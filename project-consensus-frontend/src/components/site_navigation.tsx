@@ -11,8 +11,8 @@ import {
 } from '@/components/ui/navigation-menu';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { forwardRef, useState } from 'react';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { forwardRef, useState, FormEvent } from 'react';
+import { Menu, X, ChevronDown, Search } from 'lucide-react';
 
 /**
  * Forum section submenu items configuration
@@ -73,38 +73,44 @@ const linksItems = [
 /**
  * ListItem Component - Renders individual items in dropdown menus
  * Uses forwardRef to support Radix UI's internal ref forwarding
- *
- * @param {string} className - Custom style classes
- * @param {string} title - Menu item title
- * @param {ReactNode} children - Menu item description content
- * @param {object} props - Other props passed to the link (e.g., href, target)
  */
-const ListItem = forwardRef(({ className, title, children, ...props }, ref) => {
-    return (
-        <li>
-            <NavigationMenuLink asChild>
-                <a
-                    ref={ref}
-                    className={cn(
-                        // Base styles: block element, rounded corners, padding, transition effects
-                        'block select-none space-y-1 rounded-md p-4 leading-none no-underline outline-none transition-colors',
-                        // Hover and focus states: change background and text color
-                        'hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
-                        className
-                    )}
-                    {...props}
-                >
-                    {/* Menu item title - larger font and bold */}
-                    <div className="text-base font-medium leading-none">{title}</div>
-                    {/* Menu item description - smaller font and muted color */}
-                    <p className="line-clamp-2 text-sm leading-snug text-muted-foreground mt-2">
-                        {children}
-                    </p>
-                </a>
-            </NavigationMenuLink>
-        </li>
-    );
-});
+interface ListItemProps {
+    className?: string;
+    title: string;
+    children: React.ReactNode;
+    href: string;
+    target?: string;
+    rel?: string;
+}
+
+const ListItem = forwardRef<HTMLAnchorElement, ListItemProps>(
+    ({ className, title, children, ...props }, ref) => {
+        return (
+            <li>
+                <NavigationMenuLink asChild>
+                    <a
+                        ref={ref}
+                        className={cn(
+                            // Base styles: block element, rounded corners, padding, transition effects
+                            'block select-none space-y-1 rounded-md p-4 leading-none no-underline outline-none transition-colors',
+                            // Hover and focus states: change background and text color
+                            'hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
+                            className
+                        )}
+                        {...props}
+                    >
+                        {/* Menu item title - larger font and bold */}
+                        <div className="text-base font-medium leading-none">{title}</div>
+                        {/* Menu item description - smaller font and muted color */}
+                        <p className="line-clamp-2 text-sm leading-snug text-muted-foreground mt-2">
+                            {children}
+                        </p>
+                    </a>
+                </NavigationMenuLink>
+            </li>
+        );
+    }
+);
 ListItem.displayName = 'ListItem';
 
 /**
@@ -131,15 +137,31 @@ export function SiteNavigation() {
         links: false,
     });
 
+    // Search input state
+    const [searchQuery, setSearchQuery] = useState('');
+
     /**
      * Toggle specific mobile dropdown open/close state
      * @param {string} key - Dropdown identifier ('forum' or 'links')
      */
-    const toggleMobileDropdown = (key) => {
+    const toggleMobileDropdown = (key: 'forum' | 'links') => {
         setMobileDropdowns(prev => ({
             ...prev,
             [key]: !prev[key],
         }));
+    };
+
+    /**
+     * Handle search form submission
+     * @param {FormEvent} e - Form submission event
+     */
+    const handleSearchSubmit = (e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        // Navigate to search results page with query
+        // Assuming a search results page is available at /search
+        if (searchQuery.trim()) {
+            window.location.href = `/search?query=${encodeURIComponent(searchQuery)}`;
+        }
     };
 
     return (
@@ -168,11 +190,12 @@ export function SiteNavigation() {
 
                         {/* Home navigation item - simple link without dropdown */}
                         <NavigationMenuItem>
-                            <Link href="/" passHref>
-                                <NavigationMenuLink className={customNavigationMenuTriggerStyle()}>
-                                    Home
-                                </NavigationMenuLink>
-                            </Link>
+                            <NavigationMenuLink
+                                href="/"
+                                className={customNavigationMenuTriggerStyle()}
+                            >
+                                Home
+                            </NavigationMenuLink>
                         </NavigationMenuItem>
 
                         {/* Forum navigation item - includes dropdown menu */}
@@ -225,32 +248,81 @@ export function SiteNavigation() {
 
                         {/* About navigation item - simple link without dropdown */}
                         <NavigationMenuItem>
-                            <Link href="/about" passHref>
-                                <NavigationMenuLink className={customNavigationMenuTriggerStyle()}>
-                                    About
-                                </NavigationMenuLink>
-                            </Link>
+                            <NavigationMenuLink
+                                href="/about"
+                                className={customNavigationMenuTriggerStyle()}
+                            >
+                                About
+                            </NavigationMenuLink>
                         </NavigationMenuItem>
                     </NavigationMenuList>
                 </NavigationMenu>
                 </div>
-                <div className="flex justify-end">
-                {/* Mobile menu button - only visible on small screens */}
-                <button
-                    className="md:hidden p-2 hover:bg-accent rounded-md transition-colors"
-                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    aria-label="Toggle menu"
-                >
-                    {/* Show different icon based on menu state */}
-                    {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-                </button>
-            </div>
+
+                {/* Right side - Search bar and mobile menu button */}
+                <div className="flex justify-end items-center gap-4">
+                    {/* Search bar - visible on larger screens */}
+                    <form onSubmit={handleSearchSubmit} className="hidden lg:flex relative">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Search..."
+                                className="w-64 pl-10 pr-10 py-2 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                            />
+                            {searchQuery && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearchQuery('')}
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                                >
+                                    <X className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                                </button>
+                            )}
+                        </div>
+                    </form>
+
+                    {/* Mobile menu button - only visible on small screens */}
+                    <button
+                        className="md:hidden p-2 hover:bg-accent rounded-md transition-colors"
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        aria-label="Toggle menu"
+                    >
+                        {/* Show different icon based on menu state */}
+                        {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                    </button>
+                </div>
             </div>
 
             {/* Mobile navigation menu - only visible on mobile when menu is open */}
             {isMobileMenuOpen && (
                 <div className="md:hidden border-t bg-background">
                     <div className="container px-4 py-2 space-y-1">
+
+                        {/* Mobile search bar */}
+                        <div className="py-2">
+                            <form onSubmit={handleSearchSubmit} className="relative">
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="Search..."
+                                    className="w-full pl-10 pr-10 py-2 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                                />
+                                {searchQuery && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSearchQuery('')}
+                                        className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                                    >
+                                        <X className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                                    </button>
+                                )}
+                            </form>
+                        </div>
 
                         {/* Home link - mobile simple link */}
                         <Link
