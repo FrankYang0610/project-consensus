@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 200" role="img" aria-label="project-consensus">
+    <defs>
+        <style>
+            :root { --fg: #000; }
+            text {
+            font-family: "Lucida Grande", "Lucida Sans", "Lucida Sans Unicode", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            }
+        </style>
+    </defs>
+    <text x="50%" y="50%" fill="var(--fg)" font-size="120" text-anchor="middle" dominant-baseline="middle">
+        project-consensus
+    </text>
+</svg>
