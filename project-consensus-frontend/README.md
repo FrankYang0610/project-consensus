@@ -16,6 +16,14 @@ pnpm dev
 bun dev
 ```
 
+### Shadcn UI components are used in this project. To learn more about documentation, please visit [shadcn/ui](https://ui.shadcn.com/docs).
+```bash
+# Install shadcn/ui
+npx shadcn@latest init
+
+```
+
+
 Open [http://localhost:3000](http://localhost:3000) with the browser to see the result.
 
 One can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
