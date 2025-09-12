@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { forwardRef, useState, FormEvent } from 'react';
 import { Menu, X, ChevronDown, Search } from 'lucide-react';
+import Image from "next/image";
 
 /**
  * Forum section submenu items configuration
@@ -168,7 +169,14 @@ export function SiteNavigation() {
                 {/* Logo area - click to return home */}
                 <div className="flex items-center">
                 <Link href="/" className="flex items-center space-x-2">
-                    <span className="font-bold text-2xl lg:text-3xl">Project Consensus</span>
+                    <Image
+                        className="dark:invert"
+                        src="/project-consensus-icon.svg"
+                        alt="project-consensus-icon"
+                        width={225}
+                        height={60}
+                        priority
+                    />
                 </Link>
                 </div>
 
@@ -187,6 +195,7 @@ export function SiteNavigation() {
                             </NavigationMenuLink>
                         </NavigationMenuItem>
 
+                        {/* Course Review navigation item - simple link without dropdown */}
                         <NavigationMenuItem>
                             <NavigationMenuLink
                                 href="/courses"
@@ -242,6 +251,7 @@ export function SiteNavigation() {
                                 About
                             </NavigationMenuLink>
                         </NavigationMenuItem>
+
                     </NavigationMenuList>
                 </NavigationMenu>
                 </div>
