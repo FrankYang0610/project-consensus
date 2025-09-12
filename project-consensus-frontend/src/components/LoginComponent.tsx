@@ -172,11 +172,11 @@ export function LoginComponent({ className }: LoginComponentProps) {
             <DialogTrigger asChild>
                 <Button
                     variant="outline"
-                    size="sm"
+                    size="default"
                     className={`items-center gap-2 ${className}`}
                 >
                     <User size={16} />
-                    <span className="hidden sm:inline">Login</span>
+                    <span>Login</span>
                 </Button>
             </DialogTrigger>
             <DialogContent className="p-0 max-w-sm">

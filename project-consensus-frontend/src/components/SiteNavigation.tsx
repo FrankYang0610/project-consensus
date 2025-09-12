@@ -284,9 +284,16 @@ export function SiteNavigation() {
                 <div className="md:hidden border-t bg-background">
                     <div className="container px-4 py-2 space-y-1">
 
-                        {/* Mobile search bar */}
-                        <div className="py-2">
-                            <SearchBar showMobileVersion={true} placeholder="Search..." />
+                        {/* Mobile: Search + Login inline */}
+                        <div className="py-2 flex items-center gap-2">
+                            <SearchBar className="flex-1" showMobileVersion={true} placeholder="Search..." />
+                            {!isLoading && (
+                                isLoggedIn ? (
+                                    <UserMenu />
+                                ) : (
+                                    <LoginComponent />
+                                )
+                            )}
                         </div>
 
                         {/* Home link - mobile simple link */}
@@ -345,17 +352,6 @@ export function SiteNavigation() {
                         >
                             About
                         </Link>
-
-                        {/* 用户认证组件 - mobile version */}
-                        <div className="py-2 px-2">
-                            {!isLoading && (
-                                isLoggedIn ? (
-                                    <UserMenu />
-                                ) : (
-                                    <LoginComponent />
-                                )
-                            )}
-                        </div>
                     </div>
                 </div>
             )}

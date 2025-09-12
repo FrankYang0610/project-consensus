@@ -1,6 +1,7 @@
 import React, { useState, FormEvent } from 'react';
 import { Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
 
 interface SearchBarProps {
     placeholder?: string;
@@ -37,14 +38,14 @@ export function SearchBar({
         <form onSubmit={handleSubmit} className={cn("relative", className)}>
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input
+                <Input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={placeholder}
                     className={cn(
-                        "pl-10 pr-10 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent",
-                        showMobileVersion ? "w-full h-8" : "w-64 h-8"
+                        "pl-10 pr-10",
+                        showMobileVersion ? "w-full h-9" : "w-64 h-9"
                     )}
                 />
                 {searchQuery && (
