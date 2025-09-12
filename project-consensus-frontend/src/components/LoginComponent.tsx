@@ -12,6 +12,7 @@ import {
 import {
     Dialog,
     DialogContent,
+    DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -180,6 +181,7 @@ export function LoginComponent({ className }: LoginComponentProps) {
                 </Button>
             </DialogTrigger>
             <DialogContent className="p-0 max-w-sm">
+                <DialogTitle className="sr-only">Login</DialogTitle>
                 <Card className="border-0 shadow-none">
                     <CardHeader className="text-center">
                         <CardTitle>Welcome Back</CardTitle>
