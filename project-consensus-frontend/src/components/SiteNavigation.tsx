@@ -131,7 +131,7 @@ export function SiteNavigation() {
     // Controls mobile dropdown expansion states
     // Uses object to store multiple dropdown states
     const [mobileDropdowns, setMobileDropdowns] = useState({
-        forum: false,
+        more: false,
     });
 
     // Search input state is now handled by SearchBar component
@@ -140,7 +140,7 @@ export function SiteNavigation() {
      * Toggle specific mobile dropdown open/close state
      * @param {string} key - Dropdown identifier ('forum')
      */
-    const toggleMobileDropdown = (key: 'forum') => {
+    const toggleMobileDropdown = (key: 'more') => {
         setMobileDropdowns(prev => ({
             ...prev,
             [key]: !prev[key],
@@ -296,34 +296,43 @@ export function SiteNavigation() {
                             )}
                         </div>
 
-                        {/* Home link - mobile simple link */}
+                        {/* Forum link - mobile simple link */}
                         <Link
                             href="/"
                             className="block py-3 px-2 text-sm font-medium hover:bg-accent rounded-md transition-colors"
                             onClick={() => setIsMobileMenuOpen(false)} // Close menu after click
                         >
-                            Home
+                            Forum
                         </Link>
 
-                        {/* Forum collapsible section */}
+                        {/* Course Review link - mobile simple link */}
+                        <Link
+                            href="/courses"
+                            className="block py-3 px-2 text-sm font-medium hover:bg-accent rounded-md transition-colors"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                            Course Review
+                        </Link>
+
+                        {/* More collapsible section */}
                         <div>
-                            {/* Forum collapse button */}
+                            {/* More collapse button */}
                             <button
                                 className="flex items-center justify-between w-full py-3 px-2 text-sm font-medium hover:bg-accent rounded-md transition-colors"
-                                onClick={() => toggleMobileDropdown('forum')}
+                                onClick={() => toggleMobileDropdown('more')}
                             >
-                                <span>Forum</span>
+                                <span>More</span>
                                 {/* Arrow icon - rotates 180 degrees when expanded */}
                                 <ChevronDown
                                     size={16}
                                     className={cn(
                                         "transition-transform duration-200",
-                                        mobileDropdowns.forum && "rotate-180"
+                                        mobileDropdowns.more && "rotate-180"
                                     )}
                                 />
                             </button>
-                            {/* Forum submenu - only visible when expanded */}
-                            {mobileDropdowns.forum && (
+                            {/* More submenu - only visible when expanded */}
+                            {mobileDropdowns.more && (
                                 <div className="ml-4 mt-1 space-y-1">
                                     {forumItems.map((item) => (
                                         <Link
@@ -332,13 +341,40 @@ export function SiteNavigation() {
                                             className="block py-2 px-3 text-sm hover:bg-accent rounded-md transition-colors"
                                             onClick={() => setIsMobileMenuOpen(false)}
                                         >
-                                            {/* Submenu item title */}
                                             <div className="font-medium">{item.title}</div>
-                                            {/* Submenu item description */}
                                             <div className="text-xs text-muted-foreground mt-1">
                                                 {item.description}
                                             </div>
                                         </Link>
+                                    ))}
+                                    {linksItems.map((item) => (
+                                        item.external ? (
+                                            <a
+                                                key={item.title}
+                                                href={item.href}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="block py-2 px-3 text-sm hover:bg-accent rounded-md transition-colors"
+                                                onClick={() => setIsMobileMenuOpen(false)}
+                                            >
+                                                <div className="font-medium">{item.title}</div>
+                                                <div className="text-xs text-muted-foreground mt-1">
+                                                    {item.description}
+                                                </div>
+                                            </a>
+                                        ) : (
+                                            <Link
+                                                key={item.title}
+                                                href={item.href}
+                                                className="block py-2 px-3 text-sm hover:bg-accent rounded-md transition-colors"
+                                                onClick={() => setIsMobileMenuOpen(false)}
+                                            >
+                                                <div className="font-medium">{item.title}</div>
+                                                <div className="text-xs text-muted-foreground mt-1">
+                                                    {item.description}
+                                                </div>
+                                            </Link>
+                                        )
                                     ))}
                                 </div>
                             )}
