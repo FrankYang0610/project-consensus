@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {SiteNavigation} from "@/components/SiteNavigation";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 export default function NotFound() {
   return (
@@ -20,14 +21,20 @@ export default function NotFound() {
             </p>
 
             <div className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2 text-left">
-            <div className="rounded-lg border border-border p-4 bg-card/50">
-                <p className="text-sm font-medium">Quick actions</p>
-                <p className="mt-1 text-sm text-muted-foreground">Use the navigation to find features or pages</p>
-            </div>
-            <Link href="/" className="rounded-lg border border-border p-4 bg-card/50 block">
-                <p className="text-sm font-medium">Go to homepage</p>
-                <p className="mt-1 text-sm text-muted-foreground">Start a new journey from the home page</p>
-            </Link>
+                <Card className="bg-card/50">
+                    <CardHeader>
+                        <CardTitle className="text-sm">Quick actions</CardTitle>
+                        <CardDescription>Use the navigation to find features or pages</CardDescription>
+                    </CardHeader>
+                </Card>
+                <Card className="bg-card/50">
+                    <Link href="/" className="block">
+                        <CardHeader>
+                            <CardTitle className="text-sm">Go to homepage</CardTitle>
+                            <CardDescription>Start a new journey from the home page</CardDescription>
+                        </CardHeader>
+                    </Link>
+                </Card>
             </div>
         </div>
         </main>
