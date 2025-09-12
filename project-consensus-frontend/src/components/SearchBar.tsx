@@ -1,53 +1,63 @@
-import React, { useState } from 'react';
+import React, { useState, FormEvent } from 'react';
 import { Search, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-export function SearchWithFiltering() {
-    const [searchTerm, setSearchTerm] = useState('');
+interface SearchBarProps {
+    placeholder?: string;
+    className?: string;
+    onSubmit?: (query: string) => void;
+    showMobileVersion?: boolean;
+}
 
-    // Sample data
-    const items = [
-        'Apple', 'Banana', 'Orange', 'Mango', 'Strawberry',
-        'Pineapple', 'Watermelon', 'Grape', 'Kiwi', 'Peach'
-    ];
+export function SearchBar({ 
+    placeholder = "Search...", 
+    className = "",
+    onSubmit,
+    showMobileVersion = false
+}: SearchBarProps) {
+    const [searchQuery, setSearchQuery] = useState('');
 
-    const filteredItems = items.filter(item =>
-        item.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (searchQuery.trim()) {
+            if (onSubmit) {
+                onSubmit(searchQuery.trim());
+            } else {
+                // Default behavior - navigate to search page
+                window.location.href = `/search?query=${encodeURIComponent(searchQuery)}`;
+            }
+        }
+    };
+
+    const clearSearch = () => {
+        setSearchQuery('');
+    };
 
     return (
-        <div className="w-full max-w-md">
+        <form onSubmit={handleSubmit} className={cn("relative", className)}>
             <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                     type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search fruits..."
-                    className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={placeholder}
+                    className={cn(
+                        "pl-10 pr-10 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent",
+                        showMobileVersion ? "w-full h-8" : "w-64 h-8"
+                    )}
                 />
-                {searchTerm && (
+                {searchQuery && (
                     <button
-                        onClick={() => setSearchTerm('')}
+                        type="button"
+                        onClick={clearSearch}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2"
                     >
-                        <X className="w-5 h-5 text-gray-400 hover:text-gray-600" />
+                        <X className="w-4 h-4 text-muted-foreground hover:text-foreground" />
                     </button>
                 )}
             </div>
-            {searchTerm && (
-                <ul className="mt-2 border border-gray-200 rounded-lg divide-y divide-gray-200">
-                    {filteredItems.length > 0 ? (
-                        filteredItems.map((item, index) => (
-                            <li key={index} className="px-4 py-2 hover:bg-gray-50">
-                                {item}
-                            </li>
-                        ))
-                    ) : (
-                        <li className="px-4 py-2 text-gray-500">No results found</li>
-                    )}
-                </ul>
-            )}
-        </div>
+        </form>
     );
 }
 
