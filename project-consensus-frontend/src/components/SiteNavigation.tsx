@@ -21,17 +21,17 @@ import { Menu, X, ChevronDown, Search } from 'lucide-react';
 const forumItems = [
     {
         title: 'Technical Support',
-        href: '/forum/support',
+        href: '/support',
         description: 'Get help with technical issues',
     },
     {
         title: 'Feature Requests',
-        href: '/forum/features',
+        href: '/features',
         description: 'Suggest new features and improvements',
     },
     {
         title: 'Announcements',
-        href: '/forum/announcements',
+        href: '/announcements',
         description: 'Stay updated with latest news',
     },
 ];
@@ -189,7 +189,7 @@ export function SiteNavigation() {
 
                         <NavigationMenuItem>
                             <NavigationMenuLink
-                                href="/"
+                                href="/courses"
                                 className={customNavigationMenuTriggerStyle()}
                             >
                                 Course Review
