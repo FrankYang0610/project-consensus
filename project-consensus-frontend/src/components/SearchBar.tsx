@@ -3,14 +3,17 @@ import { Search, X } from 'lucide-react';
 
 export function SearchWithFiltering() {
     const [searchTerm, setSearchTerm] = useState('');
+
     // Sample data
     const items = [
         'Apple', 'Banana', 'Orange', 'Mango', 'Strawberry',
         'Pineapple', 'Watermelon', 'Grape', 'Kiwi', 'Peach'
     ];
+
     const filteredItems = items.filter(item =>
         item.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
     return (
         <div className="w-full max-w-md">
             <div className="relative">

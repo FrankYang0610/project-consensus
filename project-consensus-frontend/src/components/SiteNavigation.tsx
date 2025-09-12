@@ -20,11 +20,6 @@ import { Menu, X, ChevronDown, Search } from 'lucide-react';
  */
 const forumItems = [
     {
-        title: 'General Discussion',
-        href: '/forum/general',
-        description: 'Join the community conversation',
-    },
-    {
         title: 'Technical Support',
         href: '/forum/support',
         description: 'Get help with technical issues',
@@ -50,12 +45,6 @@ const linksItems = [
         title: 'Documentation',
         href: '/docs',
         description: 'Comprehensive guides and API references',
-    },
-    {
-        title: 'GitHub',
-        href: 'https://github.com',
-        description: 'View source code and contribute',
-        external: true,
     },
     {
         title: 'Discord',
@@ -194,7 +183,16 @@ export function SiteNavigation() {
                                 href="/"
                                 className={customNavigationMenuTriggerStyle()}
                             >
-                                Home
+                                Forum
+                            </NavigationMenuLink>
+                        </NavigationMenuItem>
+
+                        <NavigationMenuItem>
+                            <NavigationMenuLink
+                                href="/"
+                                className={customNavigationMenuTriggerStyle()}
+                            >
+                                Course Review
                             </NavigationMenuLink>
                         </NavigationMenuItem>
 
@@ -202,7 +200,7 @@ export function SiteNavigation() {
                         <NavigationMenuItem>
                             {/* Trigger button - shows dropdown on click or hover */}
                             <NavigationMenuTrigger className="h-12 px-6 text-base font-medium">
-                                Forum
+                                More
                             </NavigationMenuTrigger>
                             {/* Dropdown content container */}
                             <NavigationMenuContent>
@@ -217,18 +215,7 @@ export function SiteNavigation() {
                                             {item.description}
                                         </ListItem>
                                     ))}
-                                </ul>
-                            </NavigationMenuContent>
-                        </NavigationMenuItem>
 
-
-                        {/* Links navigation item - includes dropdown menu */}
-                        <NavigationMenuItem>
-                            <NavigationMenuTrigger className="h-12 px-6 text-base font-medium">
-                                Links
-                            </NavigationMenuTrigger>
-                            <NavigationMenuContent>
-                                <ul className="grid w-[500px] gap-3 p-6 md:w-[600px] md:grid-cols-2 lg:w-[700px]">
                                     {linksItems.map((item) => (
                                         <ListItem
                                             key={item.title}
