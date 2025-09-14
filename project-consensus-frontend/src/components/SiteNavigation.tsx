@@ -12,7 +12,7 @@ import {
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { forwardRef, useState } from 'react';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { Menu, X, ChevronDown, ArrowLeft } from 'lucide-react';
 import Image from "next/image";
 //Local Components
 import { LoginComponent } from './LoginComponent';
@@ -121,7 +121,12 @@ const customNavigationMenuTriggerStyle = () => cn(
  * SiteNavigation - Main navigation bar component
  * Includes both desktop and mobile navigation solutions
  */
-export function SiteNavigation() {
+interface SiteNavigationProps {
+    showBackButton?: boolean;
+    onBackClick?: () => void;
+}
+
+export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavigationProps = {}) {
     // Auth状态
     const { isLoggedIn, isLoading } = useAuth();
     
@@ -163,16 +168,25 @@ export function SiteNavigation() {
 
                 {/* Logo area - click to return home */}
                 <div className="flex items-center">
-                <Link href="/" className="flex items-center space-x-2">
-                    <Image
-                        className="dark:invert"
-                        src="/project-consensus-icon.svg"
-                        alt="project-consensus-icon"
-                        width={225}
-                        height={60}
-                        priority
-                    />
-                </Link>
+                    {showBackButton && (
+                        <button
+                            onClick={onBackClick}
+                            className="mr-4 p-2 hover:bg-accent rounded-md transition-colors"
+                            aria-label="Go back"
+                        >
+                            <ArrowLeft className="w-5 h-5" />
+                        </button>
+                    )}
+                    <Link href="/" className="flex items-center space-x-2">
+                        <Image
+                            className="dark:invert"
+                            src="/project-consensus-icon.svg"
+                            alt="project-consensus-icon"
+                            width={225}
+                            height={60}
+                            priority
+                        />
+                    </Link>
                 </div>
 
                 {/* Desktop navigation menu - visible on medium screens and up */}

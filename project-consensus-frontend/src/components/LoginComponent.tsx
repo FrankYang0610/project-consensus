@@ -21,22 +21,14 @@ import { Label } from '@/components/ui/label';
 import { User, Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
+import { LoginResponse } from '@/types/auth';
 
-//Type Definition
-interface LoginResponse {
-    success: boolean;
-    user?: {
-        id: string;
-        email: string;
-        name?: string;
-        avatar?: string;
-    };
-    token?: string;
-    message?: string;
-}
-
-interface LoginComponentProps {
-    className?: string;
+/**
+ * 登录组件属性 / Login component props
+ */
+export interface LoginComponentProps {
+    className?: string; // 自定义CSS类名（可选） / Custom CSS class name (optional)
+    onLoginSuccess?: (user: import('@/types/user').User) => void; // 登录成功回调（可选） / Login success callback (optional)
 }
 
 export function LoginComponent({ className }: LoginComponentProps) {
