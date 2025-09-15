@@ -1,39 +1,45 @@
-import Image from "next/image";
+"use client";
+
+import * as React from "react";
 import { SiteNavigation } from "@/components/SiteNavigation";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ForumPostPreviewCard } from "@/components/ForumPostPreviewCard";
+import { samplePosts, toggleLikeById } from "@/data/samplePosts";
 
 export default function HomePage() {
-  return (
-      <>
-          <SiteNavigation />
-          <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-              <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-                  <Image
-                      className="dark:invert"
-                      src="/project-consensus-icon.svg"
-                      alt="project-consensus-icon"
-                      width={300}
-                      height={60}
-                      priority
-                  />
-                  <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-                      <li className="mb-2 tracking-[-.01em]">
-                          Get started by editing{" "}
-                          <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-                              src/app/page.tsx
-                          </code>
-                          .
-                      </li>
-                      <li className="tracking-[-.01em]">
-                          Save and see the changes instantly.
-                      </li>
-                  </ol>
+    const [posts, setPosts] = React.useState(() => [...samplePosts]);
 
-                  <div className="flex gap-4 items-center flex-col sm:flex-row">
-                  </div>
-              </main>
-              <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-              </footer>
-          </div>
-      </>
-  );
+    const handleLike = (id: string) => {
+        const updated = toggleLikeById(id);
+        if (!updated) return;
+        setPosts(prev => prev.map(p => (p.id === id ? { ...p, isLiked: updated.isLiked, likes: updated.likes } : p)));
+    };
+
+    return (
+        <>
+            <SiteNavigation />
+            <div className="min-h-screen bg-background">
+                <main className="w-full py-8">
+                    <div className="w-full p-6">
+                        <div className="max-w-7xl mx-auto mb-1">
+                            <Alert>
+                                <AlertTitle>Note</AlertTitle>
+                                <AlertDescription>
+                                    This site is under active development. UI and features may change frequently.
+                                </AlertDescription>
+                            </Alert>
+                        </div>
+                    </div>
+                    
+                    <div className="w-full p-6 pt-0">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto">
+                            {posts.map(post => (
+                                <ForumPostPreviewCard key={post.id} post={post} onLike={handleLike} />
+                            ))}
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </>
+    );
 }

@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { User, Settings, LogOut, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
-interface UserMenuProps {
+export interface UserMenuProps {
     className?: string;
 }
 
