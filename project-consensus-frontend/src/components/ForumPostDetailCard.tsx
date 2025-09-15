@@ -182,7 +182,7 @@ export function ForumPostDetailCard({
 
                 {post.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mb-4">
-                        {post.tags.map((tag: string) => (
+                        {post.tags.map((tag) => (
                             <span
                                 key={tag}
                                 className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground"
