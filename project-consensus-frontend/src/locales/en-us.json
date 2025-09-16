@@ -52,7 +52,9 @@
     "codeInputDisabledHint": "Click Send Code first to enable",
     "errorPasswordMismatch": "Passwords do not match",
     "errorPolyuEmail": "Please use a valid PolyU email (@connect.polyu.hk)",
-    "emailPrivacyNotice": "Your email is only used to link your project-consensus account and verify that you are a PolyU student. No school-related or email-related content will be read."
+    "emailPrivacyNotice": "Your email is only used to link your project-consensus account and verify that you are a PolyU student. Your personal information will not be shared.",
+    "registerConsent": "By clicking Register you agree to our",
+    "termsOfService": "Terms of Service"
   },
   "post": {
     "translate": "Translate",
@@ -95,5 +97,58 @@
     "quickActionsDesc": "Use the navigation to find features or pages",
     "goHome": "Go to homepage",
     "goHomeDesc": "Start a new journey from the home page"
+  },
+  "tos": {
+    "title": "Terms of Service",
+    "updatedAt": "Last updated: {{date}}",
+    "intro": "By using this site you agree to the following terms.",
+    "sections": {
+      "acceptance": {
+        "title": "1. Acceptance of Terms",
+        "content": "By creating an account or using project-consensus, you agree to these Terms and all applicable policies referenced here."
+      },
+      "accounts": {
+        "title": "2. Accounts and Eligibility",
+        "content": "You must provide accurate information and keep your account secure. You are responsible for all activity under your account."
+      },
+      "userContent": {
+        "title": "3. User Content",
+        "content": "You retain ownership of content you post. By posting, you grant us a non-exclusive license to host, store, display, and distribute your content as necessary to operate the service."
+      },
+      "prohibited": {
+        "title": "4. Prohibited Conduct",
+        "items": [
+          "Illegal, harassing, hateful, or violent behavior",
+          "Posting spam, scams, or mis/disinformation",
+          "Infringing intellectual property or privacy rights",
+          "Circumventing security or abusing the service",
+          "Automated scraping without permission"
+        ]
+      },
+      "intellectualProperty": {
+        "title": "5. Intellectual Property",
+        "content": "All trademarks, logos, and software of project-consensus are protected. Do not use them without prior permission."
+      },
+      "disclaimer": {
+        "title": "6. Disclaimer",
+        "content": "The service is provided “as is” without warranties of any kind. We do not guarantee accuracy, availability, or reliability."
+      },
+      "limitation": {
+        "title": "7. Limitation of Liability",
+        "content": "To the maximum extent permitted by law, project-consensus will not be liable for any indirect, incidental, or consequential damages."
+      },
+      "privacy": {
+        "title": "8. Privacy Policy",
+        "content": "We collect only what is necessary to operate the service (e.g., account info and content you submit). We do not sell your personal data and do not share it except as needed to comply with law."
+      },
+      "changes": {
+        "title": "9. Changes to these Terms",
+        "content": "We may update these Terms from time to time. Material changes will be announced by notice on the site. Continued use constitutes acceptance."
+      },
+      "contact": {
+        "title": "10. Contact",
+        "content": "Questions? Contact us at support@project-consensus.app."
+      }
+    }
   }
 }

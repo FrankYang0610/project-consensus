@@ -52,7 +52,9 @@
     "codeInputDisabledHint": "請先點擊發送驗證碼以啟用",
     "errorPasswordMismatch": "兩次輸入的密碼不一致",
     "errorPolyuEmail": "請使用有效的理大電郵（@connect.polyu.hk）",
-    "emailPrivacyNotice": "您的電郵只用於關聯您的 project-consensus 帳戶並確認您是 PolyU 學生。您的學校相關內容、電郵相關內容均不會被讀取。"
+    "emailPrivacyNotice": "您的電郵只用於關聯您的 project-consensus 帳戶並確認您是 PolyU 學生。您的學校相關內容、電郵相關內容均不會被讀取您的個人隱私信息不會被分享。",
+    "registerConsent": "點擊註冊即代表你同意我們的",
+    "termsOfService": "服務條款"
   },
   "post": {
     "translate": "翻譯",
@@ -95,5 +97,58 @@
     "quickActionsDesc": "使用導覽尋找功能或頁面",
     "goHome": "返回首頁",
     "goHomeDesc": "從首頁開啟新的旅程"
+  },
+  "tos": {
+    "title": "服務條款",
+    "updatedAt": "最近更新：{{date}}",
+    "intro": "使用本網站即表示你同意以下條款。",
+    "sections": {
+      "acceptance": {
+        "title": "1. 接受條款",
+        "content": "建立帳戶或使用 project-consensus 即表示你同意本服務條款及本文引用的所有適用政策。"
+      },
+      "accounts": {
+        "title": "2. 帳戶與資格",
+        "content": "你必須提供準確資料並確保帳戶安全。你需對帳戶下的一切行為負責。"
+      },
+      "userContent": {
+        "title": "3. 用戶內容",
+        "content": "你保留所發佈內容的所有權。發佈內容即授權我們為營運服務之需要而非獨家地託管、儲存、展示與分發該內容。"
+      },
+      "prohibited": {
+        "title": "4. 禁止行為",
+        "items": [
+          "違法、騷擾、仇恨或暴力行為",
+          "發佈垃圾資訊、詐騙或虛假/誤導資訊",
+          "侵犯知識產權或私隱權",
+          "規避安全措施或濫用服務",
+          "未經許可的自動化抓取"
+        ]
+      },
+      "intellectualProperty": {
+        "title": "5. 知識產權",
+        "content": "project-consensus 的商標、標誌與軟件受保護。未經事先許可不得使用。"
+      },
+      "disclaimer": {
+        "title": "6. 免責聲明",
+        "content": "本服務按「現況」提供，不作任何明示或默示保證。我們不保證準確性、可用性或可靠性。"
+      },
+      "limitation": {
+        "title": "7. 責任限制",
+        "content": "在法律允許的最大範圍內，project-consensus 不對任何間接、附帶或後果性損害承擔責任。"
+      },
+      "privacy": {
+        "title": "8. 私隱政策",
+        "content": "我們只收集提供服務所需的資料（如帳戶資料及你提交的內容）。我們不會出售你的個人資料，除應依法要求外亦不會分享。"
+      },
+      "changes": {
+        "title": "9. 條款變更",
+        "content": "我們可能不時更新本條款。重大變更將以站內通知方式告知。繼續使用即表示接受變更。"
+      },
+      "contact": {
+        "title": "10. 聯絡方式",
+        "content": "如有問題，請聯絡：support@project-consensus.app。"
+      }
+    }
   }
 }

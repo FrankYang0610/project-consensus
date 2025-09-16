@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/hooks/useI18n';
+import Link from 'next/link';
 
 export default function AboutPage() {
     const { t } = useI18n();
@@ -13,11 +14,23 @@ export default function AboutPage() {
     return (
         <>
             <SiteNavigation />
+            <div className="w-full p-6">
+                        <div className="max-w-7xl mx-auto mb-1">
+                            <Alert>
+                                <AlertTitle>{t('common.note')}</AlertTitle>
+                                <AlertDescription>
+                                    {t('common.developmentNotice')}
+                                </AlertDescription>
+                            </Alert>
+                        </div>
+                    </div>
+
             <main className={cn('mx-auto max-w-5xl p-8 space-y-8')}>
                 <div className="space-y-2">
                     <h1 className="text-4xl font-semibold tracking-tight">{t('about.title')}</h1>
                     <p className="text-sm text-muted-foreground">{t('about.subtitle')}</p>
                 </div>
+
 
                 <div className="grid gap-6 md:grid-cols-2">
                     <Card>
@@ -32,7 +45,7 @@ export default function AboutPage() {
                         </CardContent>
                         <CardFooter>
                             <Button asChild>
-                                <a href="/">{t('about.goToHome')}</a>
+                                <Link href="/">{t('about.goToHome')}</Link>
                             </Button>
                         </CardFooter>
                     </Card>
@@ -55,13 +68,6 @@ export default function AboutPage() {
                         </CardFooter>
                     </Card>
                 </div>
-
-                <Alert>
-                    <AlertTitle>{t('common.note')}</AlertTitle>
-                    <AlertDescription>
-                        {t('common.developmentNotice')}
-                    </AlertDescription>
-                </Alert>
 
                 <Card>
                     <CardHeader>
