@@ -5,7 +5,7 @@ export default function Watermark() {
       aria-hidden="true"
       className="pointer-events-none fixed bottom-3 left-20 z-30 select-none text-[12px] text-foreground/40"
     >
-      © {year} Project Consensus
+      © {year} project-consensus
     </div>
   );
 }

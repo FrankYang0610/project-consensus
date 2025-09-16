@@ -174,9 +174,9 @@ export function LoginComponent({ className }: LoginComponentProps) {
                     <span>{t('auth.login')}</span>
                 </Button>
             </DialogTrigger>
-            <DialogContent className="p-0 max-w-sm">
+            <DialogContent className="p-0 max-w-sm overflow-hidden rounded-xl">
                 <DialogTitle className="sr-only">{t('auth.login')}</DialogTitle>
-                <Card className="border-0 shadow-none">
+                <Card className="border-0 shadow-none rounded-none">
                     <CardHeader className="text-center">
                         <CardTitle>{t('auth.welcomeBack')}</CardTitle>
                         <CardDescription>

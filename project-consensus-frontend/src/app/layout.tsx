@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+
+import "@/lib/i18n"; // Initialize i18n
 import "./globals.css";
-import { AppProvider } from "@/contexts/AppContext";
-// Initialize i18n
-import "@/lib/i18n";
+
+import { ThemeProvider } from "@/components/ThemeProvider";
 import Watermark from "@/components/Watermark";
+import { AppProvider } from "@/contexts/AppContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,10 +33,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AppProvider>
-          {children}
-          <Watermark />
-        </AppProvider>
+        <ThemeProvider>
+          <AppProvider>
+            {children}
+            <Watermark />
+          </AppProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

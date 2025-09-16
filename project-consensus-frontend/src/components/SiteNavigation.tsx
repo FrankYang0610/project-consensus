@@ -28,6 +28,7 @@ import { SearchBar } from './SearchBar';
 import { UserMenu } from './UserMenu';
 import { useApp } from '@/contexts/AppContext';
 import { Language } from '@/types/app-types';
+import { ThemeToggle } from './ThemeToggle';
 
 
 /**
@@ -324,6 +325,9 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                 <div className="flex justify-end items-center gap-4">
                     {/* Search bar - visible on larger screens */}
                     <SearchBar className="hidden lg:flex" placeholder={t('search.placeholder')} />
+
+                    {/* Theme toggle */}
+                    <ThemeToggle />
 
                     {/* Language Switcher - visible on larger screens */}
                     <div className="hidden md:block">
