@@ -47,6 +47,11 @@ body {
   font-family: "Lucida Grande", Arial, Helvetica, sans-serif;
 }
 
+/* Smooth theme transitions */
+html, body, [data-theme] {
+  transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+}
+
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);

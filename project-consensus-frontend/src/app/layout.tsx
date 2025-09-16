@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppProvider } from "@/contexts/AppContext";
+import { ThemeProvider } from "@/components/ThemeProvider";
 // Initialize i18n
 import "@/lib/i18n";
 import Watermark from "@/components/Watermark";
@@ -31,10 +32,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AppProvider>
-          {children}
-          <Watermark />
-        </AppProvider>
+        <ThemeProvider>
+          <AppProvider>
+            {children}
+          </AppProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

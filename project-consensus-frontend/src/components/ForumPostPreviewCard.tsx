@@ -161,10 +161,10 @@ export function ForumPostPreviewCard({
                                 <img
                                     src={post.author.avatar}
                                     alt={post.author.name}
-                                    className="w-8 h-8 rounded-full object-cover ring-2 ring-white shadow-sm"
+                                    className="w-8 h-8 rounded-full object-cover ring-2 ring-zinc-200 dark:ring-zinc-800 shadow-sm"
                                 />
                             ) : (
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-sm ring-2 ring-white">
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-sm ring-2 ring-zinc-200 dark:ring-zinc-800">
                                     <span className="text-white text-xs font-semibold">
                                         {post.author.name.charAt(0).toUpperCase()}
                                     </span>
