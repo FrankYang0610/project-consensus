@@ -1,0 +1,32 @@
+{
+  "navigation": {
+    "forum": "Forum",
+    "courseReview": "Course Review",
+    "more": "More",
+    "about": "About",
+    "language": "Language"
+  },
+  "menu": {
+    "techSupport": "Technical Support",
+    "techSupportDesc": "Get help with technical issues",
+    "featureRequests": "Feature Requests",
+    "featureRequestsDesc": "Suggest new features and improvements",
+    "announcements": "Announcements",
+    "announcementsDesc": "Stay updated with latest news",
+    "documentation": "Documentation",
+    "documentationDesc": "Comprehensive guides and API references",
+    "discord": "Discord",
+    "discordDesc": "Join our community chat",
+    "resources": "Resources",
+    "resourcesDesc": "Useful tools and materials"
+  },
+  "search": {
+    "placeholder": "Type to search..."
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "profile": "Profile",
+    "settings": "Settings"
+  }
+}

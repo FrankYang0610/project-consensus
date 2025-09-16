@@ -9,59 +9,46 @@ import {
     NavigationMenuTrigger,
     navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { forwardRef, useState } from 'react';
-import { Menu, X, ChevronDown, ArrowLeft } from 'lucide-react';
+import { useI18n } from '@/hooks/useI18n';
+import { Menu, X, ChevronDown, ArrowLeft, Globe } from 'lucide-react';
 import Image from "next/image";
 //Local Components
 import { LoginComponent } from './LoginComponent';
 import { SearchBar } from './SearchBar';
 import { UserMenu } from './UserMenu';
-import { useAuth } from '@/contexts/AuthContext';
+import { useApp } from '@/contexts/AppContext';
+import { Language } from '@/types/app-types';
+
 
 /**
- * Forum section submenu items configuration
- * Each item contains title, path, and description
+ * Language options configuration
+ * Contains language codes and their display names
  */
-const forumItems = [
+const languageOptions = [
     {
-        title: 'Technical Support',
-        href: '/support',
-        description: 'Get help with technical issues',
+        code: 'zh-CN' as Language,
+        name: '简体中文',
+        flag: '🇨🇳',
     },
     {
-        title: 'Feature Requests',
-        href: '/features',
-        description: 'Suggest new features and improvements',
+        code: 'zh-HK' as Language,
+        name: '繁體中文',
+        flag: '🇭🇰',
     },
     {
-        title: 'Announcements',
-        href: '/announcements',
-        description: 'Stay updated with latest news',
-    },
-];
-
-/**
- * Links section submenu items configuration
- * external: true indicates external links that open in new tab
- */
-const linksItems = [
-    {
-        title: 'Documentation',
-        href: '/docs',
-        description: 'Comprehensive guides and API references',
-    },
-    {
-        title: 'Discord',
-        href: 'https://discord.com',
-        description: 'Join our community chat',
-        external: true,
-    },
-    {
-        title: 'Resources',
-        href: '/resources',
-        description: 'Useful tools and materials',
+        code: 'en-US' as Language,
+        name: 'English',
+        flag: '🇺🇸',
     },
 ];
 
@@ -127,8 +114,11 @@ interface SiteNavigationProps {
 }
 
 export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavigationProps = {}) {
-    // Auth状态
-    const { isLoggedIn, isLoading } = useAuth();
+    // i18n translation and language management
+    const { t, language, changeLanguage } = useI18n();
+    
+    // Auth状态 / Auth status
+    const { isLoggedIn, isLoading } = useApp();
     
     // Controls mobile menu open/close state
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -153,6 +143,71 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
     };
 
     // Search form submission is now handled by SearchBar component
+
+    /**
+     * Get current language display information
+     */
+    const getCurrentLanguage = () => {
+        return languageOptions.find(lang => lang.code === language) || languageOptions[0];
+    };
+
+    /**
+     * Get translated menu items
+     */
+    const getTranslatedMenuItems = () => {
+        return {
+            forumItems: [
+                {
+                    title: t('menu.techSupport'),
+                    href: '/support',
+                    description: t('menu.techSupportDesc'),
+                },
+                {
+                    title: t('menu.featureRequests'),
+                    href: '/features',
+                    description: t('menu.featureRequestsDesc'),
+                },
+                {
+                    title: t('menu.announcements'),
+                    href: '/announcements',
+                    description: t('menu.announcementsDesc'),
+                },
+            ],
+            linksItems: [
+                {
+                    title: t('menu.documentation'),
+                    href: '/docs',
+                    description: t('menu.documentationDesc'),
+                },
+                {
+                    title: t('menu.discord'),
+                    href: 'https://discord.com',
+                    description: t('menu.discordDesc'),
+                    external: true,
+                },
+                {
+                    title: t('menu.resources'),
+                    href: '/resources',
+                    description: t('menu.resourcesDesc'),
+                },
+            ]
+        };
+    };
+
+    /**
+     * Handle language change
+     * @param {Language} newLanguage - New language code
+     */
+    const handleLanguageChange = (newLanguage: Language) => {
+        changeLanguage(newLanguage);
+        // Close mobile menu if open
+        if (isMobileMenuOpen) {
+            setIsMobileMenuOpen(false);
+        }
+    };
+
+    // Get translated menu items
+    const { forumItems: translatedForumItems, linksItems: translatedLinksItems } = getTranslatedMenuItems();
 
     return (
         <nav className={cn(
@@ -200,7 +255,7 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                                 href="/"
                                 className={customNavigationMenuTriggerStyle()}
                             >
-                                Forum
+                                {t('navigation.forum')}
                             </NavigationMenuLink>
                         </NavigationMenuItem>
 
@@ -210,21 +265,21 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                                 href="/courses"
                                 className={customNavigationMenuTriggerStyle()}
                             >
-                                Course Review
+                                {t('navigation.courseReview')}
                             </NavigationMenuLink>
                         </NavigationMenuItem>
 
-                        {/* Forum navigation item - includes dropdown menu */}
+                        {/* [More] navigation item - includes dropdown menu */}
                         <NavigationMenuItem>
                             {/* Trigger button - shows dropdown on click or hover */}
                             <NavigationMenuTrigger className="h-12 px-6 text-base font-medium">
-                                More
+                                {t('navigation.more')}
                             </NavigationMenuTrigger>
                             {/* Dropdown content container */}
                             <NavigationMenuContent>
                                 {/* Grid layout with responsive columns */}
                                 <ul className="grid w-[500px] gap-3 p-6 md:w-[600px] md:grid-cols-2 lg:w-[700px]">
-                                    {forumItems.map((item) => (
+                                    {translatedForumItems.map((item) => (
                                         <ListItem
                                             key={item.title}
                                             title={item.title}
@@ -234,7 +289,7 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                                         </ListItem>
                                     ))}
 
-                                    {linksItems.map((item) => (
+                                    {translatedLinksItems.map((item) => (
                                         <ListItem
                                             key={item.title}
                                             title={item.title}
@@ -257,7 +312,7 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                                 href="/about"
                                 className={customNavigationMenuTriggerStyle()}
                             >
-                                About
+                                {t('navigation.about')}
                             </NavigationMenuLink>
                         </NavigationMenuItem>
 
@@ -268,7 +323,39 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                 {/* Right side - Search bar, login, and mobile menu button */}
                 <div className="flex justify-end items-center gap-4">
                     {/* Search bar - visible on larger screens */}
-                    <SearchBar className="hidden lg:flex" placeholder="Type to Search..." />
+                    <SearchBar className="hidden lg:flex" placeholder={t('search.placeholder')} />
+
+                    {/* Language Switcher - visible on larger screens */}
+                    <div className="hidden md:block">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm" className="flex items-center gap-2 h-9 px-3">
+                                    <Globe size={14} />
+                                    <span className="hidden lg:inline text-sm">{getCurrentLanguage().name}</span>
+                                    <span className="lg:hidden">{getCurrentLanguage().flag}</span>
+                                    <ChevronDown size={12} className="opacity-50" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40">
+                                {languageOptions.map((langOption) => (
+                                    <DropdownMenuItem
+                                        key={langOption.code}
+                                        onClick={() => handleLanguageChange(langOption.code)}
+                                        className={cn(
+                                            "flex items-center gap-2 cursor-pointer",
+                                            language === langOption.code && "bg-accent text-accent-foreground"
+                                        )}
+                                    >
+                                        <span>{langOption.flag}</span>
+                                        <span className="text-sm">{langOption.name}</span>
+                                        {language === langOption.code && (
+                                            <span className="ml-auto text-xs">✓</span>
+                                        )}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
 
                     {/* User authentication component - visible on larger screens */}
                     <div className="hidden md:block">
@@ -300,7 +387,7 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
 
                         {/* Mobile: Search + Login inline */}
                         <div className="py-2 flex items-center gap-2">
-                            <SearchBar className="flex-1" showMobileVersion={true} placeholder="Search..." />
+                            <SearchBar className="flex-1" showMobileVersion={true} placeholder={t('search.placeholder')} />
                             {!isLoading && (
                                 isLoggedIn ? (
                                     <UserMenu />
@@ -316,7 +403,7 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                             className="block py-3 px-2 text-sm font-medium hover:bg-accent rounded-md transition-colors"
                             onClick={() => setIsMobileMenuOpen(false)} // Close menu after click
                         >
-                            Forum
+                            {t('navigation.forum')}
                         </Link>
 
                         {/* Course Review link - mobile simple link */}
@@ -325,7 +412,7 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                             className="block py-3 px-2 text-sm font-medium hover:bg-accent rounded-md transition-colors"
                             onClick={() => setIsMobileMenuOpen(false)}
                         >
-                            Course Review
+                            {t('navigation.courseReview')}
                         </Link>
 
                         {/* More collapsible section */}
@@ -335,7 +422,7 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                                 className="flex items-center justify-between w-full py-3 px-2 text-sm font-medium hover:bg-accent rounded-md transition-colors"
                                 onClick={() => toggleMobileDropdown('more')}
                             >
-                                <span>More</span>
+                                <span>{t('navigation.more')}</span>
                                 {/* Arrow icon - rotates 180 degrees when expanded */}
                                 <ChevronDown
                                     size={16}
@@ -348,7 +435,7 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                             {/* More submenu - only visible when expanded */}
                             {mobileDropdowns.more && (
                                 <div className="ml-4 mt-1 space-y-1">
-                                    {forumItems.map((item) => (
+                                    {translatedForumItems.map((item) => (
                                         <Link
                                             key={item.title}
                                             href={item.href}
@@ -361,7 +448,7 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                                             </div>
                                         </Link>
                                     ))}
-                                    {linksItems.map((item) => (
+                                    {translatedLinksItems.map((item) => (
                                         item.external ? (
                                             <a
                                                 key={item.title}
@@ -400,8 +487,39 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                             className="block py-3 px-2 text-sm font-medium hover:bg-accent rounded-md transition-colors"
                             onClick={() => setIsMobileMenuOpen(false)}
                         >
-                            About
+                            {t('navigation.about')}
                         </Link>
+
+                        {/* Language Switcher - mobile */}
+                        <div className="border-t pt-2 mt-2">
+                            <div className="px-2 pb-2">
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                                    <Globe size={14} />
+                                    <span>{t('navigation.language')}</span>
+                                </div>
+                                <div className="grid grid-cols-1 gap-1">
+                                    {languageOptions.map((langOption) => (
+                                        <button
+                                            key={langOption.code}
+                                            onClick={() => handleLanguageChange(langOption.code)}
+                                            className={cn(
+                                                "flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors text-left",
+                                                "hover:bg-accent hover:text-accent-foreground",
+                                                language === langOption.code 
+                                                    ? "bg-accent text-accent-foreground font-medium" 
+                                                    : ""
+                                            )}
+                                        >
+                                            <span className="text-base">{langOption.flag}</span>
+                                            <span>{langOption.name}</span>
+                                            {language === langOption.code && (
+                                                <span className="ml-auto text-xs">✓</span>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

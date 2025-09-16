@@ -9,14 +9,14 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { User, Settings, LogOut, ChevronDown } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useApp } from '@/contexts/AppContext';
 
 export interface UserMenuProps {
     className?: string;
 }
 
 export function UserMenu({ className }: UserMenuProps) {
-    const { user, logout } = useAuth();
+    const { user, logout } = useApp();
     const [isOpen, setIsOpen] = useState(false);
 
     if (!user) {
