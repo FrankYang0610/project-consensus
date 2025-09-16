@@ -27,7 +27,19 @@
     "login": "Login",
     "logout": "Logout",
     "profile": "Profile",
-    "settings": "Settings"
+    "settings": "Settings",
+    "welcomeBack": "Welcome Back",
+    "loginDescription": "Enter your email below to login to your account",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot password?",
+    "loginWithGoogle": "Login with Google",
+    "dontHaveAccount": "Don't have an account?",
+    "signUp": "Sign up",
+    "errorRequiredFields": "Please fill in all fields",
+    "errorInvalidEmail": "Please enter a valid email address",
+    "errorNetwork": "Network error. Please try again.",
+    "errorGoogleFailed": "Google login failed"
   },
   "post": {
     "translate": "Translate",
@@ -61,5 +73,14 @@
     "teamTitle": "Team",
     "teamDescription": "Meet the people behind project-consensus",
     "coCreator": "Co-creator"
+  },
+  "notFound": {
+    "error": "Error 404",
+    "title": "Page not found",
+    "desc": "Sorry, the page you're looking for doesn't exist or may have been moved. Please check the URL or return to the homepage to continue browsing.",
+    "quickActions": "Quick actions",
+    "quickActionsDesc": "Use the navigation to find features or pages",
+    "goHome": "Go to homepage",
+    "goHomeDesc": "Start a new journey from the home page"
   }
 }

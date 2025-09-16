@@ -27,7 +27,19 @@
     "login": "登录",
     "logout": "登出",
     "profile": "个人资料",
-    "settings": "设置"
+    "settings": "设置",
+    "welcomeBack": "欢迎回来",
+    "loginDescription": "请输入邮箱以登录你的账号",
+    "email": "邮箱",
+    "password": "密码",
+    "forgotPassword": "忘记密码？",
+    "loginWithGoogle": "使用 Google 登录",
+    "dontHaveAccount": "还没有账号？",
+    "signUp": "注册",
+    "errorRequiredFields": "请填写所有必填项",
+    "errorInvalidEmail": "请输入有效的邮箱地址",
+    "errorNetwork": "网络错误，请重试",
+    "errorGoogleFailed": "Google 登录失败"
   },
   "post": {
     "translate": "翻译",
@@ -61,5 +73,14 @@
     "teamTitle": "团队",
     "teamDescription": "认识 project-consensus 背后的团队",
     "coCreator": "联合创始人"
+  },
+  "notFound": {
+    "error": "错误 404",
+    "title": "页面未找到",
+    "desc": "抱歉，你要访问的页面不存在或已被移动。请检查网址或返回首页继续浏览。",
+    "quickActions": "快捷操作",
+    "quickActionsDesc": "使用导航查找功能或页面",
+    "goHome": "返回首页",
+    "goHomeDesc": "从首页开启新的旅程"
   }
 }

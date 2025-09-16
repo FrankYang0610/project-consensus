@@ -22,6 +22,7 @@ import { User, Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useApp } from '@/contexts/AppContext';
 import { LoginResponse } from '@/types/app-types';
+import { useI18n } from '@/hooks/useI18n';
 
 /**
  * 登录组件属性 / Login component props
@@ -32,6 +33,7 @@ export interface LoginComponentProps {
 }
 
 export function LoginComponent({ className }: LoginComponentProps) {
+    const { t } = useI18n();
     // Auth context
     const { login } = useApp();
     
@@ -92,13 +94,13 @@ export function LoginComponent({ className }: LoginComponentProps) {
 
         // Basic Verification, needs more cases
         if (!email || !password) {
-            setError('Please fill in all fields');
+            setError(t('auth.errorRequiredFields'));
             setIsLoading(false);
             return;
         }
 
         if (!email.includes('@')) {
-            setError('Please enter a valid email address');
+            setError(t('auth.errorInvalidEmail'));
             setIsLoading(false);
             return;
         }
@@ -127,7 +129,7 @@ export function LoginComponent({ className }: LoginComponentProps) {
                 setError(result.message || 'Login failed');
             }
         } catch (err: unknown) {
-            const errorMessage = err instanceof Error ? err.message : 'Network error. Please try again.';
+            const errorMessage = err instanceof Error ? err.message : t('auth.errorNetwork');
             setError(errorMessage);
         } finally {
             setIsLoading(false);
@@ -142,7 +144,7 @@ export function LoginComponent({ className }: LoginComponentProps) {
         try {
             await handleGoogleAuth();
         } catch (err: unknown) {
-            const errorMessage = err instanceof Error ? err.message : 'Google login failed';
+            const errorMessage = err instanceof Error ? err.message : t('auth.errorGoogleFailed');
             setError(errorMessage);
             setIsGoogleLoading(false);
         }
@@ -169,16 +171,16 @@ export function LoginComponent({ className }: LoginComponentProps) {
                     className={`items-center gap-2 ${className}`}
                 >
                     <User size={16} />
-                    <span>Login</span>
+                    <span>{t('auth.login')}</span>
                 </Button>
             </DialogTrigger>
             <DialogContent className="p-0 max-w-sm">
-                <DialogTitle className="sr-only">Login</DialogTitle>
+                <DialogTitle className="sr-only">{t('auth.login')}</DialogTitle>
                 <Card className="border-0 shadow-none">
                     <CardHeader className="text-center">
-                        <CardTitle>Welcome Back</CardTitle>
+                        <CardTitle>{t('auth.welcomeBack')}</CardTitle>
                         <CardDescription>
-                            Enter your email below to login to your account
+                            {t('auth.loginDescription')}
                         </CardDescription>
                     </CardHeader>
 
@@ -195,7 +197,7 @@ export function LoginComponent({ className }: LoginComponentProps) {
                             <div className="flex flex-col gap-4">
                                 {/* Email Input */}
                                 <div className="grid gap-2">
-                                    <Label htmlFor="email">Email</Label>
+                                    <Label htmlFor="email">{t('auth.email')}</Label>
                                     <Input
                                         id="email"
                                         type="email"
@@ -210,13 +212,13 @@ export function LoginComponent({ className }: LoginComponentProps) {
                                 {/* Password Input */}
                                 <div className="grid gap-2">
                                     <div className="flex items-center justify-between">
-                                        <Label htmlFor="password">Password</Label>
+                                        <Label htmlFor="password">{t('auth.password')}</Label>
                                         <button
                                             type="button"
                                             onClick={handleForgotPassword}
                                             className="text-sm text-muted-foreground underline-offset-4 hover:underline"
                                         >
-                                            Forgot password?
+                                            {t('auth.forgotPassword')}
                                         </button>
                                     </div>
                                     <Input
@@ -240,7 +242,7 @@ export function LoginComponent({ className }: LoginComponentProps) {
                             disabled={isLoading}
                         >
                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Login
+                            {t('auth.login')}
                         </Button>
 
                         {/* Google Login button */}
@@ -252,18 +254,18 @@ export function LoginComponent({ className }: LoginComponentProps) {
                             disabled={isGoogleLoading || isLoading}
                         >
                             {isGoogleLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Login with Google
+                            {t('auth.loginWithGoogle')}
                         </Button>
 
                         {/* Register Link */}
                         <div className="text-center text-sm text-muted-foreground">
-                            Don&apos;t have an account?{' '}
+                            {t('auth.dontHaveAccount')}{' '}
                             <button
                                 type="button"
                                 onClick={handleSignUp}
                                 className="underline underline-offset-4 hover:text-primary"
                             >
-                                Sign up
+                                {t('auth.signUp')}
                             </button>
                         </div>
                     </CardFooter>
