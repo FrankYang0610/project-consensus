@@ -204,14 +204,14 @@ export default function RegisterPage() {
 
                         <p className="text-xs text-muted-foreground text-center">
                             {t('auth.registerConsent')}{' '}
-                            <a
+                            <Link
                                 href="/tos"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="underline underline-offset-4"
                             >
                                 {t('auth.termsOfService')}
-                            </a>
+                            </Link>
                         </p>
                     </form>
                 </CardContent>
