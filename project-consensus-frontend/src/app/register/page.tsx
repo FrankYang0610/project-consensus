@@ -16,6 +16,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { useI18n } from '@/hooks/useI18n';
 import { SiteNavigation } from '@/components/SiteNavigation';
+import Link from 'next/link';
 
 const POLYU_EMAIL_REGEX = /@connect\.polyu\.hk$/i;
 
@@ -200,14 +201,26 @@ export default function RegisterPage() {
                             {isRegistering && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {t('auth.register')}
                         </Button>
+
+                        <p className="text-xs text-muted-foreground text-center">
+                            {t('auth.registerConsent')}{' '}
+                            <a
+                                href="/tos"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="underline underline-offset-4"
+                            >
+                                {t('auth.termsOfService')}
+                            </a>
+                        </p>
                     </form>
                 </CardContent>
 
                 <CardFooter className="justify-center text-sm text-muted-foreground">
                     <span className="mr-1">{t('auth.alreadyHaveAccount')}</span>
-                    <a className="underline underline-offset-4" href="/">
+                    <Link className="underline underline-offset-4" href="/">
                         {t('auth.login')}
-                    </a>
+                    </Link>
                 </CardFooter>
             </Card>
             </div>

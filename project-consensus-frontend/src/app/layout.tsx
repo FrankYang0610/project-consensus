@@ -4,6 +4,7 @@ import "./globals.css";
 import { AppProvider } from "@/contexts/AppContext";
 // Initialize i18n
 import "@/lib/i18n";
+import Watermark from "@/components/Watermark";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,6 +33,7 @@ export default function RootLayout({
       >
         <AppProvider>
           {children}
+          <Watermark />
         </AppProvider>
       </body>
     </html>
