@@ -39,7 +39,20 @@
     "errorRequiredFields": "请填写所有必填项",
     "errorInvalidEmail": "请输入有效的邮箱地址",
     "errorNetwork": "网络错误，请重试",
-    "errorGoogleFailed": "Google 登录失败"
+    "errorGoogleFailed": "Google 登录失败",
+    "register": "注册",
+    "nickname": "昵称",
+    "verificationCode": "验证码",
+    "sendCode": "发送验证码",
+    "resendCode": "重新发送",
+    "confirmPassword": "确认密码",
+    "alreadyHaveAccount": "已经有账号？",
+    "polyuEmail": "理大邮箱",
+    "emailVerificationHint": "请使用理大邮箱（@connect.polyu.hk）",
+    "codeInputDisabledHint": "请先点击发送验证码以启用",
+    "errorPasswordMismatch": "两次输入的密码不一致",
+    "errorPolyuEmail": "请使用有效的理大邮箱（@connect.polyu.hk）",
+    "emailPrivacyNotice": "您的电子邮件只用于关联您的 project-consensus 账户并确定您是PolyU学生。您的学校相关内容、邮箱相关内容均不会被读取。"
   },
   "post": {
     "translate": "翻译",

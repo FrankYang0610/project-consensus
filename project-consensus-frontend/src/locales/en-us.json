@@ -39,7 +39,20 @@
     "errorRequiredFields": "Please fill in all fields",
     "errorInvalidEmail": "Please enter a valid email address",
     "errorNetwork": "Network error. Please try again.",
-    "errorGoogleFailed": "Google login failed"
+    "errorGoogleFailed": "Google login failed",
+    "register": "Register",
+    "nickname": "Nickname",
+    "verificationCode": "Verification Code",
+    "sendCode": "Send Code",
+    "resendCode": "Resend Code",
+    "confirmPassword": "Confirm Password",
+    "alreadyHaveAccount": "Already have an account?",
+    "polyuEmail": "PolyU Email",
+    "emailVerificationHint": "Use your PolyU email (@connect.polyu.hk)",
+    "codeInputDisabledHint": "Click Send Code first to enable",
+    "errorPasswordMismatch": "Passwords do not match",
+    "errorPolyuEmail": "Please use a valid PolyU email (@connect.polyu.hk)",
+    "emailPrivacyNotice": "Your email is only used to link your project-consensus account and verify that you are a PolyU student. No school-related or email-related content will be read."
   },
   "post": {
     "translate": "Translate",
