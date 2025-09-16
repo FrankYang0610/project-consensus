@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { forwardRef, useState } from 'react';
 import { useI18n } from '@/hooks/useI18n';
-import { Menu, X, ChevronDown, ArrowLeft, Globe } from 'lucide-react';
+import { Menu, X, ChevronDown, ArrowLeft } from 'lucide-react';
 import Image from "next/image";
 //Local Components
 import { LoginComponent } from './LoginComponent';
@@ -330,7 +330,7 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="outline" size="sm" className="flex items-center gap-2 h-9 px-3">
-                                    <Globe size={14} />
+                                    <span className="text-sm">{getCurrentLanguage().flag}</span>
                                     <span className="hidden lg:inline text-sm">{getCurrentLanguage().name}</span>
                                     <span className="lg:hidden">{getCurrentLanguage().flag}</span>
                                     <ChevronDown size={12} className="opacity-50" />
@@ -494,7 +494,6 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                         <div className="border-t pt-2 mt-2">
                             <div className="px-2 pb-2">
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                                    <Globe size={14} />
                                     <span>{t('navigation.language')}</span>
                                 </div>
                                 <div className="grid grid-cols-1 gap-1">

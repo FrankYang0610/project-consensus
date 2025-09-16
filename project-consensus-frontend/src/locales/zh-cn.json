@@ -28,5 +28,38 @@
     "logout": "登出",
     "profile": "个人资料",
     "settings": "设置"
+  },
+  "post": {
+    "translate": "翻译",
+    "original": "原文",
+    "share": "分享",
+    "copied": "已复制！",
+    "copyText": "复制文本",
+    "translateUnavailable": "翻译功能尚不可用",
+    "shareUnavailable": "分享功能暂时不可用，敬请期待！",
+    "copyFailed": "复制文本到剪贴板失败",
+    "justNow": "刚刚",
+    "hoursAgo": "小时前",
+    "daysAgo": "天前"
+  },
+  "common": {
+    "note": "注意",
+    "developmentNotice": "本网站正在积极开发中，界面和功能可能会频繁更改。"
+  },
+  "about": {
+    "title": "关于",
+    "subtitle": "了解更多关于项目的信息、其目的以及背后的团队。",
+    "whatIsTitle": "什么是 project-consensus？",
+    "whatIsDescription": "校园论坛和课程评价社区",
+    "whatIsContent": "project-consensus 是由 Frank Yang 和 Jim Yang 设计的校园论坛和课程评价社区。它旨在帮助学生分享见解、讨论课程并建立协作社区。",
+    "goToHome": "返回首页",
+    "repositoryTitle": "开源仓库",
+    "repositoryDescription": "探索源代码并参与贡献",
+    "repositoryContent": "该项目是开源的。查看仓库并随时提交问题或拉取请求。",
+    "githubRepository": "GitHub 仓库",
+    "viewIssues": "查看问题",
+    "teamTitle": "团队",
+    "teamDescription": "认识 project-consensus 背后的团队",
+    "coCreator": "联合创始人"
   }
 }

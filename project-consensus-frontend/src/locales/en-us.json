@@ -28,5 +28,38 @@
     "logout": "Logout",
     "profile": "Profile",
     "settings": "Settings"
+  },
+  "post": {
+    "translate": "Translate",
+    "original": "Original",
+    "share": "Share",
+    "copied": "Copied!",
+    "copyText": "Copy text",
+    "translateUnavailable": "Translation feature is not available yet",
+    "shareUnavailable": "Share feature is temporarily unavailable. Stay tuned!",
+    "copyFailed": "Failed to copy text to clipboard",
+    "justNow": "Just now",
+    "hoursAgo": "hours ago",
+    "daysAgo": "days ago"
+  },
+  "common": {
+    "note": "Note",
+    "developmentNotice": "This site is under active development. UI and features may change frequently."
+  },
+  "about": {
+    "title": "About",
+    "subtitle": "Learn more about the project, its purpose, and the team behind it.",
+    "whatIsTitle": "What is project-consensus?",
+    "whatIsDescription": "Campus forum and course review community",
+    "whatIsContent": "project-consensus is a campus forum and course review community designed by Frank Yang and Jim Yang. It aims to help students share insights, discuss courses, and build a collaborative community.",
+    "goToHome": "Go to Home",
+    "repositoryTitle": "Open-Source Repository",
+    "repositoryDescription": "Explore the source code and contribute",
+    "repositoryContent": "The project is open-source. Check out the repository and feel free to open issues or submit pull requests.",
+    "githubRepository": "GitHub Repository",
+    "viewIssues": "View Issues",
+    "teamTitle": "Team",
+    "teamDescription": "Meet the people behind project-consensus",
+    "coCreator": "Co-creator"
   }
 }

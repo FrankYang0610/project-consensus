@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { ForumPost } from "@/types/forum";
+import { useI18n } from "@/hooks/useI18n";
 
 /**
  * 论坛帖子详情卡片组件属性 / Forum post detail card component props
@@ -53,6 +54,9 @@ export function ForumPostDetailCard({
     onAuthorClick,
     className,
 }: ForumPostDetailCardProps) {
+    // i18n translation
+    const { t } = useI18n();
+    
     const [showDialog, setShowDialog] = React.useState(false);
     const [dialogMessage, setDialogMessage] = React.useState("");
     const [dialogTitle, setDialogTitle] = React.useState("");
@@ -71,7 +75,7 @@ export function ForumPostDetailCard({
         e.preventDefault();
         e.stopPropagation();
         setDialogTitle("Error");
-        setDialogMessage("Share feature is temporarily unavailable. Stay tuned!");
+        setDialogMessage(t('post.shareUnavailable'));
         setShowDialog(true);
         onShare?.(post.id);
     };
@@ -89,7 +93,7 @@ export function ForumPostDetailCard({
             }, 2000);
         } catch (err) {
             setDialogTitle("Error");
-            setDialogMessage("Failed to copy text to clipboard");
+            setDialogMessage(t('post.copyFailed'));
             setShowDialog(true);
         }
     };
@@ -116,11 +120,11 @@ export function ForumPostDetailCard({
         );
 
         if (diffInHours < 1) {
-            return "Just now";
+            return t('post.justNow');
         } else if (diffInHours < 24) {
-            return `${diffInHours} hours ago`;
+            return `${diffInHours} ${t('post.hoursAgo')}`;
         } else if (diffInHours < 168) {
-            return `${Math.floor(diffInHours / 24)} days ago`;
+            return `${Math.floor(diffInHours / 24)} ${t('post.daysAgo')}`;
         } else {
             return date.toLocaleDateString("zh-CN", {
                 year: "numeric",
@@ -169,7 +173,7 @@ export function ForumPostDetailCard({
             <CardContent className="pt-0 pb-0">
                 <div className="flex items-center justify-between mb-4">
                     <h1 className="text-2xl font-bold line-clamp-2 flex-1">
-                        {isTranslated ? "翻译功能尚不可用" : post.title}
+                        {isTranslated ? t('post.translateUnavailable') : post.title}
                     </h1>
                     <span className="ml-2 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full whitespace-nowrap">
                         {post.language}
@@ -177,7 +181,7 @@ export function ForumPostDetailCard({
                 </div>
                 
                 <div className="text-muted-foreground text-base leading-relaxed mb-4 whitespace-pre-wrap">
-                    {isTranslated ? "翻译功能尚不可用" : post.content}
+                    {isTranslated ? t('post.translateUnavailable') : post.content}
                 </div>
 
                 {post.tags.length > 0 && (
@@ -223,7 +227,7 @@ export function ForumPostDetailCard({
                         >
                             <Languages className="w-4 h-4" />
                             <span className="text-sm">
-                                {isTranslated ? "Original" : "Translate"}
+                                {isTranslated ? t('post.original') : t('post.translate')}
                             </span>
                         </Button>
                     </div>
@@ -244,7 +248,7 @@ export function ForumPostDetailCard({
                                     <Share2 className="w-4 h-4" />
                                 )}
                                 <span className="text-sm">
-                                    {isCopySuccess ? "Copied!" : "Share"}
+                                    {isCopySuccess ? t('post.copied') : t('post.share')}
                                 </span>
                             </Button>
                         </DropdownMenuTrigger>
@@ -254,7 +258,7 @@ export function ForumPostDetailCard({
                                 className="cursor-pointer"
                             >
                                 <FileText className="w-4 h-4 mr-2" />
-                                <span>Copy text</span>
+                                <span>{t('post.copyText')}</span>
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>

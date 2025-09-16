@@ -5,8 +5,10 @@ import { SiteNavigation } from "@/components/SiteNavigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ForumPostPreviewCard } from "@/components/ForumPostPreviewCard";
 import { samplePosts, toggleLikeById } from "@/data/samplePosts";
+import { useI18n } from "@/hooks/useI18n";
 
 export default function HomePage() {
+    const { t } = useI18n();
     const [posts, setPosts] = React.useState(() => [...samplePosts]);
 
     const handleLike = (id: string) => {
@@ -23,9 +25,9 @@ export default function HomePage() {
                     <div className="w-full p-6">
                         <div className="max-w-7xl mx-auto mb-1">
                             <Alert>
-                                <AlertTitle>Note</AlertTitle>
+                                <AlertTitle>{t('common.note')}</AlertTitle>
                                 <AlertDescription>
-                                    This site is under active development. UI and features may change frequently.
+                                    {t('common.developmentNotice')}
                                 </AlertDescription>
                             </Alert>
                         </div>
