@@ -17,12 +17,14 @@ bun dev
 ```
 
 ### Shadcn UI components are used in this project. To learn more about documentation, please visit [shadcn/ui](https://ui.shadcn.com/docs).
+
 ```bash
 # Install shadcn/ui
 npx shadcn@latest init
+# Install i18next
+npm install i18next react-i18next i18next-browser-languagedetector
 
 ```
-
 
 Open [http://localhost:3000](http://localhost:3000) with the browser to see the result.
 
@@ -39,7 +41,7 @@ To learn more about Next.js, take a look at the following resources:
 
 It's also recommended to check out [the Next.js GitHub repository](https://github.com/vercel/next.js).
 
-####  Deploy on Vercel
+#### Deploy on Vercel
 
 The easiest way to deploy Next.js apps is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 

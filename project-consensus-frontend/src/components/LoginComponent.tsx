@@ -20,8 +20,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { User, Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useAuth } from '@/contexts/AuthContext';
-import { LoginResponse } from '@/types/auth';
+import { useApp } from '@/contexts/AppContext';
+import { LoginResponse } from '@/types/app-types';
 
 /**
  * 登录组件属性 / Login component props
@@ -33,7 +33,7 @@ export interface LoginComponentProps {
 
 export function LoginComponent({ className }: LoginComponentProps) {
     // Auth context
-    const { login } = useAuth();
+    const { login } = useApp();
     
     // State management
     const [email, setEmail] = useState('');

@@ -1,0 +1,32 @@
+{
+  "navigation": {
+    "forum": "论坛",
+    "courseReview": "课程评价",
+    "more": "更多",
+    "about": "关于",
+    "language": "语言"
+  },
+  "menu": {
+    "techSupport": "技术支持",
+    "techSupportDesc": "获取技术问题帮助",
+    "featureRequests": "功能建议",
+    "featureRequestsDesc": "建议新功能和改进",
+    "announcements": "公告",
+    "announcementsDesc": "获取最新消息",
+    "documentation": "文档",
+    "documentationDesc": "全面的指南和API参考",
+    "discord": "Discord",
+    "discordDesc": "加入我们的社区聊天",
+    "resources": "资源",
+    "resourcesDesc": "有用的工具和资料"
+  },
+  "search": {
+    "placeholder": "输入搜索..."
+  },
+  "auth": {
+    "login": "登录",
+    "logout": "登出",
+    "profile": "个人资料",
+    "settings": "设置"
+  }
+}

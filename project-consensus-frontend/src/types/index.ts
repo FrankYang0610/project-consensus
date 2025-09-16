@@ -11,5 +11,5 @@ export type { User, Author } from './user';
 // 论坛相关类型 / Forum-related types
 export type { ForumPost } from './forum';
 
-// 认证相关类型 / Authentication-related types
-export type { AuthContextType, LoginResponse } from './auth';
+// 应用全局状态相关类型 / App global state related types
+export type { AppContextType, LoginResponse, ThemeMode, Language } from './app-types';
