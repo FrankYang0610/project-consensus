@@ -61,7 +61,7 @@ function clamp(value: number, min: number, max: number) {
  * Format term string by locale
  */
 function formatTerm(year: number, semester: SemesterKey, t: (key: string, opts?: Record<string, unknown>) => string, language: string) {
-    const semLabel = t(`courses.card.semester.${semester}`);
+    const semLabel = t(`card.semester.${semester}`);
     // e.g. "2025 秋季" (zh) or "2025 Fall" (en)
     const spacer = language.startsWith("zh") ? " " : " ";
     return `${year}${spacer}${semLabel}`;
