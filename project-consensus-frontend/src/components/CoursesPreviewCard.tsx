@@ -242,7 +242,7 @@ export function CoursesPreviewCard({
         <CardFooter className="pt-4 md:pt-5">
             <div className="flex items-center justify-end w-full gap-2 text-xs text-muted-foreground">
                 <CalendarDays className="w-3.5 h-3.5" />
-                {t("courses.card.lastUpdated", { date: formatDateDisplay(lastUpdated, language) })}
+                {t("card.lastUpdated", { date: formatDateDisplay(lastUpdated, language) })}
             </div>
         </CardFooter>
     ) : null;
