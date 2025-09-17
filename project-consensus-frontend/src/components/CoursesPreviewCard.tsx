@@ -159,7 +159,7 @@ export function CoursesPreviewCard({
     const hasMultiple = Array.isArray(terms) && terms.length > 0;
     const displayedTerm = hasMultiple ? getLatestTerm(terms!) : term;
     const termText = formatTerm(displayedTerm.year, displayedTerm.semester, t, language) + (hasMultiple ? "..." : "");
-    const reviewsText = t("courses.card.rating.reviews", { count: rating.reviewsCount });
+    const reviewsText = t("card.rating.reviews", { count: rating.reviewsCount });
 
     const TitleBlock = (
         <CardHeader className="pb-0">
