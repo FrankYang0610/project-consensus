@@ -22,19 +22,27 @@ const resources = {
   }
 };
 
-i18n
-  // Detect user language
-  .use(LanguageDetector)
-  // Pass the i18n instance to react-i18next
+// 是否在浏览器环境 | Whether we are running in the browser
+const isBrowser = typeof window !== 'undefined';
+
+// 仅在客户端启用浏览器语言检测，避免 SSR/CSR 初始语言不一致导致水合问题
+// Only enable browser language detection on the client to avoid SSR/CSR hydration mismatches
+let i18nInstance = i18n;
+if (isBrowser) {
+  i18nInstance = i18nInstance.use(LanguageDetector);
+}
+i18nInstance
   .use(initReactI18next)
-  // Initialize i18next
   .init({
     resources,
+    // 确保在没有用户偏好的情况下，SSR 与 CSR 起始语言一致（稳定默认）
+    // Ensure SSR and CSR start from the same deterministic language when no stored preference
+    // SSR 强制使用默认值；客户端可由检测/本地存储覆盖
+    // During SSR, force a stable default; on the client, detector/localStorage may override
+    lng: isBrowser ? undefined : 'zh-HK',
     
-    // Default language
-    fallbackLng: 'zh-CN',
-    
-    // Supported languages
+    // 默认回退语言设为繁体中文 | Set fallback language to Traditional Chinese
+    fallbackLng: 'zh-HK',
     supportedLngs: ['zh-CN', 'zh-HK', 'en-US'],
     
     // Debug mode (set to false in production)
@@ -42,8 +50,9 @@ i18n
     
     // Language detection options
     detection: {
-      // Order and from where user language should be detected
-      order: ['localStorage', 'navigator', 'htmlTag'],
+      // 优先使用持久化的用户选择；避免使用 navigator/htmlTag，以保持 SSR/CSR 一致
+      // Prefer persisted user choice; avoid navigator/htmlTag to keep SSR/CSR consistent
+      order: ['localStorage'],
       
       // Keys or params to lookup language from
       lookupLocalStorage: 'language',
@@ -51,9 +60,11 @@ i18n
       // Cache user language on
       caches: ['localStorage'],
       
-      // Convert codes like zh to zh-CN
+      // 规范化检测到的语言代码（兼容多种变体）
+      // Normalize detected language codes (support common variants)
       convertDetectedLanguage: (lng) => {
         // 标准化语言代码
+        // Normalize detected language codes
         const languageMap: { [key: string]: string } = {
           'zh': 'zh-CN',
           'zh-cn': 'zh-CN',
@@ -70,15 +81,17 @@ i18n
         return languageMap[lng] || 'zh-CN';
       }
     },
-    
+
     // Interpolation options
     interpolation: {
-      escapeValue: false, // React already does escaping
+      // React 已自带转义 | React escapes by default
+      escapeValue: false,
     },
-    
+
     // React specific options
     react: {
-      useSuspense: false, // We don't want to use Suspense for now
+      // 简化用法：不使用 Suspense | Simpler usage: disable Suspense
+      useSuspense: false,
     },
   });
 
