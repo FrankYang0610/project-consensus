@@ -67,7 +67,12 @@
     "copyFailed": "複製文本到剪貼板失敗",
     "justNow": "剛剛",
     "hoursAgo": "小時前",
-    "daysAgo": "天前"
+    "daysAgo": "天前",
+    "newTitle": "建立新的論壇帖子",
+    "titlePlaceholder": "輸入標題",
+    "contentPlaceholder": "輸入正文內容",
+    "create": "發帖",
+    "cancel": "放棄"
   },
   "common": {
     "note": "注意",

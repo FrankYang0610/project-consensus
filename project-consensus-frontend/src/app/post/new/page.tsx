@@ -1,0 +1,58 @@
+"use client";
+
+import * as React from "react";
+import { SiteNavigation } from "@/components/SiteNavigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { useI18n } from "@/hooks/useI18n";
+import { useRouter } from "next/navigation";
+
+export default function NewForumPostPage() {
+  const { t } = useI18n();
+  const router = useRouter();
+  const [title, setTitle] = React.useState("");
+  const [content, setContent] = React.useState("");
+
+  return (
+    <>
+      <SiteNavigation />
+      <div className="min-h-screen bg-background">
+        <main className="w-full py-8">
+          <div className="w-full p-6">
+            <div className="max-w-3xl mx-auto">
+              <h1 className="text-2xl font-semibold mb-4">{t("post.newTitle")}</h1>
+              <Card>
+                <CardContent>
+                  <Input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder={t("post.titlePlaceholder")}
+                    className="mb-3 h-11 text-lg md:text-lg font-normal px-4"
+                  />
+                  { /* TODO: add rich text editor */ }
+                  <textarea
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder={t("post.contentPlaceholder")}
+                    className="w-full min-h-[16rem] px-3 py-2 border rounded-md bg-background text-foreground"
+                  />
+                </CardContent>
+                <CardFooter className="gap-3">
+                  <Button onClick={() => { /* TODO: submit handler */ }}>
+                    {t("post.create")}
+                  </Button>
+                  <Button variant="ghost" onClick={() => router.back()}>
+                    {t("post.cancel")}
+                  </Button>
+                </CardFooter>
+              </Card>
+            </div>
+          </div>
+        </main>
+      </div>
+    </>
+  );
+}
+
+

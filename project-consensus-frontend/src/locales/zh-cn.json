@@ -67,7 +67,12 @@
     "copyFailed": "复制文本到剪贴板失败",
     "justNow": "刚刚",
     "hoursAgo": "小时前",
-    "daysAgo": "天前"
+    "daysAgo": "天前",
+    "newTitle": "创建新的论坛帖子",
+    "titlePlaceholder": "输入标题",
+    "contentPlaceholder": "输入正文内容",
+    "create": "发帖",
+    "cancel": "放弃"
   },
   "common": {
     "note": "注意",
