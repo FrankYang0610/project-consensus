@@ -242,16 +242,16 @@ export function CoursesFilterBar({ className, onApply }: CoursesFilterBarProps) 
                                 </DropdownMenuTrigger>
                             <DropdownMenuContent className="w-56 max-h-64 overflow-auto">
                                 {detailedCategoryOptions.map(opt => (
-                                        <DropdownMenuCheckboxItem
-                                            key={opt.value}
-                                            checked={filterCategories.includes(opt.value)}
-                                            onCheckedChange={() => toggleSelection(filterCategories, opt.value, setFilterCategories)}
-                                            className="text-xs"
-                                        >
-                                            {opt.label}
-                                        </DropdownMenuCheckboxItem>
-                                    ))}
-                                </DropdownMenuContent>
+                                    <DropdownMenuCheckboxItem
+                                        key={opt.value}
+                                        checked={filterCategories.includes(opt.value)}
+                                        onCheckedChange={() => toggleSelection(filterCategories, opt.value, setFilterCategories)}
+                                        className="text-xs"
+                                    >
+                                        {opt.label}
+                                    </DropdownMenuCheckboxItem>
+                                ))}
+                            </DropdownMenuContent>
                             </DropdownMenu>
                         </div>
 
