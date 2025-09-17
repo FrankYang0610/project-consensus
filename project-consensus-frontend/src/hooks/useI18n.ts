@@ -3,6 +3,7 @@
 import '@/lib/i18n';
 import { useTranslation } from 'react-i18next';
 import { Language } from '@/types/app-types';
+import { normalizeLanguage } from '@/lib/locale';
 
 /**
  * Simple i18n hook - 直接使用 i18next，不需要复杂的状态管理
@@ -14,7 +15,15 @@ export function useI18n() {
      * Change language - 直接调用 i18next
      */
     const changeLanguage = (newLanguage: Language) => {
-        i18n.changeLanguage(newLanguage);
+        const normalized = normalizeLanguage(newLanguage) || 'en-US';
+        // 持久化用户选择 | Persist user choice
+        try {
+            localStorage.setItem('language', normalized);
+        } catch {}
+        i18n.changeLanguage(normalized);
+        if (typeof document !== 'undefined' && document.documentElement.lang !== normalized) {
+            document.documentElement.lang = normalized;
+        }
     };
 
     /**

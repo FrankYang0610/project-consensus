@@ -2,12 +2,18 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { User, AppContextType, ThemeMode } from '@/types/app-types';
+import { useTranslation } from 'react-i18next';
+import { normalizeLanguage } from '@/lib/locale';
 
 // Create Context
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 // App Provider 组件 / App Provider component
 export function AppProvider({ children }: { children: ReactNode }) {
+    // i18n 实例，用于在客户端挂载后根据偏好切换语言
+    // i18n instance to switch language after client mount based on preference
+    const { i18n } = useTranslation();
+    
     // 用户认证状态 / User authentication state
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -82,6 +88,37 @@ export function AppProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         applyTheme();
     }, [applyTheme]);
+
+    // 语言自动检测（仅客户端）/ Language auto-detection (client-only)
+    // - 若 localStorage 已有用户选择：使用该语言
+    // - 否则：根据浏览器语言归一化为 zh-CN / zh-HK / en-US，并持久化
+    // - 同步设置 <html lang="...">，避免可访问性问题
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        try {
+            const stored = localStorage.getItem('language');
+            const hasLanguagesArray = Array.isArray(window.navigator.languages) && window.navigator.languages.length > 0;
+            const preferred: string | undefined = hasLanguagesArray
+                ? window.navigator.languages[0]
+                : window.navigator.language;
+            const target = normalizeLanguage(stored || preferred) || 'en-US';
+
+            // Persist if missing
+            if (!stored) {
+                localStorage.setItem('language', target);
+            }
+
+            // Update i18n if needed
+            if (i18n.language !== target) {
+                i18n.changeLanguage(target);
+            }
+
+            // Update document lang for accessibility and consistency
+            if (document.documentElement.lang !== target) {
+                document.documentElement.lang = target;
+            }
+        } catch { /* ignore */ }
+    }, [i18n]);
 
     const login = (userData: User, token: string) => {
         // 保存用户信息和令牌到 localStorage / Save user information and token to localStorage
