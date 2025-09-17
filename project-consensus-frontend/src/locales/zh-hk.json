@@ -120,6 +120,51 @@
         "all": "全部"
       }
     }
+  ,
+    "card": {
+      "term": "學期",
+      "semester": {
+        "spring": "春季",
+        "summer": "夏季",
+        "fall": "秋季"
+      },
+      "rating": {
+        "score": "評分",
+        "outOf": "共10分",
+        "reviews": "{{count}} 人評價"
+      },
+      "attributes": {
+        "difficulty": "課程難度",
+        "workload": "作業多少",
+        "grading": "給分好壞",
+        "gain": "收穫大小"
+      },
+      "adjectives": {
+        "veryEasy": "非常容易",
+        "easy": "容易",
+        "medium": "一般",
+        "hard": "較難",
+        "veryHard": "非常難",
+        "light": "很少",
+        "moderate": "適中",
+        "heavy": "較多",
+        "veryHeavy": "非常多",
+        "lenient": "寬鬆",
+        "balanced": "中等",
+        "strict": "嚴格",
+        "low": "較少",
+        "decent": "不錯",
+        "high": "很多"
+      },
+      "teachers": "老師：{{names}}",
+      "lastUpdated": "最近更新：{{date}}",
+      "viewDetails": "查看詳情"
+    ,
+    "labels": {
+      "teachers": "老師",
+      "department": "部門"
+    }
+    }
   },
   "about": {
     "title": "關於",

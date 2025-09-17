@@ -6,6 +6,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useI18n } from "@/hooks/useI18n";
 import { CoursesBackgroundCard } from "@/components/CoursesBackgroundCard";
 import { CoursesFilterBar } from "@/components/CoursesFilterBar";
+import { CoursesPreviewCard } from "@/components/CoursesPreviewCard";
+import { sampleCourses } from "@/data/sampleCourses";
 
 export default function CoursesPage() {
     const { t } = useI18n();
@@ -28,8 +30,22 @@ export default function CoursesPage() {
                             <CoursesBackgroundCard>
                                 <div className="space-y-4">
                                     <CoursesFilterBar onApply={() => { /* TODO: wire filters to list */ }} />
-                                    <div>
-                                        {/* TODO: course list content */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {sampleCourses.map(course => (
+                                            <CoursesPreviewCard
+                                                key={course.subjectCode}
+                                                subjectCode={course.subjectCode}
+                                                title={course.title}
+                                                term={course.term}
+                                                terms={course.terms}
+                                                rating={course.rating}
+                                                attributes={course.attributes}
+                                                teachers={course.teachers}
+                                                department={course.department}
+                                                lastUpdated={course.lastUpdated}
+                                                href={course.href}
+                                            />
+                                        ))}
                                     </div>
                                 </div>
                             </CoursesBackgroundCard>

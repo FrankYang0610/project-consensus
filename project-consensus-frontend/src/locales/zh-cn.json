@@ -120,6 +120,51 @@
         "all": "全部"
       }
     }
+  ,
+    "card": {
+      "term": "学期",
+      "semester": {
+        "spring": "春季",
+        "summer": "夏季",
+        "fall": "秋季"
+      },
+      "rating": {
+        "score": "评分",
+        "outOf": "共10分",
+        "reviews": "{{count}} 人评价"
+      },
+      "attributes": {
+        "difficulty": "课程难度",
+        "workload": "作业多少",
+        "grading": "给分好坏",
+        "gain": "收获大小"
+      },
+      "adjectives": {
+        "veryEasy": "非常容易",
+        "easy": "容易",
+        "medium": "一般",
+        "hard": "较难",
+        "veryHard": "非常难",
+        "light": "很少",
+        "moderate": "适中",
+        "heavy": "较多",
+        "veryHeavy": "非常多",
+        "lenient": "宽松",
+        "balanced": "中等",
+        "strict": "严格",
+        "low": "较少",
+        "decent": "不错",
+        "high": "很多"
+      },
+      "teachers": "老师：{{names}}",
+      "lastUpdated": "最近更新：{{date}}",
+      "viewDetails": "查看详情"
+    ,
+    "labels": {
+      "teachers": "老师",
+      "department": "部门"
+    }
+    }
   },
   "about": {
     "title": "关于",
