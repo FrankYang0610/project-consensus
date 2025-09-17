@@ -199,22 +199,22 @@ export function CoursesPreviewCard({
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                     <div className="space-y-3">
                         <AttributeItem
-                            label={t("courses.card.attributes.difficulty")}
-                            value={t(`courses.card.adjectives.${attributes.difficulty}`)}
+                            label={t("card.attributes.difficulty")}
+                            value={t(`card.adjectives.${attributes.difficulty}`)}
                         />
                         <AttributeItem
-                            label={t("courses.card.attributes.workload")}
-                            value={t(`courses.card.adjectives.${attributes.workload}`)}
+                            label={t("card.attributes.workload")}
+                            value={t(`card.adjectives.${attributes.workload}`)}
                         />
                     </div>
                     <div className="space-y-3">
                         <AttributeItem
-                            label={t("courses.card.attributes.grading")}
-                            value={t(`courses.card.adjectives.${attributes.grading}`)}
+                            label={t("card.attributes.grading")}
+                            value={t(`card.adjectives.${attributes.grading}`)}
                         />
                         <AttributeItem
-                            label={t("courses.card.attributes.gain")}
-                            value={t(`courses.card.adjectives.${attributes.gain}`)}
+                            label={t("card.attributes.gain")}
+                            value={t(`card.adjectives.${attributes.gain}`)}
                         />
                     </div>
                     <div className="space-y-3">
