@@ -240,8 +240,8 @@ export function CoursesFilterBar({ className, onApply }: CoursesFilterBarProps) 
                                         <ChevronDown className="opacity-60" />
                                     </Button>
                                 </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-56 max-h-64 overflow-auto">
-                                {detailedCategoryOptions.map(opt => (
+                                <DropdownMenuContent className="w-56 max-h-64 overflow-auto">
+                                    {detailedCategoryOptions.map(opt => (
                                     <DropdownMenuCheckboxItem
                                         key={opt.value}
                                         checked={filterCategories.includes(opt.value)}
