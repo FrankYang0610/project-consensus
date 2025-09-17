@@ -73,6 +73,49 @@
     "note": "注意",
     "developmentNotice": "本網站正在積極開發中，界面和功能可能會頻繁更改。"
   },
+  "courses": {
+    "topbar": {
+      "courseCategory": "課程類別",
+      "category": {
+        "label": "類別",
+        "all": "全部",
+        "major": "專業課",
+        "postgraduate": "研究生課"
+      },
+      "sortBy": "排序方式",
+      "sort": {
+        "rating": "課程評分",
+        "reviews": "點評數量",
+        "composite": "綜合排序"
+      },
+      "advancedFilters": "高級篩選",
+      "subjectCode": "課程代碼",
+      "subjectCodePlaceholder": "例如：APSS1A01",
+      "subjectTitle": "課程標題",
+      "subjectTitlePlaceholder": "請輸入課程標題",
+      "offeringDepartment": "課程部門",
+      "selectPlaceholder": "請選擇...",
+      "selectedCount": "已選 {{count}} 項",
+      "subjectLevel": "課程等級",
+      "apply": "應用",
+      "detailedCategory": {
+        "label": "詳細類別",
+        "options": {
+          "projectHeavy": "項目密集",
+          "examHeavy": "考試密集",
+          "writingIntensive": "寫作密集",
+          "presentationHeavy": "展示密集"
+        }
+      },
+      "teacherName": "老師名字",
+      "teacherNamePlaceholder": "請輸入老師名字",
+      "level": {
+        "ug": "本科",
+        "pg": "研究生",
+        "all": "全部"
+      }
+    }
+  },
   "about": {
     "title": "關於",
     "subtitle": "了解更多關於項目的資訊、其目的以及背後的團隊。",

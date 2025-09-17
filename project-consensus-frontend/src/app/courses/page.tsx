@@ -4,6 +4,8 @@ import * as React from "react";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useI18n } from "@/hooks/useI18n";
+import { CoursesBackgroundCard } from "@/components/CoursesBackgroundCard";
+import { CoursesFilterBar } from "@/components/CoursesFilterBar";
 
 export default function CoursesPage() {
     const { t } = useI18n();
@@ -22,10 +24,15 @@ export default function CoursesPage() {
                                 </AlertDescription>
                             </Alert>
                         </div>
-                    </div>
-
-                    <div className="w-full p-6 pt-0">
-                        <div className="max-w-7xl mx-auto">
+                        <div className="max-w-7xl mx-auto grid grid-cols-1 gap-6 pt-4">
+                            <CoursesBackgroundCard>
+                                <div className="space-y-4">
+                                    <CoursesFilterBar onApply={() => { /* TODO: wire filters to list */ }} />
+                                    <div>
+                                        {/* TODO: course list content */}
+                                    </div>
+                                </div>
+                            </CoursesBackgroundCard>
                         </div>
                     </div>
                 </main>
