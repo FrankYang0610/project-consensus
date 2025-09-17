@@ -30,6 +30,7 @@ export default function NewForumPostPage() {
                     placeholder={t("post.titlePlaceholder")}
                     className="mb-3 h-11 text-lg md:text-lg font-normal px-4"
                   />
+                  { /* TODO: add rich text editor */ }
                   <textarea
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
