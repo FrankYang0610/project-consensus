@@ -73,6 +73,49 @@
     "note": "Note",
     "developmentNotice": "This site is under active development. UI and features may change frequently."
   },
+  "courses": {
+    "topbar": {
+      "courseCategory": "Course Category",
+      "category": {
+        "label": "Category",
+        "all": "All",
+        "major": "Major",
+        "postgraduate": "Postgraduate"
+      },
+      "sortBy": "Sort By",
+      "sort": {
+        "rating": "Course Rating",
+        "reviews": "Review Count",
+        "composite": "Composite"
+      },
+      "advancedFilters": "Advanced Filters",
+      "subjectCode": "Subject Code",
+      "subjectCodePlaceholder": "e.g. APSS1A01",
+      "subjectTitle": "Subject Title",
+      "subjectTitlePlaceholder": "Enter subject title",
+      "offeringDepartment": "Course Department",
+      "selectPlaceholder": "Select...",
+      "selectedCount": "{{count}} selected",
+      "subjectLevel": "Subject Level",
+      "apply": "Apply",
+      "detailedCategory": {
+        "label": "Detailed Category",
+        "options": {
+          "projectHeavy": "Project-heavy",
+          "examHeavy": "Exam-heavy",
+          "writingIntensive": "Writing-intensive",
+          "presentationHeavy": "Presentation-heavy"
+        }
+      },
+      "teacherName": "Teacher Name",
+      "teacherNamePlaceholder": "Enter teacher name",
+      "level": {
+        "ug": "Undergraduate",
+        "pg": "Postgraduate",
+        "all": "All"
+      }
+    }
+  },
   "about": {
     "title": "About",
     "subtitle": "Learn more about the project, its purpose, and the team behind it.",
