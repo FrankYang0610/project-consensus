@@ -220,7 +220,7 @@ export function CoursesPreviewCard({
                     <div className="space-y-3">
                         {teachers && teachers.length > 0 && (
                             <MetaItem
-                                label={t("courses.card.labels.teachers")}
+                                label={t("card.labels.teachers")}
                                 value={teachers.join(", ")}
                                 icon={<BookOpen className="w-3.5 h-3.5" />}
                             />
