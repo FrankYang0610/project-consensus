@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { User, AppContextType, ThemeMode } from '@/types/app-types';
 import { useTranslation } from 'react-i18next';
-import { normalizeLanguage } from '@/lib/locale';
+import { normalizeLanguage, defaultLanguage } from '@/lib/locale';
 
 // Create Context
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -101,7 +101,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const preferred: string | undefined = hasLanguagesArray
                 ? window.navigator.languages[0]
                 : window.navigator.language;
-            const target = normalizeLanguage(stored || preferred) || 'en-US';
+            const target = normalizeLanguage(stored || preferred) || defaultLanguage;
 
             // Persist if missing
             if (!stored) {
