@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 
 import "@/lib/i18n"; // Initialize i18n
 import "./globals.css";
@@ -29,7 +30,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="zh-HK" suppressHydrationWarning>
+      <head>
+        <Script id="init-language" strategy="beforeInteractive">{`
+          try {
+            if (typeof window !== 'undefined') {
+              var key = 'language';
+              if (!window.localStorage.getItem(key)) {
+                window.localStorage.setItem(key, 'zh-HK');
+              }
+            }
+          } catch (e) {}
+        `}</Script>
+      </head>
       {/**
        * 主题说明：ThemeProvider（next-themes）会在客户端根据系统/存储设置注入 html 的 class/style，
        * SSR 无法预知这些值，因此首屏可能与客户端不一致。使用 suppressHydrationWarning 抑制此类
