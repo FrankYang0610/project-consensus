@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ForumPostPreviewCard } from "@/components/ForumPostPreviewCard";
 import { samplePosts, toggleLikeById } from "@/data/samplePosts";
 import { useI18n } from "@/hooks/useI18n";
+import CreateForumPostButton from "@/components/CreateForumPostButton";
 
 export default function HomePage() {
     const { t } = useI18n();
@@ -42,6 +43,7 @@ export default function HomePage() {
                     </div>
                 </main>
             </div>
+            <CreateForumPostButton />
         </>
     );
 }
