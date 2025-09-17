@@ -27,7 +27,11 @@ const isBrowser = typeof window !== 'undefined';
 
 // 仅在客户端启用浏览器语言检测，避免 SSR/CSR 初始语言不一致导致水合问题
 // Only enable browser language detection on the client to avoid SSR/CSR hydration mismatches
-(isBrowser ? i18n.use(LanguageDetector) : i18n)
+let i18nInstance = i18n;
+if (isBrowser) {
+  i18nInstance = i18nInstance.use(LanguageDetector);
+}
+i18nInstance
   .use(initReactI18next)
   .init({
     resources,
