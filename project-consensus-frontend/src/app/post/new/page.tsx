@@ -14,6 +14,11 @@ export default function NewForumPostPage() {
   const [title, setTitle] = React.useState("");
   const [content, setContent] = React.useState("");
 
+  // Scroll to top when component mounts
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <>
       <SiteNavigation />
