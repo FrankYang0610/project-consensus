@@ -34,11 +34,9 @@ export default function RootLayout({
       <head>
         <Script id="init-language" strategy="beforeInteractive">{`
           try {
-            if (typeof window !== 'undefined') {
-              var key = 'language';
-              if (!window.localStorage.getItem(key)) {
-                window.localStorage.setItem(key, 'zh-HK');
-              }
+            var key = 'language';
+            if (!window.localStorage.getItem(key)) {
+              window.localStorage.setItem(key, 'zh-HK');
             }
           } catch (e) {}
         `}</Script>
