@@ -377,10 +377,16 @@
 /* 用于：“插入表格”下拉中的选择网格（Table 插件），控制选区高亮与边框色
    Used in: selection grid in the “Insert table” dropdown (Table plugin), controlling highlight and border */
 .container :global(.ck) {
-  /* Ensure the grid base border aligns with app tokens */
+  /* 局部强调色，仅用于编辑器选区；OKLCH 色彩空间 / Local accent for editor selection; OKLCH */
+  --accent-strong: oklch(0.78 0.16 255);
+  --accent-strong-foreground: oklch(0.985 0 0);
+  /* 确保网格基线边框与应用令牌一致 / Align base grid border with app tokens */
   --ck-color-base-border: var(--border);
-  /* Tint used by Lark theme for selected grid boxes */
+  /* 选区外阴影色调（用于 Lark 主题）/ Outer shadow tint for selected boxes */
   --ck-color-focus-outer-shadow: color-mix(in oklch, var(--primary) 16%, var(--card));
+  /* 基于强调色的选区配色（蓝）/ Selection colors derived from accent (blue) */
+  --editor-grid-selected-bg: color-mix(in oklch, var(--accent-strong) 100%, var(--card));
+  --editor-grid-selected-border: color-mix(in oklch, var(--accent-strong) 70%, var(--card));
 }
 
 /* 插入表格：标签文本 / Insert table: label text */
@@ -404,16 +410,22 @@
    Used in: selected range cells in the “Insert table” dropdown */
 .container :global(.ck .ck-insert-table-dropdown-grid-box.ck-on) {
   /* Blue for selected range */
-  background-color: oklch(0.76 0.18 255) !important;
-  border-color: oklch(0.58 0.18 255) !important;
+  background-color: var(--editor-grid-selected-bg) !important;
+  border-color: var(--editor-grid-selected-border) !important;
 }
 
 /* 插入表格：暗色模式（变量与配色） / Insert table: dark mode (variables and colors) */
 /* 用于：暗色主题下“插入表格”网格的变量与色彩
    Used in: variables and colors for the “Insert table” grid in dark theme */
 :global(.dark) .container :global(.ck) {
+  /* 暗色主题下的局部强调色 / Local accent for dark theme */
+  --accent-strong: oklch(0.75 0.16 255);
+  --accent-strong-foreground: oklch(0.145 0 0);
   --ck-color-base-border: var(--border);
   --ck-color-focus-outer-shadow: color-mix(in oklch, var(--primary) 24%, var(--card));
+  /* 暗色主题下的选区配色（蓝）/ Dark theme selection colors (blue) */
+  --editor-grid-selected-bg: color-mix(in oklch, var(--accent-strong) 100%, var(--card));
+  --editor-grid-selected-border: color-mix(in oklch, var(--accent-strong) 80%, var(--card));
 }
 
 /* 插入表格：暗色模式标签文本 / Insert table: label in dark */
@@ -437,6 +449,6 @@
    Used in: selected grid range in dark theme */
 :global(.dark) .container :global(.ck .ck-insert-table-dropdown-grid-box.ck-on) {
   /* Slightly deeper blue for dark mode to maintain contrast */
-  background-color: oklch(0.65 0.19 255) !important;
-  border-color: oklch(0.5 0.19 255) !important;
+  background-color: var(--editor-grid-selected-bg) !important;
+  border-color: var(--editor-grid-selected-border) !important;
 }
