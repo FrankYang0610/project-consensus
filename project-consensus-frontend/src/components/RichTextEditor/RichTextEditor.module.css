@@ -344,15 +344,10 @@
   --ck-color-widget-blurred-border: var(--border);
   --ck-color-widget-hover-border: var(--ring);
   /* 选区强调色（供各处派生使用）/ Accent for selection derivations */
-  --accent-strong: oklch(0.78 0.16 255);
-  --accent-strong-foreground: oklch(0.985 0 0);
+  --accent-strong: var(--primary);
+  --accent-strong-foreground: var(--primary-foreground);
 }
 
-/* 深色主题下的强调色覆盖 / Dark theme overrides for accent tokens */
-:global(.dark) .container :global(.ck) {
-  --accent-strong: oklch(0.75 0.16 255);
-  --accent-strong-foreground: oklch(0.145 0 0);
-}
 
 
 /* =============================================================
