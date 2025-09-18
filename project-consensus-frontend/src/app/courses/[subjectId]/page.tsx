@@ -3,7 +3,8 @@
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
 import { SiteNavigation } from "@/components/SiteNavigation";
-import CoursesDetailedCard, { TeacherInfo } from "@/components/CoursesDetailedCard";
+import CoursesDetailedCard from "@/components/CoursesDetailedCard";
+import { TeacherInfo } from "@/types";
 import { sampleCourses, getOtherTeacherCourses } from "@/data/sampleCourses";
 import { useI18n } from "@/hooks/useI18n";
 
