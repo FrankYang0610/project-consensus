@@ -23,6 +23,7 @@ type SemesterKey = "spring" | "summer" | "fall";
  * Courses preview card props
  */
 export interface CoursesPreviewCardProps {
+    subjectId: string;
     subjectCode: string;
     title: string;
     term: {
@@ -46,7 +47,7 @@ export interface CoursesPreviewCardProps {
     teachers?: string[];
     department?: string;
     lastUpdated?: string | Date;
-    href?: string;
+    href?: string; // optional override; otherwise computed from subjectId
     className?: string;
 }
 
@@ -143,6 +144,7 @@ function MetaItem({ label, value, icon }: { label: string; value: string; icon?:
 }
 
 export function CoursesPreviewCard({
+    subjectId,
     subjectCode,
     title,
     term,
@@ -246,17 +248,19 @@ export function CoursesPreviewCard({
             </div>
         </CardFooter>
     ) : null;
+    // optional override using href; otherwise computed from subjectId
+    const computedHref = href ?? (subjectId ? `/courses/${subjectId}` : undefined);
 
     const CardInner = (
-        <Card className={cn("hover:shadow-md transition-shadow duration-200 gap-1 py-4", href && "cursor-pointer", className)}>
+        <Card className={cn("hover:shadow-md transition-shadow duration-200 gap-1 py-4", computedHref && "cursor-pointer", className)}>
             {TitleBlock}
             {ContentBlock}
             {FooterBlock}
         </Card>
     );
 
-    return href ? (
-        <Link href={href} className="block">
+    return computedHref ? (
+        <Link href={computedHref} className="block">
             {CardInner}
         </Link>
     ) : (

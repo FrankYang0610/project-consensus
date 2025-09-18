@@ -1,6 +1,7 @@
 export type SemesterKey = "spring" | "summer" | "fall";
 
 export interface SampleCoursePreview {
+    subjectId: string; // unique stable course id
     subjectCode: string;
     title: string;
     term: {
@@ -24,11 +25,12 @@ export interface SampleCoursePreview {
     teachers?: string[];
     department?: string;
     lastUpdated?: string;
-    href?: string;
+    href?: string; // optional override; otherwise computed from subjectId
 }
 
 export const sampleCourses: SampleCoursePreview[] = [
     {
+        subjectId: "crs_0001",
         subjectCode: "APSS1A01",
         title: "Introduction to Social Sciences",
         term: { year: 2025, semester: "fall" },
@@ -47,9 +49,9 @@ export const sampleCourses: SampleCoursePreview[] = [
         teachers: ["Prof. Wang Yao Wu"],
         department: "APSS",
         lastUpdated: "2025-08-15T12:00:00Z",
-        href: "/courses/APSS1A01",
     },
     {
+        subjectId: "crs_0002",
         subjectCode: "APSS2B10",
         title: "Social Research Methods",
         term: { year: 2025, semester: "spring" },
@@ -67,9 +69,9 @@ export const sampleCourses: SampleCoursePreview[] = [
         teachers: ["Dr. Lee", "Dr. Chan", "Dr. Cheung"],
         department: "APSS",
         lastUpdated: "2025-03-20T08:00:00Z",
-        href: "/courses/APSS2B10",
     },
     {
+        subjectId: "crs_0003",
         subjectCode: "COMP1011",
         title: "Programming Fundamentals",
         term: { year: 2025, semester: "fall" },
@@ -88,9 +90,9 @@ export const sampleCourses: SampleCoursePreview[] = [
         teachers: ["Prof. Lau", "Dr. Ma", "Dr. Tam", "Dr. Yu"],
         department: "COMP",
         lastUpdated: "2025-09-01T10:00:00Z",
-        href: "/courses/COMP1011",
     },
     {
+        subjectId: "crs_0004",
         subjectCode: "MATH2001",
         title: "Calculus II",
         term: { year: 2024, semester: "spring" },
@@ -108,9 +110,9 @@ export const sampleCourses: SampleCoursePreview[] = [
         teachers: ["Dr. Wong", "Dr. Cheng"],
         department: "AMA",
         lastUpdated: "2024-04-10T12:40:00Z",
-        href: "/courses/MATH2001",
     },
     {
+        subjectId: "crs_0005",
         subjectCode: "ENG3003",
         title: "Technical Writing",
         term: { year: 2025, semester: "summer" },
@@ -128,9 +130,9 @@ export const sampleCourses: SampleCoursePreview[] = [
         teachers: ["Ms. Chan", "Mr. Lee"],
         department: "ELC",
         lastUpdated: "2025-06-18T09:30:00Z",
-        href: "/courses/ENG3003",
     },
     {
+        subjectId: "crs_0006",
         subjectCode: "MM3005",
         title: "Manufacturing Processes",
         term: { year: 2025, semester: "spring" },
@@ -148,9 +150,9 @@ export const sampleCourses: SampleCoursePreview[] = [
         teachers: ["Dr. Ho", "Dr. Lam"],
         department: "MM",
         lastUpdated: "2025-03-02T10:15:00Z",
-        href: "/courses/MM3005",
     },
     {
+        subjectId: "crs_0007",
         subjectCode: "APSS3C22",
         title: "Community Engagement Project",
         term: { year: 2024, semester: "fall" },
@@ -168,9 +170,9 @@ export const sampleCourses: SampleCoursePreview[] = [
         teachers: ["Dr. Lee", "Dr. Yip", "Dr. Poon", "Dr. Hui", "Dr. Ko"],
         department: "APSS",
         lastUpdated: "2024-10-08T16:00:00Z",
-        href: "/courses/APSS3C22",
     },
     {
+        subjectId: "crs_0008",
         subjectCode: "EEE2B11",
         title: "Circuits and Systems",
         term: { year: 2025, semester: "spring" },
@@ -188,9 +190,9 @@ export const sampleCourses: SampleCoursePreview[] = [
         teachers: ["Dr. Wong"],
         department: "EEE",
         lastUpdated: "2025-02-22T09:00:00Z",
-        href: "/courses/EEE2B11",
     },
     {
+        subjectId: "crs_0009",
         subjectCode: "ISE3C20",
         title: "Human-Computer Interaction",
         term: { year: 2024, semester: "summer" },
@@ -208,9 +210,9 @@ export const sampleCourses: SampleCoursePreview[] = [
         teachers: ["Prof. Ng"],
         department: "ISE",
         lastUpdated: "2024-07-05T14:30:00Z",
-        href: "/courses/ISE3C20",
     },
     {
+        subjectId: "crs_0010",
         subjectCode: "MM4D32",
         title: "Materials Science Fundamentals",
         term: { year: 2025, semester: "fall" },
@@ -224,7 +226,6 @@ export const sampleCourses: SampleCoursePreview[] = [
         teachers: ["Dr. Ho"],
         department: "MM",
         lastUpdated: "2025-01-12T10:00:00Z",
-        href: "/courses/MM4D32",
     },
 ];
 

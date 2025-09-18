@@ -164,6 +164,30 @@
       "teachers": "老師",
       "department": "部門"
     }
+    },
+    "detail": {
+      "follow": "關注",
+      "recommend": "推薦",
+      "notRecommend": "不推薦",
+      "teachers": "授課教師",
+      "teacherHomepage": "教師主頁",
+      "otherTeachersOfCourse": "其他老師的【{{title}}】課程",
+      "aiSummary": "AI 智能總結",
+      "aiSummaryComingSoon": "根據學生評價自動生成的課程概要即將推出，敬請期待。",
+      "courseInfo": "課程資訊",
+      "selectionCategory": "選課類別",
+      "teachingType": "教學類型",
+      "courseCategory": "課程類別",
+      "offeringDepartment": "開課單位",
+      "level": "課程層次",
+      "credits": "學分",
+      "courseHomepage": "課程主頁",
+      "visitOfficialPage": "訪問官方課程頁面",
+      "syllabus": "課程大綱",
+      "viewDetailedSyllabus": "查看詳細課程大綱",
+      "courseLinks": "課程連結",
+      "noLinkAvailable": "暫無連結",
+      "courseNotFound": "找不到課程。"
     }
   },
   "about": {
