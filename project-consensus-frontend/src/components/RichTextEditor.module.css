@@ -301,76 +301,9 @@
   --ck-color-widget-hover-border: var(--ring);
 }
 
-/* 暗色模式（编辑器） / Dark mode support for editor */
-/* 用于：暗色主题下的编辑区背景与描边配色
-   Used in: editable background and border in dark theme */
-:global(.dark) .container :global(.ck-editor__editable) {
-  background-color: var(--card) !important;
-  color: var(--card-foreground) !important;
-  border-color: var(--border) !important;
-}
-
-/* 暗色模式：编辑区聚焦 / Dark mode: editable focus */
-/* 用于：暗色主题下编辑区获得焦点的高亮
-   Used in: focus highlight for editable in dark theme */
-:global(.dark) .container :global(.ck-editor__editable:focus) {
-  border-color: var(--ring) !important;
-  box-shadow: 0 0 0 2px var(--ring) !important;
-}
-
-/* 暗色模式：工具栏容器 / Dark mode: toolbar container */
-/* 用于：暗色主题下工具栏外层容器的外观
-   Used in: appearance of the toolbar outer container in dark theme */
-:global(.dark) .container :global(.ck-editor__top) {
-  border: none !important;
-  box-shadow: none !important;
-}
-
-/* 暗色模式：工具栏主体（按钮所在的容器）/ Dark mode: toolbar main container (holds buttons) */
-/* 用于：暗色主题下承载按钮的工具栏主体
-   Used in: the toolbar element that holds buttons in dark theme */
-:global(.dark) .container :global(.ck-editor__top .ck-toolbar) {
-  background-color: var(--card) !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
-/* 暗色模式：移除工具栏子元素边框 / Dark mode: remove borders in toolbar subtree */
-/* 用于：暗色主题下，统一移除工具栏子元素的边框、轮廓与阴影
-   Used in: remove borders/outlines/shadows from toolbar descendants in dark theme */
-:global(.dark) .container :global(.ck-editor__top *) {
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* 暗色模式：按钮圆角 / Dark mode: button radius */
-/* 用于：暗色主题下按钮的圆角外观（与亮色保持一致）
-   Used in: button radius in dark theme (kept same as light) */
-:global(.dark) .container :global(.ck-editor__top .ck-button) {
-  border-radius: calc(var(--radius) * 0.5) !important;
-}
-
 /* 暗色模式：按钮悬停 / Dark mode: button hover */
-/* 用于：暗色主题下按钮悬停态
-   Used in: button hover state in dark theme */
 :global(.dark) .container :global(.ck-editor__top .ck-button:hover) {
-  border-radius: calc(var(--radius) * 0.5) !important;
   background-color: color-mix(in oklch, var(--primary) 18%, var(--card)) !important;
-}
-
-/* 暗色模式：按钮激活态 / Dark mode: button active */
-/* 用于：暗色主题下按钮激活态
-   Used in: button active (on) state in dark theme */
-:global(.dark) .container :global(.ck-editor__top .ck-button.ck-on) {
-  border-radius: calc(var(--radius) * 0.5) !important;
-}
-
-/* 暗色模式：按钮禁用态 / Dark mode: button disabled */
-/* 用于：暗色主题下按钮禁用态
-   Used in: button disabled state in dark theme */
-:global(.dark) .container :global(.ck-editor__top .ck-button.ck-disabled) {
-  border-radius: calc(var(--radius) * 0.5) !important;
 }
 
 /* 插入表格网格（范围高亮） / Insert table dropdown grid (range highlight) */
@@ -428,20 +361,9 @@
   --editor-grid-selected-border: color-mix(in oklch, var(--accent-strong) 80%, var(--card));
 }
 
-/* 插入表格：暗色模式标签文本 / Insert table: label in dark */
-/* 用于：暗色主题下“插入表格”下拉中的标签文字
-   Used in: label text in the “Insert table” dropdown (dark theme) */
-:global(.dark) .container :global(.ck .ck-insert-table-dropdown__label) {
-  color: var(--muted-foreground) !important;
-}
-
 /* 插入表格：暗色模式网格单元（灰） / Insert table: grid cell in dark (gray) */
-/* 用于：暗色主题下未选中的网格单元
-   Used in: unselected grid cells in dark theme */
 :global(.dark) .container :global(.ck .ck-insert-table-dropdown-grid-box) {
-  /* Neutral gray suited for dark surfaces */
   background-color: color-mix(in oklch, var(--foreground) 6%, var(--card)) !important;
-  border-color: var(--input) !important;
 }
 
 /* 插入表格：暗色模式选中范围（蓝） / Insert table: selected range in dark (blue) */
@@ -452,3 +374,4 @@
   background-color: var(--editor-grid-selected-bg) !important;
   border-color: var(--editor-grid-selected-border) !important;
 }
+  
