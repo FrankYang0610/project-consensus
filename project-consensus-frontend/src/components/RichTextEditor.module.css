@@ -1,6 +1,7 @@
 /* 富文本编辑器样式 / Rich text editor styles */
 /* 作用范围容器（styles.container）：从 RichTextEditor.tsx 传入，用于限定下方 :global 选择器仅影响该编辑器实例
    Scope wrapper (styles.container): assigned in RichTextEditor.tsx to restrict :global selectors to this editor instance */
+
 /* 编辑器可编辑区域（输入内容的地方）/ CKEditor editable area (where users type) */
 /* 用于：ClassicEditor 主编辑区域；控制高度、滚动、描边与配色
    Used in: ClassicEditor main editable; controls height, scrolling, border and colors */
@@ -87,6 +88,20 @@
 .container :global(.ck-editor__top .ck-button:hover) {
   border-radius: calc(var(--radius) * 0.5) !important;
   background-color: color-mix(in oklch, var(--primary) 8%, var(--card)) !important;
+}
+
+/* 始终隐藏拆分按钮分割线（hover/focus/open 全部不显示） / Always hide split button divider */
+.container :global(.ck-editor__top .ck-splitbutton > .ck-splitbutton__arrow::after),
+.container :global(.ck-editor__top .ck-splitbutton:hover > .ck-splitbutton__arrow::after),
+.container :global(.ck-editor__top .ck-splitbutton.ck-splitbutton_open > .ck-splitbutton__arrow::after),
+.container :global(.ck-editor__top .ck-splitbutton > .ck-splitbutton__arrow:focus::after) {
+  display: none !important;
+}
+/* 仅高亮真正 hover 的半边；打开下拉时也不联动另一半 */
+.container :global(.ck-editor__top .ck-splitbutton:hover > .ck-button:not(:hover):not(.ck-on):not(:focus)),
+.container :global(.ck-editor__top .ck-splitbutton.ck-splitbutton_open > .ck-button:not(:hover):not(.ck-on):not(:focus)) {
+  background: none !important;
+  background-color: transparent !important;
 }
 
 /* 工具栏按钮激活态 / Toolbar button active (on) */
@@ -273,6 +288,9 @@
   --ck-color-button-on-background: color-mix(in oklch, var(--primary) 16%, var(--card));
   --ck-color-button-on-hover-background: color-mix(in oklch, var(--primary) 20%, var(--card));
   --ck-color-button-on-foreground: var(--accent-foreground);
+  /* 禁用拆分按钮整体 hover 背景与分割线颜色，交由更精确选择器控制 */
+  --ck-color-split-button-hover-background: transparent;
+  --ck-color-split-button-hover-border: transparent;
   --ck-color-focus-border: var(--ring);
   --ck-color-widget-blurred-border: var(--border);
   --ck-color-widget-hover-border: var(--ring);
