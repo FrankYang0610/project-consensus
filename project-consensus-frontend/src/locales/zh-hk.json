@@ -172,6 +172,10 @@
       "teachers": "授課教師",
       "teacherHomepage": "教師主頁",
       "otherTeachersOfCourse": "其他老師的【{{title}}】課程",
+      "otherTeachers": {
+        "gain": "收獲大小",
+        "grading": "給分好壞"
+      },
       "aiSummary": "AI 智能總結",
       "aiSummaryComingSoon": "根據學生評價自動生成的課程概要即將推出，敬請期待。",
       "courseInfo": "課程資訊",
@@ -187,7 +191,34 @@
       "viewDetailedSyllabus": "查看詳細課程大綱",
       "courseLinks": "課程連結",
       "noLinkAvailable": "暫無連結",
-      "courseNotFound": "找不到課程。"
+      "courseNotFound": "找不到課程。",
+      "reviews": {
+        "title": "點評",
+        "writeReview": "寫點評",
+        "deletedNotice": "本課程有 {{count}} 位用戶曾刪除過點評。",
+          "totalReviews": "一共 {{count}} 條點評",
+        "sort": {
+          "label": "排序",
+          "options": {
+            "mostLiked": "點贊最多",
+            "newest": "最新點評",
+            "oldest": "最舊點評",
+            "ratingHighToLow": "評分高-低",
+            "ratingLowToHigh": "評分低-高"
+          }
+        },
+        "term": {
+          "label": "學期",
+          "select": "選擇學期",
+          "selected": "已選 {{count}} 項"
+        },
+        "rating": {
+          "label": "評分",
+          "min": "最低分",
+          "max": "最高分"
+        },
+        "apply": "應用"
+      }
     }
   },
   "about": {

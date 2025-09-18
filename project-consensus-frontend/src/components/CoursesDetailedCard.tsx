@@ -22,16 +22,124 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+    DropdownMenu,
+    DropdownMenuTrigger,
+    DropdownMenuContent,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuCheckboxItem,
+} from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
 
 // Types
 type SemesterKey = "spring" | "summer" | "fall";
 
+// Voting state types
+interface VotingState {
+    userVote: 'recommend' | 'notRecommend' | null;
+    recommendCount: number;
+    notRecommendCount: number;
+}
+
+type VotingAction = 
+    | { type: 'TOGGLE_VOTE'; voteType: 'recommend' | 'notRecommend' }
+    | { type: 'RESET_VOTES'; recommendCount: number; notRecommendCount: number };
+
+// Voting state reducer
+function votingReducer(state: VotingState, action: VotingAction): VotingState {
+    switch (action.type) {
+        case 'TOGGLE_VOTE': {
+            const { voteType } = action;
+            
+            if (state.userVote === voteType) {
+                // Remove existing vote
+                return {
+                    userVote: null,
+                    recommendCount: voteType === 'recommend' 
+                        ? Math.max(0, state.recommendCount - 1) 
+                        : state.recommendCount,
+                    notRecommendCount: voteType === 'notRecommend' 
+                        ? Math.max(0, state.notRecommendCount - 1) 
+                        : state.notRecommendCount,
+                };
+            } else {
+                // Change or add vote
+                let newRecommendCount = state.recommendCount;
+                let newNotRecommendCount = state.notRecommendCount;
+                
+                // Remove previous vote if exists
+                if (state.userVote === 'recommend') {
+                    newRecommendCount = Math.max(0, newRecommendCount - 1);
+                } else if (state.userVote === 'notRecommend') {
+                    newNotRecommendCount = Math.max(0, newNotRecommendCount - 1);
+                }
+                
+                // Add new vote
+                if (voteType === 'recommend') {
+                    newRecommendCount++;
+                } else {
+                    newNotRecommendCount++;
+                }
+                
+                return {
+                    userVote: voteType,
+                    recommendCount: newRecommendCount,
+                    notRecommendCount: newNotRecommendCount,
+                };
+            }
+        }
+        case 'RESET_VOTES': {
+            return {
+                userVote: null,
+                recommendCount: action.recommendCount,
+                notRecommendCount: action.notRecommendCount,
+            };
+        }
+        default:
+            return state;
+    }
+}
+
 export interface TeacherInfo {
     name: string;
     avatarUrl?: string;
     homepageUrl?: string;
+}
+
+export interface OtherTeacherCourse {
+    subjectId: string;
+    teacherName: string;
+    teacherAvatarUrl?: string;
+    rating: {
+        score: number;
+        reviewsCount: number;
+    };
+    attributes: {
+        difficulty: "veryEasy" | "easy" | "medium" | "hard" | "veryHard";
+        workload: "light" | "moderate" | "heavy" | "veryHeavy";
+        grading: "lenient" | "balanced" | "strict";
+        gain: "low" | "decent" | "high";
+    };
+}
+
+// Filter-related interfaces
+export interface FilterState {
+    sort: string;
+    selectedTerms: Record<string, boolean>;
+    ratingMin: number;
+    ratingMax: number;
+}
+
+export interface FilterCallbacks {
+    onSortChange: (value: string) => void;
+    onTermsChange: (selected: Record<string, boolean>) => void;
+    onRatingChange: (min: number, max: number) => void;
+    onApplyFilters: () => void;
+    onFilteredCountUpdate?: (filteredCount: number) => void; // 新增：筛选后的评论数更新回调
 }
 
 export interface CoursesDetailedCardProps {
@@ -71,6 +179,11 @@ export interface CoursesDetailedCardProps {
     courseHomepageUrl?: string;
     syllabusUrl?: string;
     className?: string;
+    // Filter-related props
+    filterState?: FilterState;
+    filterCallbacks?: FilterCallbacks;
+    // Other teachers teaching the same course
+    otherTeacherCourses?: OtherTeacherCourse[];
 }
 
 // Utility Functions
@@ -149,9 +262,13 @@ function MetaRow({ label, value }: { label: string; value?: React.ReactNode }) {
  */
 function TeacherAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string }) {
     const initials = React.useMemo(() => {
-        const parts = name.split(/\s+/).filter(Boolean);
+        if (!name || typeof name !== 'string') return '?';
+        const trimmedName = name.trim();
+        if (!trimmedName) return '?';
+        
+        const parts = trimmedName.split(/\s+/).filter(Boolean);
         const initialsText = parts.slice(0, 2).map(p => p[0]?.toUpperCase() ?? "").join("");
-        return initialsText || name[0]?.toUpperCase() || "?";
+        return initialsText || trimmedName[0]?.toUpperCase() || "?";
     }, [name]);
     
     return (
@@ -186,42 +303,96 @@ export function CoursesDetailedCard({
     courseHomepageUrl,
     syllabusUrl,
     className,
+    filterState,
+    filterCallbacks,
+    otherTeacherCourses,
 }: CoursesDetailedCardProps) {
     const { t, language } = useI18n();
     
-    // Interactive voting state
-    const [userVote, setUserVote] = React.useState<'recommend' | 'notRecommend' | null>(null);
-    const [currentRecommendCount, setCurrentRecommendCount] = React.useState(rating.recommendCount ?? 0);
-    const [currentNotRecommendCount, setCurrentNotRecommendCount] = React.useState(rating.notRecommendCount ?? 0);
+    // Interactive voting state using useReducer to avoid race conditions
+    const [votingState, dispatchVoting] = React.useReducer(votingReducer, {
+        userVote: null,
+        recommendCount: rating.recommendCount ?? 0,
+        notRecommendCount: rating.notRecommendCount ?? 0,
+    });
+    
+    // Reset voting state when rating props change
+    React.useEffect(() => {
+        dispatchVoting({
+            type: 'RESET_VOTES',
+            recommendCount: rating.recommendCount ?? 0,
+            notRecommendCount: rating.notRecommendCount ?? 0,
+        });
+    }, [rating.recommendCount, rating.notRecommendCount]);
+    
+    // 筛选后的评论数状态
+    const [filteredReviewsCount, setFilteredReviewsCount] = React.useState(rating.reviewsCount);
+    
+    // 默认筛选状态，如果父组件没有提供则使用默认值
+    const [internalFilterState, setInternalFilterState] = React.useState<FilterState>({
+        sort: "mostLiked",
+        selectedTerms: {},
+        ratingMin: 0,
+        ratingMax: 10,
+    });
+
+    // 使用外部状态或内部默认状态
+    const currentFilterState = filterState ?? internalFilterState;
+    
+    // 监听外部评论数变化
+    React.useEffect(() => {
+        setFilteredReviewsCount(rating.reviewsCount);
+    }, [rating.reviewsCount]);
+    
+    // 默认回调函数，如果父组件没有提供则使用内部状态管理
+    const defaultCallbacks: FilterCallbacks = React.useMemo(() => ({
+        onSortChange: (value: string) => {
+            if (filterCallbacks?.onSortChange) {
+                filterCallbacks.onSortChange(value);
+            } else {
+                setInternalFilterState(prev => ({ ...prev, sort: value }));
+            }
+        },
+        onTermsChange: (selected: Record<string, boolean>) => {
+            if (filterCallbacks?.onTermsChange) {
+                filterCallbacks.onTermsChange(selected);
+            } else {
+                setInternalFilterState(prev => ({ ...prev, selectedTerms: selected }));
+            }
+        },
+        onRatingChange: (min: number, max: number) => {
+            if (filterCallbacks?.onRatingChange) {
+                filterCallbacks.onRatingChange(min, max);
+            } else {
+                setInternalFilterState(prev => ({ ...prev, ratingMin: min, ratingMax: max }));
+            }
+        },
+        onApplyFilters: () => {
+            if (filterCallbacks?.onApplyFilters) {
+                filterCallbacks.onApplyFilters();
+            } else {
+                // 默认应用筛选逻辑 - 模拟筛选结果
+                const mockFilteredCount = Math.floor(rating.reviewsCount * (0.6 + Math.random() * 0.4));
+                setFilteredReviewsCount(mockFilteredCount);
+                console.log('Applied filters:', currentFilterState, 'Filtered count:', mockFilteredCount);
+            }
+        },
+        onFilteredCountUpdate: (filteredCount: number) => {
+            if (filterCallbacks?.onFilteredCountUpdate) {
+                filterCallbacks.onFilteredCountUpdate(filteredCount);
+            }
+            setFilteredReviewsCount(filteredCount);
+        },
+    }), [filterCallbacks, currentFilterState, rating.reviewsCount]);
+
+    const currentCallbacks = filterCallbacks ?? defaultCallbacks;
 
     /**
-     * Handle user voting interaction
+     * Handle user voting interaction using reducer to prevent race conditions
      */
     const handleVote = React.useCallback((voteType: 'recommend' | 'notRecommend') => {
-        if (userVote === voteType) {
-            // Remove existing vote
-            setUserVote(null);
-            if (voteType === 'recommend') {
-                setCurrentRecommendCount(prev => Math.max(0, prev - 1));
-            } else {
-                setCurrentNotRecommendCount(prev => Math.max(0, prev - 1));
-            }
-        } else {
-            // Change or add vote
-            if (userVote === 'recommend') {
-                setCurrentRecommendCount(prev => Math.max(0, prev - 1));
-            } else if (userVote === 'notRecommend') {
-                setCurrentNotRecommendCount(prev => Math.max(0, prev - 1));
-            }
-            
-            setUserVote(voteType);
-            if (voteType === 'recommend') {
-                setCurrentRecommendCount(prev => prev + 1);
-            } else {
-                setCurrentNotRecommendCount(prev => prev + 1);
-            }
-        }
-    }, [userVote]);
+        dispatchVoting({ type: 'TOGGLE_VOTE', voteType });
+    }, []);
 
     // Sort terms by year and semester (most recent first)
     const orderedTerms = React.useMemo(() => {
@@ -232,17 +403,16 @@ export function CoursesDetailedCard({
 
     // Teacher data processing
     const primaryTeacher = teachers?.[0];
-    const otherTeachers = teachers.slice(1);
-    const hasOtherTeachers = otherTeachers.length > 0;
+    const hasOtherTeachers = otherTeacherCourses && otherTeacherCourses.length > 0;
     const hasTeacherHomepage = !!primaryTeacher?.homepageUrl;
 
     // Adaptive layout: calculate content weight to balance columns
     const leftContentWeight = React.useMemo(() => {
         let weight = 1; // Base teacher section
-        if (hasOtherTeachers) weight += otherTeachers.length * 0.6; // Each additional teacher
+        if (hasOtherTeachers) weight += (otherTeacherCourses?.length ?? 0) * 0.6; // Each additional teacher
         if (hasTeacherHomepage) weight += 0.4; // Teacher homepage link
         return weight;
-    }, [hasOtherTeachers, otherTeachers.length, hasTeacherHomepage]);
+    }, [hasOtherTeachers, otherTeacherCourses?.length, hasTeacherHomepage]);
 
     const rightContentWeight = React.useMemo(() => {
         return 2.3; // Course info (1.5) + AI Summary (0.8)
@@ -309,10 +479,316 @@ export function CoursesDetailedCard({
         </div>
     ), [courseHomepageUrl, syllabusUrl, t]);
 
+    /**
+     * Reviews filters inline components
+     */
+    function SortDropdown({ value, onValueChange }: { value: string; onValueChange: (value: string) => void }) {
+        return (
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 text-xs">
+                        {t(`courses.detail.reviews.sort.options.${value}`)}
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                    <DropdownMenuRadioGroup value={value} onValueChange={onValueChange}>
+                        {[
+                            "mostLiked",
+                            "newest",
+                            "oldest",
+                            "ratingHighToLow",
+                            "ratingLowToHigh",
+                        ].map((key) => (
+                            <DropdownMenuRadioItem key={key} value={key} className="text-xs">
+                                {t(`courses.detail.reviews.sort.options.${key}`)}
+                            </DropdownMenuRadioItem>
+                        ))}
+                    </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        );
+    }
+
+    function TermsDropdown({ 
+        terms, 
+        format, 
+        selected, 
+        onSelectionChange 
+    }: { 
+        terms: Array<{ year: number; semester: SemesterKey }>; 
+        format: (tm: { year: number; semester: SemesterKey }) => string;
+        selected: Record<string, boolean>;
+        onSelectionChange: (selected: Record<string, boolean>) => void;
+    }) {
+        const [open, setOpen] = React.useState<boolean>(false);
+        
+        const toggle = React.useCallback((key: string, checked: boolean) => {
+            const newSelected = { ...selected, [key]: checked };
+            onSelectionChange(newSelected);
+        }, [selected, onSelectionChange]);
+        
+        const selectedCount = React.useMemo(() => {
+            return Object.values(selected).filter(Boolean).length;
+        }, [selected]);
+        
+        return (
+            <DropdownMenu open={open} onOpenChange={setOpen}>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 text-xs">
+                        {selectedCount > 0 ? t("courses.detail.reviews.term.selected", { count: selectedCount }) : t("courses.detail.reviews.term.select")}
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="max-h-64 overflow-auto">
+                    {terms.map((tm, idx) => {
+                        const key = `${tm.year}-${tm.semester}-${idx}`;
+                        return (
+                            <DropdownMenuCheckboxItem
+                                key={key}
+                                checked={!!selected[key]}
+                                onCheckedChange={(checked) => {
+                                    toggle(key, Boolean(checked));
+                                    // 阻止菜单关闭
+                                }}
+                                onSelect={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                }}
+                                className="text-xs focus:bg-accent"
+                            >
+                                {format(tm)}
+                            </DropdownMenuCheckboxItem>
+                        );
+                    })}
+                </DropdownMenuContent>
+            </DropdownMenu>
+        );
+    }
+
+    const RatingSlider = React.memo(({ 
+        minVal, 
+        maxVal, 
+        onRangeChange 
+    }: { 
+        minVal: number; 
+        maxVal: number; 
+        onRangeChange: (min: number, max: number) => void; 
+    }) => {
+        const [isDragging, setIsDragging] = React.useState<'min' | 'max' | null>(null);
+        const [localMinVal, setLocalMinVal] = React.useState<number>(minVal);
+        const [localMaxVal, setLocalMaxVal] = React.useState<number>(maxVal);
+        const sliderRef = React.useRef<HTMLDivElement>(null);
+        const animationFrameRef = React.useRef<number>(0);
+        const callbackTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+        const lastCallbackValuesRef = React.useRef<{ min: number; max: number }>({ min: minVal, max: maxVal });
+    
+        // 同步外部状态变化
+        React.useEffect(() => {
+            if (!isDragging) {
+                setLocalMinVal(minVal);
+                setLocalMaxVal(maxVal);
+                lastCallbackValuesRef.current = { min: minVal, max: maxVal };
+            }
+        }, [minVal, maxVal, isDragging]);
+
+        // 优化的回调函数 - 只有值实际变化时才触发
+        const triggerCallback = React.useCallback((min: number, max: number) => {
+            const lastValues = lastCallbackValuesRef.current;
+            const roundedMin = Math.round(min * 10) / 10;
+            const roundedMax = Math.round(max * 10) / 10;
+            
+            // 只有值真正变化时才触发回调
+            if (Math.abs(roundedMin - lastValues.min) >= 0.1 || Math.abs(roundedMax - lastValues.max) >= 0.1) {
+                if (callbackTimeoutRef.current) {
+                    clearTimeout(callbackTimeoutRef.current);
+                }
+                callbackTimeoutRef.current = setTimeout(() => {
+                    lastCallbackValuesRef.current = { min: roundedMin, max: roundedMax };
+                    onRangeChange(roundedMin, roundedMax);
+                }, 50); // 减少防抖时间至50ms
+            }
+        }, [onRangeChange]);
+    
+        // 将像素位置转换为值 - 优化缓存
+        const pixelToValue = React.useCallback((clientX: number) => {
+            if (!sliderRef.current) return 0;
+            const rect = sliderRef.current.getBoundingClientRect();
+            const percent = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+            return percent * 10;
+        }, []);
+
+        // 使用 requestAnimationFrame 优化状态更新
+        const updateValues = React.useCallback((targetSlider: 'min' | 'max', value: number) => {
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+            }
+            
+            animationFrameRef.current = requestAnimationFrame(() => {
+                if (targetSlider === 'min') {
+                    const newMin = Math.max(0, Math.min(value, localMaxVal - 0.1));
+                    if (Math.abs(newMin - localMinVal) >= 0.05) {
+                        setLocalMinVal(newMin);
+                        triggerCallback(newMin, localMaxVal);
+                    }
+                } else {
+                    const newMax = Math.min(10, Math.max(value, localMinVal + 0.1));
+                    if (Math.abs(newMax - localMaxVal) >= 0.05) {
+                        setLocalMaxVal(newMax);
+                        triggerCallback(localMinVal, newMax);
+                    }
+                }
+            });
+        }, [localMinVal, localMaxVal, triggerCallback]);
+    
+        // 处理鼠标/触摸开始 - 简化逻辑
+        const handlePointerDown = React.useCallback((e: React.PointerEvent) => {
+            if (!sliderRef.current) return;
+            e.preventDefault();
+            
+            const value = pixelToValue(e.clientX);
+            const distToMin = Math.abs(value - localMinVal);
+            const distToMax = Math.abs(value - localMaxVal);
+            
+            const targetSlider = distToMin <= distToMax ? 'min' : 'max';
+            setIsDragging(targetSlider);
+            updateValues(targetSlider, value);
+            
+            // 设置pointer capture提升性能
+            (e.target as Element).setPointerCapture(e.pointerId);
+        }, [localMinVal, localMaxVal, pixelToValue, updateValues]);
+    
+        // 处理拖拽移动 - 优化性能
+        const handlePointerMove = React.useCallback((e: PointerEvent) => {
+            if (!isDragging) return;
+            
+            const value = pixelToValue(e.clientX);
+            updateValues(isDragging, value);
+        }, [isDragging, pixelToValue, updateValues]);
+    
+        // 处理拖拽结束
+        const handlePointerUp = React.useCallback(() => {
+            if (isDragging) {
+                // 立即触发最终回调
+                if (callbackTimeoutRef.current) {
+                    clearTimeout(callbackTimeoutRef.current);
+                }
+                if (animationFrameRef.current) {
+                    cancelAnimationFrame(animationFrameRef.current);
+                }
+                
+                const roundedMin = Math.round(localMinVal * 10) / 10;
+                const roundedMax = Math.round(localMaxVal * 10) / 10;
+                lastCallbackValuesRef.current = { min: roundedMin, max: roundedMax };
+                onRangeChange(roundedMin, roundedMax);
+                setIsDragging(null);
+            }
+        }, [isDragging, localMinVal, localMaxVal, onRangeChange]);
+    
+        // 添加全局事件监听 - 优化事件处理
+        React.useEffect(() => {
+            if (isDragging) {
+                document.addEventListener('pointermove', handlePointerMove, { passive: true });
+                document.addEventListener('pointerup', handlePointerUp, { passive: true });
+                
+                return () => {
+                    document.removeEventListener('pointermove', handlePointerMove);
+                    document.removeEventListener('pointerup', handlePointerUp);
+                    if (callbackTimeoutRef.current) {
+                        clearTimeout(callbackTimeoutRef.current);
+                    }
+                    if (animationFrameRef.current) {
+                        cancelAnimationFrame(animationFrameRef.current);
+                    }
+                };
+            }
+        }, [isDragging, handlePointerMove, handlePointerUp]);
+
+        // 缓存计算结果 - 只在值真正变化时重新计算
+        const displayValues = React.useMemo(() => ({
+            minPercent: `${Math.round(localMinVal * 1000) / 100}%`,
+            maxPercent: `${Math.round(localMaxVal * 1000) / 100}%`,
+            rangePercent: `${Math.round((localMaxVal - localMinVal) * 1000) / 100}%`,
+            minDisplay: localMinVal.toFixed(1),
+            maxDisplay: localMaxVal.toFixed(1)
+        }), [localMinVal, localMaxVal]);
+
+        // 静态刻度组件，避免重复渲染
+        const Ticks = React.useMemo(() => (
+            <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 z-5 pointer-events-none">
+                <div className="flex justify-between">
+                    {[0, 2, 4, 6, 8, 10].map((tick) => (
+                        <div key={tick} className="h-2 w-px bg-muted-foreground/60" />
+                    ))}
+                </div>
+            </div>
+        ), []);
+    
+        return (
+            <div className="flex items-center gap-2 w-full">
+                {/* Left value (min) */}
+                <div className="w-10 text-[11px] text-muted-foreground text-right">
+                    {displayValues.minDisplay}
+                </div>
+                
+                {/* Custom slider container */}
+                <div className="w-full sm:max-w-[260px] md:max-w-[300px] lg:max-w-[320px]">
+                    <div 
+                        ref={sliderRef}
+                        className="relative w-full h-5 cursor-pointer touch-none select-none"
+                        onPointerDown={handlePointerDown}
+                    >
+                        {/* Base track */}
+                        <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-1 rounded bg-muted-foreground/25" />
+                        
+                        {/* Selected range - 移除过渡动画减少重绘 */}
+                        <div
+                            className="absolute top-1/2 -translate-y-1/2 h-1 rounded bg-primary z-10 will-change-auto"
+                            style={{ 
+                                left: displayValues.minPercent, 
+                                width: displayValues.rangePercent
+                            }}
+                        />
+                        
+                        {/* Ticks - 静态元素 */}
+                        {Ticks}
+                        
+                        {/* Min handle - 修复定位和层级 */}
+                        <div 
+                            className="absolute top-1/2 -translate-y-1/2 h-4 w-4 rounded-full bg-primary border-2 border-background shadow-sm z-30 will-change-transform"
+                            style={{ 
+                                left: displayValues.minPercent,
+                                marginLeft: '-8px', // 手动居中，避免transform冲突
+                                transform: isDragging === 'min' ? 'scale(1.1)' : 'scale(1)',
+                                transition: isDragging === 'min' ? 'none' : 'transform 0.15s ease'
+                            }}
+                        />
+                        
+                        {/* Max handle - 修复定位和层级 */}
+                        <div 
+                            className="absolute top-1/2 -translate-y-1/2 h-4 w-4 rounded-full bg-primary border-2 border-background shadow-sm z-30 will-change-transform"
+                            style={{ 
+                                left: displayValues.maxPercent,
+                                marginLeft: '-8px', // 手动居中，避免transform冲突
+                                transform: isDragging === 'max' ? 'scale(1.1)' : 'scale(1)',
+                                transition: isDragging === 'max' ? 'none' : 'transform 0.15s ease'
+                            }}
+                        />
+                    </div>
+                </div>
+                
+                {/* Right value (max) */}
+                <div className="w-10 text-[11px] text-muted-foreground">
+                    {displayValues.maxDisplay}
+                </div>
+            </div>
+        );
+    });
+    
+    RatingSlider.displayName = 'RatingSlider';
+
     return (
         <Card className={cn("overflow-hidden border-muted/30 shadow-none bg-background/50 backdrop-blur-sm", className)}>
             {/* Header Section - Course Title, Terms, Rating, and Actions */}
-            <CardHeader className="pb-6 bg-gradient-to-r from-background/80 to-muted/10">
+            <CardHeader className="pb-1 bg-gradient-to-r from-background/80 to-muted/10">
                 <div className="flex flex-col gap-3">
                     {/* Title Row */}
                     <div className="flex items-start justify-between gap-3">
@@ -356,14 +832,14 @@ export function CoursesDetailedCard({
                             </div>
                             <div className="text-sm text-muted-foreground">
                                 <Users className="w-4 h-4 inline mr-1" />
-                                {t("courses.card.rating.reviews", { count: rating.reviewsCount })}
+                                {t("courses.card.rating.reviews", { count: filteredReviewsCount })}
                             </div>
                         </div>
                         {/* Interactive Voting Buttons */}
                         <div className="flex gap-2">
                             <Button 
                                 size="sm" 
-                                variant={userVote === 'recommend' ? 'default' : 'outline'}
+                                variant={votingState.userVote === 'recommend' ? 'default' : 'outline'}
                                 className="gap-1.5"
                                 onClick={() => handleVote('recommend')}
                             >
@@ -371,14 +847,14 @@ export function CoursesDetailedCard({
                                 <span>{t("courses.detail.recommend")}</span>
                                 <span className={cn(
                                     "px-1.5 py-0.5 rounded text-xs font-medium",
-                                    userVote === 'recommend' ? "bg-white/20" : "bg-muted"
+                                    votingState.userVote === 'recommend' ? "bg-white/20" : "bg-muted"
                                 )}>
-                                    {currentRecommendCount}
+                                    {votingState.recommendCount}
                                 </span>
                             </Button>
                             <Button 
                                 size="sm" 
-                                variant={userVote === 'notRecommend' ? 'destructive' : 'outline'}
+                                variant={votingState.userVote === 'notRecommend' ? 'destructive' : 'outline'}
                                 className="gap-1.5"
                                 onClick={() => handleVote('notRecommend')}
                             >
@@ -386,9 +862,9 @@ export function CoursesDetailedCard({
                                 <span>{t("courses.detail.notRecommend")}</span>
                                 <span className={cn(
                                     "px-1.5 py-0.5 rounded text-xs font-medium",
-                                    userVote === 'notRecommend' ? "bg-white/20" : "bg-muted"
+                                    votingState.userVote === 'notRecommend' ? "bg-white/20" : "bg-muted"
                                 )}>
-                                    {currentNotRecommendCount}
+                                    {votingState.notRecommendCount}
                                 </span>
                             </Button>
                         </div>
@@ -396,7 +872,7 @@ export function CoursesDetailedCard({
                 </div>
             </CardHeader>
             
-            <CardContent className="space-y-8 px-6 py-6">
+            <CardContent className="space-y-4 px-6 pt-1 pb-5">
                 {/* Course Attributes Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {(['difficulty', 'workload', 'grading', 'gain'] as const).map((attr) => (
@@ -451,14 +927,38 @@ export function CoursesDetailedCard({
                                         {t("courses.detail.otherTeachersOfCourse", { title })}
                                     </div>
                                     <div className="space-y-2">
-                                        {otherTeachers.map((tch) => (
+                                        {otherTeacherCourses!.map((course) => (
                                             <Link 
-                                                key={tch.name}
-                                                href={`/courses/${subjectId}?teacher=${encodeURIComponent(tch.name)}`}
-                                                className="flex items-center gap-3 p-3 rounded-lg border bg-background hover:bg-muted/50 transition-colors"
+                                                key={course.subjectId}
+                                                href={`/courses/${course.subjectId}`}
+                                                className="flex items-center gap-3 p-3 rounded-lg border bg-background hover:bg-muted/50 transition-colors group"
                                             >
-                                                <TeacherAvatar name={tch.name} avatarUrl={tch.avatarUrl} />
-                                                <span className="text-sm font-medium">{tch.name}</span>
+                                                <TeacherAvatar name={course.teacherName} avatarUrl={course.teacherAvatarUrl} />
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="text-sm font-medium">{course.teacherName}</div>
+                                                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                                                        <span className="flex items-center gap-1">
+                                                            <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
+                                                            {course.rating.score.toFixed(1)}
+                                                        </span>
+                                                        <span>•</span>
+                                                        <span>{t("courses.card.rating.reviews", { count: course.rating.reviewsCount })}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex flex-col items-end gap-1 text-xs text-muted-foreground">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="text-muted-foreground/80">{t("courses.detail.otherTeachers.gain")}:</span>
+                                                        <span className="px-2 py-1 rounded bg-muted/50 font-medium">
+                                                            {t(`courses.card.adjectives.${course.attributes.gain}`)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="text-muted-foreground/80">{t("courses.detail.otherTeachers.grading")}:</span>
+                                                        <span className="px-2 py-1 rounded bg-muted/50 font-medium">
+                                                            {t(`courses.card.adjectives.${course.attributes.grading}`)}
+                                                        </span>
+                                                    </div>
+                                                </div>
                                             </Link>
                                         ))}
                                     </div>
@@ -484,6 +984,13 @@ export function CoursesDetailedCard({
                                     <MetaRow label={t("courses.detail.credits")} value={credits !== undefined ? String(credits) : undefined} />
                                 </div>
                             </div>
+                            {/* Last Updated inside the course info area */}
+                            {lastUpdated && (
+                                <div className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
+                                    <CalendarDays className="w-3.5 h-3.5" />
+                                    {t("courses.card.lastUpdated", { date: formatDateDisplay(lastUpdated, language) })}
+                                </div>
+                            )}
                         </div>
 
                         {/* Course Links - Adaptive positioning */}
@@ -503,18 +1010,72 @@ export function CoursesDetailedCard({
                     </div>
                 </div>
 
-                {/* Footer - Last Updated */}
-                {lastUpdated && (
-                    <div className="pt-4 border-t">
-                        <div className="text-xs text-muted-foreground flex items-center gap-1">
-                            <CalendarDays className="w-3.5 h-3.5" />
-                            {t("courses.card.lastUpdated", { date: formatDateDisplay(lastUpdated, language) })}
+                {/* Reviews Header and Filters */}
+                <div className="border-t pt-4 space-y-3">
+                    {/* Header Row */}
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-base font-semibold">{t("courses.detail.reviews.title")}</h3>
+                        <Button size="sm">{t("courses.detail.reviews.writeReview")}</Button>
+                    </div>
+                    {/* Alert Bar */}
+                    <Alert>
+                        <AlertDescription>
+                            {t("courses.detail.reviews.deletedNotice", { count: 0 })}
+                        </AlertDescription>
+                    </Alert>
+
+                    {/* Filters Row */}
+                    <div className="rounded-lg border bg-background/60 px-3 py-3">
+                        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-6">
+                            {/* Left cluster: Sort + Term */}
+                            <div className="flex items-center gap-4 flex-wrap">
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <Label className="text-xs w-12 shrink-0 text-muted-foreground">{t("courses.detail.reviews.sort.label")}</Label>
+                                    <SortDropdown 
+                                        value={currentFilterState.sort} 
+                                        onValueChange={currentCallbacks.onSortChange} 
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <Label className="text-xs w-12 shrink-0 text-muted-foreground">{t("courses.detail.reviews.term.label")}</Label>
+                                    <TermsDropdown 
+                                        terms={orderedTerms} 
+                                        format={(tm: { year: number; semester: SemesterKey }) => formatTerm(tm.year, tm.semester, t, language)}
+                                        selected={currentFilterState.selectedTerms}
+                                        onSelectionChange={currentCallbacks.onTermsChange}
+                                    />
+                                </div>
+                            </div>
+                            {/* Right cluster: Rating + Total + Apply */}
+                            <div className="flex items-center gap-3 flex-1 md:justify-end">
+                                <Label className="text-xs w-12 shrink-0 text-muted-foreground">{t("courses.detail.reviews.rating.label")}</Label>
+                                <div className="flex-1 min-w-[240px] max-w-[360px]">
+                                    <RatingSlider 
+                                        minVal={currentFilterState.ratingMin} 
+                                        maxVal={currentFilterState.ratingMax}
+                                        onRangeChange={currentCallbacks.onRatingChange}
+                                    />
+                                </div>
+                                <div className="text-xs text-muted-foreground whitespace-nowrap">
+                                    {t("courses.detail.reviews.totalReviews", { count: filteredReviewsCount })}
+                                </div>
+                                <Button 
+                                    size="default" 
+                                    className="h-9 px-4 text-sm"
+                                    onClick={currentCallbacks.onApplyFilters}
+                                >
+                                    {t("courses.detail.reviews.apply")}
+                                </Button>
+                            </div>
                         </div>
                     </div>
-                )}
+                </div>
+
+                {/* Footer spacing intentionally kept minimal; last updated moved above reviews */}
             </CardContent>
         </Card>
     );
 }
 
 export default CoursesDetailedCard;
+
