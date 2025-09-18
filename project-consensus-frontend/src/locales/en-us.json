@@ -120,6 +120,51 @@
         "all": "All"
       }
     }
+  ,
+    "card": {
+      "term": "Term",
+      "semester": {
+        "spring": "Spring",
+        "summer": "Summer",
+        "fall": "Fall"
+      },
+      "rating": {
+        "score": "Rating",
+        "outOf": "out of 10",
+        "reviews": "{{count}} reviews"
+      },
+      "attributes": {
+        "difficulty": "Difficulty",
+        "workload": "Workload",
+        "grading": "Grading",
+        "gain": "Takeaway"
+      },
+      "adjectives": {
+        "veryEasy": "Very easy",
+        "easy": "Easy",
+        "medium": "Moderate",
+        "hard": "Hard",
+        "veryHard": "Very hard",
+        "light": "Light",
+        "moderate": "Moderate",
+        "heavy": "Heavy",
+        "veryHeavy": "Very heavy",
+        "lenient": "Lenient",
+        "balanced": "Balanced",
+        "strict": "Strict",
+        "low": "Low",
+        "decent": "Decent",
+        "high": "High"
+      },
+      "teachers": "Teachers: {{names}}",
+      "lastUpdated": "Last updated: {{date}}",
+      "viewDetails": "View details"
+    ,
+    "labels": {
+      "teachers": "Teachers",
+      "department": "Department"
+    }
+    }
   },
   "about": {
     "title": "About",
