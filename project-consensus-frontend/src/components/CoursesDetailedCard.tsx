@@ -1071,7 +1071,6 @@ export function CoursesDetailedCard({
                     </div>
                 </div>
 
-                {/* Footer spacing intentionally kept minimal; last updated moved above reviews */}
             </CardContent>
         </Card>
     );
