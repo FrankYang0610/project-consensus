@@ -229,6 +229,11 @@
   border-radius: var(--radius) !important;
 }
 
+/* 避免代码块第一行额外缩进：移除 pre 中 code 的内边距 / Avoid first-line extra indent in code blocks: remove padding on code inside pre */
+.container :global(.ck-content pre code) {
+  padding: 0 !important;
+}
+
 /* 表格边框 / Table borders */
 /* 用于：内容中的表格外边框
    Used in: outer borders of tables inside content */
