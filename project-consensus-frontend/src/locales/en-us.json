@@ -164,6 +164,30 @@
       "teachers": "Teachers",
       "department": "Department"
     }
+    },
+    "detail": {
+      "follow": "Follow",
+      "recommend": "Recommend",
+      "notRecommend": "Not Recommend",
+      "teachers": "Instructors",
+      "teacherHomepage": "Teacher Homepage",
+      "otherTeachersOfCourse": "Other teachers of \"{{title}}\"",
+      "aiSummary": "AI Summary",
+      "aiSummaryComingSoon": "AI-generated course summary based on student reviews coming soon.",
+      "courseInfo": "Course Information",
+      "selectionCategory": "Selection Category",
+      "teachingType": "Teaching Type",
+      "courseCategory": "Course Category",
+      "offeringDepartment": "Offering Department",
+      "level": "Course Level",
+      "credits": "Credits",
+      "courseHomepage": "Course Homepage",
+      "visitOfficialPage": "Visit official course page",
+      "syllabus": "Syllabus",
+      "viewDetailedSyllabus": "View detailed course syllabus",
+      "courseLinks": "Course Links",
+      "noLinkAvailable": "No link available",
+      "courseNotFound": "Course not found."
     }
   },
   "about": {

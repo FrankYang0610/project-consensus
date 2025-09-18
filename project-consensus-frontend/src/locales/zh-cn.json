@@ -164,6 +164,30 @@
       "teachers": "老师",
       "department": "部门"
     }
+    },
+    "detail": {
+      "follow": "关注",
+      "recommend": "推荐",
+      "notRecommend": "不推荐",
+      "teachers": "授课教师",
+      "teacherHomepage": "教师主页",
+      "otherTeachersOfCourse": "其他老师的【{{title}}】课程",
+      "aiSummary": "AI 智能总结",
+      "aiSummaryComingSoon": "根据学生评价自动生成的课程概要即将推出，敬请期待。",
+      "courseInfo": "课程信息",
+      "selectionCategory": "选课类别",
+      "teachingType": "教学类型",
+      "courseCategory": "课程类别",
+      "offeringDepartment": "开课单位",
+      "level": "课程层次",
+      "credits": "学分",
+      "courseHomepage": "课程主页",
+      "visitOfficialPage": "访问官方课程页面",
+      "syllabus": "课程大纲",
+      "viewDetailedSyllabus": "查看详细课程大纲",
+      "courseLinks": "课程链接",
+      "noLinkAvailable": "暂无链接",
+      "courseNotFound": "课程未找到。"
     }
   },
   "about": {
