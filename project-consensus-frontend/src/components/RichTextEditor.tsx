@@ -112,5 +112,3 @@ export default function RichTextEditor({ value, onChange, placeholder, className
     </div>
   );
 }
-
-

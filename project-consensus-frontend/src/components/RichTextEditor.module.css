@@ -2,6 +2,7 @@
 /* 作用范围容器（styles.container）：从 RichTextEditor.tsx 传入，用于限定下方 :global 选择器仅影响该编辑器实例
    Scope wrapper (styles.container): assigned in RichTextEditor.tsx to restrict :global selectors to this editor instance */
 
+   
 /* ============================== 索引 / Index ==============================
    (1) 编辑器框架与可编辑区域 / Editor frame & editable area
    (2) 工具栏 UI / Toolbar UI
@@ -11,6 +12,7 @@
    (6) 主题变量映射 / Theme variables mapping
    (7) 插入表格（Table 插件）/ Insert table (Table plugin)
 */
+
 
 /* =============================================================
    (1) 编辑器框架与可编辑区域 / Editor frame & editable area
@@ -51,6 +53,7 @@
 .container :global(.ck-placeholder::before) {
   color: var(--muted-foreground) !important;
 }
+
 
 /* =============================================================
    (2) 工具栏 UI / Toolbar UI
@@ -157,6 +160,7 @@
   color: var(--muted-foreground) !important;
 }
 
+
 /* =============================================================
    (3) 下拉/气泡/列表 UI / Dropdowns, balloons, lists UI
    ============================================================= */
@@ -203,6 +207,7 @@
 .container :global(.ck-list__item .ck-button:focus-visible) {
   background-color: color-mix(in oklch, var(--primary) 8%, var(--card)) !important;
 }
+
 
 /* =============================================================
    (4) 内容排版（文档区）/ Content (document styling)
@@ -275,6 +280,7 @@
   border-color: var(--border) !important;
 }
 
+
 /* =============================================================
    (5) 表单与标签（编辑器 UI）/ Forms and labels (editor UI)
    ============================================================= */
@@ -301,6 +307,7 @@
 .container :global(.ck-labeled-field__label) {
   color: var(--muted-foreground) !important;
 }
+
 
 /* =============================================================
    (6) 主题变量映射（CKEditor -> 设计令牌）/ Theme variables mapping
@@ -331,7 +338,17 @@
   --ck-color-focus-border: var(--ring);
   --ck-color-widget-blurred-border: var(--border);
   --ck-color-widget-hover-border: var(--ring);
+  /* 选区强调色（供各处派生使用）/ Accent for selection derivations */
+  --accent-strong: oklch(0.78 0.16 255);
+  --accent-strong-foreground: oklch(0.985 0 0);
 }
+
+/* 深色主题下的强调色覆盖 / Dark theme overrides for accent tokens */
+:global(.dark) .container :global(.ck) {
+  --accent-strong: oklch(0.75 0.16 255);
+  --accent-strong-foreground: oklch(0.145 0 0);
+}
+
 
 /* =============================================================
    (7) 插入表格（Table 插件）/ Insert table (Table plugin)
@@ -340,9 +357,6 @@
 /* 用于：“插入表格”下拉中的选择网格（Table 插件），控制选区高亮与边框色
    Used in: selection grid in the “Insert table” dropdown (Table plugin), controlling highlight and border */
 .container :global(.ck) {
-  /* 局部强调色，仅用于编辑器选区；OKLCH 色彩空间 / Local accent for editor selection; OKLCH */
-  --accent-strong: oklch(0.78 0.16 255);
-  --accent-strong-foreground: oklch(0.985 0 0);
   /* 确保网格基线边框与应用令牌一致 / Align base grid border with app tokens */
   --ck-color-base-border: var(--border);
   /* 选区外阴影色调（用于 Lark 主题）/ Outer shadow tint for selected boxes */
@@ -379,9 +393,6 @@
 
 /* 暗色模式：插入表格（变量与配色） / Dark mode: Insert table (variables & colors) */
 :global(.dark) .container :global(.ck) {
-  /* 暗色主题下的局部强调色 / Local accent for dark theme */
-  --accent-strong: oklch(0.75 0.16 255);
-  --accent-strong-foreground: oklch(0.145 0 0);
   --ck-color-base-border: var(--border);
   --ck-color-focus-outer-shadow: color-mix(in oklch, var(--primary) 24%, var(--card));
   /* 暗色主题下的选区配色（蓝）/ Dark theme selection colors (blue) */
@@ -399,4 +410,3 @@
   background-color: var(--editor-grid-selected-bg) !important;
   border-color: var(--editor-grid-selected-border) !important;
 }
-  
