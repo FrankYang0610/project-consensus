@@ -139,7 +139,7 @@ export interface FilterCallbacks {
     onTermsChange: (selected: Record<string, boolean>) => void;
     onRatingChange: (min: number, max: number) => void;
     onApplyFilters: () => void;
-    onFilteredCountUpdate?: (filteredCount: number) => void; // 新增：筛选后的评论数更新回调
+    onFilteredCountUpdate?: (filteredCount: number) => void; // New: callback to update filtered review count
 }
 
 export interface CoursesDetailedCardProps {
@@ -325,10 +325,10 @@ export function CoursesDetailedCard({
         });
     }, [rating.recommendCount, rating.notRecommendCount]);
     
-    // 筛选后的评论数状态
+    // State for filtered review count
     const [filteredReviewsCount, setFilteredReviewsCount] = React.useState(rating.reviewsCount);
     
-    // 默认筛选状态，如果父组件没有提供则使用默认值
+    // Default filter state; use defaults if parent does not provide
     const [internalFilterState, setInternalFilterState] = React.useState<FilterState>({
         sort: "mostLiked",
         selectedTerms: {},
@@ -336,15 +336,15 @@ export function CoursesDetailedCard({
         ratingMax: 10,
     });
 
-    // 使用外部状态或内部默认状态
+    // Use external state or internal defaults
     const currentFilterState = filterState ?? internalFilterState;
     
-    // 监听外部评论数变化
+    // Listen for external review count changes
     React.useEffect(() => {
         setFilteredReviewsCount(rating.reviewsCount);
     }, [rating.reviewsCount]);
     
-    // 默认回调函数，如果父组件没有提供则使用内部状态管理
+    // Default callbacks; if parent does not provide them, manage internal state
     const defaultCallbacks: FilterCallbacks = React.useMemo(() => ({
         onSortChange: (value: string) => {
             if (filterCallbacks?.onSortChange) {
@@ -371,7 +371,7 @@ export function CoursesDetailedCard({
             if (filterCallbacks?.onApplyFilters) {
                 filterCallbacks.onApplyFilters();
             } else {
-                // 默认应用筛选逻辑 - 模拟筛选结果
+                // Default apply-filter logic - simulate filtered result
                 const mockFilteredCount = Math.floor(rating.reviewsCount * (0.6 + Math.random() * 0.4));
                 setFilteredReviewsCount(mockFilteredCount);
                 console.log('Applied filters:', currentFilterState, 'Filtered count:', mockFilteredCount);
@@ -547,7 +547,7 @@ export function CoursesDetailedCard({
                                 checked={!!selected[key]}
                                 onCheckedChange={(checked) => {
                                     toggle(key, Boolean(checked));
-                                    // 阻止菜单关闭
+                                    // Prevent menu from closing
                                 }}
                                 onSelect={(e) => {
                                     e.preventDefault();
@@ -581,7 +581,7 @@ export function CoursesDetailedCard({
         const callbackTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
         const lastCallbackValuesRef = React.useRef<{ min: number; max: number }>({ min: minVal, max: maxVal });
     
-        // 同步外部状态变化
+        // Sync external state changes
         React.useEffect(() => {
             if (!isDragging) {
                 setLocalMinVal(minVal);
@@ -590,13 +590,13 @@ export function CoursesDetailedCard({
             }
         }, [minVal, maxVal, isDragging]);
 
-        // 优化的回调函数 - 只有值实际变化时才触发
+        // Optimized callback - trigger only when values actually change
         const triggerCallback = React.useCallback((min: number, max: number) => {
             const lastValues = lastCallbackValuesRef.current;
             const roundedMin = Math.round(min * 10) / 10;
             const roundedMax = Math.round(max * 10) / 10;
             
-            // 只有值真正变化时才触发回调
+            // Only trigger callback when values truly change
             if (Math.abs(roundedMin - lastValues.min) >= 0.1 || Math.abs(roundedMax - lastValues.max) >= 0.1) {
                 if (callbackTimeoutRef.current) {
                     clearTimeout(callbackTimeoutRef.current);
@@ -604,11 +604,11 @@ export function CoursesDetailedCard({
                 callbackTimeoutRef.current = setTimeout(() => {
                     lastCallbackValuesRef.current = { min: roundedMin, max: roundedMax };
                     onRangeChange(roundedMin, roundedMax);
-                }, 50); // 减少防抖时间至50ms
+                }, 50); // Reduce debounce time to 50ms
             }
         }, [onRangeChange]);
     
-        // 将像素位置转换为值 - 优化缓存
+        // Convert pixel position to value - cache optimized
         const pixelToValue = React.useCallback((clientX: number) => {
             if (!sliderRef.current) return 0;
             const rect = sliderRef.current.getBoundingClientRect();
@@ -616,7 +616,7 @@ export function CoursesDetailedCard({
             return percent * 10;
         }, []);
 
-        // 使用 requestAnimationFrame 优化状态更新
+        // Use requestAnimationFrame to optimize state updates
         const updateValues = React.useCallback((targetSlider: 'min' | 'max', value: number) => {
             if (animationFrameRef.current) {
                 cancelAnimationFrame(animationFrameRef.current);
@@ -639,7 +639,7 @@ export function CoursesDetailedCard({
             });
         }, [localMinVal, localMaxVal, triggerCallback]);
     
-        // 处理鼠标/触摸开始 - 简化逻辑
+        // Handle pointer down - simplified logic
         const handlePointerDown = React.useCallback((e: React.PointerEvent) => {
             if (!sliderRef.current) return;
             e.preventDefault();
@@ -652,11 +652,11 @@ export function CoursesDetailedCard({
             setIsDragging(targetSlider);
             updateValues(targetSlider, value);
             
-            // 设置pointer capture提升性能
+            // Set pointer capture to improve performance
             (e.target as Element).setPointerCapture(e.pointerId);
         }, [localMinVal, localMaxVal, pixelToValue, updateValues]);
     
-        // 处理拖拽移动 - 优化性能
+        // Handle drag move - performance optimized
         const handlePointerMove = React.useCallback((e: PointerEvent) => {
             if (!isDragging) return;
             
@@ -664,10 +664,10 @@ export function CoursesDetailedCard({
             updateValues(isDragging, value);
         }, [isDragging, pixelToValue, updateValues]);
     
-        // 处理拖拽结束
+        // Handle drag end
         const handlePointerUp = React.useCallback(() => {
             if (isDragging) {
-                // 立即触发最终回调
+                // Trigger final callback immediately
                 if (callbackTimeoutRef.current) {
                     clearTimeout(callbackTimeoutRef.current);
                 }
@@ -683,7 +683,7 @@ export function CoursesDetailedCard({
             }
         }, [isDragging, localMinVal, localMaxVal, onRangeChange]);
     
-        // 添加全局事件监听 - 优化事件处理
+        // Add global event listeners - optimized event handling
         React.useEffect(() => {
             if (isDragging) {
                 document.addEventListener('pointermove', handlePointerMove, { passive: true });
@@ -702,7 +702,7 @@ export function CoursesDetailedCard({
             }
         }, [isDragging, handlePointerMove, handlePointerUp]);
 
-        // 缓存计算结果 - 只在值真正变化时重新计算
+        // Cache computed results - recompute only when values truly change
         const displayValues = React.useMemo(() => ({
             minPercent: `${Math.round(localMinVal * 1000) / 100}%`,
             maxPercent: `${Math.round(localMaxVal * 1000) / 100}%`,
@@ -711,7 +711,7 @@ export function CoursesDetailedCard({
             maxDisplay: localMaxVal.toFixed(1)
         }), [localMinVal, localMaxVal]);
 
-        // 静态刻度组件，避免重复渲染
+        // Static ticks component to avoid repeated renders
         const Ticks = React.useMemo(() => (
             <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 z-5 pointer-events-none">
                 <div className="flex justify-between">
@@ -739,7 +739,7 @@ export function CoursesDetailedCard({
                         {/* Base track */}
                         <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-1 rounded bg-muted-foreground/25" />
                         
-                        {/* Selected range - 移除过渡动画减少重绘 */}
+                        {/* Selected range - remove transitions to reduce repaints */}
                         <div
                             className="absolute top-1/2 -translate-y-1/2 h-1 rounded bg-primary z-10 will-change-auto"
                             style={{ 
@@ -748,26 +748,26 @@ export function CoursesDetailedCard({
                             }}
                         />
                         
-                        {/* Ticks - 静态元素 */}
+                        {/* Ticks - static element */}
                         {Ticks}
                         
-                        {/* Min handle - 修复定位和层级 */}
+                        {/* Min handle - fix positioning and z-index */}
                         <div 
                             className="absolute top-1/2 -translate-y-1/2 h-4 w-4 rounded-full bg-primary border-2 border-background shadow-sm z-30 will-change-transform"
                             style={{ 
                                 left: displayValues.minPercent,
-                                marginLeft: '-8px', // 手动居中，避免transform冲突
+                                marginLeft: '-8px', // Manually center to avoid transform conflicts
                                 transform: isDragging === 'min' ? 'scale(1.1)' : 'scale(1)',
                                 transition: isDragging === 'min' ? 'none' : 'transform 0.15s ease'
                             }}
                         />
                         
-                        {/* Max handle - 修复定位和层级 */}
+                        {/* Max handle - fix positioning and z-index */}
                         <div 
                             className="absolute top-1/2 -translate-y-1/2 h-4 w-4 rounded-full bg-primary border-2 border-background shadow-sm z-30 will-change-transform"
                             style={{ 
                                 left: displayValues.maxPercent,
-                                marginLeft: '-8px', // 手动居中，避免transform冲突
+                                marginLeft: '-8px', // Manually center to avoid transform conflicts
                                 transform: isDragging === 'max' ? 'scale(1.1)' : 'scale(1)',
                                 transition: isDragging === 'max' ? 'none' : 'transform 0.15s ease'
                             }}
