@@ -1,3 +1,8 @@
+/* TODO: Do not use !important in css file. */
+/* MARK: CKEditor 自带样式层级较高；在少数情况下仍可能需要提升选择器特异性，或保留极少量的 !important 作为兜底。 */
+/* MARK: CKEditor built-in styles have high specificity; in a few spots we may still need to bump selector specificity or keep a minimal number of !important as a fallback. */
+
+
 /* 富文本编辑器样式 / Rich text editor styles */
 /* 作用范围容器（styles.container）：从 RichTextEditor.tsx 传入，用于限定下方 :global 选择器仅影响该编辑器实例
    Scope wrapper (styles.container): assigned in RichTextEditor.tsx to restrict :global selectors to this editor instance */
