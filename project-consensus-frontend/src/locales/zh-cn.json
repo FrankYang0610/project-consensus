@@ -196,7 +196,7 @@
         "title": "点评",
         "writeReview": "写点评",
         "deletedNotice": "本课程有 {{count}} 位用户曾删除过点评。",
-          "totalReviews": "一共 {{count}} 条点评",
+          "totalReviews": "一共 {{count}} 条 点评",
         "sort": {
           "label": "排序",
           "options": {
