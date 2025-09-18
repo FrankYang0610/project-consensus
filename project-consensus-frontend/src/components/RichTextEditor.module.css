@@ -1,0 +1,118 @@
+/* Rich Text Editor Styles */
+.container :global(.ck-editor__editable) {
+  min-height: 300px !important;
+  resize: vertical !important;
+  overflow: auto !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+}
+
+/* Add 5px gap between toolbar and text box */
+.container :global(.ck-editor__main) {
+  min-height: 300px !important;
+  margin-top: 5px !important;
+}
+
+/* Toolbar rounded corners */
+.container :global(.ck-editor__top) {
+  border-radius: var(--radius) !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Ensure toolbar buttons have proper border radius */
+.container :global(.ck-editor__top .ck-toolbar) {
+  border-radius: var(--radius) !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove all possible toolbar borders and outlines */
+.container :global(.ck-editor__top *) {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.container :global(.ck-editor__top .ck-toolbar__separator) {
+  border: none !important;
+  background: none !important;
+}
+
+.container :global(.ck-editor__top .ck-toolbar__items) {
+  border: none !important;
+}
+
+.container :global(.ck-editor__top .ck-toolbar__group) {
+  border: none !important;
+}
+
+/* Rounded corners for toolbar buttons */
+.container :global(.ck-editor__top .ck-button) {
+  border-radius: calc(var(--radius) * 0.5) !important;
+}
+
+.container :global(.ck-editor__top .ck-button:hover) {
+  border-radius: calc(var(--radius) * 0.5) !important;
+}
+
+.container :global(.ck-editor__top .ck-button.ck-on) {
+  border-radius: calc(var(--radius) * 0.5) !important;
+}
+
+.container :global(.ck-editor__top .ck-button.ck-disabled) {
+  border-radius: calc(var(--radius) * 0.5) !important;
+}
+
+.container :global(.ck-editor__editable:focus) {
+  border-color: var(--ring) !important;
+  box-shadow: 0 0 0 2px var(--ring) !important;
+}
+
+/* Dark mode support for rich text editor */
+.dark .container :global(.ck-editor__editable) {
+  background-color: var(--card) !important;
+  color: var(--card-foreground) !important;
+  border-color: var(--border) !important;
+}
+
+.dark .container :global(.ck-editor__editable:focus) {
+  border-color: var(--ring) !important;
+  box-shadow: 0 0 0 2px var(--ring) !important;
+}
+
+/* Dark mode toolbar rounded corners */
+.dark .container :global(.ck-editor__top) {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.dark .container :global(.ck-editor__top .ck-toolbar) {
+  background-color: var(--card) !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Dark mode - remove all possible toolbar borders */
+.dark .container :global(.ck-editor__top *) {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Dark mode - rounded corners for toolbar buttons */
+.dark .container :global(.ck-editor__top .ck-button) {
+  border-radius: calc(var(--radius) * 0.5) !important;
+}
+
+.dark .container :global(.ck-editor__top .ck-button:hover) {
+  border-radius: calc(var(--radius) * 0.5) !important;
+}
+
+.dark .container :global(.ck-editor__top .ck-button.ck-on) {
+  border-radius: calc(var(--radius) * 0.5) !important;
+}
+
+.dark .container :global(.ck-editor__top .ck-button.ck-disabled) {
+  border-radius: calc(var(--radius) * 0.5) !important;
+}

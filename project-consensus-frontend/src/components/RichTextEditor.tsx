@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
+import styles from './RichTextEditor.module.css';
 import {
   ClassicEditor,
   Essentials,
@@ -101,7 +102,7 @@ export default function RichTextEditor({ value, onChange, placeholder, className
   };
 
   return (
-    <div className={className}>
+    <div className={`${className} ${styles.container}`}>
       <CKEditor
         editor={ClassicEditor}
         config={config}
