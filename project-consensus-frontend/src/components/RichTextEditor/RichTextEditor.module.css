@@ -39,7 +39,6 @@
 /* 用于：包含 .ck-editor__editable 的主容器，与顶部工具栏之间的垂直间距
    Used in: main wrapper around .ck-editor__editable; vertical spacing below top toolbar */
 .container :global(.ck-editor__main) {
-  min-height: 300px !important;
   margin-top: 5px !important;
 }
 
