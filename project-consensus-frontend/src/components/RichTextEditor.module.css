@@ -2,6 +2,19 @@
 /* 作用范围容器（styles.container）：从 RichTextEditor.tsx 传入，用于限定下方 :global 选择器仅影响该编辑器实例
    Scope wrapper (styles.container): assigned in RichTextEditor.tsx to restrict :global selectors to this editor instance */
 
+/* ============================== 索引 / Index ==============================
+   (1) 编辑器框架与可编辑区域 / Editor frame & editable area
+   (2) 工具栏 UI / Toolbar UI
+   (3) 下拉/气泡/列表 UI / Dropdowns, balloons, lists UI
+   (4) 内容排版（文档区）/ Content (document styling)
+   (5) 表单与标签（编辑器 UI）/ Forms and labels (editor UI)
+   (6) 主题变量映射 / Theme variables mapping
+   (7) 插入表格（Table 插件）/ Insert table (Table plugin)
+*/
+
+/* =============================================================
+   (1) 编辑器框架与可编辑区域 / Editor frame & editable area
+   ============================================================= */
 /* 编辑器可编辑区域（输入内容的地方）/ CKEditor editable area (where users type) */
 /* 用于：ClassicEditor 主编辑区域；控制高度、滚动、描边与配色
    Used in: ClassicEditor main editable; controls height, scrolling, border and colors */
@@ -23,6 +36,25 @@
   margin-top: 5px !important;
 }
 
+/* 编辑区聚焦态 / Editable focus state */
+/* 用于：编辑区获得焦点时的高亮描边
+   Used in: highlight ring when the editable receives focus */
+.container :global(.ck-editor__editable:focus) {
+  border-color: var(--ring) !important;
+  box-shadow: 0 0 0 2px var(--ring) !important;
+}
+
+/* 占位符颜色 / Placeholder color */
+/* 用于：编辑区为空时显示的占位符文字
+   Used in: placeholder text shown when the editor is empty */
+.container :global(.ck-editor__editable[data-placeholder]::before),
+.container :global(.ck-placeholder::before) {
+  color: var(--muted-foreground) !important;
+}
+
+/* =============================================================
+   (2) 工具栏 UI / Toolbar UI
+   ============================================================= */
 /* 顶部工具栏圆角 / Toolbar rounded corners */
 /* 用于：ClassicEditor 顶部工具栏的外层容器
    Used in: outer container of the ClassicEditor top toolbar */
@@ -89,6 +121,10 @@
   border-radius: calc(var(--radius) * 0.5) !important;
   background-color: color-mix(in oklch, var(--primary) 8%, var(--card)) !important;
 }
+/* 暗色模式：按钮悬停 / Dark mode: button hover */
+:global(.dark) .container :global(.ck-editor__top .ck-button:hover) {
+  background-color: color-mix(in oklch, var(--primary) 18%, var(--card)) !important;
+}
 
 /* 始终隐藏拆分按钮分割线（hover/focus/open 全部不显示） / Always hide split button divider */
 .container :global(.ck-editor__top .ck-splitbutton > .ck-splitbutton__arrow::after),
@@ -121,22 +157,9 @@
   color: var(--muted-foreground) !important;
 }
 
-/* 编辑区聚焦态 / Editable focus state */
-/* 用于：编辑区获得焦点时的高亮描边
-   Used in: highlight ring when the editable receives focus */
-.container :global(.ck-editor__editable:focus) {
-  border-color: var(--ring) !important;
-  box-shadow: 0 0 0 2px var(--ring) !important;
-}
-
-/* 占位符颜色 / Placeholder color */
-/* 用于：编辑区为空时显示的占位符文字
-   Used in: placeholder text shown when the editor is empty */
-.container :global(.ck-editor__editable[data-placeholder]::before),
-.container :global(.ck-placeholder::before) {
-  color: var(--muted-foreground) !important;
-}
-
+/* =============================================================
+   (3) 下拉/气泡/列表 UI / Dropdowns, balloons, lists UI
+   ============================================================= */
 /* 下拉菜单、气泡、列表（圆角） / Dropdowns, balloons, lists (rounded) */
 /* 用于：所有下拉菜单（如 Heading、Insert table）、气泡面板（如 Link、Image）、以及通用列表容器
    Used in: all dropdowns (e.g., Heading, Insert table), balloon panels (Link, Image), and generic list containers */
@@ -181,6 +204,9 @@
   background-color: color-mix(in oklch, var(--primary) 8%, var(--card)) !important;
 }
 
+/* =============================================================
+   (4) 内容排版（文档区）/ Content (document styling)
+   ============================================================= */
 /* 内容区主题 / Content area theme */
 /* 用于：文档内容显示（非编辑器工具栏 UI）
    Used in: document content rendering (not the editor UI chrome) */
@@ -249,6 +275,9 @@
   border-color: var(--border) !important;
 }
 
+/* =============================================================
+   (5) 表单与标签（编辑器 UI）/ Forms and labels (editor UI)
+   ============================================================= */
 /* 输入框（下拉/气泡） / Inputs in dropdown/balloon (e.g., link, image alt) */
 /* 用于：气泡面板或下拉中的文本输入（如 Link URL、Image Alt 文本）
    Used in: text inputs inside balloons or dropdowns (e.g., Link URL, Image Alt) */
@@ -273,6 +302,9 @@
   color: var(--muted-foreground) !important;
 }
 
+/* =============================================================
+   (6) 主题变量映射（CKEditor -> 设计令牌）/ Theme variables mapping
+   ============================================================= */
 /* 映射 CKEditor 变量到设计令牌 / Map CKEditor CSS variables to design tokens */
 /* 用于：覆盖 CKEditor 主题变量，统一映射到应用的设计系统令牌
    Used in: overriding CKEditor theme variables to match the app design tokens */
@@ -301,11 +333,9 @@
   --ck-color-widget-hover-border: var(--ring);
 }
 
-/* 暗色模式：按钮悬停 / Dark mode: button hover */
-:global(.dark) .container :global(.ck-editor__top .ck-button:hover) {
-  background-color: color-mix(in oklch, var(--primary) 18%, var(--card)) !important;
-}
-
+/* =============================================================
+   (7) 插入表格（Table 插件）/ Insert table (Table plugin)
+   ============================================================= */
 /* 插入表格网格（范围高亮） / Insert table dropdown grid (range highlight) */
 /* 用于：“插入表格”下拉中的选择网格（Table 插件），控制选区高亮与边框色
    Used in: selection grid in the “Insert table” dropdown (Table plugin), controlling highlight and border */
@@ -347,9 +377,7 @@
   border-color: var(--editor-grid-selected-border) !important;
 }
 
-/* 插入表格：暗色模式（变量与配色） / Insert table: dark mode (variables and colors) */
-/* 用于：暗色主题下“插入表格”网格的变量与色彩
-   Used in: variables and colors for the “Insert table” grid in dark theme */
+/* 暗色模式：插入表格（变量与配色） / Dark mode: Insert table (variables & colors) */
 :global(.dark) .container :global(.ck) {
   /* 暗色主题下的局部强调色 / Local accent for dark theme */
   --accent-strong: oklch(0.75 0.16 255);
@@ -361,14 +389,11 @@
   --editor-grid-selected-border: color-mix(in oklch, var(--accent-strong) 80%, var(--card));
 }
 
-/* 插入表格：暗色模式网格单元（灰） / Insert table: grid cell in dark (gray) */
+/* 暗色模式：网格单元与选中范围 / Dark: grid cell and selected range */
 :global(.dark) .container :global(.ck .ck-insert-table-dropdown-grid-box) {
   background-color: color-mix(in oklch, var(--foreground) 6%, var(--card)) !important;
 }
 
-/* 插入表格：暗色模式选中范围（蓝） / Insert table: selected range in dark (blue) */
-/* 用于：暗色主题下已选中的网格范围
-   Used in: selected grid range in dark theme */
 :global(.dark) .container :global(.ck .ck-insert-table-dropdown-grid-box.ck-on) {
   /* Slightly deeper blue for dark mode to maintain contrast */
   background-color: var(--editor-grid-selected-bg) !important;
