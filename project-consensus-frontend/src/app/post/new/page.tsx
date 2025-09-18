@@ -1,6 +1,11 @@
 "use client";
 
 import * as React from "react";
+
+import dynamic from "next/dynamic";
+// Dynamic import for client-only CKEditor component
+const RichTextEditor = dynamic(() => import("@/components/RichTextEditor"), { ssr: false });
+
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +18,11 @@ export default function NewForumPostPage() {
   const router = useRouter();
   const [title, setTitle] = React.useState("");
   const [content, setContent] = React.useState("");
+
+  // Scroll to top when component mounts
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   return (
     <>
@@ -30,12 +40,12 @@ export default function NewForumPostPage() {
                     placeholder={t("post.titlePlaceholder")}
                     className="mb-3 h-11 text-lg md:text-lg font-normal px-4"
                   />
-                  { /* TODO: add rich text editor */ }
-                  <textarea
+                  { /* NOTE: Images are embedded as Base64 for now. TODO: server upload. */ }
+                  <RichTextEditor
                     value={content}
-                    onChange={(e) => setContent(e.target.value)}
+                    onChange={setContent}
                     placeholder={t("post.contentPlaceholder")}
-                    className="w-full min-h-[16rem] px-3 py-2 border rounded-md bg-background text-foreground"
+                    className="prose max-w-none"
                   />
                 </CardContent>
                 <CardFooter className="gap-3">
