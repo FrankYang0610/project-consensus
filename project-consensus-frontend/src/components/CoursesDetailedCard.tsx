@@ -374,7 +374,6 @@ export function CoursesDetailedCard({
                 // Default apply-filter logic - simulate filtered result
                 const mockFilteredCount = Math.floor(rating.reviewsCount * (0.6 + Math.random() * 0.4));
                 setFilteredReviewsCount(mockFilteredCount);
-                console.log('Applied filters:', currentFilterState, 'Filtered count:', mockFilteredCount);
             }
         },
         onFilteredCountUpdate: (filteredCount: number) => {
