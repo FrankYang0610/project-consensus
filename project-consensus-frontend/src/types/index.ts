@@ -13,3 +13,15 @@ export type { ForumPost } from './forum';
 
 // 应用全局状态相关类型 / App global state related types
 export type { AppContextType, LoginResponse, ThemeMode, Language } from './app-types';
+
+// 课程相关类型 / Course-related types
+export type {
+  SemesterKey,
+  VotingState,
+  VotingAction,
+  TeacherInfo,
+  OtherTeacherCourse,
+  FilterState,
+  FilterCallbacks,
+  CoursesDetailedCardProps,
+} from './course';

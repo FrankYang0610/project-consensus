@@ -34,20 +34,14 @@ import {
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
-
-// Types
-type SemesterKey = "spring" | "summer" | "fall";
-
-// Voting state types
-interface VotingState {
-    userVote: 'recommend' | 'notRecommend' | null;
-    recommendCount: number;
-    notRecommendCount: number;
-}
-
-type VotingAction = 
-    | { type: 'TOGGLE_VOTE'; voteType: 'recommend' | 'notRecommend' }
-    | { type: 'RESET_VOTES'; recommendCount: number; notRecommendCount: number };
+import type {
+    SemesterKey,
+    VotingState,
+    VotingAction,
+    FilterState,
+    FilterCallbacks,
+    CoursesDetailedCardProps,
+} from "@/types";
 
 // Voting state reducer
 function votingReducer(state: VotingState, action: VotingAction): VotingState {
@@ -104,87 +98,7 @@ function votingReducer(state: VotingState, action: VotingAction): VotingState {
     }
 }
 
-export interface TeacherInfo {
-    name: string;
-    avatarUrl?: string;
-    homepageUrl?: string;
-}
-
-export interface OtherTeacherCourse {
-    subjectId: string;
-    teacherName: string;
-    teacherAvatarUrl?: string;
-    rating: {
-        score: number;
-        reviewsCount: number;
-    };
-    attributes: {
-        difficulty: "veryEasy" | "easy" | "medium" | "hard" | "veryHard";
-        workload: "light" | "moderate" | "heavy" | "veryHeavy";
-        grading: "lenient" | "balanced" | "strict";
-        gain: "low" | "decent" | "high";
-    };
-}
-
-// Filter-related interfaces
-export interface FilterState {
-    sort: string;
-    selectedTerms: Record<string, boolean>;
-    ratingMin: number;
-    ratingMax: number;
-}
-
-export interface FilterCallbacks {
-    onSortChange: (value: string) => void;
-    onTermsChange: (selected: Record<string, boolean>) => void;
-    onRatingChange: (min: number, max: number) => void;
-    onApplyFilters: () => void;
-    onFilteredCountUpdate?: (filteredCount: number) => void; // New: callback to update filtered review count
-}
-
-export interface CoursesDetailedCardProps {
-    subjectId: string;
-    subjectCode: string;
-    title: string;
-    term: {
-        year: number;
-        semester: SemesterKey;
-    };
-    terms?: Array<{
-        year: number;
-        semester: SemesterKey;
-    }>;
-    rating: {
-        score: number; // 0.0 - 10.0
-        reviewsCount: number;
-        recommendCount?: number;
-        notRecommendCount?: number;
-    };
-    attributes: {
-        difficulty: "veryEasy" | "easy" | "medium" | "hard" | "veryHard";
-        workload: "light" | "moderate" | "heavy" | "veryHeavy";
-        grading: "lenient" | "balanced" | "strict";
-        gain: "low" | "decent" | "high";
-    };
-    teachers: TeacherInfo[];
-    department?: string;
-    lastUpdated?: string | Date;
-    // Course metadata
-    selectionCategory?: string;
-    teachingType?: string;
-    courseCategory?: string;
-    offeringDepartment?: string;
-    level?: string;
-    credits?: number | string;
-    courseHomepageUrl?: string;
-    syllabusUrl?: string;
-    className?: string;
-    // Filter-related props
-    filterState?: FilterState;
-    filterCallbacks?: FilterCallbacks;
-    // Other teachers teaching the same course
-    otherTeacherCourses?: OtherTeacherCourse[];
-}
+// Types moved to '@/types'
 
 // Utility Functions
 function clamp(value: number, min: number, max: number): number {
@@ -284,7 +198,7 @@ function TeacherAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string }
 }
 
 export function CoursesDetailedCard({
-    subjectId,
+    subjectId: _subjectId, // Placeholder to avoid unused warning, will be used later
     subjectCode,
     title,
     term,
@@ -308,6 +222,8 @@ export function CoursesDetailedCard({
     otherTeacherCourses,
 }: CoursesDetailedCardProps) {
     const { t, language } = useI18n();
+    // Placeholder to avoid unused warning, will be used later
+    void _subjectId;
     
     // Interactive voting state using useReducer to avoid race conditions
     const [votingState, dispatchVoting] = React.useReducer(votingReducer, {
