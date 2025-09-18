@@ -61,7 +61,7 @@ function clamp(value: number, min: number, max: number) {
  * Format term string by locale
  */
 function formatTerm(year: number, semester: SemesterKey, t: (key: string, opts?: Record<string, unknown>) => string, language: string) {
-    const semLabel = t(`card.semester.${semester}`);
+    const semLabel = t(`courses.card.semester.${semester}`);
     // e.g. "2025 秋季" (zh) or "2025 Fall" (en)
     const spacer = language.startsWith("zh") ? " " : " ";
     return `${year}${spacer}${semLabel}`;
@@ -159,7 +159,7 @@ export function CoursesPreviewCard({
     const hasMultiple = Array.isArray(terms) && terms.length > 0;
     const displayedTerm = hasMultiple ? getLatestTerm(terms!) : term;
     const termText = formatTerm(displayedTerm.year, displayedTerm.semester, t, language) + (hasMultiple ? "..." : "");
-    const reviewsText = t("card.rating.reviews", { count: rating.reviewsCount });
+    const reviewsText = t("courses.card.rating.reviews", { count: rating.reviewsCount });
 
     const TitleBlock = (
         <CardHeader className="pb-0">
@@ -199,28 +199,28 @@ export function CoursesPreviewCard({
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                     <div className="space-y-3">
                         <AttributeItem
-                            label={t("card.attributes.difficulty")}
-                            value={t(`card.adjectives.${attributes.difficulty}`)}
+                            label={t("courses.card.attributes.difficulty")}
+                            value={t(`courses.card.adjectives.${attributes.difficulty}`)}
                         />
                         <AttributeItem
-                            label={t("card.attributes.workload")}
-                            value={t(`card.adjectives.${attributes.workload}`)}
+                            label={t("courses.card.attributes.workload")}
+                            value={t(`courses.card.adjectives.${attributes.workload}`)}
                         />
                     </div>
                     <div className="space-y-3">
                         <AttributeItem
-                            label={t("card.attributes.grading")}
-                            value={t(`card.adjectives.${attributes.grading}`)}
+                            label={t("courses.card.attributes.grading")}
+                            value={t(`courses.card.adjectives.${attributes.grading}`)}
                         />
                         <AttributeItem
-                            label={t("card.attributes.gain")}
-                            value={t(`card.adjectives.${attributes.gain}`)}
+                            label={t("courses.card.attributes.gain")}
+                            value={t(`courses.card.adjectives.${attributes.gain}`)}
                         />
                     </div>
                     <div className="space-y-3">
                         {teachers && teachers.length > 0 && (
                             <MetaItem
-                                label={t("card.labels.teachers")}
+                                label={t("courses.card.labels.teachers")}
                                 value={teachers.join(", ")}
                                 icon={<BookOpen className="w-3.5 h-3.5" />}
                             />
@@ -242,7 +242,7 @@ export function CoursesPreviewCard({
         <CardFooter className="pt-4 md:pt-5">
             <div className="flex items-center justify-end w-full gap-2 text-xs text-muted-foreground">
                 <CalendarDays className="w-3.5 h-3.5" />
-                {t("card.lastUpdated", { date: formatDateDisplay(lastUpdated, language) })}
+                {t("courses.card.lastUpdated", { date: formatDateDisplay(lastUpdated, language) })}
             </div>
         </CardFooter>
     ) : null;

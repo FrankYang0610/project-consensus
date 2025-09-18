@@ -135,7 +135,7 @@
       },
       "attributes": {
         "difficulty": "课程难度",
-        "workload": "作业多少",
+        "workload": "课业多少",
         "grading": "给分好坏",
         "gain": "收获大小"
       },
