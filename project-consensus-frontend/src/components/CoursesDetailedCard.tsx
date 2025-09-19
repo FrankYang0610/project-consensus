@@ -41,8 +41,44 @@ import type {
     VotingAction,
     FilterState,
     FilterCallbacks,
-    CoursesDetailedCardProps,
+    TeacherInfo,
+    OtherTeacherCourse,
 } from "@/types";
+
+export interface CoursesDetailedCardProps {
+    subjectId: string;
+    subjectCode: string;
+    title: string;
+    term: { year: number; semester: SemesterKey };
+    terms?: Array<{ year: number; semester: SemesterKey }>;
+    rating: {
+        score: number;
+        reviewsCount: number;
+        recommendCount?: number;
+        notRecommendCount?: number;
+    };
+    attributes: {
+        difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard';
+        workload: 'light' | 'moderate' | 'heavy' | 'veryHeavy';
+        grading: 'lenient' | 'balanced' | 'strict';
+        gain: 'low' | 'decent' | 'high';
+    };
+    teachers: TeacherInfo[];
+    department?: string;
+    lastUpdated?: string | Date;
+    selectionCategory?: string;
+    teachingType?: string;
+    courseCategory?: string;
+    offeringDepartment?: string;
+    level?: string;
+    credits?: number | string;
+    courseHomepageUrl?: string;
+    syllabusUrl?: string;
+    className?: string;
+    filterState?: FilterState;
+    filterCallbacks?: FilterCallbacks;
+    otherTeacherCourses?: OtherTeacherCourse[];
+}
 
 // Voting state reducer
 function votingReducer(state: VotingState, action: VotingAction): VotingState {

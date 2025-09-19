@@ -18,9 +18,15 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
 import { clamp, formatTerm, formatDateDisplay, validateRating } from "@/lib/course-utils";
-import type {
-    CourseReviewCardProps,
-} from "@/types";
+import type { CourseReview } from "@/types";
+
+export interface CourseReviewCardProps {
+    review: CourseReview;
+    onLike?: (reviewId: string) => void;
+    onReply?: (reviewId: string) => void;
+    className?: string;
+    showRepliesSection?: boolean;
+}
 
 /**
  * User avatar component with fallback to initials

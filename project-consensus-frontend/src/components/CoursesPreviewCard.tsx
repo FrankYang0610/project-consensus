@@ -14,7 +14,27 @@ import {
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
 import { clamp, formatDateDisplay, formatTerm, sortTerms, validateRating } from "@/lib/course-utils";
-import type { CoursesPreviewCardProps } from "@/types/course";
+import type { SemesterKey } from "@/types";
+
+export interface CoursesPreviewCardProps {
+    subjectId: string;
+    subjectCode: string;
+    title: string;
+    term: { year: number; semester: SemesterKey };
+    terms?: Array<{ year: number; semester: SemesterKey }>;
+    rating: { score: number; reviewsCount: number };
+    attributes: {
+        difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard';
+        workload: 'light' | 'moderate' | 'heavy' | 'veryHeavy';
+        grading: 'lenient' | 'balanced' | 'strict';
+        gain: 'low' | 'decent' | 'high';
+    };
+    teachers?: string[];
+    department?: string;
+    lastUpdated?: string | Date;
+    href?: string;
+    className?: string;
+}
 
 /**
  * Attribute row with label and pill value
