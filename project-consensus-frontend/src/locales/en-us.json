@@ -219,6 +219,13 @@
         },
         "apply": "Apply"
       }
+    },
+    "review": {
+      "overallRating": "Overall Rating",
+      "edited": "edited {{date}}",
+      "reply": "Reply",
+      "replies": "{{count}} replies",
+      "repliesSection": "Replies will appear here"
     }
   },
   "about": {

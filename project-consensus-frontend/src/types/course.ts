@@ -73,6 +73,79 @@ export interface FilterCallbacks {
 }
 
 /**
+ * 课程评价信息 / Course review information
+ */
+export interface CourseReview {
+    id: string; // 评价唯一标识符 / Review unique identifier
+    subjectId: string; // 课程ID / Course ID
+    author: {
+        id: string; // 作者ID / Author ID
+        name: string; // 作者姓名 / Author name  
+        avatarUrl?: string; // 头像URL / Avatar URL
+    };
+    overallRating: number; // 总体评分 0.0 - 10.0 / Overall rating
+    attributes: {
+        difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard';
+        workload: 'light' | 'moderate' | 'heavy' | 'veryHeavy';
+        grading: 'lenient' | 'balanced' | 'strict';
+        gain: 'low' | 'decent' | 'high';
+    };
+    content: string; // 评价正文 / Review content
+    likesCount: number; // 点赞数 / Number of likes
+    createdAt: string | Date; // 发布时间 / Creation time
+    updatedAt?: string | Date; // 编辑时间 / Last updated time
+    isLiked?: boolean; // 当前用户是否点赞 / Whether current user liked
+    term?: {
+        year: number;
+        semester: SemesterKey;
+    }; // 上课学期 / Course term
+    repliesCount?: number; // 回复数量 / Number of replies
+}
+
+/**
+ * 课程评价卡片组件属性 / Props for CourseReviewCard
+ */
+export interface CourseReviewCardProps {
+    review: CourseReview;
+    onLike?: (reviewId: string) => void; // 点赞回调 / Like callback
+    onReply?: (reviewId: string) => void; // 回复回调 / Reply callback
+    className?: string;
+    showRepliesSection?: boolean; // 是否显示回复区域 / Whether to show replies section
+}
+
+/**
+ * 课程预览卡片组件属性 / Props for CoursesPreviewCard
+ */
+export interface CoursesPreviewCardProps {
+    subjectId: string;
+    subjectCode: string;
+    title: string;
+    term: {
+        year: number;
+        semester: SemesterKey;
+    };
+    terms?: Array<{
+        year: number;
+        semester: SemesterKey;
+    }>;
+    rating: {
+        score: number; // 0.0 - 10.0
+        reviewsCount: number;
+    };
+    attributes: {
+        difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard';
+        workload: 'light' | 'moderate' | 'heavy' | 'veryHeavy';
+        grading: 'lenient' | 'balanced' | 'strict';
+        gain: 'low' | 'decent' | 'high';
+    };
+    teachers?: string[];
+    department?: string;
+    lastUpdated?: string | Date;
+    href?: string; // optional override; otherwise computed from subjectId
+    className?: string;
+}
+
+/**
  * 课程详情卡片组件属性 / Props for CoursesDetailedCard
  */
 export interface CoursesDetailedCardProps {

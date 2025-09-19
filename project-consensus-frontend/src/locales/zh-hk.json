@@ -219,6 +219,13 @@
         },
         "apply": "應用"
       }
+    },
+    "review": {
+      "overallRating": "綜合評分",
+      "edited": "編輯於 {{date}}",
+      "reply": "回覆",
+      "replies": "{{count}} 條回覆",
+      "repliesSection": "回覆將顯示在此處"
     }
   },
   "about": {

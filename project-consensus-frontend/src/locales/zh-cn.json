@@ -219,6 +219,13 @@
         },
         "apply": "应用"
       }
+    },
+    "review": {
+      "overallRating": "综合评分",
+      "edited": "编辑于 {{date}}",
+      "reply": "回复",
+      "replies": "{{count}} 条回复",
+      "repliesSection": "回复将显示在此处"
     }
   },
   "about": {

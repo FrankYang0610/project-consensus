@@ -34,6 +34,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
+import { clamp, formatDateDisplay, formatTerm, sortTerms, validateRating } from "@/lib/course-utils";
 import type {
     SemesterKey,
     VotingState,
@@ -100,48 +101,14 @@ function votingReducer(state: VotingState, action: VotingAction): VotingState {
 
 // Types moved to '@/types'
 
-// Utility Functions
-function clamp(value: number, min: number, max: number): number {
-    return Math.min(Math.max(value, min), max);
-}
+// Utility Functions moved to '@/lib/course-utils'
 
 /**
- * Format semester term for display with proper spacing for different languages
- */
-function formatTerm(
-    year: number, 
-    semester: SemesterKey, 
-    t: (key: string, opts?: Record<string, unknown>) => string, 
-    language: string
-): string {
-    const semLabel = t(`courses.card.semester.${semester}`);
-    const spacer = language.startsWith("zh") ? " " : " ";
-    return `${year}${spacer}${semLabel}`;
-}
-
-/**
- * Format date for display with language-specific formatting
- */
-function formatDateDisplay(dateInput: string | Date, language: string): string {
-    const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
-    try {
-        return new Intl.DateTimeFormat(language, { 
-            year: "numeric", 
-            month: "short", 
-            day: "numeric" 
-        }).format(date);
-    } catch {
-        return date.toLocaleDateString();
-    }
-}
-
-/**
- * Star rating component that maps 0-10 score to 0-5 star display
+ * Star rating: maps 0–10 score to 0–5 partially-filled stars
  */
 function StarRating({ score10 }: { score10: number }) {
-    const safeScore = clamp(score10, 0, 10);
-    const score5 = safeScore / 2; // Convert to 5-star scale
-    
+    const safeScore = validateRating(score10);
+    const score5 = safeScore / 2;
     return (
         <div className="flex items-center gap-1" aria-label={`rating-${safeScore}`}>
             {Array.from({ length: 5 }).map((_, index) => {
@@ -311,10 +278,11 @@ export function CoursesDetailedCard({
 
     // Sort terms by year and semester (most recent first)
     const orderedTerms = React.useMemo(() => {
-        const order: Record<SemesterKey, number> = { spring: 1, summer: 2, fall: 3 };
-        const list = (terms && terms.length > 0) ? terms.slice() : [term];
-        return list.sort((a, b) => (b.year - a.year) || (order[b.semester] - order[a.semester]));
+        const source = terms && terms.length > 0 ? terms : [term];
+        return sortTerms(source);
     }, [terms, term]);
+
+    const safeRating = React.useMemo(() => validateRating(rating.score), [rating.score]);
 
     // Teacher data processing
     const primaryTeacher = teachers?.[0];
@@ -742,7 +710,7 @@ export function CoursesDetailedCard({
                         <div className="flex items-center gap-3">
                             <div className="flex items-center gap-2">
                                 <StarRating score10={rating.score} />
-                                <span className="text-2xl font-bold">{rating.score.toFixed(1)}</span>
+                                <span className="text-2xl font-bold">{safeRating.toFixed(1)}</span>
                                 <span className="text-sm text-muted-foreground">/ 10</span>
                             </div>
                             <div className="text-sm text-muted-foreground">
@@ -992,4 +960,3 @@ export function CoursesDetailedCard({
 }
 
 export default CoursesDetailedCard;
-

@@ -23,5 +23,8 @@ export type {
   OtherTeacherCourse,
   FilterState,
   FilterCallbacks,
+  CoursesPreviewCardProps,
   CoursesDetailedCardProps,
+  CourseReview,
+  CourseReviewCardProps,
 } from './course';
