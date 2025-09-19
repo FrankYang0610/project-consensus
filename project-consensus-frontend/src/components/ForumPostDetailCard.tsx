@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { ForumPost } from "@/types";
+import DOMPurify from "isomorphic-dompurify";
 import { useI18n } from "@/hooks/useI18n";
 
 /**
@@ -180,9 +181,14 @@ export function ForumPostDetailCard({
                     </span>
                 </div>
                 
-                <div className="text-muted-foreground text-base leading-relaxed mb-4 whitespace-pre-wrap">
-                    {isTranslated ? t('post.translateUnavailable') : post.content}
-                </div>
+                <div
+                    className="prose prose-zinc dark:prose-invert max-w-none mb-4"
+                    dangerouslySetInnerHTML={{
+                        __html: isTranslated
+                            ? t('post.translateUnavailable')
+                            : DOMPurify.sanitize(post.content, { USE_PROFILES: { html: true } })
+                    }}
+                />
 
                 {post.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mb-4">

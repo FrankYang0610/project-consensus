@@ -88,7 +88,8 @@ export function ForumPostPreviewCard({
         e.preventDefault();
         e.stopPropagation();
         try {
-            const textToCopy = `${post.title}\n\n${post.content}\n\n- ${post.author.name}`;
+            const plainTextContent = stripHtmlTags(post.content);
+            const textToCopy = `${post.title}\n\n${plainTextContent}\n\n- ${post.author.name}`;
             await navigator.clipboard.writeText(textToCopy);
             setIsCopySuccess(true);
             setIsDropdownOpen(false); // Close dropdown after copying
@@ -141,9 +142,24 @@ export function ForumPostPreviewCard({
         }
     };
 
+    const stripHtmlTags = (html: string): string => {
+        // Remove HTML tags and decode HTML entities
+        return html
+            .replace(/<[^>]*>/g, '') // Remove HTML tags
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&amp;/g, '&')
+            .replace(/&quot;/g, '"')
+            .replace(/&#x27;/g, "'")
+            .replace(/&#x2F;/g, '/')
+            .replace(/&nbsp;/g, ' ')
+            .trim();
+    };
+
     const truncateContent = (content: string, maxLength: number = 150) => {
-        if (content.length <= maxLength) return content;
-        return content.slice(0, maxLength) + "...";
+        const plainText = stripHtmlTags(content);
+        if (plainText.length <= maxLength) return plainText;
+        return plainText.slice(0, maxLength) + "...";
     };
 
     return (
