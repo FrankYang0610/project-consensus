@@ -40,12 +40,15 @@ export default function NewForumPostPage() {
                     placeholder={t("post.titlePlaceholder")}
                     className="mb-3 h-11 text-lg md:text-lg font-normal px-4"
                   />
-                  { /* NOTE: Images are embedded as Base64 for now. TODO: server upload. */ }
                   <RichTextEditor
                     value={content}
                     onChange={setContent}
                     placeholder={t("post.contentPlaceholder")}
                     className="prose max-w-none"
+                    // TODO: 配置图片上传接口 / Configure image upload endpoint
+                    // uploadUrl="/api/upload/image" // 图片上传接口地址 / Image upload endpoint
+                    // uploadHeaders={{ "Authorization": "Bearer your-token" }} // 认证头 / Auth headers
+                    // onUploadError={(error) => console.error("Upload failed:", error)} // 上传错误处理 / Upload error handling
                   />
                 </CardContent>
                 <CardFooter className="gap-3">

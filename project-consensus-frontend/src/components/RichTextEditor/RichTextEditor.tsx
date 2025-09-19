@@ -27,7 +27,7 @@ import {
   ImageResize,
   ImageUpload,
   PictureEditing,
-  Base64UploadAdapter
+  SimpleUploadAdapter
 } from 'ckeditor5';
 import type { EditorConfig } from 'ckeditor5';
 
@@ -39,10 +39,21 @@ type RichTextEditorProps = {
   onChange: (html: string) => void;
   placeholder?: string;
   className?: string;
-  // TODO: If switching to server upload later, add `uploadUrl` and SimpleUploadAdapter
+  // 图片上传配置 / Image upload configuration
+  uploadUrl?: string; // 图片上传接口地址 / Image upload endpoint URL
+  uploadHeaders?: Record<string, string>; // 上传请求头（如认证token） / Upload request headers (e.g., auth token)
+  onUploadError?: (error: Error) => void; // 上传错误回调 / Upload error callback
 };
 
-export default function RichTextEditor({ value, onChange, placeholder, className }: RichTextEditorProps) {
+export default function RichTextEditor({ 
+  value, 
+  onChange, 
+  placeholder, 
+  className,
+  uploadUrl,
+  uploadHeaders,
+  onUploadError
+}: RichTextEditorProps) {
   const plugins: NonNullable<EditorConfig['plugins']> = [
     Essentials,
     Paragraph,
@@ -66,7 +77,8 @@ export default function RichTextEditor({ value, onChange, placeholder, className
     ImageResize,
     ImageUpload,
     PictureEditing,
-    Base64UploadAdapter
+    // 使用服务器端上传适配器 / Using server-side upload adapter
+    SimpleUploadAdapter
   ];
 
   const toolbar: string[] = [
@@ -96,10 +108,18 @@ export default function RichTextEditor({ value, onChange, placeholder, className
         'resizeImage'
       ]
     },
-    table: { contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells'] }
-    // NOTE: Using Base64UploadAdapter by default. This inlines images as data URI.
-    // TODO[Optional]: Switch to SimpleUploadAdapter with an `uploadUrl` when backend 
-    // is ready to persist files and return a public URL: { url: 'https://...' }.
+    table: { contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells'] },
+    // 图片上传配置 / Image upload configuration
+    simpleUpload: uploadUrl ? {
+      // TODO: 后端需要实现图片上传接口 / Backend needs to implement image upload endpoint
+      // 接口规范 / API specification:
+      // - 接收 multipart/form-data 格式的图片文件 / Accept multipart/form-data image files
+      // - 返回格式: { url: "https://example.com/image.jpg" } / Return format: { url: "https://example.com/image.jpg" }
+      // - 支持文件类型验证、大小限制、安全扫描 / Support file type validation, size limits, security scanning
+      uploadUrl,
+      headers: uploadHeaders,
+      withCredentials: true, // 发送认证信息 / Send authentication credentials
+    } : undefined
   };
 
   return (
@@ -109,6 +129,17 @@ export default function RichTextEditor({ value, onChange, placeholder, className
         config={config}
         data={value}
         onChange={(_, editor) => onChange(editor.getData())}
+        onError={(error, { willEditorRestart }) => {
+          // 处理编辑器错误 / Handle editor errors
+          console.error('CKEditor error:', error);
+          if (onUploadError && error.name === 'UploadError') {
+            onUploadError(error);
+          }
+          if (willEditorRestart) {
+            // 编辑器将重启，可以在这里添加加载指示器 / Editor will restart, can add loading indicator here
+            console.log('Editor will restart due to error');
+          }
+        }}
       />
     </div>
   );
