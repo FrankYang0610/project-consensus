@@ -1,4 +1,4 @@
-export type SemesterKey = "spring" | "summer" | "fall";
+import type { SemesterKey } from '@/types';
 
 export interface SampleCoursePreview {
     subjectId: string; // unique stable course id

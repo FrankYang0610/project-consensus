@@ -37,22 +37,64 @@ import { useI18n } from "@/hooks/useI18n";
 import { clamp, formatDateDisplay, formatTerm, sortTerms, validateRating } from "@/lib/course-utils";
 import type {
     SemesterKey,
-    VotingState,
-    VotingAction,
-    FilterState,
-    FilterCallbacks,
     TeacherInfo,
     OtherTeacherCourse,
 } from "@/types";
 
+/**
+ * 投票状态 / Voting state
+ */
+export interface VotingState {
+    userVote: 'recommend' | 'notRecommend' | null;
+    recommendCount: number;
+    notRecommendCount: number;
+}
+
+/**
+ * 投票动作 / Voting action
+ */
+export type VotingAction =
+    | { type: 'TOGGLE_VOTE'; voteType: 'recommend' | 'notRecommend' }
+    | { type: 'RESET_VOTES'; recommendCount: number; notRecommendCount: number };
+
+/**
+ * 课程详情卡片过滤器状态 / Filter state for course detail reviews
+ */
+export interface FilterState {
+    sort: string;
+    selectedTerms: Record<string, boolean>;
+    ratingMin: number;
+    ratingMax: number;
+}
+
+/**
+ * 课程详情卡片过滤器回调 / Filter callbacks
+ */
+export interface FilterCallbacks {
+    onSortChange: (value: string) => void;
+    onTermsChange: (selected: Record<string, boolean>) => void;
+    onRatingChange: (min: number, max: number) => void;
+    onApplyFilters: () => void;
+    onFilteredCountUpdate?: (filteredCount: number) => void;
+}
+
+/**
+ * 课程详情卡片组件属性 / Props for CoursesDetailedCard
+ */
 export interface CoursesDetailedCardProps {
     subjectId: string;
     subjectCode: string;
     title: string;
-    term: { year: number; semester: SemesterKey };
-    terms?: Array<{ year: number; semester: SemesterKey }>;
+    term: {
+        year: number;
+        semester: SemesterKey;
+    };
+    terms?: Array<{
+        year: number;
+        semester: SemesterKey;
+    }>;
     rating: {
-        score: number;
+        score: number; // 0.0 - 10.0
         reviewsCount: number;
         recommendCount?: number;
         notRecommendCount?: number;
@@ -66,6 +108,7 @@ export interface CoursesDetailedCardProps {
     teachers: TeacherInfo[];
     department?: string;
     lastUpdated?: string | Date;
+    // Course metadata
     selectionCategory?: string;
     teachingType?: string;
     courseCategory?: string;
@@ -75,8 +118,10 @@ export interface CoursesDetailedCardProps {
     courseHomepageUrl?: string;
     syllabusUrl?: string;
     className?: string;
+    // Filter-related props
     filterState?: FilterState;
     filterCallbacks?: FilterCallbacks;
+    // Other teachers teaching the same course
     otherTeacherCourses?: OtherTeacherCourse[];
 }
 

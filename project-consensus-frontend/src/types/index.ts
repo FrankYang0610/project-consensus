@@ -2,7 +2,9 @@
  * 类型定义统一导出 / Unified type definitions export
  * 
  * 这个文件作为类型定义的统一入口点，重新导出各个模块的类型定义
+ * 只包含前端与后端API交互所需的数据结构
  * This file serves as a unified entry point for type definitions, re-exporting types from various modules
+ * Only includes data structures needed for frontend-backend API interaction
  */
 
 // 用户相关类型 / User-related types
@@ -17,11 +19,8 @@ export type { AppContextType, LoginResponse, ThemeMode, Language } from './app-t
 // 课程相关类型 / Course-related types
 export type {
   SemesterKey,
-  VotingState,
-  VotingAction,
   TeacherInfo,
   OtherTeacherCourse,
-  FilterState,
-  FilterCallbacks,
   CourseReview,
+  Course,
 } from './course';

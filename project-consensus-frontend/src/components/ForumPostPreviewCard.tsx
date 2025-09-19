@@ -33,7 +33,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { ForumPost } from "@/types/forum";
+import { ForumPost } from "@/types";
 import { useI18n } from "@/hooks/useI18n";
 
 /**

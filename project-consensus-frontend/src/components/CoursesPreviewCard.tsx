@@ -14,15 +14,27 @@ import {
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
 import { clamp, formatDateDisplay, formatTerm, sortTerms, validateRating } from "@/lib/course-utils";
-import type { SemesterKey } from "@/types";
+import type { Course, SemesterKey } from "@/types";
 
+/**
+ * 课程预览卡片组件属性 / Props for CoursesPreviewCard
+ */
 export interface CoursesPreviewCardProps {
     subjectId: string;
     subjectCode: string;
     title: string;
-    term: { year: number; semester: SemesterKey };
-    terms?: Array<{ year: number; semester: SemesterKey }>;
-    rating: { score: number; reviewsCount: number };
+    term: {
+        year: number;
+        semester: SemesterKey;
+    };
+    terms?: Array<{
+        year: number;
+        semester: SemesterKey;
+    }>;
+    rating: {
+        score: number; // 0.0 - 10.0
+        reviewsCount: number;
+    };
     attributes: {
         difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard';
         workload: 'light' | 'moderate' | 'heavy' | 'veryHeavy';
@@ -32,7 +44,7 @@ export interface CoursesPreviewCardProps {
     teachers?: string[];
     department?: string;
     lastUpdated?: string | Date;
-    href?: string;
+    href?: string; // optional override; otherwise computed from subjectId
     className?: string;
 }
 

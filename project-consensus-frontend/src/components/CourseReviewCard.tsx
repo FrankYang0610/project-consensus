@@ -18,14 +18,19 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
 import { clamp, formatTerm, formatDateDisplay, validateRating } from "@/lib/course-utils";
-import type { CourseReview } from "@/types";
+import type {
+    CourseReview,
+} from "@/types";
 
+/**
+ * 课程评价卡片组件属性 / Props for CourseReviewCard
+ */
 export interface CourseReviewCardProps {
     review: CourseReview;
-    onLike?: (reviewId: string) => void;
-    onReply?: (reviewId: string) => void;
+    onLike?: (reviewId: string) => void; // 点赞回调 / Like callback
+    onReply?: (reviewId: string) => void; // 回复回调 / Reply callback
     className?: string;
-    showRepliesSection?: boolean;
+    showRepliesSection?: boolean; // 是否显示回复区域 / Whether to show replies section
 }
 
 /**

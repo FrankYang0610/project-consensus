@@ -2,7 +2,7 @@
 
 import '@/lib/i18n';
 import { useTranslation } from 'react-i18next';
-import { Language } from '@/types/app-types';
+import { Language } from '@/types';
 import { normalizeLanguage, defaultLanguage } from '@/lib/locale';
 
 /**

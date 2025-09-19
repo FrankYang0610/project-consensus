@@ -21,7 +21,7 @@ import { Label } from '@/components/ui/label';
 import { User, Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useApp } from '@/contexts/AppContext';
-import { LoginResponse } from '@/types/app-types';
+import { LoginResponse } from '@/types';
 import { useI18n } from '@/hooks/useI18n';
 
 /**
