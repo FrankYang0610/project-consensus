@@ -1,4 +1,4 @@
-import { ForumPost } from "@/types/forum";
+import { ForumPost } from "@/types";
 
 // Sample data - Computer Science course discussions
 export const samplePosts: ForumPost[] = [

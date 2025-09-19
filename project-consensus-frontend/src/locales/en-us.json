@@ -172,6 +172,10 @@
       "teachers": "Instructors",
       "teacherHomepage": "Teacher Homepage",
       "otherTeachersOfCourse": "Other teachers of \"{{title}}\"",
+      "otherTeachers": {
+        "gain": "Gain",
+        "grading": "Grading"
+      },
       "aiSummary": "AI Summary",
       "aiSummaryComingSoon": "AI-generated course summary based on student reviews coming soon.",
       "courseInfo": "Course Information",
@@ -187,7 +191,41 @@
       "viewDetailedSyllabus": "View detailed course syllabus",
       "courseLinks": "Course Links",
       "noLinkAvailable": "No link available",
-      "courseNotFound": "Course not found."
+      "courseNotFound": "Course not found.",
+      "reviews": {
+        "title": "Reviews",
+        "writeReview": "Write a review",
+        "deletedNotice": "For this course, {{count}} users have deleted their reviews.",
+          "totalReviews": "Total {{count}} reviews",
+        "sort": {
+          "label": "Sort",
+          "options": {
+            "mostLiked": "Most liked",
+            "newest": "Newest",
+            "oldest": "Oldest",
+            "ratingHighToLow": "Rating: high → low",
+            "ratingLowToHigh": "Rating: low → high"
+          }
+        },
+        "term": {
+          "label": "Term",
+          "select": "Select terms",
+          "selected": "{{count}} selected"
+        },
+        "rating": {
+          "label": "Rating",
+          "min": "Min rating",
+          "max": "Max rating"
+        },
+        "apply": "Apply"
+      }
+    },
+    "review": {
+      "overallRating": "Overall Rating",
+      "edited": "edited {{date}}",
+      "reply": "Reply",
+      "replies": "{{count}} replies",
+      "repliesSection": "Replies will appear here"
     }
   },
   "about": {

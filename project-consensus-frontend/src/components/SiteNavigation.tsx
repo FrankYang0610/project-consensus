@@ -27,7 +27,7 @@ import { LoginComponent } from './LoginComponent';
 import { SearchBar } from './SearchBar';
 import { UserMenu } from './UserMenu';
 import { useApp } from '@/contexts/AppContext';
-import { Language } from '@/types/app-types';
+import { Language } from '@/types';
 import { ThemeToggle } from './ThemeToggle';
 
 

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { User, AppContextType, ThemeMode } from '@/types/app-types';
+import { User, AppContextType, ThemeMode } from '@/types';
 import { useTranslation } from 'react-i18next';
 import { normalizeLanguage, defaultLanguage } from '@/lib/locale';
 

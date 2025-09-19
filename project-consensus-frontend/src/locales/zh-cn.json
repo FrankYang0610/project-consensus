@@ -172,6 +172,10 @@
       "teachers": "授课教师",
       "teacherHomepage": "教师主页",
       "otherTeachersOfCourse": "其他老师的【{{title}}】课程",
+      "otherTeachers": {
+        "gain": "收获大小",
+        "grading": "给分好坏"
+      },
       "aiSummary": "AI 智能总结",
       "aiSummaryComingSoon": "根据学生评价自动生成的课程概要即将推出，敬请期待。",
       "courseInfo": "课程信息",
@@ -187,7 +191,41 @@
       "viewDetailedSyllabus": "查看详细课程大纲",
       "courseLinks": "课程链接",
       "noLinkAvailable": "暂无链接",
-      "courseNotFound": "课程未找到。"
+      "courseNotFound": "课程未找到。",
+      "reviews": {
+        "title": "点评",
+        "writeReview": "写点评",
+        "deletedNotice": "本课程有 {{count}} 位用户曾删除过点评。",
+          "totalReviews": "一共 {{count}} 条 点评",
+        "sort": {
+          "label": "排序",
+          "options": {
+            "mostLiked": "点赞最多",
+            "newest": "最新点评",
+            "oldest": "最旧点评",
+            "ratingHighToLow": "评分高-低",
+            "ratingLowToHigh": "评分低-高"
+          }
+        },
+        "term": {
+          "label": "学期",
+          "select": "选择学期",
+          "selected": "已选 {{count}} 项"
+        },
+        "rating": {
+          "label": "评分",
+          "min": "最低分",
+          "max": "最高分"
+        },
+        "apply": "应用"
+      }
+    },
+    "review": {
+      "overallRating": "综合评分",
+      "edited": "编辑于 {{date}}",
+      "reply": "回复",
+      "replies": "{{count}} 条回复",
+      "repliesSection": "回复将显示在此处"
     }
   },
   "about": {

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Star, Users, BookOpen, CalendarDays, Building2 } from "lucide-react";
+import { Users, BookOpen, CalendarDays, Building2, Star } from "lucide-react";
 
 import {
     Card,
@@ -13,14 +13,11 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
+import { clamp, formatDateDisplay, formatTerm, sortTerms, validateRating } from "@/lib/course-utils";
+import type { Course, SemesterKey } from "@/types";
 
 /**
- * Supported semester keys (no winter term)
- */
-type SemesterKey = "spring" | "summer" | "fall";
-
-/**
- * Courses preview card props
+ * 课程预览卡片组件属性 / Props for CoursesPreviewCard
  */
 export interface CoursesPreviewCardProps {
     subjectId: string;
@@ -33,85 +30,22 @@ export interface CoursesPreviewCardProps {
     terms?: Array<{
         year: number;
         semester: SemesterKey;
-    }>; // optional: multiple offerings, latest shown with ellipsis
+    }>;
     rating: {
         score: number; // 0.0 - 10.0
         reviewsCount: number;
     };
     attributes: {
-        difficulty: "veryEasy" | "easy" | "medium" | "hard" | "veryHard";
-        workload: "light" | "moderate" | "heavy" | "veryHeavy";
-        grading: "lenient" | "balanced" | "strict";
-        gain: "low" | "decent" | "high";
+        difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard';
+        workload: 'light' | 'moderate' | 'heavy' | 'veryHeavy';
+        grading: 'lenient' | 'balanced' | 'strict';
+        gain: 'low' | 'decent' | 'high';
     };
     teachers?: string[];
     department?: string;
     lastUpdated?: string | Date;
     href?: string; // optional override; otherwise computed from subjectId
     className?: string;
-}
-
-/**
- * Clamp a numeric value between [min, max]
- */
-function clamp(value: number, min: number, max: number) {
-    return Math.min(Math.max(value, min), max);
-}
-
-/**
- * Format term string by locale
- */
-function formatTerm(year: number, semester: SemesterKey, t: (key: string, opts?: Record<string, unknown>) => string, language: string) {
-    const semLabel = t(`courses.card.semester.${semester}`);
-    // e.g. "2025 秋季" (zh) or "2025 Fall" (en)
-    const spacer = language.startsWith("zh") ? " " : " ";
-    return `${year}${spacer}${semLabel}`;
-}
-
-/**
- * Pick the latest term by (year desc, semester order desc)
- */
-function getLatestTerm(terms: Array<{ year: number; semester: SemesterKey }>): { year: number; semester: SemesterKey } {
-    const order: Record<SemesterKey, number> = { spring: 1, summer: 2, fall: 3 };
-    return terms.slice().sort((a, b) => {
-        if (a.year !== b.year) return b.year - a.year;
-        return order[b.semester] - order[a.semester];
-    })[0];
-}
-
-/**
- * Format a date for display by language, with safe fallback
- */
-function formatDateDisplay(dateInput: string | Date, language: string) {
-    const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
-    try {
-        return new Intl.DateTimeFormat(language, { year: "numeric", month: "short", day: "numeric" }).format(date);
-    } catch {
-        return date.toLocaleDateString();
-    }
-}
-
-/**
- * 0..10 score mapped to a 0..5 partial-filled star rating
- */
-function StarRating({ score10 }: { score10: number }) {
-    const safeScore = clamp(score10, 0, 10);
-    const score5 = safeScore / 2; // map 0..10 -> 0..5
-    return (
-        <div className="flex items-center gap-1" aria-label={`rating-${safeScore}`}> 
-            {Array.from({ length: 5 }).map((_, index) => {
-                const fillPercent = clamp((score5 - index) * 100, 0, 100);
-                return (
-                    <div key={index} className="relative w-4 h-4" aria-hidden>
-                        <Star className="absolute inset-0 w-4 h-4 text-muted-foreground/60" />
-                        <div className="absolute inset-0 overflow-hidden" style={{ width: `${fillPercent}%` }}>
-                            <Star className="w-4 h-4 text-yellow-500" />
-                        </div>
-                    </div>
-                );
-            })}
-        </div>
-    );
 }
 
 /**
@@ -158,10 +92,31 @@ export function CoursesPreviewCard({
     className,
 }: CoursesPreviewCardProps) {
     const { t, language } = useI18n();
-    const hasMultiple = Array.isArray(terms) && terms.length > 0;
-    const displayedTerm = hasMultiple ? getLatestTerm(terms!) : term;
-    const termText = formatTerm(displayedTerm.year, displayedTerm.semester, t, language) + (hasMultiple ? "..." : "");
-    const reviewsText = t("courses.card.rating.reviews", { count: rating.reviewsCount });
+    const hasMultipleTerms = React.useMemo(() => Array.isArray(terms) && terms.length > 0, [terms]);
+
+    const displayedTerm = React.useMemo(() => {
+        if (hasMultipleTerms && terms) {
+            const [latest] = sortTerms(terms);
+            return latest ?? term;
+        }
+        return term;
+    }, [hasMultipleTerms, terms, term]);
+
+    const termText = React.useMemo(() => {
+        const base = formatTerm(displayedTerm.year, displayedTerm.semester, t, language);
+        return hasMultipleTerms ? `${base}...` : base;
+    }, [displayedTerm, hasMultipleTerms, t, language]);
+
+    const safeRating = React.useMemo(() => validateRating(rating.score), [rating.score]);
+    const reviewsText = React.useMemo(
+        () => t("courses.card.rating.reviews", { count: rating.reviewsCount }),
+        [rating.reviewsCount, t]
+    );
+
+    const formattedLastUpdated = React.useMemo(() => {
+        if (!lastUpdated) return null;
+        return formatDateDisplay(lastUpdated, language);
+    }, [lastUpdated, language]);
 
     const TitleBlock = (
         <CardHeader className="pb-0">
@@ -181,6 +136,29 @@ export function CoursesPreviewCard({
         </CardHeader>
     );
 
+    // Local star rating for preview card
+    const StarRating = React.useMemo(() => {
+        return function StarRatingInner({ score10 }: { score10: number }) {
+            const safeScore = validateRating(score10);
+            const score5 = safeScore / 2;
+            return (
+                <div className="flex items-center gap-1" aria-label={`rating-${safeScore}`}>
+                    {Array.from({ length: 5 }).map((_, index) => {
+                        const fillPercent = clamp((score5 - index) * 100, 0, 100);
+                        return (
+                            <div key={index} className="relative w-4 h-4" aria-hidden>
+                                <Star className="absolute inset-0 w-4 h-4 text-muted-foreground/60" />
+                                <div className="absolute inset-0 overflow-hidden" style={{ width: `${fillPercent}%` }}>
+                                    <Star className="w-4 h-4 text-yellow-500" />
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            );
+        };
+    }, []);
+
     const ContentBlock = (
         <CardContent className="pt-0">
             <div className="flex flex-col gap-3">
@@ -188,7 +166,7 @@ export function CoursesPreviewCard({
                 <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
                         <StarRating score10={rating.score} />
-                        <span className="text-sm font-medium">{rating.score.toFixed(1)}</span>
+                        <span className="text-sm font-medium">{safeRating.toFixed(1)}</span>
                         <span className="text-xs text-muted-foreground">/ 10</span>
                     </div>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -240,11 +218,11 @@ export function CoursesPreviewCard({
         </CardContent>
     );
 
-    const FooterBlock = lastUpdated ? (
+    const FooterBlock = formattedLastUpdated ? (
         <CardFooter className="pt-4 md:pt-5">
             <div className="flex items-center justify-end w-full gap-2 text-xs text-muted-foreground">
                 <CalendarDays className="w-3.5 h-3.5" />
-                {t("courses.card.lastUpdated", { date: formatDateDisplay(lastUpdated, language) })}
+                {t("courses.card.lastUpdated", { date: formattedLastUpdated })}
             </div>
         </CardFooter>
     ) : null;
@@ -269,5 +247,3 @@ export function CoursesPreviewCard({
 }
 
 export default CoursesPreviewCard;
-
-

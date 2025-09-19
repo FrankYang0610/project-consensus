@@ -3,8 +3,11 @@
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
 import { SiteNavigation } from "@/components/SiteNavigation";
-import CoursesDetailedCard, { TeacherInfo } from "@/components/CoursesDetailedCard";
-import { sampleCourses } from "@/data/sampleCourses";
+import CoursesDetailedCard from "@/components/CoursesDetailedCard";
+import CourseReviewCard from "@/components/CourseReviewCard";
+import { TeacherInfo } from "@/types";
+import { sampleCourses, getOtherTeacherCourses } from "@/data/sampleCourses";
+import { getReviewsBySubjectId } from "@/data/sampleReviews";
 import { useI18n } from "@/hooks/useI18n";
 
 export default function CourseDetailPage({ params }: { params: Promise<{ subjectId: string }> }) {
@@ -29,6 +32,18 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
             ? [ { name: teacherQuery }, ...teachers.filter(t => t.name !== teacherQuery) ]
             : teachers;
     }, [teachers, teacherQuery]);
+
+    // Get other teachers teaching the same course
+    const otherTeacherCourses = React.useMemo(() => {
+        if (!course) return [];
+        return getOtherTeacherCourses(course.subjectId, course.subjectCode);
+    }, [course]);
+
+    // Get reviews for this course
+    const courseReviews = React.useMemo(() => {
+        if (!course) return [];
+        return getReviewsBySubjectId(course.subjectId);
+    }, [course]);
 
 
     if (!course) {
@@ -75,13 +90,36 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
                                     credits={"—"}
                                     courseHomepageUrl={undefined}
                                     syllabusUrl={undefined}
+                                    otherTeacherCourses={otherTeacherCourses}
                                 />
                         </div>
+                        
+                        {/* Course Reviews Section */}
+                        {courseReviews.length > 0 && (
+                            <div className="px-4">
+                                <div className="flex flex-col gap-1">
+                                    {courseReviews.map((review) => (
+                                        <CourseReviewCard
+                                            key={review.id}
+                                            review={review}
+                                            onLike={(reviewId) => {
+                                                console.log("Like review:", reviewId);
+                                                // TODO: Implement like functionality
+                                            }}
+                                            onReply={(reviewId) => {
+                                                console.log("Reply to review:", reviewId);
+                                                // TODO: Implement reply functionality
+                                            }}
+                                            showRepliesSection={true}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </main>
         </div>
     );
 }
-
 
