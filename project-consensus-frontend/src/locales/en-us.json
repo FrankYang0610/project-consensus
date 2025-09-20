@@ -58,7 +58,7 @@
   },
   "post": {
     "translate": "Translate",
-    "original": "Original",
+    "showOriginal": "Original",
     "share": "Share",
     "copied": "Copied!",
     "copyText": "Copy text",
@@ -88,7 +88,7 @@
     "hideReplies": "Hide replies",
     "loadMore": "Load more ({{remaining}} remaining)",
     "translate": "Translate",
-    "showOriginal": "Show Original",
+    "showOriginal": "Original",
     "avatar": "Avatar",
     "replyTo": "replied to"
   },

@@ -58,7 +58,7 @@
   },
   "post": {
     "translate": "翻譯",
-    "original": "原文",
+    "showOriginal": "原文",
     "share": "分享",
     "copied": "已複製！",
     "copyText": "複製文本",
@@ -88,7 +88,7 @@
     "hideReplies": "收起回覆",
     "loadMore": "載入更多 ({{remaining}} 條)",
     "translate": "翻譯",
-    "showOriginal": "顯示原文",
+    "showOriginal": "原文",
     "avatar": "頭像",
     "replyTo": "回覆了"
   },

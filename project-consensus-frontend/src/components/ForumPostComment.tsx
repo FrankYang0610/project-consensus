@@ -172,7 +172,7 @@ export function ForumPostComment({
                 )}
                 >
                   <Languages className="w-3 h-3 mr-1" />
-                {isTranslated ? t('post.original') : t('post.translate')}
+                {isTranslated ? t('comment.showOriginal') : t('comment.translate')}
                 </Button>
 
                 {canDelete && (

@@ -233,7 +233,7 @@ export function ForumPostDetailCard({
             >
               <Languages className="w-4 h-4" />
               <span className="text-sm">
-                {isTranslated ? t('post.original') : t('post.translate')}
+                {isTranslated ? t('post.showOriginal') : t('post.translate')}
               </span>
             </Button>
           </div>
