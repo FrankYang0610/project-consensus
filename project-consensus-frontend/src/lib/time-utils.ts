@@ -14,10 +14,10 @@
  * 
  * @param dateString - ISO date string / ISO 日期字符串
  * @param t - Translation function from useI18n hook / 来自 useI18n hook 的翻译函数
- * @param locale - Optional locale string, defaults to 'en-US' / 可选的区域设置字符串，默认为 'en-US'
+ * @param language - Optional language string, defaults to 'en-US' / 可选的语言字符串，默认为 'en-US'
  * @returns Formatted time string / 格式化的时间字符串
  */
-export function formatRelativeTime(dateString: string, t: (key: string) => string, locale: string = 'en-US'): string {
+export function formatRelativeTime(dateString: string, t: (key: string) => string, language: string = 'en-US'): string {
   // Validate input date string
   if (!dateString || typeof dateString !== 'string') {
     return t('post.invalidDate') || 'Invalid date'; // Fallback for invalid input
@@ -41,7 +41,7 @@ export function formatRelativeTime(dateString: string, t: (key: string) => strin
     // 7 days / 7天
     return `${Math.floor(diffInHours / 24)} ${t('post.daysAgo')}`; // "X days ago" / "X天前"
   } else {
-    return date.toLocaleDateString(locale, {
+    return date.toLocaleDateString(language, {
       year: "numeric",
       month: "short",
       day: "numeric",
