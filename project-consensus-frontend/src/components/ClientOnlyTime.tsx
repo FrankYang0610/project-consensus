@@ -62,7 +62,7 @@ export function ClientOnlyTime({ dateString, className }: ClientOnlyTimeProps) {
     return (
       <div className={cn("flex items-center text-xs text-muted-foreground", className)}>
         <Calendar className="w-3 h-3 mr-1" />
-        <span className="animate-pulse bg-muted-foreground/20 rounded w-16 h-3"></span>
+        <span className="animate-pulse bg-muted-foreground/20 rounded min-w-[6ch] h-3"></span>
       </div>
     );
   }
