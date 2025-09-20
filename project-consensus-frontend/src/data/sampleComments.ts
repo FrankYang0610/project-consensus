@@ -279,11 +279,11 @@ export function separateComments(comments: ForumPostComment[]): {
     }
   });
 
-  // 按创建时间排序
-  mainComments.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-  subComments.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  // 按创建时间排序 - 创建新数组而不是修改原数组
+  const sortedMainComments = [...mainComments].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  const sortedSubComments = [...subComments].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
-  return { mainComments, subComments };
+  return { mainComments: sortedMainComments, subComments: sortedSubComments };
 }
 
 /**
@@ -310,23 +310,35 @@ export function getSeparatedCommentsByPostId(postId: string): {
  * 切换评论点赞状态 / Toggle comment like status
  */
 export function toggleCommentLike(commentId: string): ForumPostComment | null {
-  const comment = sampleComments.find(c => c.id === commentId);
-  if (comment) {
-    comment.isLiked = !comment.isLiked;
-    comment.likes += comment.isLiked ? 1 : -1;
-    return comment;
-  }
-  return null;
+  const commentIndex = sampleComments.findIndex(c => c.id === commentId);
+  if (commentIndex === -1) return null;
+  
+  const comment = sampleComments[commentIndex];
+  const updatedComment = {
+    ...comment,
+    isLiked: !comment.isLiked,
+    likes: comment.likes + (comment.isLiked ? -1 : 1)
+  };
+  
+  // Update the array immutably
+  sampleComments[commentIndex] = updatedComment;
+  return updatedComment;
 }
 
 /**
  * 删除评论 / Delete comment
  */
 export function deleteComment(commentId: string): boolean {
-  const comment = sampleComments.find(c => c.id === commentId);
-  if (comment) {
-    comment.isDeleted = true;
-    return true;
-  }
-  return false;
+  const commentIndex = sampleComments.findIndex(c => c.id === commentId);
+  if (commentIndex === -1) return false;
+  
+  const comment = sampleComments[commentIndex];
+  const updatedComment = {
+    ...comment,
+    isDeleted: true
+  };
+  
+  // Update the array immutably
+  sampleComments[commentIndex] = updatedComment;
+  return true;
 }

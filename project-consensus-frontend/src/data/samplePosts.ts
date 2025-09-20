@@ -182,18 +182,26 @@ LIMIT 10;</code></pre>
 ];
 
 /**
- * Toggle like state for a post and mutate the in-memory samplePosts data.
+ * Toggle like state for a post and update the in-memory samplePosts data immutably.
  * Returns the updated post if found; otherwise undefined.
  */
 export function toggleLikeById(postId: string): ForumPost | undefined {
   const index = samplePosts.findIndex(p => p.id === postId);
   if (index === -1) return undefined;
+  
   const post = samplePosts[index];
   const currentlyLiked = !!post.isLiked;
   const nextLiked = !currentlyLiked;
   const nextLikes = Math.max(0, post.likes + (nextLiked ? 1 : -1));
-  // Mutate in place to reflect global change
-  post.isLiked = nextLiked;
-  post.likes = nextLikes;
-  return post;
+  
+  // Create updated post object immutably
+  const updatedPost = {
+    ...post,
+    isLiked: nextLiked,
+    likes: nextLikes
+  };
+  
+  // Update the array immutably
+  samplePosts[index] = updatedPost;
+  return updatedPost;
 }
