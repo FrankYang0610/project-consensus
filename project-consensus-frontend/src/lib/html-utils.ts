@@ -12,7 +12,7 @@ export function sanitizeHtml(html: string): string {
             'p', 'h1', 'h2', 'h3', 'ul', 'ol', 'li',
             'strong', 'em', 'code', 'pre', 'blockquote'
         ],
-        ALLOWED_ATTR: ['class']
+        ALLOWED_ATTR: []
     });
 }
 
