@@ -18,8 +18,7 @@ export const sampleComments: ForumPostComment[] = [
     createdAt: '2024-01-15T10:30:00Z',
     likes: 12,
     isLiked: false,
-    postId: 'a7f3b2c1',
-    isMainComment: true
+    postId: 'a7f3b2c1'
   },
   {
     id: 'comment-2',
@@ -32,8 +31,7 @@ export const sampleComments: ForumPostComment[] = [
     createdAt: '2024-01-15T16:45:00Z',
     likes: 7,
     isLiked: false,
-    postId: 'a7f3b2c1',
-    isMainComment: true
+    postId: 'a7f3b2c1'
   },
   {
     id: 'comment-3',
@@ -46,8 +44,7 @@ export const sampleComments: ForumPostComment[] = [
     createdAt: '2024-01-16T09:20:00Z',
     likes: 15,
     isLiked: true,
-    postId: 'a7f3b2c1',
-    isMainComment: true
+    postId: 'a7f3b2c1'
   },
   {
     id: 'comment-4',
@@ -60,8 +57,7 @@ export const sampleComments: ForumPostComment[] = [
     createdAt: '2024-01-16T14:30:00Z',
     likes: 9,
     isLiked: false,
-    postId: 'a7f3b2c1',
-    isMainComment: true
+    postId: 'a7f3b2c1'
   },
   // 子评论
   {
@@ -77,7 +73,6 @@ export const sampleComments: ForumPostComment[] = [
     isLiked: true,
     parentId: 'comment-1',
     postId: 'a7f3b2c1',
-    isMainComment: false,
     replyToUser: {
       id: 'user-2',
       name: 'Alex Johnson',
@@ -97,7 +92,6 @@ export const sampleComments: ForumPostComment[] = [
     isLiked: false,
     parentId: 'comment-1',
     postId: 'a7f3b2c1',
-    isMainComment: false,
     replyToUser: {
       id: 'user-2',
       name: 'Alex Johnson',
@@ -117,7 +111,6 @@ export const sampleComments: ForumPostComment[] = [
     isLiked: false,
     parentId: 'comment-1-2',
     postId: 'a7f3b2c1',
-    isMainComment: false,
     replyToUser: {
       id: 'user-4',
       name: 'James Wong',
@@ -137,7 +130,6 @@ export const sampleComments: ForumPostComment[] = [
     isLiked: false,
     parentId: 'comment-3',
     postId: 'a7f3b2c1',
-    isMainComment: false,
     replyToUser: {
       id: 'user-6',
       name: 'Sarah Wilson',
@@ -158,7 +150,6 @@ export const sampleComments: ForumPostComment[] = [
     isLiked: false,
     parentId: 'comment-1',
     postId: 'a7f3b2c1',
-    isMainComment: false,
     replyToUser: {
       id: 'user-2',
       name: 'Alex Johnson',
@@ -178,7 +169,6 @@ export const sampleComments: ForumPostComment[] = [
     isLiked: true,
     parentId: 'comment-1',
     postId: 'a7f3b2c1',
-    isMainComment: false,
     replyToUser: {
       id: 'user-2',
       name: 'Alex Johnson',
@@ -198,7 +188,6 @@ export const sampleComments: ForumPostComment[] = [
     isLiked: false,
     parentId: 'comment-1',
     postId: 'a7f3b2c1',
-    isMainComment: false,
     replyToUser: {
       id: 'user-2',
       name: 'Alex Johnson',
@@ -218,7 +207,6 @@ export const sampleComments: ForumPostComment[] = [
     isLiked: false,
     parentId: 'comment-1',
     postId: 'a7f3b2c1',
-    isMainComment: false,
     replyToUser: {
       id: 'user-2',
       name: 'Alex Johnson',
@@ -238,7 +226,6 @@ export const sampleComments: ForumPostComment[] = [
     isLiked: false,
     parentId: 'comment-1',
     postId: 'a7f3b2c1',
-    isMainComment: false,
     replyToUser: {
       id: 'user-2',
       name: 'Alex Johnson',
@@ -258,7 +245,6 @@ export const sampleComments: ForumPostComment[] = [
     isLiked: true,
     parentId: 'comment-1',
     postId: 'a7f3b2c1',
-    isMainComment: false,
     replyToUser: {
       id: 'user-2',
       name: 'Alex Johnson',
@@ -286,7 +272,7 @@ export function separateComments(comments: ForumPostComment[]): {
   const subComments: ForumPostComment[] = [];
 
   comments.forEach(comment => {
-    if (comment.isMainComment) {
+    if (!comment.parentId) {
       mainComments.push(comment);
     } else {
       subComments.push(comment);
@@ -305,7 +291,7 @@ export function separateComments(comments: ForumPostComment[]): {
  */
 export function getSubCommentsByMainCommentId(mainCommentId: string, allComments: ForumPostComment[]): ForumPostComment[] {
   return allComments.filter(comment =>
-    !comment.isMainComment && comment.parentId === mainCommentId
+    comment.parentId === mainCommentId
   );
 }
 
