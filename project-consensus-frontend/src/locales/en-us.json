@@ -58,7 +58,7 @@
   },
   "post": {
     "translate": "Translate",
-    "original": "Original",
+    "showOriginal": "Original",
     "share": "Share",
     "copied": "Copied!",
     "copyText": "Copy text",
@@ -73,6 +73,24 @@
     "contentPlaceholder": "Enter post content",
     "create": "Post",
     "cancel": "Cancel"
+  },
+  "comment": {
+    "title": "Comments ({{count}})",
+    "addComment": "Add Comment",
+    "noComments": "No comments yet, be the first to comment!",
+    "showAll": "View all {{count}} comments",
+    "hideAll": "Hide comments",
+    "reply": "Reply",
+    "delete": "Delete",
+    "deleting": "Deleting...",
+    "deleted": "This comment has been deleted",
+    "showReplies": "Show {{count}} replies",
+    "hideReplies": "Hide replies",
+    "loadMore": "Load more ({{remaining}} remaining)",
+    "translate": "Translate",
+    "showOriginal": "Original",
+    "avatar": "Avatar",
+    "replyTo": "replied to"
   },
   "common": {
     "note": "Note",

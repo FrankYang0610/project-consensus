@@ -8,6 +8,7 @@ import "ckeditor5/ckeditor5.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Watermark from "@/components/Watermark";
 import { AppProvider } from "@/contexts/AppContext";
+import { cn } from "@/lib/utils";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,7 +43,7 @@ export default function RootLayout({
        * this expected difference, per Next's recommendation.
        */}
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={cn(geistSans.variable, geistMono.variable, "antialiased")}
       >
         <ThemeProvider>
           <AppProvider>

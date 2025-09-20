@@ -149,4 +149,17 @@ body,
   .prose :not(pre)>code {
     @apply bg-muted text-foreground/90 px-1 py-0 rounded border border-border text-[0.9em];
   }
+
+  /* styles inside prose */
+  .prose ul {
+    @apply list-disc my-2 pl-5;
+  }
+
+  .prose ol {
+    @apply list-decimal my-2 pl-5;
+  }
+
+  .prose li {
+    @apply my-1 leading-6;
+  }
 }

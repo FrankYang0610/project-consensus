@@ -9,7 +9,7 @@ import { decode } from "he";
 export function sanitizeHtml(html: string): string {
   return DOMPurify.sanitize(html, {
     ALLOWED_TAGS: [
-      'p', 'h1', 'h2', 'h3', 'ul', 'ol', 'li',
+      'p', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'br',
       'strong', 'em', 'code', 'pre', 'blockquote'
     ],
     ALLOWED_ATTR: []

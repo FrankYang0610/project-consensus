@@ -58,7 +58,7 @@
   },
   "post": {
     "translate": "翻译",
-    "original": "原文",
+    "showOriginal": "原文",
     "share": "分享",
     "copied": "已复制！",
     "copyText": "复制文本",
@@ -73,6 +73,24 @@
     "contentPlaceholder": "输入正文内容",
     "create": "发帖",
     "cancel": "放弃"
+  },
+  "comment": {
+    "title": "评论 ({{count}})",
+    "addComment": "发表评论",
+    "noComments": "还没有评论，来发表第一条评论吧！",
+    "showAll": "查看全部 {{count}} 条评论",
+    "hideAll": "收起评论",
+    "reply": "回复",
+    "delete": "删除",
+    "deleting": "删除中...",
+    "deleted": "此评论已被删除",
+    "showReplies": "展开 {{count}} 条回复",
+    "hideReplies": "收起回复",
+    "loadMore": "加载更多 ({{remaining}} 条)",
+    "translate": "翻译",
+    "showOriginal": "原文",
+    "avatar": "头像",
+    "replyTo": "回复了"
   },
   "common": {
     "note": "注意",

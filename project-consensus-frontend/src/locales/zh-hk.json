@@ -58,7 +58,7 @@
   },
   "post": {
     "translate": "翻譯",
-    "original": "原文",
+    "showOriginal": "原文",
     "share": "分享",
     "copied": "已複製！",
     "copyText": "複製文本",
@@ -73,6 +73,24 @@
     "contentPlaceholder": "輸入正文內容",
     "create": "發帖",
     "cancel": "放棄"
+  },
+  "comment": {
+    "title": "評論 ({{count}})",
+    "addComment": "發表評論",
+    "noComments": "還沒有評論，來發表第一條評論吧！",
+    "showAll": "查看全部 {{count}} 條評論",
+    "hideAll": "收起評論",
+    "reply": "回覆",
+    "delete": "刪除",
+    "deleting": "刪除中...",
+    "deleted": "此評論已被刪除",
+    "showReplies": "展開 {{count}} 條回覆",
+    "hideReplies": "收起回覆",
+    "loadMore": "載入更多 ({{remaining}} 條)",
+    "translate": "翻譯",
+    "showOriginal": "原文",
+    "avatar": "頭像",
+    "replyTo": "回覆了"
   },
   "common": {
     "note": "注意",
