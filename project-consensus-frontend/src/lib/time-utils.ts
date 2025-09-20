@@ -14,10 +14,10 @@
  * 
  * @param dateString - ISO date string / ISO 日期字符串
  * @param t - Translation function from useI18n hook / 来自 useI18n hook 的翻译函数
- * @param language - Optional language string, defaults to 'en-US' / 可选的语言字符串，默认为 'en-US'
+ * @param language - Current language string from useI18n hook / 来自 useI18n hook 的当前语言字符串
  * @returns Formatted time string / 格式化的时间字符串
  */
-export function formatRelativeTime(dateString: string, t: (key: string) => string, language: string = 'en-US'): string {
+export function formatRelativeTime(dateString: string, t: (key: string) => string, language: string): string {
   // Validate input date string
   if (!dateString || typeof dateString !== 'string') {
     return t('post.invalidDate') || 'Invalid date'; // Fallback for invalid input
