@@ -34,6 +34,7 @@ import { cn } from "@/lib/utils";
 import { ForumPost } from "@/types";
 import { useI18n } from "@/hooks/useI18n";
 import { sanitizeHtml } from "@/lib/html-utils";
+import { formatRelativeTime } from "@/lib/time-utils";
 
 /**
  * 论坛帖子详情卡片组件属性 / Forum post detail card component props
@@ -113,28 +114,6 @@ export function ForumPostDetailCard({
     onAuthorClick?.(post.author.id);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInHours = Math.floor(
-      (now.getTime() - date.getTime()) / (1000 * 60 * 60)
-    );
-
-    if (diffInHours < 1) {
-      return t('post.justNow');
-    } else if (diffInHours < 24) {
-      return `${diffInHours} ${t('post.hoursAgo')}`;
-    } else if (diffInHours < 168) {
-      return `${Math.floor(diffInHours / 24)} ${t('post.daysAgo')}`;
-    } else {
-      return date.toLocaleDateString("zh-CN", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    }
-  };
-
   return (
     <Card className={cn("w-full", className)}>
       <CardHeader className="pb-0">
@@ -164,7 +143,7 @@ export function ForumPostDetailCard({
               </button>
               <div className="flex items-center text-xs text-muted-foreground">
                 <Calendar className="w-3 h-3 mr-1" />
-                {formatDate(post.createdAt)}
+                {formatRelativeTime(post.createdAt, t)}
               </div>
             </div>
           </div>

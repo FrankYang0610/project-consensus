@@ -26,6 +26,7 @@
 import * as React from "react";
 import { Calendar } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
+import { formatRelativeTime } from "@/lib/time-utils";
 
 /**
  * ClientOnlyTime component props / ClientOnlyTime 组件属性
@@ -54,34 +55,6 @@ export function ClientOnlyTime({ dateString, className }: ClientOnlyTimeProps) {
     setIsClient(true);
   }, []);
 
-  /**
-   * Format date string to relative time display / 将日期字符串格式化为相对时间显示
-   * @param dateString - ISO date string / ISO 日期字符串
-   * @returns Formatted time string / 格式化的时间字符串
-   */
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInHours = Math.floor(
-      (now.getTime() - date.getTime()) / (1000 * 60 * 60)
-    );
-
-    if (diffInHours < 1) {
-      return t('post.justNow'); // "Just now" / "刚刚"
-    } else if (diffInHours < 24) {
-      return `${diffInHours} ${t('post.hoursAgo')}`; // "X hours ago" / "X小时前"
-    } else if (diffInHours < 168) {
-      // 7 days / 7天
-      return `${Math.floor(diffInHours / 24)} ${t('post.daysAgo')}`; // "X days ago" / "X天前"
-    } else {
-      return date.toLocaleDateString("zh-CN", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    }
-  };
-
   // Show placeholder during server-side rendering to prevent hydration mismatch
   // 服务端渲染时显示占位符，避免 hydration 不匹配
   if (!isClient) {
@@ -97,7 +70,7 @@ export function ClientOnlyTime({ dateString, className }: ClientOnlyTimeProps) {
   return (
     <div className={`flex items-center text-xs text-muted-foreground ${className}`}>
       <Calendar className="w-3 h-3 mr-1" />
-      {formatDate(dateString)}
+      {formatRelativeTime(dateString, t)}
     </div>
   );
 }

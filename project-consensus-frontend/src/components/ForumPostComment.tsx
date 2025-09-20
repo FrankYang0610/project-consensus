@@ -8,6 +8,7 @@ import { Heart, Reply, MoreHorizontal, Trash2, Languages } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
 import { sanitizeHtml } from "@/lib/html-utils";
+import { formatTime } from "@/lib/time-utils";
 
 interface ForumPostCommentProps {
   comment: ForumPostComment;
@@ -30,16 +31,6 @@ export function ForumPostComment({
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [isTranslated, setIsTranslated] = React.useState(false);
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-
-    if (diffInHours < 1) return t('post.justNow');
-    if (diffInHours < 24) return `${diffInHours} ${t('post.hoursAgo')}`;
-    if (diffInHours < 168) return `${Math.floor(diffInHours / 24)} ${t('post.daysAgo')}`;
-    return date.toLocaleDateString('zh-CN');
-  };
 
   const handleLike = () => {
     if (onLike) {
@@ -121,7 +112,7 @@ export function ForumPostComment({
                   </span>
                 )}
                 <span className="text-xs text-muted-foreground">
-                  {formatTime(comment.createdAt)}
+                  {formatTime(comment.createdAt, t)}
                 </span>
               </div>
 
