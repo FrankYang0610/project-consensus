@@ -30,6 +30,7 @@ import {
   Base64UploadAdapter
 } from 'ckeditor5';
 import type { EditorConfig } from 'ckeditor5';
+import { cn } from '@/lib/utils';
 
 // CKEditor 5 styles (required for proper UI rendering)
 // NOTE: Global CSS must be imported in a root layout. See `src/app/layout.tsx`.
@@ -103,7 +104,7 @@ export default function RichTextEditor({ value, onChange, placeholder, className
   };
 
   return (
-    <div className={`${className} ${styles.container}`}>
+    <div className={cn(className, styles.container)}>
       <CKEditor
         editor={ClassicEditor}
         config={config}

@@ -27,6 +27,7 @@ import * as React from "react";
 import { Calendar } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { formatRelativeTime } from "@/lib/time-utils";
+import { cn } from "@/lib/utils";
 
 /**
  * ClientOnlyTime component props / ClientOnlyTime 组件属性
@@ -59,7 +60,7 @@ export function ClientOnlyTime({ dateString, className }: ClientOnlyTimeProps) {
   // 服务端渲染时显示占位符，避免 hydration 不匹配
   if (!isClient) {
     return (
-      <div className={`flex items-center text-xs text-muted-foreground ${className}`}>
+      <div className={cn("flex items-center text-xs text-muted-foreground", className)}>
         <Calendar className="w-3 h-3 mr-1" />
         <span className="animate-pulse bg-muted-foreground/20 rounded w-16 h-3"></span>
       </div>
@@ -68,7 +69,7 @@ export function ClientOnlyTime({ dateString, className }: ClientOnlyTimeProps) {
 
   // Render actual time on client side / 客户端渲染实际时间
   return (
-    <div className={`flex items-center text-xs text-muted-foreground ${className}`}>
+    <div className={cn("flex items-center text-xs text-muted-foreground", className)}>
       <Calendar className="w-3 h-3 mr-1" />
       {formatRelativeTime(dateString, t)}
     </div>

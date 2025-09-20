@@ -23,6 +23,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useApp } from '@/contexts/AppContext';
 import { LoginResponse } from '@/types';
 import { useI18n } from '@/hooks/useI18n';
+import { cn } from '@/lib/utils';
 
 /**
  * 登录组件属性 / Login component props
@@ -168,7 +169,7 @@ export function LoginComponent({ className }: LoginComponentProps) {
         <Button
           variant="outline"
           size="default"
-          className={`items-center gap-2 ${className}`}
+          className={cn("items-center gap-2", className)}
         >
           <User size={16} />
           <span>{t('auth.login')}</span>
