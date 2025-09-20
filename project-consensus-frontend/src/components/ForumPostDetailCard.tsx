@@ -33,6 +33,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ForumPost } from "@/types";
 import { useI18n } from "@/hooks/useI18n";
+import { sanitizeHtml } from "@/lib/html-utils";
 
 /**
  * 论坛帖子详情卡片组件属性 / Forum post detail card component props
@@ -180,9 +181,14 @@ export function ForumPostDetailCard({
                     </span>
                 </div>
                 
-                <div className="text-muted-foreground text-base leading-relaxed mb-4 whitespace-pre-wrap">
-                    {isTranslated ? t('post.translateUnavailable') : post.content}
-                </div>
+                <div
+                    className="prose prose-zinc dark:prose-invert max-w-none mb-4"
+                    dangerouslySetInnerHTML={{
+                        __html: isTranslated
+                            ? t('post.translateUnavailable')
+                            : sanitizeHtml(post.content)
+                    }}
+                />
 
                 {post.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mb-4">

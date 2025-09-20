@@ -129,3 +129,20 @@ html, body, [data-theme] {
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  /* Style rich-text code blocks */
+  .prose pre {
+    @apply bg-muted border border-border rounded-md px-4 py-2 my-3 overflow-x-auto text-sm leading-6;
+  }
+
+  /* Avoid double background inside pre > code */
+  .prose pre code {
+    @apply bg-transparent p-0 text-inherit;
+  }
+
+  /* Inline code chips */
+  .prose :not(pre) > code {
+    @apply bg-muted text-foreground/90 px-1 py-0 rounded border border-border text-[0.9em];
+  }
+}

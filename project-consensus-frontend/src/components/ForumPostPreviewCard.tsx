@@ -35,6 +35,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ForumPost } from "@/types";
 import { useI18n } from "@/hooks/useI18n";
+import { stripHtmlTags, truncateHtmlContent } from "@/lib/html-utils";
 
 /**
  * 论坛帖子预览卡片组件属性 / Forum post preview card component props
@@ -88,7 +89,8 @@ export function ForumPostPreviewCard({
         e.preventDefault();
         e.stopPropagation();
         try {
-            const textToCopy = `${post.title}\n\n${post.content}\n\n- ${post.author.name}`;
+            const plainTextContent = stripHtmlTags(post.content);
+            const textToCopy = `${post.title}\n\n${plainTextContent}\n\n- ${post.author.name}`;
             await navigator.clipboard.writeText(textToCopy);
             setIsCopySuccess(true);
             setIsDropdownOpen(false); // Close dropdown after copying
@@ -141,10 +143,6 @@ export function ForumPostPreviewCard({
         }
     };
 
-    const truncateContent = (content: string, maxLength: number = 150) => {
-        if (content.length <= maxLength) return content;
-        return content.slice(0, maxLength) + "...";
-    };
 
     return (
         <Card
@@ -198,7 +196,7 @@ export function ForumPostPreviewCard({
                         </span>
                     </div>
                     <p className="text-muted-foreground text-sm leading-relaxed mb-1 flex-1">
-                        {isTranslated ? t('post.translateUnavailable') : truncateContent(post.content)}
+                        {isTranslated ? t('post.translateUnavailable') : truncateHtmlContent(post.content)}
                     </p>
 
                     {post.tags.length > 0 && (
