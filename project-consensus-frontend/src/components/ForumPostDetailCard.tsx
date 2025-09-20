@@ -182,7 +182,7 @@ export function ForumPostDetailCard({
         </div>
 
         <div
-          className="prose prose-zinc dark:prose-invert max-w-none mb-4"
+          className="prose prose-zinc dark:prose-invert max-w-none mb-3 text-[0.95rem] leading-6"
           dangerouslySetInnerHTML={{
             __html: isTranslated
               ? t('post.translateUnavailable')

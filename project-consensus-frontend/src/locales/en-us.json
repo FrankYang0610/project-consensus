@@ -74,6 +74,24 @@
     "create": "Post",
     "cancel": "Cancel"
   },
+  "comment": {
+    "title": "Comments ({{count}})",
+    "addComment": "Add Comment",
+    "noComments": "No comments yet, be the first to comment!",
+    "showAll": "View all {{count}} comments",
+    "hideAll": "Hide comments",
+    "reply": "Reply",
+    "delete": "Delete",
+    "deleting": "Deleting...",
+    "deleted": "This comment has been deleted",
+    "showReplies": "Show {{count}} replies",
+    "hideReplies": "Hide replies",
+    "loadMore": "Load more ({{remaining}} remaining)",
+    "translate": "Translate",
+    "showOriginal": "Show Original",
+    "avatar": "Avatar",
+    "replyTo": "replied to"
+  },
   "common": {
     "note": "Note",
     "developmentNotice": "This site is under active development. UI and features may change frequently."
