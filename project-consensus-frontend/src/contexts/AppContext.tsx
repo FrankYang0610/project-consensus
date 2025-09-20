@@ -2,18 +2,17 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { User, AppContextType, ThemeMode } from '@/types';
-import { useTranslation } from 'react-i18next';
 import { normalizeLanguage, defaultLanguage } from '@/lib/locale';
+import i18n from '@/lib/i18n';
 
 // Create Context
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 // App Provider 组件 / App Provider component
 export function AppProvider({ children }: { children: ReactNode }) {
-  // i18n 实例，用于在客户端挂载后根据偏好切换语言
-  // i18n instance to switch language after client mount based on preference
-  const { i18n } = useTranslation();
-
+  // 所有 hooks 必须在组件顶层以固定顺序调用
+  // All hooks must be called at the top level in a fixed order
+  
   // 用户认证状态 / User authentication state
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -95,6 +94,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // - 同步设置 <html lang="...">，避免可访问性问题
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    
+    // 确保 i18n 已初始化
+    // Ensure i18n is initialized
+    // 
+    // 为什么需要这个检查：
+    // 1. i18n 库需要时间加载和初始化资源文件（翻译文本、语言包等）
+    // 2. 在 i18n 未完全初始化时调用 changeLanguage() 可能导致：
+    //    - 翻译文本显示为 key 而不是实际翻译内容
+    //    - 语言切换失败或出现错误
+    //    - 应用状态不一致（UI 显示语言与 i18n 内部状态不匹配）
+    // 3. 这个检查确保只有在 i18n 完全准备好后才执行语言检测和切换逻辑
+    // 
+    // Why this check is needed:
+    // 1. i18n library needs time to load and initialize resource files (translation texts, language packs, etc.)
+    // 2. Calling changeLanguage() before i18n is fully initialized may cause:
+    //    - Translation texts showing as keys instead of actual translated content
+    //    - Language switching failure or errors
+    //    - Inconsistent app state (UI language doesn't match i18n internal state)
+    // 3. This check ensures language detection and switching logic only runs when i18n is fully ready
+    if (!i18n.isInitialized) return;
+    
     try {
       const stored = localStorage.getItem('language');
       const hasLanguagesArray = Array.isArray(window.navigator.languages) && window.navigator.languages.length > 0;
@@ -118,7 +138,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         document.documentElement.lang = target;
       }
     } catch { /* ignore */ }
-  }, [i18n]);
+  }, []);
 
   const login = (userData: User, token: string) => {
     // 保存用户信息和令牌到 localStorage / Save user information and token to localStorage
