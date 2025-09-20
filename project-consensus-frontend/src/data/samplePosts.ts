@@ -2,10 +2,10 @@ import { ForumPost } from "@/types";
 
 // Sample data - Computer Science course discussions
 export const samplePosts: ForumPost[] = [
-    {
-        id: "a7f3b2c1",
-        title: "Java編程：接口同抽象類嘅分別",
-        content: `
+  {
+    id: "a7f3b2c1",
+    title: "Java編程：接口同抽象類嘅分別",
+    content: `
             <h2>點樣揀：<em>接口</em> vs <strong>抽象類</strong>？</h2>
             <p>老師上堂講咗兩者嘅分別，但我都係唔係好明幾時用邊個。我理解嘅係：</p>
             <ul>
@@ -20,38 +20,38 @@ export const samplePosts: ForumPost[] = [
             </ol>
             <p>有冇人可以舉個具體嘅例子幫我理解？</p>
         `,
-        author: {
-            id: "usr_9k2m8x",
-            name: "Sarah",
-            avatar: undefined  // No avatar, will display default avatar
-        },
-        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-        tags: ["Java", "面向對象", "編程基礎"],
-        likes: 8,
-        comments: 3,
-        isLiked: true,
-        language: "繁体中文（粵語）"
+    author: {
+      id: "usr_9k2m8x",
+      name: "Sarah",
+      avatar: undefined  // No avatar, will display default avatar
     },
-    {
-        id: "e5d8a9f4",
-        title: "设计理论：如何理解色彩搭配的原理？",
-        content: "大家好！我在学习色彩理论时对互补色、类似色和三角色搭配有点困惑。谁能帮我解释一下这些色彩搭配方式的区别？特别是如何在实际设计中应用这些原理。",
-        author: {
-            id: "usr_3n7q1w",
-            name: "Catalina",
-            avatar: undefined  // No avatar, will display default avatar
-        },
-        createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), // 5 hours ago
-        tags: ["设计理论", "色彩搭配", "视觉设计"],
-        likes: 12,
-        comments: 5,
-        isLiked: false,
-        language: "简体中文（普通话）"
+    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+    tags: ["Java", "面向對象", "編程基礎"],
+    likes: 8,
+    comments: 3,
+    isLiked: true,
+    language: "繁体中文（粵語）"
+  },
+  {
+    id: "e5d8a9f4",
+    title: "设计理论：如何理解色彩搭配的原理？",
+    content: "大家好！我在学习色彩理论时对互补色、类似色和三角色搭配有点困惑。谁能帮我解释一下这些色彩搭配方式的区别？特别是如何在实际设计中应用这些原理。",
+    author: {
+      id: "usr_3n7q1w",
+      name: "Catalina",
+      avatar: undefined  // No avatar, will display default avatar
     },
-    {
-        id: "b6c4e2a8",
-        title: "Database: SQL Query Optimization Tips",
-        content: `
+    createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), // 5 hours ago
+    tags: ["设计理论", "色彩搭配", "视觉设计"],
+    likes: 12,
+    comments: 5,
+    isLiked: false,
+    language: "简体中文（普通话）"
+  },
+  {
+    id: "b6c4e2a8",
+    title: "Database: SQL Query Optimization Tips",
+    content: `
             <h2>Database queries running super slow - help!</h2>
             <p>My database course project queries are taking forever. I've tried a few things but nothing seems to work. Here's what I'm dealing with:</p>
             <h3>My current query</h3>
@@ -72,22 +72,22 @@ LIMIT 10;</code></pre>
             </ol>
             <p>Really need help before the deadline! 🙏</p>
         `,
-        author: {
-            id: "usr_5m9k2x",
-            name: "Mike",
-            avatar: undefined  // No avatar, will display default avatar
-        },
-        createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-        tags: ["Database", "SQL", "Performance"],
-        likes: 25,
-        comments: 12,
-        isLiked: false,
-        language: "English (Hong Kong)"
+    author: {
+      id: "usr_5m9k2x",
+      name: "Mike",
+      avatar: undefined  // No avatar, will display default avatar
     },
-    {
-        id: "f1a8d3c7",
-        title: "會計學：財務報表分析嘅重點",
-        content: `
+    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+    tags: ["Database", "SQL", "Performance"],
+    likes: 25,
+    comments: 12,
+    isLiked: false,
+    language: "English (Hong Kong)"
+  },
+  {
+    id: "f1a8d3c7",
+    title: "會計學：財務報表分析嘅重點",
+    content: `
             <h2>財務報表分析 - 現金流量表睇唔明</h2>
             <p>我哋會計課要分析公司嘅財務報表，但係我對現金流量表完全冇頭緒。老師講咗幾個比率：</p>
             <ul>
@@ -103,22 +103,22 @@ LIMIT 10;</code></pre>
             </ol>
             <p>真係好需要幫助，下個禮拜就要交功課了！</p>
         `,
-        author: {
-            id: "usr_2j8n4p",
-            name: "Emma",
-            avatar: undefined  // No avatar, will display default avatar
-        },
-        createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(), // 3 hours ago
-        tags: ["會計學", "財務報表", "財務分析"],
-        likes: 15,
-        comments: 7,
-        isLiked: true,
-        language: "繁体中文（粵語）"
+    author: {
+      id: "usr_2j8n4p",
+      name: "Emma",
+      avatar: undefined  // No avatar, will display default avatar
     },
-    {
-        id: "c9e6b1f5",
-        title: "中國文學：唐詩宋詞嘅意境分析",
-        content: `
+    createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(), // 3 hours ago
+    tags: ["會計學", "財務報表", "財務分析"],
+    likes: 15,
+    comments: 7,
+    isLiked: true,
+    language: "繁体中文（粵語）"
+  },
+  {
+    id: "c9e6b1f5",
+    title: "中國文學：唐詩宋詞嘅意境分析",
+    content: `
             <h2>唐詩宋詞嘅「意境」點樣分析？</h2>
             <p>我哋文學課要分析詩詞嘅意境，但係我對「意境」呢個概念完全唔明。老師話要從<strong>情、景、意</strong>三方面睇：</p>
             <ol>
@@ -135,22 +135,22 @@ LIMIT 10;</code></pre>
             <blockquote>「無邊落木蕭蕭下，不盡長江滾滾來。」</blockquote>
             <p>呢句詩點樣體現意境？有冇同學可以幫我分析下？</p>
         `,
-        author: {
-            id: "usr_7q3w9k",
-            name: "David",
-            avatar: undefined
-        },
-        createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), // 6 hours ago
-        tags: ["中國文學", "唐詩宋詞", "意境分析"],
-        likes: 9,
-        comments: 4,
-        isLiked: false,
-        language: "繁体中文（粵語）"
+    author: {
+      id: "usr_7q3w9k",
+      name: "David",
+      avatar: undefined
     },
-    {
-        id: "d4a7f2e9",
-        title: "Civil Engineering: Structural Analysis for Bridge Design",
-        content: `
+    createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), // 6 hours ago
+    tags: ["中國文學", "唐詩宋詞", "意境分析"],
+    likes: 9,
+    comments: 4,
+    isLiked: false,
+    language: "繁体中文（粵語）"
+  },
+  {
+    id: "d4a7f2e9",
+    title: "Civil Engineering: Structural Analysis for Bridge Design",
+    content: `
             <h2>Bridge design - moment calculations confusing me</h2>
             <p>I'm working on my bridge design project and I'm really struggling with the structural analysis calculations. I need to calculate the moment distribution for a simply supported beam, but I'm not sure if I'm doing it right.</p>
             <p>I found this formula:</p>
@@ -167,18 +167,18 @@ LIMIT 10;</code></pre>
             </ol>
             <p>Really need help before the project deadline! Any civil engineering students here?</p>
         `,
-        author: {
-            id: "usr_1n5m8x",
-            name: "Sophie",
-            avatar: undefined  // No avatar, will display default avatar
-        },
-        createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), // 12 hours ago
-        tags: ["Civil Engineering", "Structural Analysis", "Bridge Design"],
-        likes: 18,
-        comments: 8,
-        isLiked: true,
-        language: "English (Hong Kong)"
-    }
+    author: {
+      id: "usr_1n5m8x",
+      name: "Sophie",
+      avatar: undefined  // No avatar, will display default avatar
+    },
+    createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), // 12 hours ago
+    tags: ["Civil Engineering", "Structural Analysis", "Bridge Design"],
+    likes: 18,
+    comments: 8,
+    isLiked: true,
+    language: "English (Hong Kong)"
+  }
 ];
 
 /**
@@ -186,14 +186,14 @@ LIMIT 10;</code></pre>
  * Returns the updated post if found; otherwise undefined.
  */
 export function toggleLikeById(postId: string): ForumPost | undefined {
-    const index = samplePosts.findIndex(p => p.id === postId);
-    if (index === -1) return undefined;
-    const post = samplePosts[index];
-    const currentlyLiked = !!post.isLiked;
-    const nextLiked = !currentlyLiked;
-    const nextLikes = Math.max(0, post.likes + (nextLiked ? 1 : -1));
-    // Mutate in place to reflect global change
-    post.isLiked = nextLiked;
-    post.likes = nextLikes;
-    return post;
+  const index = samplePosts.findIndex(p => p.id === postId);
+  if (index === -1) return undefined;
+  const post = samplePosts[index];
+  const currentlyLiked = !!post.isLiked;
+  const nextLiked = !currentlyLiked;
+  const nextLikes = Math.max(0, post.likes + (nextLiked ? 1 : -1));
+  // Mutate in place to reflect global change
+  post.isLiked = nextLiked;
+  post.likes = nextLikes;
+  return post;
 }

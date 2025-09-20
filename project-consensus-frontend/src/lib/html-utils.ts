@@ -7,13 +7,13 @@ import { decode } from "he";
  * @returns Sanitized HTML string
  */
 export function sanitizeHtml(html: string): string {
-    return DOMPurify.sanitize(html, {
-        ALLOWED_TAGS: [
-            'p', 'h1', 'h2', 'h3', 'ul', 'ol', 'li',
-            'strong', 'em', 'code', 'pre', 'blockquote'
-        ],
-        ALLOWED_ATTR: []
-    });
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: [
+      'p', 'h1', 'h2', 'h3', 'ul', 'ol', 'li',
+      'strong', 'em', 'code', 'pre', 'blockquote'
+    ],
+    ALLOWED_ATTR: []
+  });
 }
 
 /**
@@ -22,11 +22,11 @@ export function sanitizeHtml(html: string): string {
  * @returns Plain text string with HTML tags removed and entities decoded
  */
 export function stripHtmlTags(html: string): string {
-    // First, decode all HTML entities using the 'he' library
-    const decoded = decode(html);
+  // First, decode all HTML entities using the 'he' library
+  const decoded = decode(html);
 
-    // Remove HTML tags
-    return decoded.replace(/<[^>]*>/g, '').trim();
+  // Remove HTML tags
+  return decoded.replace(/<[^>]*>/g, '').trim();
 }
 
 /**
@@ -36,7 +36,7 @@ export function stripHtmlTags(html: string): string {
  * @returns Truncated plain text string
  */
 export function truncateHtmlContent(html: string, maxLength: number = 150): string {
-    const plainText = stripHtmlTags(html);
-    if (plainText.length <= maxLength) return plainText;
-    return plainText.slice(0, maxLength) + "...";
+  const plainText = stripHtmlTags(html);
+  if (plainText.length <= maxLength) return plainText;
+  return plainText.slice(0, maxLength) + "...";
 }

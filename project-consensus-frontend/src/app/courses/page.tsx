@@ -10,51 +10,51 @@ import { CoursesPreviewCard } from "@/components/CoursesPreviewCard";
 import { sampleCourses } from "@/data/sampleCourses";
 
 export default function CoursesPage() {
-    const { t } = useI18n();
+  const { t } = useI18n();
 
-    return (
-        <>
-            <SiteNavigation />
-            <div className="min-h-screen bg-background">
-                <main className="w-full py-8">
-                    <div className="w-full p-6">
-                        <div className="max-w-7xl mx-auto mb-1">
-                            <Alert>
-                                <AlertTitle>{t('common.note')}</AlertTitle>
-                                <AlertDescription>
-                                    {t('common.developmentNotice')}
-                                </AlertDescription>
-                            </Alert>
-                        </div>
-                        <div className="max-w-7xl mx-auto grid grid-cols-1 gap-6 pt-4">
-                            <CoursesBackgroundCard>
-                                <div className="space-y-4">
-                                    <CoursesFilterBar onApply={() => { /* TODO: wire filters to list */ }} />
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        {sampleCourses.map(course => (
-                                            <CoursesPreviewCard
-                                                key={course.subjectId}
-                                                subjectId={course.subjectId}
-                                                subjectCode={course.subjectCode}
-                                                title={course.title}
-                                                term={course.term}
-                                                terms={course.terms}
-                                                rating={course.rating}
-                                                attributes={course.attributes}
-                                                teachers={course.teachers}
-                                                department={course.department}
-                                                lastUpdated={course.lastUpdated}
-                                            />
-                                        ))}
-                                    </div>
-                                </div>
-                            </CoursesBackgroundCard>
-                        </div>
-                    </div>
-                </main>
+  return (
+    <>
+      <SiteNavigation />
+      <div className="min-h-screen bg-background">
+        <main className="w-full py-8">
+          <div className="w-full p-6">
+            <div className="max-w-7xl mx-auto mb-1">
+              <Alert>
+                <AlertTitle>{t('common.note')}</AlertTitle>
+                <AlertDescription>
+                  {t('common.developmentNotice')}
+                </AlertDescription>
+              </Alert>
             </div>
-        </>
-    );
+            <div className="max-w-7xl mx-auto grid grid-cols-1 gap-6 pt-4">
+              <CoursesBackgroundCard>
+                <div className="space-y-4">
+                  <CoursesFilterBar onApply={() => { /* TODO: wire filters to list */ }} />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {sampleCourses.map(course => (
+                      <CoursesPreviewCard
+                        key={course.subjectId}
+                        subjectId={course.subjectId}
+                        subjectCode={course.subjectCode}
+                        title={course.title}
+                        term={course.term}
+                        terms={course.terms}
+                        rating={course.rating}
+                        attributes={course.attributes}
+                        teachers={course.teachers}
+                        department={course.department}
+                        lastUpdated={course.lastUpdated}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </CoursesBackgroundCard>
+            </div>
+          </div>
+        </main>
+      </div>
+    </>
+  );
 }
 
 
