@@ -18,7 +18,18 @@
  * @returns Formatted time string / 格式化的时间字符串
  */
 export function formatRelativeTime(dateString: string, t: (key: string) => string, locale: string = 'en-US'): string {
+  // Validate input date string
+  if (!dateString || typeof dateString !== 'string') {
+    return t('post.invalidDate') || 'Invalid date'; // Fallback for invalid input
+  }
+
   const date = new Date(dateString);
+  
+  // Check if the date is valid
+  if (isNaN(date.getTime())) {
+    return t('post.invalidDate') || 'Invalid date'; // Fallback for invalid date
+  }
+
   const now = new Date();
   const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
 
