@@ -27,7 +27,7 @@ export function ForumPostComment({
   isSubComment = false,
   currentUserId
 }: ForumPostCommentProps) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [isTranslated, setIsTranslated] = React.useState(false);
 
@@ -112,7 +112,7 @@ export function ForumPostComment({
                   </span>
                 )}
                 <span className="text-xs text-muted-foreground">
-                  {formatTime(comment.createdAt, t)}
+                  {formatTime(comment.createdAt, t, language)}
                 </span>
               </div>
 

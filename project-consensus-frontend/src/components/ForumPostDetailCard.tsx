@@ -57,7 +57,7 @@ export function ForumPostDetailCard({
   className,
 }: ForumPostDetailCardProps) {
   // i18n translation
-  const { t } = useI18n();
+  const { t, language } = useI18n();
 
   const [showDialog, setShowDialog] = React.useState(false);
   const [dialogMessage, setDialogMessage] = React.useState("");
@@ -143,7 +143,7 @@ export function ForumPostDetailCard({
               </button>
               <div className="flex items-center text-xs text-muted-foreground">
                 <Calendar className="w-3 h-3 mr-1" />
-                {formatRelativeTime(post.createdAt, t)}
+                {formatRelativeTime(post.createdAt, t, language)}
               </div>
             </div>
           </div>

@@ -14,9 +14,10 @@
  * 
  * @param dateString - ISO date string / ISO 日期字符串
  * @param t - Translation function from useI18n hook / 来自 useI18n hook 的翻译函数
+ * @param locale - Optional locale string, defaults to 'en-US' / 可选的区域设置字符串，默认为 'en-US'
  * @returns Formatted time string / 格式化的时间字符串
  */
-export function formatRelativeTime(dateString: string, t: (key: string) => string): string {
+export function formatRelativeTime(dateString: string, t: (key: string) => string, locale: string = 'en-US'): string {
   const date = new Date(dateString);
   const now = new Date();
   const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
@@ -29,7 +30,7 @@ export function formatRelativeTime(dateString: string, t: (key: string) => strin
     // 7 days / 7天
     return `${Math.floor(diffInHours / 24)} ${t('post.daysAgo')}`; // "X days ago" / "X天前"
   } else {
-    return date.toLocaleDateString("zh-CN", {
+    return date.toLocaleDateString(locale, {
       year: "numeric",
       month: "short",
       day: "numeric",

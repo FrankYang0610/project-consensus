@@ -46,7 +46,7 @@ interface ClientOnlyTimeProps {
  */
 export function ClientOnlyTime({ dateString, className }: ClientOnlyTimeProps) {
   // i18n translation hook / 国际化翻译钩子
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   
   // Client-side rendering state / 客户端渲染状态
   const [isClient, setIsClient] = React.useState(false);
@@ -71,7 +71,7 @@ export function ClientOnlyTime({ dateString, className }: ClientOnlyTimeProps) {
   return (
     <div className={cn("flex items-center text-xs text-muted-foreground", className)}>
       <Calendar className="w-3 h-3 mr-1" />
-      {formatRelativeTime(dateString, t)}
+      {formatRelativeTime(dateString, t, language)}
     </div>
   );
 }
