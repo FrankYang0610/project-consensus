@@ -32,8 +32,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { ForumPost } from "@/types";
-import DOMPurify from "isomorphic-dompurify";
 import { useI18n } from "@/hooks/useI18n";
+import { sanitizeHtml } from "@/lib/html-utils";
 
 /**
  * 论坛帖子详情卡片组件属性 / Forum post detail card component props
@@ -186,7 +186,7 @@ export function ForumPostDetailCard({
                     dangerouslySetInnerHTML={{
                         __html: isTranslated
                             ? t('post.translateUnavailable')
-                            : DOMPurify.sanitize(post.content, { USE_PROFILES: { html: true } })
+                            : sanitizeHtml(post.content)
                     }}
                 />
 

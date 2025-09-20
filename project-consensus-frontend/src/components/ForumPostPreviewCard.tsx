@@ -35,6 +35,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ForumPost } from "@/types";
 import { useI18n } from "@/hooks/useI18n";
+import { stripHtmlTags, truncateHtmlContent } from "@/lib/html-utils";
 
 /**
  * 论坛帖子预览卡片组件属性 / Forum post preview card component props
@@ -142,25 +143,6 @@ export function ForumPostPreviewCard({
         }
     };
 
-    const stripHtmlTags = (html: string): string => {
-        // Remove HTML tags and decode HTML entities
-        return html
-            .replace(/<[^>]*>/g, '') // Remove HTML tags
-            .replace(/&lt;/g, '<')
-            .replace(/&gt;/g, '>')
-            .replace(/&amp;/g, '&')
-            .replace(/&quot;/g, '"')
-            .replace(/&#x27;/g, "'")
-            .replace(/&#x2F;/g, '/')
-            .replace(/&nbsp;/g, ' ')
-            .trim();
-    };
-
-    const truncateContent = (content: string, maxLength: number = 150) => {
-        const plainText = stripHtmlTags(content);
-        if (plainText.length <= maxLength) return plainText;
-        return plainText.slice(0, maxLength) + "...";
-    };
 
     return (
         <Card
@@ -214,7 +196,7 @@ export function ForumPostPreviewCard({
                         </span>
                     </div>
                     <p className="text-muted-foreground text-sm leading-relaxed mb-1 flex-1">
-                        {isTranslated ? t('post.translateUnavailable') : truncateContent(post.content)}
+                        {isTranslated ? t('post.translateUnavailable') : truncateHtmlContent(post.content)}
                     </p>
 
                     {post.tags.length > 0 && (
