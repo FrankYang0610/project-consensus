@@ -59,7 +59,7 @@ export function ForumPostComment({
     setIsTranslated(prev => !prev);
   };
 
-  const canDelete = currentUserId && currentUserId === comment.author.id;
+  const canDelete = currentUserId && currentUserId.trim() && currentUserId === comment.author.id;
 
   if (comment.isDeleted) {
     return (
