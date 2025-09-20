@@ -119,8 +119,7 @@
         "pg": "Postgraduate",
         "all": "All"
       }
-    }
-  ,
+    },
     "card": {
       "term": "Term",
       "semester": {
@@ -158,12 +157,11 @@
       },
       "teachers": "Teachers: {{names}}",
       "lastUpdated": "Last updated: {{date}}",
-      "viewDetails": "View details"
-    ,
-    "labels": {
-      "teachers": "Teachers",
-      "department": "Department"
-    }
+      "viewDetails": "View details",
+      "labels": {
+        "teachers": "Teachers",
+        "department": "Department"
+      }
     },
     "detail": {
       "follow": "Follow",
@@ -196,7 +194,7 @@
         "title": "Reviews",
         "writeReview": "Write a review",
         "deletedNotice": "For this course, {{count}} users have deleted their reviews.",
-          "totalReviews": "Total {{count}} reviews",
+        "totalReviews": "Total {{count}} reviews",
         "sort": {
           "label": "Sort",
           "options": {

@@ -82,7 +82,7 @@ export const sampleReviews: CourseReview[] = [
     repliesCount: 12
   },
   {
-    id: "review-4", 
+    id: "review-4",
     subjectId: "crs_0001", // APSS1A01 - Introduction to Social Sciences (Prof. Wang Yao Wu)
     author: {
       id: "user-004",
@@ -117,7 +117,7 @@ export const sampleReviews: CourseReview[] = [
     overallRating: 5.5,
     attributes: {
       difficulty: 'veryHard',
-      workload: 'veryHeavy', 
+      workload: 'veryHeavy',
       grading: 'strict',
       gain: 'low'
     },

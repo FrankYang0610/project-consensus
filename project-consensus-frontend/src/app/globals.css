@@ -48,7 +48,9 @@ body {
 }
 
 /* Smooth theme transitions */
-html, body, [data-theme] {
+html,
+body,
+[data-theme] {
   transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
 }
 
@@ -125,12 +127,14 @@ html, body, [data-theme] {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
 }
 
 @layer components {
+
   /* Style rich-text code blocks */
   .prose pre {
     @apply bg-muted border border-border rounded-md px-4 py-2 my-3 overflow-x-auto text-sm leading-6;
@@ -142,7 +146,7 @@ html, body, [data-theme] {
   }
 
   /* Inline code chips */
-  .prose :not(pre) > code {
+  .prose :not(pre)>code {
     @apply bg-muted text-foreground/90 px-1 py-0 rounded border border-border text-[0.9em];
   }
 }
