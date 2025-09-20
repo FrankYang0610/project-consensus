@@ -289,8 +289,8 @@ export function separateComments(comments: ForumPostComment[]): {
 /**
  * 根据主评论ID获取其子评论 / Get sub-comments by main comment ID
  */
-export function getSubCommentsByMainCommentId(mainCommentId: string, allComments: ForumPostComment[]): ForumPostComment[] {
-  return allComments.filter(comment =>
+export function getSubCommentsByMainCommentId(mainCommentId: string, subComments: ForumPostComment[]): ForumPostComment[] {
+  return subComments.filter(comment =>
     comment.parentId === mainCommentId
   );
 }

@@ -45,7 +45,7 @@ export function ForumPostCommentList({
 
   // 获取主评论的子评论
   const getSubCommentsForMainComment = (mainCommentId: string) => {
-    return subComments.filter(subComment => subComment.parentId === mainCommentId);
+    return getSubCommentsByMainCommentId(mainCommentId, subComments);
   };
 
   // 切换主评论的展开状态
