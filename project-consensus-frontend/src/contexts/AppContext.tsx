@@ -138,7 +138,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         document.documentElement.lang = target;
       }
     } catch { /* ignore */ }
-  }, []);
+  }, [i18n.isInitialized, i18n.language]);
 
   const login = (userData: User, token: string) => {
     // 保存用户信息和令牌到 localStorage / Save user information and token to localStorage
