@@ -308,6 +308,62 @@ body,
   }
 
   /* ========================================
+     TABLE STYLES
+     表格样式
+     ======================================== */
+
+  /* Table container styling */
+  /* 表格容器样式 */
+  .prose table {
+    @apply w-full border-collapse my-4 text-sm;
+    border: 1px solid var(--border);
+  }
+
+  /* Table header styling */
+  /* 表格头部样式 */
+  .prose thead {
+    @apply bg-muted;
+  }
+
+  /* Table header cell styling */
+  /* 表格头部单元格样式 */
+  .prose th {
+    @apply border border-border px-3 py-2 text-left font-semibold;
+    background-color: var(--muted);
+    color: var(--muted-foreground);
+  }
+
+  /* Table body cell styling */
+  /* 表格主体单元格样式 */
+  .prose td {
+    @apply border border-border px-3 py-2;
+  }
+
+  /* Table row hover effect */
+  /* 表格行悬停效果 */
+  .prose tbody tr:hover {
+    @apply bg-muted/50;
+  }
+
+  /* Table row alternating colors */
+  /* 表格行交替颜色 */
+  .prose tbody tr:nth-child(even) {
+    @apply bg-muted/30;
+  }
+
+  /* Table responsive wrapper */
+  /* 表格响应式包装器 */
+  .prose .table-wrapper {
+    @apply overflow-x-auto my-4;
+  }
+
+  /* Table caption styling */
+  /* 表格标题样式 */
+  .prose caption {
+    @apply text-sm text-muted-foreground mt-2 mb-1;
+  }
+
+  /* ========================================
      MOBILE RESPONSIVE STYLES
      移动端响应式样式
      ======================================== */
@@ -348,6 +404,17 @@ body,
     
     .prose pre {
       @apply text-xs px-2 py-1;
+    }
+
+    /* Mobile table adjustments */
+    /* 移动端表格调整 */
+    .prose table {
+      @apply text-xs;
+    }
+    
+    .prose th,
+    .prose td {
+      @apply px-2 py-1;
     }
   }
 }
