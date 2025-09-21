@@ -1,13 +1,37 @@
+/* ========================================
+   CSS IMPORTS & CONFIGURATION
+   CSS 导入和配置
+   ======================================== */
+
+/* Import Tailwind CSS framework */
+/* 导入 Tailwind CSS 框架 */
 @import "tailwindcss";
+
+/* Import animation utilities */
+/* 导入动画工具库 */
 @import "tw-animate-css";
 
+/* Custom dark mode variant for nested elements */
+/* 为嵌套元素定义自定义暗色模式变体 */
 @custom-variant dark (&:is(.dark *));
 
+/* ========================================
+   THEME CONFIGURATION
+   主题配置
+   ======================================== */
+
+/* Define CSS custom properties for Tailwind theme integration */
+/* 定义 CSS 自定义属性，用于 Tailwind 主题集成 */
 @theme inline {
+  /* Color system - 颜色系统 */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  
+  /* Typography - 字体系统 */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  
+  /* Sidebar component colors - 侧边栏组件颜色 */
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -16,11 +40,15 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
+  
+  /* Chart colors - 图表颜色 */
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+  
+  /* UI component colors - UI 组件颜色 */
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -37,116 +65,238 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  
+  /* Border radius system - 圆角系统 */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* ========================================
+   BASE STYLES
+   基础样式
+   ======================================== */
+
+/* Global font family for the entire application */
+/* 整个应用程序的全局字体族 */
 body {
   font-family: "Lucida Grande", Arial, Helvetica, sans-serif;
 }
 
-/* Smooth theme transitions */
+/* ========================================
+   THEME TRANSITIONS
+   主题过渡效果
+   ======================================== */
+
+/* Smooth transitions for theme switching */
+/* 主题切换时的平滑过渡效果 */
 html,
 body,
 [data-theme] {
   transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
 }
 
+/* ========================================
+   LIGHT THEME COLORS
+   浅色主题颜色
+   ======================================== */
+
+/* Light theme color definitions using OKLCH color space */
+/* 使用 OKLCH 色彩空间定义浅色主题颜色 */
 :root {
+  /* Base radius - 基础圆角 */
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  
+  /* Core colors - 核心颜色 */
+  --background: oklch(1 0 0);           /* Pure white background - 纯白背景 */
+  --foreground: oklch(0.145 0 0);       /* Dark text - 深色文字 */
+  
+  /* Card component colors - 卡片组件颜色 */
+  --card: oklch(1 0 0);                 /* White card background - 白色卡片背景 */
+  --card-foreground: oklch(0.145 0 0);  /* Dark text on cards - 卡片上的深色文字 */
+  
+  /* Popover component colors - 弹出框组件颜色 */
+  --popover: oklch(1 0 0);              /* White popover background - 白色弹出框背景 */
+  --popover-foreground: oklch(0.145 0 0); /* Dark text in popovers - 弹出框中的深色文字 */
+  
+  /* Primary brand colors - 主要品牌颜色 */
+  --primary: oklch(0.205 0 0);          /* Dark primary color - 深色主色调 */
+  --primary-foreground: oklch(0.985 0 0); /* Light text on primary - 主色调上的浅色文字 */
+  
+  /* Secondary colors - 次要颜色 */
+  --secondary: oklch(0.97 0 0);         /* Light gray secondary - 浅灰色次要色 */
+  --secondary-foreground: oklch(0.205 0 0); /* Dark text on secondary - 次要色上的深色文字 */
+  
+  /* Muted colors - 柔和颜色 */
+  --muted: oklch(0.97 0 0);             /* Light gray muted - 浅灰色柔和色 */
+  --muted-foreground: oklch(0.556 0 0); /* Medium gray text - 中灰色文字 */
+  
+  /* Accent colors - 强调色 */
+  --accent: oklch(0.97 0 0);            /* Light gray accent - 浅灰色强调色 */
+  --accent-foreground: oklch(0.205 0 0); /* Dark text on accent - 强调色上的深色文字 */
+  
+  /* Destructive/error colors - 破坏性/错误颜色 */
+  --destructive: oklch(0.577 0.245 27.325); /* Red for errors - 错误红色 */
+  
+  /* Border and input colors - 边框和输入框颜色 */
+  --border: oklch(0.922 0 0);           /* Light gray border - 浅灰色边框 */
+  --input: oklch(0.922 0 0);            /* Light gray input background - 浅灰色输入框背景 */
+  --ring: oklch(0.708 0 0);             /* Medium gray focus ring - 中灰色焦点环 */
+  
+  /* Chart colors - 图表颜色 */
+  --chart-1: oklch(0.646 0.222 41.116);  /* Orange - 橙色 */
+  --chart-2: oklch(0.6 0.118 184.704);   /* Blue - 蓝色 */
+  --chart-3: oklch(0.398 0.07 227.392);  /* Purple - 紫色 */
+  --chart-4: oklch(0.828 0.189 84.429);  /* Green - 绿色 */
+  --chart-5: oklch(0.769 0.188 70.08);   /* Yellow - 黄色 */
+  
+  /* Sidebar component colors - 侧边栏组件颜色 */
+  --sidebar: oklch(0.985 0 0);          /* Very light sidebar - 极浅侧边栏 */
+  --sidebar-foreground: oklch(0.145 0 0); /* Dark text in sidebar - 侧边栏中的深色文字 */
+  --sidebar-primary: oklch(0.205 0 0);   /* Dark primary in sidebar - 侧边栏中的深色主色调 */
+  --sidebar-primary-foreground: oklch(0.985 0 0); /* Light text on sidebar primary - 侧边栏主色调上的浅色文字 */
+  --sidebar-accent: oklch(0.97 0 0);     /* Light accent in sidebar - 侧边栏中的浅色强调色 */
+  --sidebar-accent-foreground: oklch(0.205 0 0); /* Dark text on sidebar accent - 侧边栏强调色上的深色文字 */
+  --sidebar-border: oklch(0.922 0 0);    /* Light border in sidebar - 侧边栏中的浅色边框 */
+  --sidebar-ring: oklch(0.708 0 0);      /* Medium gray ring in sidebar - 侧边栏中的中灰色环 */
 }
 
+/* ========================================
+   DARK THEME COLORS
+   深色主题颜色
+   ======================================== */
+
+/* Dark theme color definitions using OKLCH color space */
+/* 使用 OKLCH 色彩空间定义深色主题颜色 */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* Core colors - 核心颜色 */
+  --background: oklch(0.145 0 0);       /* Dark background - 深色背景 */
+  --foreground: oklch(0.985 0 0);       /* Light text - 浅色文字 */
+  
+  /* Card component colors - 卡片组件颜色 */
+  --card: oklch(0.205 0 0);             /* Dark card background - 深色卡片背景 */
+  --card-foreground: oklch(0.985 0 0);  /* Light text on cards - 卡片上的浅色文字 */
+  
+  /* Popover component colors - 弹出框组件颜色 */
+  --popover: oklch(0.205 0 0);          /* Dark popover background - 深色弹出框背景 */
+  --popover-foreground: oklch(0.985 0 0); /* Light text in popovers - 弹出框中的浅色文字 */
+  
+  /* Primary brand colors - 主要品牌颜色 */
+  --primary: oklch(0.922 0 0);          /* Light primary color - 浅色主色调 */
+  --primary-foreground: oklch(0.205 0 0); /* Dark text on primary - 主色调上的深色文字 */
+  
+  /* Secondary colors - 次要颜色 */
+  --secondary: oklch(0.269 0 0);        /* Dark gray secondary - 深灰色次要色 */
+  --secondary-foreground: oklch(0.985 0 0); /* Light text on secondary - 次要色上的浅色文字 */
+  
+  /* Muted colors - 柔和颜色 */
+  --muted: oklch(0.269 0 0);            /* Dark gray muted - 深灰色柔和色 */
+  --muted-foreground: oklch(0.708 0 0); /* Medium gray text - 中灰色文字 */
+  
+  /* Accent colors - 强调色 */
+  --accent: oklch(0.269 0 0);           /* Dark gray accent - 深灰色强调色 */
+  --accent-foreground: oklch(0.985 0 0); /* Light text on accent - 强调色上的浅色文字 */
+  
+  /* Destructive/error colors - 破坏性/错误颜色 */
+  --destructive: oklch(0.704 0.191 22.216); /* Bright red for errors - 错误亮红色 */
+  
+  /* Border and input colors - 边框和输入框颜色 */
+  --border: oklch(1 0 0 / 10%);         /* Semi-transparent white border - 半透明白色边框 */
+  --input: oklch(1 0 0 / 15%);          /* Semi-transparent white input - 半透明白色输入框 */
+  --ring: oklch(0.556 0 0);             /* Medium gray focus ring - 中灰色焦点环 */
+  
+  /* Chart colors - 图表颜色 */
+  --chart-1: oklch(0.488 0.243 264.376);  /* Purple - 紫色 */
+  --chart-2: oklch(0.696 0.17 162.48);    /* Cyan - 青色 */
+  --chart-3: oklch(0.769 0.188 70.08);    /* Yellow - 黄色 */
+  --chart-4: oklch(0.627 0.265 303.9);    /* Pink - 粉色 */
+  --chart-5: oklch(0.645 0.246 16.439);   /* Orange - 橙色 */
+  
+  /* Sidebar component colors - 侧边栏组件颜色 */
+  --sidebar: oklch(0.205 0 0);          /* Dark sidebar - 深色侧边栏 */
+  --sidebar-foreground: oklch(0.985 0 0); /* Light text in sidebar - 侧边栏中的浅色文字 */
+  --sidebar-primary: oklch(0.488 0.243 264.376); /* Purple primary in sidebar - 侧边栏中的紫色主色调 */
+  --sidebar-primary-foreground: oklch(0.985 0 0); /* Light text on sidebar primary - 侧边栏主色调上的浅色文字 */
+  --sidebar-accent: oklch(0.269 0 0);    /* Dark accent in sidebar - 侧边栏中的深色强调色 */
+  --sidebar-accent-foreground: oklch(0.985 0 0); /* Light text on sidebar accent - 侧边栏强调色上的浅色文字 */
+  --sidebar-border: oklch(1 0 0 / 10%);  /* Semi-transparent border in sidebar - 侧边栏中的半透明边框 */
+  --sidebar-ring: oklch(0.556 0 0);      /* Medium gray ring in sidebar - 侧边栏中的中灰色环 */
 }
 
+/* ========================================
+   TAILWIND BASE LAYER
+   Tailwind 基础层
+   ======================================== */
+
+/* Base layer styles that apply globally */
+/* 全局应用的基础层样式 */
 @layer base {
+  /* Apply consistent border and focus styles to all elements */
+  /* 为所有元素应用一致的边框和焦点样式 */
   * {
     @apply border-border outline-ring/50;
   }
 
+  /* Set global background and text colors */
+  /* 设置全局背景和文字颜色 */
   body {
     @apply bg-background text-foreground;
   }
 }
 
+/* ========================================
+   TAILWIND COMPONENTS LAYER
+   Tailwind 组件层
+   ======================================== */
+
+/* Component-specific styles for rich text content */
+/* 富文本内容的组件特定样式 */
 @layer components {
 
-  /* Style rich-text code blocks */
+  /* ========================================
+     RICH TEXT EDITOR STYLES
+     富文本编辑器样式
+     ======================================== */
+
+  /* Code block styling for rich text editor */
+  /* 富文本编辑器中代码块的样式 */
   .prose pre {
     @apply bg-muted border border-border rounded-md px-4 py-2 my-3 overflow-x-auto text-sm leading-6;
   }
 
-  /* Avoid double background inside pre > code */
+  /* Remove double background for code inside pre blocks */
+  /* 移除 pre 块内代码的双重背景 */
   .prose pre code {
     @apply bg-transparent p-0 text-inherit;
   }
 
-  /* Inline code chips */
+  /* Inline code styling (not inside pre blocks) */
+  /* 内联代码样式（不在 pre 块内） */
   .prose :not(pre)>code {
     @apply bg-muted text-foreground/90 px-1 py-0 rounded border border-border text-[0.9em];
+  }
+
+  /* ========================================
+     PROSE CONTENT STYLES
+     散文内容样式
+     ======================================== */
+
+  /* Unordered list styling in prose content */
+  /* 散文内容中无序列表的样式 */
+  .prose ul {
+    @apply list-disc my-2 pl-5;
+  }
+
+  /* Ordered list styling in prose content */
+  /* 散文内容中有序列表的样式 */
+  .prose ol {
+    @apply list-decimal my-2 pl-5;
+  }
+
+  /* List item styling in prose content */
+  /* 散文内容中列表项的样式 */
+  .prose li {
+    @apply my-1 leading-6;
   }
 }

@@ -2,16 +2,18 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { User, AppContextType, ThemeMode } from '@/types';
-import { useTranslation } from 'react-i18next';
 import { normalizeLanguage, defaultLanguage } from '@/lib/locale';
+import { useTranslation } from 'react-i18next';
 
 // Create Context
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 // App Provider 组件 / App Provider component
 export function AppProvider({ children }: { children: ReactNode }) {
-  // i18n 实例，用于在客户端挂载后根据偏好切换语言
-  // i18n instance to switch language after client mount based on preference
+  // 所有 hooks 必须在组件顶层以固定顺序调用
+  // All hooks must be called at the top level in a fixed order
+  
+  // 获取 i18n 实例 / Get i18n instance
   const { i18n } = useTranslation();
 
   // 用户认证状态 / User authentication state
@@ -95,6 +97,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // - 同步设置 <html lang="...">，避免可访问性问题
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    
+    // 确保 i18n 已初始化
+    // Ensure i18n is initialized
+    // 
+    // 检查 i18n 是否初始化，避免语言切换时出现翻译或状态异常。
+    // Check i18n initialization to prevent translation/state issues during language switching.
+    // See docs/i18n-language-check.md for detailed reasoning.
+    if (!i18n.isInitialized) return;
+    
     try {
       const stored = localStorage.getItem('language');
       const hasLanguagesArray = Array.isArray(window.navigator.languages) && window.navigator.languages.length > 0;

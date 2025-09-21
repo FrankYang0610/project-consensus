@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { User, Settings, LogOut, ChevronDown } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
+import { cn } from '@/lib/utils';
 
 export interface UserMenuProps {
   className?: string;
@@ -54,7 +55,7 @@ export function UserMenu({ className }: UserMenuProps) {
         <Button
           variant="outline"
           size="sm"
-          className={`items-center gap-2 ${className}`}
+          className={cn("items-center gap-2", className)}
         >
           {/* User avatar */}
           {user.avatar ? (

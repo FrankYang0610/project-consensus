@@ -37,14 +37,14 @@ import { ThemeToggle } from './ThemeToggle';
  */
 const languageOptions = [
   {
-    code: 'zh-CN' as Language,
-    name: '简体中文',
-    flag: '🇨🇳',
-  },
-  {
     code: 'zh-HK' as Language,
     name: '繁體中文',
     flag: '🇭🇰',
+  },
+  {
+    code: 'zh-CN' as Language,
+    name: '简体中文',
+    flag: '🇨🇳',
   },
   {
     code: 'en-US' as Language,

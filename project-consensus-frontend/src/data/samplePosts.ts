@@ -182,18 +182,61 @@ LIMIT 10;</code></pre>
 ];
 
 /**
- * Toggle like state for a post and mutate the in-memory samplePosts data.
+ * Toggle like state for a post and return the updated post.
+ * Note: This function directly modifies the original samplePosts array.
  * Returns the updated post if found; otherwise undefined.
  */
 export function toggleLikeById(postId: string): ForumPost | undefined {
   const index = samplePosts.findIndex(p => p.id === postId);
   if (index === -1) return undefined;
+  
   const post = samplePosts[index];
   const currentlyLiked = !!post.isLiked;
   const nextLiked = !currentlyLiked;
   const nextLikes = Math.max(0, post.likes + (nextLiked ? 1 : -1));
-  // Mutate in place to reflect global change
+  
+  // Directly modify the original post object
   post.isLiked = nextLiked;
   post.likes = nextLikes;
+  
   return post;
+}
+
+/**
+ * Add a new post to the sample data
+ */
+export function addPost(post: ForumPost): ForumPost {
+  samplePosts.push(post);
+  return post;
+}
+
+/**
+ * Update post content
+ */
+export function updatePost(postId: string, updates: Partial<ForumPost>): ForumPost | undefined {
+  const index = samplePosts.findIndex(p => p.id === postId);
+  if (index === -1) return undefined;
+  
+  const post = samplePosts[index];
+  Object.assign(post, updates);
+  
+  return post;
+}
+
+/**
+ * Delete a post (remove from array)
+ */
+export function deletePost(postId: string): boolean {
+  const index = samplePosts.findIndex(p => p.id === postId);
+  if (index === -1) return false;
+  
+  samplePosts.splice(index, 1);
+  return true;
+}
+
+/**
+ * Get post by ID
+ */
+export function getPostById(postId: string): ForumPost | undefined {
+  return samplePosts.find(p => p.id === postId);
 }

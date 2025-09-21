@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+
 import {
   Calendar,
   User,
@@ -32,10 +33,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
 import { cn } from "@/lib/utils";
+import { stripHtmlTags, truncateHtmlContent } from "@/lib/html-utils";
 import { ForumPost } from "@/types";
 import { useI18n } from "@/hooks/useI18n";
-import { stripHtmlTags, truncateHtmlContent } from "@/lib/html-utils";
+
+import ClientOnlyTime from "./ClientOnlyTime";
 
 /**
  * 论坛帖子预览卡片组件属性 / Forum post preview card component props
@@ -120,28 +124,6 @@ export function ForumPostPreviewCard({
     onAuthorClick?.(post.author.id);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInHours = Math.floor(
-      (now.getTime() - date.getTime()) / (1000 * 60 * 60)
-    );
-
-    if (diffInHours < 1) {
-      return t('post.justNow');
-    } else if (diffInHours < 24) {
-      return `${diffInHours} ${t('post.hoursAgo')}`;
-    } else if (diffInHours < 168) {
-      // 7 days
-      return `${Math.floor(diffInHours / 24)} ${t('post.daysAgo')}`;
-    } else {
-      return date.toLocaleDateString("zh-CN", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    }
-  };
 
 
   return (
@@ -176,10 +158,7 @@ export function ForumPostPreviewCard({
               >
                 {post.author.name}
               </button>
-              <div className="flex items-center text-xs text-muted-foreground">
-                <Calendar className="w-3 h-3 mr-1" />
-                {formatDate(post.createdAt)}
-              </div>
+              <ClientOnlyTime dateString={post.createdAt} />
             </div>
           </div>
         </div>
@@ -243,7 +222,7 @@ export function ForumPostPreviewCard({
             >
               <Languages className="w-4 h-4" />
               <span className="text-sm">
-                {isTranslated ? t('post.original') : t('post.translate')}
+                {isTranslated ? t('post.showOriginal') : t('post.translate')}
               </span>
             </Button>
           </div>
