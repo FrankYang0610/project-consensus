@@ -314,15 +314,10 @@ export function toggleCommentLike(commentId: string): ForumPostComment | null {
   if (commentIndex === -1) return null;
   
   const comment = sampleComments[commentIndex];
-  const updatedComment = {
-    ...comment,
-    isLiked: !comment.isLiked,
-    likes: comment.likes + (comment.isLiked ? -1 : 1)
-  };
+  comment.isLiked = !comment.isLiked;
+  comment.likes = comment.likes + (comment.isLiked ? 1 : -1);
   
-  // Update the array immutably
-  sampleComments[commentIndex] = updatedComment;
-  return updatedComment;
+  return comment;
 }
 
 /**
@@ -332,13 +327,14 @@ export function deleteComment(commentId: string): boolean {
   const commentIndex = sampleComments.findIndex(c => c.id === commentId);
   if (commentIndex === -1) return false;
   
-  const comment = sampleComments[commentIndex];
-  const updatedComment = {
-    ...comment,
-    isDeleted: true
-  };
-  
-  // Update the array immutably
-  sampleComments[commentIndex] = updatedComment;
+  sampleComments.splice(commentIndex, 1);
   return true;
+}
+
+/**
+ * 添加新评论 / Add new comment
+ */
+export function addComment(comment: ForumPostComment): ForumPostComment {
+  sampleComments.push(comment);
+  return comment;
 }
