@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { User, AppContextType, ThemeMode } from '@/types';
 import { normalizeLanguage, defaultLanguage } from '@/lib/locale';
-import i18n from '@/lib/i18n';
+import { useTranslation } from 'react-i18next';
 
 // Create Context
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -13,6 +13,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // 所有 hooks 必须在组件顶层以固定顺序调用
   // All hooks must be called at the top level in a fixed order
   
+  // 获取 i18n 实例 / Get i18n instance
+  const { i18n } = useTranslation();
+
   // 用户认证状态 / User authentication state
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -126,7 +129,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         document.documentElement.lang = target;
       }
     } catch { /* ignore */ }
-  }, [i18n.isInitialized, i18n.language]);
+  }, [i18n]);
 
   const login = (userData: User, token: string) => {
     // 保存用户信息和令牌到 localStorage / Save user information and token to localStorage
