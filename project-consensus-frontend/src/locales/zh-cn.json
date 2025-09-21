@@ -69,11 +69,21 @@
     "titlePlaceholder": "输入标题",
     "contentPlaceholder": "输入帖子内容...",
     "create": "创建帖子",
+    "submitting": "创建中...",
     "cancel": "取消",
     "tags": "标签",
     "tagPlaceholder": "输入标签名称",
     "removeTag": "移除标签",
-    "maxTagsReached": "最多只能添加 {{max}} 个标签"
+    "maxTagsReached": "最多只能添加 {{max}} 个标签",
+    "validation": {
+      "titleRequired": "标题不能为空",
+      "titleTooShort": "标题至少需要5个字符",
+      "titleTooLong": "标题不能超过200个字符",
+      "contentRequired": "内容不能为空",
+      "contentTooShort": "内容至少需要10个字符",
+      "tagsRequired": "至少需要一个标签",
+      "tooManyTags": "最多只能添加10个标签"
+    }
   },
   "time": {
     "justNow": "刚刚",

@@ -1,7 +1,7 @@
 import { ForumPost } from "@/types";
 
 // Sample data - Computer Science course discussions
-export const samplePosts: ForumPost[] = [
+const initialSamplePosts: ForumPost[] = [
   {
     id: "a7f3b2c1",
     title: "Java編程：接口同抽象類嘅分別",
@@ -181,6 +181,48 @@ LIMIT 10;</code></pre>
   }
 ];
 
+// Storage key for localStorage
+const STORAGE_KEY = 'project-consensus-posts';
+
+// Load posts from localStorage or use initial data
+function loadPostsFromStorage(): ForumPost[] {
+  if (typeof window === 'undefined') {
+    // Server-side rendering, return initial data
+    return initialSamplePosts;
+  }
+  
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      // Merge with initial posts to ensure we always have the base data
+      const existingIds = new Set(parsed.map((p: ForumPost) => p.id));
+      const newInitialPosts = initialSamplePosts.filter(p => !existingIds.has(p.id));
+      return [...parsed, ...newInitialPosts];
+    }
+  } catch (error) {
+    console.error('Error loading posts from localStorage:', error);
+  }
+  
+  return initialSamplePosts;
+}
+
+// Save posts to localStorage
+function savePostsToStorage(posts: ForumPost[]): void {
+  if (typeof window === 'undefined') {
+    return; // Server-side rendering, skip
+  }
+  
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
+  } catch (error) {
+    console.error('Error saving posts to localStorage:', error);
+  }
+}
+
+// Initialize posts array with data from localStorage
+export const samplePosts: ForumPost[] = loadPostsFromStorage();
+
 /**
  * Toggle like state for a post and return the updated post.
  * Note: This function directly modifies the original samplePosts array.
@@ -199,6 +241,9 @@ export function toggleLikeById(postId: string): ForumPost | undefined {
   post.isLiked = nextLiked;
   post.likes = nextLikes;
   
+  // Save to localStorage
+  savePostsToStorage(samplePosts);
+  
   return post;
 }
 
@@ -207,6 +252,7 @@ export function toggleLikeById(postId: string): ForumPost | undefined {
  */
 export function addPost(post: ForumPost): ForumPost {
   samplePosts.push(post);
+  savePostsToStorage(samplePosts);
   return post;
 }
 
@@ -220,6 +266,9 @@ export function updatePost(postId: string, updates: Partial<ForumPost>): ForumPo
   const post = samplePosts[index];
   Object.assign(post, updates);
   
+  // Save to localStorage
+  savePostsToStorage(samplePosts);
+  
   return post;
 }
 
@@ -231,6 +280,10 @@ export function deletePost(postId: string): boolean {
   if (index === -1) return false;
   
   samplePosts.splice(index, 1);
+  
+  // Save to localStorage
+  savePostsToStorage(samplePosts);
+  
   return true;
 }
 

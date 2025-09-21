@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { useI18n } from "@/hooks/useI18n";
 import { useRouter } from "next/navigation";
+import { addPost } from "@/data/samplePosts";
+import { ForumPost } from "@/types";
 
 export default function NewForumPostPage() {
   const { t } = useI18n();
@@ -20,11 +22,92 @@ export default function NewForumPostPage() {
   const [title, setTitle] = React.useState("");
   const [content, setContent] = React.useState("");
   const [tags, setTags] = React.useState<string[]>([]);
+  
+  // 表单状态管理 / Form state management
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [errors, setErrors] = React.useState<{
+    title?: string;
+    content?: string;
+    tags?: string;
+  }>({});
 
   // Scroll to top when component mounts
   React.useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  // 表单验证函数 / Form validation function
+  const validateForm = (): boolean => {
+    const newErrors: typeof errors = {};
+    
+    // 验证标题 / Validate title
+    if (!title.trim()) {
+      newErrors.title = t("post.validation.titleRequired");
+    } else if (title.trim().length < 5) {
+      newErrors.title = t("post.validation.titleTooShort");
+    } else if (title.trim().length > 200) {
+      newErrors.title = t("post.validation.titleTooLong");
+    }
+    
+    // 验证内容 / Validate content
+    if (!content.trim()) {
+      newErrors.content = t("post.validation.contentRequired");
+    } else if (content.trim().length < 10) {
+      newErrors.content = t("post.validation.contentTooShort");
+    }
+    
+    // 验证标签 / Validate tags
+    if (tags.length > 10) {
+      newErrors.tags = t("post.validation.tooManyTags");
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // 提交处理函数 / Submit handler function
+  const handleSubmit = async () => {
+    // 验证表单 / Validate form
+    if (!validateForm()) {
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      // TODO: 这里需要替换为实际的后端API调用 / Replace with actual backend API call
+      // 目前使用samplePosts的addPost方法作为临时实现 / Currently using samplePosts.addPost as temporary implementation
+      
+      const newPost: ForumPost = {
+        id: `post_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`, // 生成唯一ID / Generate unique ID
+        title: title.trim(),
+        content: content.trim(),
+        author: {
+          id: "current_user", // TODO: 从用户上下文获取当前用户ID / Get current user ID from user context
+          name: "Current User", // TODO: 从用户上下文获取当前用户名 / Get current user name from user context
+          avatar: undefined // TODO: 从用户上下文获取当前用户头像 / Get current user avatar from user context
+        },
+        createdAt: new Date().toISOString(),
+        tags: tags,
+        likes: 0,
+        comments: 0,
+        isLiked: false,
+        language: "简体中文（普通话）" // TODO: 根据用户设置或检测到的语言设置 / Set based on user settings or detected language
+      };
+      
+      // 调用samplePosts的addPost方法 / Call samplePosts.addPost method
+      const createdPost = addPost(newPost);
+      
+      // 跳转到帖子列表页面 / redirect to posts list page
+      router.push(`/post/${createdPost.id}`);
+      
+    } catch (error) {
+      console.error("提交帖子时出错 / Error submitting post:", error);
+      // TODO: 显示错误提示给用户 / Show error message to user
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <>
@@ -36,32 +119,76 @@ export default function NewForumPostPage() {
               <h1 className="text-2xl font-semibold mb-4">{t("post.newTitle")}</h1>
               <Card>
                 <CardContent>
-                  <Input
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder={t("post.titlePlaceholder")}
-                    className="mb-3 h-11 text-lg md:text-lg font-normal px-4"
-                  />
-                  { /* NOTE: Images are embedded as Base64 for now. TODO: server upload. */}
-                  <RichTextEditor
-                    value={content}
-                    onChange={setContent}
-                    placeholder={t("post.contentPlaceholder")}
-                    className="prose max-w-none"
-                  />
+                  <div className="mb-3">
+                    <Input
+                      value={title}
+                      onChange={(e) => {
+                        setTitle(e.target.value);
+                        // 清除标题错误 / Clear title error
+                        if (errors.title) {
+                          setErrors(prev => ({ ...prev, title: undefined }));
+                        }
+                      }}
+                      placeholder={t("post.titlePlaceholder")}
+                      className={`h-11 text-lg md:text-lg font-normal px-4 ${
+                        errors.title ? "border-red-500 focus:border-red-500" : ""
+                      }`}
+                    />
+                    {errors.title && (
+                      <p className="text-red-500 text-sm mt-1">{errors.title}</p>
+                    )}
+                  </div>
+                  
+                  <div className="mb-4">
+                    <RichTextEditor
+                      value={content}
+                      onChange={(value) => {
+                        setContent(value);
+                        // 清除内容错误 / Clear content error
+                        if (errors.content) {
+                          setErrors(prev => ({ ...prev, content: undefined }));
+                        }
+                      }}
+                      placeholder={t("post.contentPlaceholder")}
+                      className="prose max-w-none"
+                    />
+                    {errors.content && (
+                      <p className="text-red-500 text-sm mt-1">{errors.content}</p>
+                    )}
+                  </div>
+                  
                   <div className="mt-4">
                     <TagManager
                       tags={tags}
-                      onTagsChange={setTags}
+                      onTagsChange={(newTags) => {
+                        setTags(newTags);
+                        // 清除标签错误 / Clear tags error
+                        if (errors.tags) {
+                          setErrors(prev => ({ ...prev, tags: undefined }));
+                        }
+                      }}
                       maxTags={10}
                     />
+                    {errors.tags && (
+                      <p className="text-red-500 text-sm mt-1">{errors.tags}</p>
+                    )}
                   </div>
+                  
+                  { /* NOTE: Images are embedded as Base64 for now. TODO: server upload. */}
                 </CardContent>
                 <CardFooter className="gap-3">
-                  <Button onClick={() => { /* TODO: submit handler */ }}>
-                    {t("post.create")}
+                  <Button 
+                    onClick={handleSubmit}
+                    disabled={isSubmitting}
+                    className="min-w-[100px]"
+                  >
+                    {isSubmitting ? t("post.submitting") : t("post.create")}
                   </Button>
-                  <Button variant="ghost" onClick={() => router.back()}>
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => router.back()}
+                    disabled={isSubmitting}
+                  >
                     {t("post.cancel")}
                   </Button>
                 </CardFooter>

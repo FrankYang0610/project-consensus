@@ -69,11 +69,21 @@
     "titlePlaceholder": "Enter a title",
     "contentPlaceholder": "Enter post content...",
     "create": "Create Post",
+    "submitting": "Creating...",
     "cancel": "Cancel",
     "tags": "Tags",
     "tagPlaceholder": "Enter tag name",
     "removeTag": "Remove tag",
-    "maxTagsReached": "Maximum {{max}} tags allowed"
+    "maxTagsReached": "Maximum {{max}} tags allowed",
+    "validation": {
+      "titleRequired": "Title is required",
+      "titleTooShort": "Title must be at least 5 characters",
+      "titleTooLong": "Title must be less than 200 characters",
+      "contentRequired": "Content is required",
+      "contentTooShort": "Content must be at least 10 characters",
+      "tagsRequired": "At least one tag is required",
+      "tooManyTags": "Maximum 10 tags allowed"
+    }
   },
   "time": {
     "justNow": "Just now",
