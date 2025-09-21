@@ -65,14 +65,17 @@
     "translateUnavailable": "翻譯功能尚不可用",
     "shareUnavailable": "分享功能暫時不可用，敬請期待！",
     "copyFailed": "複製文本到剪貼板失敗",
-    "justNow": "剛剛",
-    "hoursAgo": "小時前",
-    "daysAgo": "天前",
     "newTitle": "建立新的論壇帖子",
     "titlePlaceholder": "輸入標題",
     "contentPlaceholder": "輸入正文內容",
     "create": "發帖",
     "cancel": "放棄"
+  },
+  "time": {
+    "justNow": "剛剛",
+    "hoursAgo": "小時前",
+    "daysAgo": "天前",
+    "invalidDate": "無效日期"
   },
   "comment": {
     "title": "評論 ({{count}})",
