@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 const RichTextEditor = dynamic(() => import("@/components/RichTextEditor"), { ssr: false });
 
 import { SiteNavigation } from "@/components/SiteNavigation";
+import { TagManager } from "@/components/TagManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -18,6 +19,7 @@ export default function NewForumPostPage() {
   const router = useRouter();
   const [title, setTitle] = React.useState("");
   const [content, setContent] = React.useState("");
+  const [tags, setTags] = React.useState<string[]>([]);
 
   // Scroll to top when component mounts
   React.useEffect(() => {
@@ -47,6 +49,13 @@ export default function NewForumPostPage() {
                     placeholder={t("post.contentPlaceholder")}
                     className="prose max-w-none"
                   />
+                  <div className="mt-4">
+                    <TagManager
+                      tags={tags}
+                      onTagsChange={setTags}
+                      maxTags={10}
+                    />
+                  </div>
                 </CardContent>
                 <CardFooter className="gap-3">
                   <Button onClick={() => { /* TODO: submit handler */ }}>

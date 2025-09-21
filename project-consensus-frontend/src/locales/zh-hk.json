@@ -67,9 +67,13 @@
     "copyFailed": "複製文本到剪貼板失敗",
     "newTitle": "建立新的論壇帖子",
     "titlePlaceholder": "輸入標題",
-    "contentPlaceholder": "輸入正文內容",
-    "create": "發帖",
-    "cancel": "放棄"
+    "contentPlaceholder": "輸入帖子內容...",
+    "create": "建立帖子",
+    "cancel": "取消",
+    "tags": "標籤",
+    "tagPlaceholder": "輸入標籤名稱",
+    "removeTag": "移除標籤",
+    "maxTagsReached": "最多只能添加 {{max}} 個標籤"
   },
   "time": {
     "justNow": "剛剛",

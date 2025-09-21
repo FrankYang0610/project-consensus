@@ -67,9 +67,13 @@
     "copyFailed": "Failed to copy text to clipboard",
     "newTitle": "Create a new forum post",
     "titlePlaceholder": "Enter a title",
-    "contentPlaceholder": "Enter post content",
-    "create": "Post",
-    "cancel": "Cancel"
+    "contentPlaceholder": "Enter post content...",
+    "create": "Create Post",
+    "cancel": "Cancel",
+    "tags": "Tags",
+    "tagPlaceholder": "Enter tag name",
+    "removeTag": "Remove tag",
+    "maxTagsReached": "Maximum {{max}} tags allowed"
   },
   "time": {
     "justNow": "Just now",

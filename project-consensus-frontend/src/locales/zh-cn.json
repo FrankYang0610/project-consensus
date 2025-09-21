@@ -67,9 +67,13 @@
     "copyFailed": "复制文本到剪贴板失败",
     "newTitle": "创建新的论坛帖子",
     "titlePlaceholder": "输入标题",
-    "contentPlaceholder": "输入正文内容",
-    "create": "发帖",
-    "cancel": "放弃"
+    "contentPlaceholder": "输入帖子内容...",
+    "create": "创建帖子",
+    "cancel": "取消",
+    "tags": "标签",
+    "tagPlaceholder": "输入标签名称",
+    "removeTag": "移除标签",
+    "maxTagsReached": "最多只能添加 {{max}} 个标签"
   },
   "time": {
     "justNow": "刚刚",
