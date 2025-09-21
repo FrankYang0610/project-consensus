@@ -174,7 +174,7 @@ export function ForumPostPreviewCard({
               {post.language}
             </span>
           </div>
-          <p className="text-muted-foreground text-sm leading-relaxed mb-1 flex-1">
+          <p className="text-muted-foreground text-sm leading-relaxed mb-1 flex-1 break-words overflow-wrap-anywhere">
             {isTranslated ? t('post.translateUnavailable') : truncateHtmlContent(post.content)}
           </p>
 
