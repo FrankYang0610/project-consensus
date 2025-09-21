@@ -8,7 +8,7 @@ import { Heart, Reply, MoreHorizontal, Trash2, Languages } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
 import { sanitizeHtml } from "@/lib/html-utils";
-import { formatTime } from "@/lib/time-utils";
+import { formatRelativeTime } from "@/lib/time-utils";
 
 interface ForumPostCommentProps {
   comment: ForumPostComment;
@@ -112,7 +112,7 @@ export function ForumPostComment({
                   </span>
                 )}
                 <span className="text-xs text-muted-foreground">
-                  {formatTime(comment.createdAt, t, language)}
+                  {formatRelativeTime(comment.createdAt, t, language)}
                 </span>
               </div>
 

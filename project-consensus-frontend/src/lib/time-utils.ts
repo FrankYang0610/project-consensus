@@ -48,14 +48,3 @@ export function formatRelativeTime(dateString: string, t: (key: string) => strin
     });
   }
 }
-
-/**
- * Format a date string to relative time display (alternative name for backward compatibility)
- * 将日期字符串格式化为相对时间显示（向后兼容的替代名称）
- * 
- * @param dateString - ISO date string / ISO 日期字符串
- * @param t - Translation function from useI18n hook / 来自 useI18n hook 的翻译函数
- * @returns Formatted time string / 格式化的时间字符串
- */
-export const formatTime = formatRelativeTime;
-export const formatDate = formatRelativeTime;
