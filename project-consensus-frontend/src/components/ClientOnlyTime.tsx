@@ -44,7 +44,7 @@ interface ClientOnlyTimeProps {
  * Only renders on the client side, shows placeholder on server side
  * 仅在客户端渲染，服务端显示占位符
  */
-export function ClientOnlyTime({ dateString, className }: ClientOnlyTimeProps) {
+export default function ClientOnlyTime({ dateString, className }: ClientOnlyTimeProps) {
   // i18n translation hook / 国际化翻译钩子
   const { t, language } = useI18n();
   
@@ -75,5 +75,3 @@ export function ClientOnlyTime({ dateString, className }: ClientOnlyTimeProps) {
     </div>
   );
 }
-
-export default ClientOnlyTime;
