@@ -69,8 +69,8 @@ export function CourseReviewReplyCard({
       // Await the callback in case it returns a Promise
       await onDelete(reply.id);
     } catch (err) {
-      // Optional: surface error to UI/logging
-      console.error('Failed to delete reply', err);
+      // Optional: surface error to UI/logging with context
+      console.error('Failed to delete reply', reply.id, err);
     } finally {
       setIsDeleting(false);
     }
@@ -137,10 +137,12 @@ export function CourseReviewReplyCard({
                 variant="ghost"
                 size="sm"
                 onClick={handleTranslate}
-                className={cn(
-                  "h-7 px-1 text-xs",
-                  isTranslated ? "text-blue-500 hover:text-blue-600" : "text-gray-500 hover:text-gray-600"
-                )}
+              className={cn(
+                "h-7 px-1 text-xs",
+                isTranslated
+                  ? "text-primary hover:text-primary/90"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
               >
                 <Languages className="w-3 h-3 mr-1" />
                 {isTranslated ? t("comment.showOriginal") : t("comment.translate")}
