@@ -1,10 +1,49 @@
 ## project-consensus-frontend
 
-> This is a Next.js project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-
 ### Getting Started
 
-First, run the development server:
+This guide will help you set up and run the project-consensus frontend application on your local development environment.
+
+#### Prerequisites
+
+Before you begin, ensure you have the following installed on your system:
+
+- **Node.js** (version 18.0 or higher) - [Download here](https://nodejs.org/)
+- **npm**, **yarn**, **pnpm**, or **bun** package manager
+- **Git** for version control
+
+#### Installation
+
+1. **Clone the repository** (if you haven't already):
+   ```bash
+   git clone https://github.com/FrankYang0610/project-consensus/
+   cd project-consensus-frontend
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   npm install
+   # or
+   yarn install
+   # or
+   pnpm install
+   # or
+   bun install
+   ```
+
+3. **Set up shadcn/ui components** (if not already configured):
+   ```bash
+   npx shadcn@latest init
+   ```
+
+4. **Install additional dependencies** (if needed):
+   ```bash
+   npm install i18next react-i18next i18next-browser-languagedetector
+   ```
+
+#### Running the Development Server
+
+Start the development server with one of the following commands:
 
 ```bash
 npm run dev
@@ -16,21 +55,26 @@ pnpm dev
 bun dev
 ```
 
-### Shadcn UI components are used in this project. To learn more about documentation, please visit [shadcn/ui](https://ui.shadcn.com/docs).
+The application will be available at [http://localhost:3000](http://localhost:3000). Open this URL in your browser to view the application.
 
-```bash
-# Install shadcn/ui
-npx shadcn@latest init
-# Install i18next
-npm install i18next react-i18next i18next-browser-languagedetector
+#### Development Features
 
-```
+- **Hot Reload**: The page automatically updates as you edit files
+- **TypeScript**: Full type checking and IntelliSense support
+- **ESLint**: Code linting for better code quality
+- **Tailwind CSS**: Utility-first CSS framework for styling
 
-Open [http://localhost:3000](http://localhost:3000) with the browser to see the result.
+#### Making Changes
 
-One can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Main page**: Edit `src/app/page.tsx` to modify the home page
+- **Components**: Add or modify components in the `src/components/` directory
+- **Styling**: Update global styles in `src/app/globals.css`
+- **Internationalization**: Add translations in the `src/locales/` directory
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+#### Additional Resources
+
+- **shadcn/ui Documentation**: [ui.shadcn.com/docs](https://ui.shadcn.com/docs) - Learn about the UI components used in this project
+- **Next.js Font Optimization**: This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a modern font family from Vercel
 
 ### Project Architecture
 
