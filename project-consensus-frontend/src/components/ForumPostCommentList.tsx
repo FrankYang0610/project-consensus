@@ -3,7 +3,6 @@
 import * as React from "react";
 import { ForumPostComment } from "@/types/forum";
 import { ForumPostCommentCard as ForumPostCommentComponent } from "./ForumPostCommentCard";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Plus } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
@@ -92,60 +91,58 @@ export function ForumPostCommentList({
   const hiddenMainComments = sortedMainComments.length - displayedMainComments.length;
 
   return (
-    <Card className="mt-6">
+    <div className="mt-6">
       {/* 评论列表头部 / Comment list header */}
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <MessageSquare className="w-5 h-5" />
-            {t('comment.title', { count: totalComments })}
-          </CardTitle>
-          {/* 添加评论按钮 / Add comment button */}
-          {onAddComment && (
-            <Button
-              onClick={onAddComment}
-              size="sm"
-              className="h-7"
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              {t('comment.addComment')}
-            </Button>
-          )}
-        </div>
-      </CardHeader>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="flex items-center gap-2 text-lg font-semibold">
+          <MessageSquare className="w-5 h-5" />
+          {t('comment.title', { count: totalComments })}
+        </h3>
+        {/* 添加评论按钮 / Add comment button */}
+        {onAddComment && (
+          <Button
+            onClick={onAddComment}
+            size="sm"
+            className="h-8"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            {t('comment.addComment')}
+          </Button>
+        )}
+      </div>
 
       {/* 评论内容区域 / Comment content area */}
-      <CardContent className="pt-0">
-        {displayedMainComments.length === 0 ? (
-          // 无评论时的空状态 / Empty state when no comments
-          <div className="text-center py-8 text-muted-foreground">
-            <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p className="text-sm">{t('comment.noComments')}</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {/* 遍历显示主评论 / Iterate through and display main comments */}
-            {displayedMainComments.map((mainComment) => {
-              const subCommentsForMain = getSubCommentsForMainComment(mainComment.id);
-              const isExpanded = expandedMainComments.has(mainComment.id);
+      {displayedMainComments.length === 0 ? (
+        // 无评论时的空状态 / Empty state when no comments
+        <div className="text-center py-8 text-muted-foreground">
+          <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
+          <p className="text-sm">{t('comment.noComments')}</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {/* 遍历显示主评论 / Iterate through and display main comments */}
+          {displayedMainComments.map((mainComment) => {
+            const subCommentsForMain = getSubCommentsForMainComment(mainComment.id);
+            const isExpanded = expandedMainComments.has(mainComment.id);
 
-              return (
-                <div key={mainComment.id} className="space-y-2">
-                  {/* 主评论组件 / Main comment component */}
-                  <ForumPostCommentComponent
-                    comment={mainComment}
-                    onLike={onLike}
-                    onReply={onReply}
-                    onDelete={onDelete}
-                    currentUserId={currentUserId}
-                  />
+            return (
+              <div key={mainComment.id} className="space-y-1">
+                {/* 主评论组件 / Main comment component */}
+                <ForumPostCommentComponent
+                  comment={mainComment}
+                  onLike={onLike}
+                  onReply={onReply}
+                  onDelete={onDelete}
+                  currentUserId={currentUserId}
+                />
 
-                  {/* 子评论区域 / Sub-comments area */}
-                  {subCommentsForMain.length > 0 && (
-                    <div className="ml-4 space-y-1">
-                      {isExpanded ? (
-                        // 展开状态：显示所有子评论 / Expanded state: show all sub-comments
-                        subCommentsForMain.map((subComment) => (
+                {/* 子评论区域 / Sub-comments area */}
+                {subCommentsForMain.length > 0 && (
+                  <div className="ml-2">
+                    {isExpanded ? (
+                      // 展开状态：显示所有子评论 / Expanded state: show all sub-comments
+                      <div className="space-y-1">
+                        {subCommentsForMain.map((subComment) => (
                           <ForumPostCommentComponent
                             key={subComment.id}
                             comment={subComment}
@@ -155,54 +152,51 @@ export function ForumPostCommentList({
                             isSubComment={true}
                             currentUserId={currentUserId}
                           />
-                        ))
-                      ) : (
-                        // 折叠状态：显示展开按钮 / Collapsed state: show expand button
+                        ))}
+                        {/* 展开状态下的收起按钮 / Collapse button when expanded */}
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => toggleMainCommentExpansion(mainComment.id)}
-                          className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
-                        >
-                          {t('comment.showReplies', { count: subCommentsForMain.length })}
-                        </Button>
-                      )}
-
-                      {/* 展开状态下的收起按钮 / Collapse button when expanded */}
-                      {isExpanded && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleMainCommentExpansion(mainComment.id)}
-                          className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+                          className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground ml-6"
                         >
                           {t('comment.hideReplies')}
                         </Button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-
-            {/* 显示更多/隐藏评论按钮 / Show more/hide comments button */}
-            {hiddenMainComments > 0 && (
-              <div className="text-center pt-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowAllComments(!showAllComments)}
-                  className="h-7"
-                >
-                  {showAllComments
-                    ? t('comment.hideAll')
-                    : t('comment.showAll', { count: mainComments.length })
-                  }
-                </Button>
+                      </div>
+                    ) : (
+                      // 折叠状态：显示展开按钮 / Collapsed state: show expand button
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleMainCommentExpansion(mainComment.id)}
+                        className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground ml-6"
+                      >
+                        {t('comment.showReplies', { count: subCommentsForMain.length })}
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+            );
+          })}
+
+          {/* 显示更多/隐藏评论按钮 / Show more/hide comments button */}
+          {hiddenMainComments > 0 && (
+            <div className="text-center pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowAllComments(!showAllComments)}
+                className="h-8"
+              >
+                {showAllComments
+                  ? t('comment.hideAll')
+                  : t('comment.showAll', { count: mainComments.length })
+                }
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
