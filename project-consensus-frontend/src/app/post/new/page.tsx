@@ -40,7 +40,7 @@ export default function NewForumPostPage() {
                     placeholder={t("post.titlePlaceholder")}
                     className="mb-3 h-11 text-lg md:text-lg font-normal px-4"
                   />
-                  { /* NOTE: Images are embedded as Base64 for now. TODO: server upload. */ }
+                  { /* NOTE: Images are embedded as Base64 for now. TODO: server upload. */}
                   <RichTextEditor
                     value={content}
                     onChange={setContent}

@@ -1,4 +1,4 @@
-import { Language } from '@/types/app-types';
+import { Language } from '@/types';
 
 // Supported languages in the app (BCP 47)
 export const supportedLanguages: readonly Language[] = ['zh-CN', 'zh-HK', 'en-US'] as const;

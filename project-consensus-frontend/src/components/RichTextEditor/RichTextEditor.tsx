@@ -29,6 +29,8 @@ import {
   PictureEditing,
   Base64UploadAdapter
 } from 'ckeditor5';
+import type { EditorConfig } from 'ckeditor5';
+import { cn } from '@/lib/utils';
 
 // CKEditor 5 styles (required for proper UI rendering)
 // NOTE: Global CSS must be imported in a root layout. See `src/app/layout.tsx`.
@@ -42,7 +44,7 @@ type RichTextEditorProps = {
 };
 
 export default function RichTextEditor({ value, onChange, placeholder, className }: RichTextEditorProps) {
-  const plugins = [
+  const plugins: NonNullable<EditorConfig['plugins']> = [
     Essentials,
     Paragraph,
     Heading,
@@ -77,7 +79,7 @@ export default function RichTextEditor({ value, onChange, placeholder, className
     'insertTable', 'uploadImage'
   ];
 
-  const config: any = {
+  const config: EditorConfig = {
     // Free usage under GPL; set a commercial key if you purchase one later
     licenseKey: process.env.NEXT_PUBLIC_CKEDITOR_LICENSE_KEY ?? 'GPL',
     plugins,
@@ -102,7 +104,7 @@ export default function RichTextEditor({ value, onChange, placeholder, className
   };
 
   return (
-    <div className={`${className} ${styles.container}`}>
+    <div className={cn(className, styles.container)}>
       <CKEditor
         editor={ClassicEditor}
         config={config}
@@ -112,5 +114,3 @@ export default function RichTextEditor({ value, onChange, placeholder, className
     </div>
   );
 }
-
-

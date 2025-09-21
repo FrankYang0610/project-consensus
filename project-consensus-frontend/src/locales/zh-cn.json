@@ -58,21 +58,42 @@
   },
   "post": {
     "translate": "翻译",
-    "original": "原文",
+    "showOriginal": "原文",
     "share": "分享",
     "copied": "已复制！",
     "copyText": "复制文本",
     "translateUnavailable": "翻译功能尚不可用",
     "shareUnavailable": "分享功能暂时不可用，敬请期待！",
     "copyFailed": "复制文本到剪贴板失败",
-    "justNow": "刚刚",
-    "hoursAgo": "小时前",
-    "daysAgo": "天前",
     "newTitle": "创建新的论坛帖子",
     "titlePlaceholder": "输入标题",
     "contentPlaceholder": "输入正文内容",
     "create": "发帖",
     "cancel": "放弃"
+  },
+  "time": {
+    "justNow": "刚刚",
+    "hoursAgo": "小时前",
+    "daysAgo": "天前",
+    "invalidDate": "无效日期"
+  },
+  "comment": {
+    "title": "评论 ({{count}})",
+    "addComment": "发表评论",
+    "noComments": "还没有评论，来发表第一条评论吧！",
+    "showAll": "查看全部 {{count}} 条评论",
+    "hideAll": "收起评论",
+    "reply": "回复",
+    "delete": "删除",
+    "deleting": "删除中...",
+    "deleted": "此评论已被删除",
+    "showReplies": "展开 {{count}} 条回复",
+    "hideReplies": "收起回复",
+    "loadMore": "加载更多 ({{remaining}} 条)",
+    "translate": "翻译",
+    "showOriginal": "原文",
+    "avatar": "头像",
+    "replyTo": "回复了"
   },
   "common": {
     "note": "注意",
@@ -119,6 +140,113 @@
         "pg": "研究生",
         "all": "全部"
       }
+    }
+  ,
+    "card": {
+      "term": "学期",
+      "semester": {
+        "spring": "春季",
+        "summer": "夏季",
+        "fall": "秋季"
+      },
+      "rating": {
+        "score": "评分",
+        "outOf": "共10分",
+        "reviews": "{{count}} 人评价"
+      },
+      "attributes": {
+        "difficulty": "课程难度",
+        "workload": "课业多少",
+        "grading": "给分好坏",
+        "gain": "收获大小"
+      },
+      "adjectives": {
+        "veryEasy": "非常容易",
+        "easy": "容易",
+        "medium": "一般",
+        "hard": "较难",
+        "veryHard": "非常难",
+        "light": "很少",
+        "moderate": "适中",
+        "heavy": "较多",
+        "veryHeavy": "非常多",
+        "lenient": "宽松",
+        "balanced": "中等",
+        "strict": "严格",
+        "low": "较少",
+        "decent": "不错",
+        "high": "很多"
+      },
+      "teachers": "老师：{{names}}",
+      "lastUpdated": "最近更新：{{date}}",
+      "viewDetails": "查看详情"
+    ,
+    "labels": {
+      "teachers": "老师",
+      "department": "部门"
+    }
+    },
+    "detail": {
+      "follow": "关注",
+      "recommend": "推荐",
+      "notRecommend": "不推荐",
+      "teachers": "授课教师",
+      "teacherHomepage": "教师主页",
+      "otherTeachersOfCourse": "其他老师的【{{title}}】课程",
+      "otherTeachers": {
+        "gain": "收获大小",
+        "grading": "给分好坏"
+      },
+      "aiSummary": "AI 智能总结",
+      "aiSummaryComingSoon": "根据学生评价自动生成的课程概要即将推出，敬请期待。",
+      "courseInfo": "课程信息",
+      "selectionCategory": "选课类别",
+      "teachingType": "教学类型",
+      "courseCategory": "课程类别",
+      "offeringDepartment": "开课单位",
+      "level": "课程层次",
+      "credits": "学分",
+      "courseHomepage": "课程主页",
+      "visitOfficialPage": "访问官方课程页面",
+      "syllabus": "课程大纲",
+      "viewDetailedSyllabus": "查看详细课程大纲",
+      "courseLinks": "课程链接",
+      "noLinkAvailable": "暂无链接",
+      "courseNotFound": "课程未找到。",
+      "reviews": {
+        "title": "点评",
+        "writeReview": "写点评",
+        "deletedNotice": "本课程有 {{count}} 位用户曾删除过点评。",
+          "totalReviews": "一共 {{count}} 条 点评",
+        "sort": {
+          "label": "排序",
+          "options": {
+            "mostLiked": "点赞最多",
+            "newest": "最新点评",
+            "oldest": "最旧点评",
+            "ratingHighToLow": "评分高-低",
+            "ratingLowToHigh": "评分低-高"
+          }
+        },
+        "term": {
+          "label": "学期",
+          "select": "选择学期",
+          "selected": "已选 {{count}} 项"
+        },
+        "rating": {
+          "label": "评分",
+          "min": "最低分",
+          "max": "最高分"
+        },
+        "apply": "应用"
+      }
+    },
+    "review": {
+      "overallRating": "综合评分",
+      "edited": "编辑于 {{date}}",
+      "reply": "回复",
+      "replies": "{{count}} 条回复",
+      "repliesSection": "回复将显示在此处"
     }
   },
   "about": {

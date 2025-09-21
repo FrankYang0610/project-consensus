@@ -58,21 +58,42 @@
   },
   "post": {
     "translate": "Translate",
-    "original": "Original",
+    "showOriginal": "Original",
     "share": "Share",
     "copied": "Copied!",
     "copyText": "Copy text",
     "translateUnavailable": "Translation feature is not available yet",
     "shareUnavailable": "Share feature is temporarily unavailable. Stay tuned!",
     "copyFailed": "Failed to copy text to clipboard",
-    "justNow": "Just now",
-    "hoursAgo": "hours ago",
-    "daysAgo": "days ago",
     "newTitle": "Create a new forum post",
     "titlePlaceholder": "Enter a title",
     "contentPlaceholder": "Enter post content",
     "create": "Post",
     "cancel": "Cancel"
+  },
+  "time": {
+    "justNow": "Just now",
+    "hoursAgo": "hours ago",
+    "daysAgo": "days ago",
+    "invalidDate": "Invalid date"
+  },
+  "comment": {
+    "title": "Comments ({{count}})",
+    "addComment": "Add Comment",
+    "noComments": "No comments yet, be the first to comment!",
+    "showAll": "View all {{count}} comments",
+    "hideAll": "Hide comments",
+    "reply": "Reply",
+    "delete": "Delete",
+    "deleting": "Deleting...",
+    "deleted": "This comment has been deleted",
+    "showReplies": "Show {{count}} replies",
+    "hideReplies": "Hide replies",
+    "loadMore": "Load more ({{remaining}} remaining)",
+    "translate": "Translate",
+    "showOriginal": "Original",
+    "avatar": "Avatar",
+    "replyTo": "replied to"
   },
   "common": {
     "note": "Note",
@@ -119,6 +140,111 @@
         "pg": "Postgraduate",
         "all": "All"
       }
+    },
+    "card": {
+      "term": "Term",
+      "semester": {
+        "spring": "Spring",
+        "summer": "Summer",
+        "fall": "Fall"
+      },
+      "rating": {
+        "score": "Rating",
+        "outOf": "out of 10",
+        "reviews": "{{count}} reviews"
+      },
+      "attributes": {
+        "difficulty": "Difficulty",
+        "workload": "Workload",
+        "grading": "Grading",
+        "gain": "Takeaway"
+      },
+      "adjectives": {
+        "veryEasy": "Very easy",
+        "easy": "Easy",
+        "medium": "Moderate",
+        "hard": "Hard",
+        "veryHard": "Very hard",
+        "light": "Light",
+        "moderate": "Moderate",
+        "heavy": "Heavy",
+        "veryHeavy": "Very heavy",
+        "lenient": "Lenient",
+        "balanced": "Balanced",
+        "strict": "Strict",
+        "low": "Low",
+        "decent": "Decent",
+        "high": "High"
+      },
+      "teachers": "Teachers: {{names}}",
+      "lastUpdated": "Last updated: {{date}}",
+      "viewDetails": "View details",
+      "labels": {
+        "teachers": "Teachers",
+        "department": "Department"
+      }
+    },
+    "detail": {
+      "follow": "Follow",
+      "recommend": "Recommend",
+      "notRecommend": "Not Recommend",
+      "teachers": "Instructors",
+      "teacherHomepage": "Teacher Homepage",
+      "otherTeachersOfCourse": "Other teachers of \"{{title}}\"",
+      "otherTeachers": {
+        "gain": "Gain",
+        "grading": "Grading"
+      },
+      "aiSummary": "AI Summary",
+      "aiSummaryComingSoon": "AI-generated course summary based on student reviews coming soon.",
+      "courseInfo": "Course Information",
+      "selectionCategory": "Selection Category",
+      "teachingType": "Teaching Type",
+      "courseCategory": "Course Category",
+      "offeringDepartment": "Offering Department",
+      "level": "Course Level",
+      "credits": "Credits",
+      "courseHomepage": "Course Homepage",
+      "visitOfficialPage": "Visit official course page",
+      "syllabus": "Syllabus",
+      "viewDetailedSyllabus": "View detailed course syllabus",
+      "courseLinks": "Course Links",
+      "noLinkAvailable": "No link available",
+      "courseNotFound": "Course not found.",
+      "reviews": {
+        "title": "Reviews",
+        "writeReview": "Write a review",
+        "deletedNotice": "For this course, {{count}} users have deleted their reviews.",
+        "totalReviews": "Total {{count}} reviews",
+        "sort": {
+          "label": "Sort",
+          "options": {
+            "mostLiked": "Most liked",
+            "newest": "Newest",
+            "oldest": "Oldest",
+            "ratingHighToLow": "Rating: high → low",
+            "ratingLowToHigh": "Rating: low → high"
+          }
+        },
+        "term": {
+          "label": "Term",
+          "select": "Select terms",
+          "selected": "{{count}} selected"
+        },
+        "rating": {
+          "label": "Rating",
+          "min": "Min rating",
+          "max": "Max rating"
+        },
+        "apply": "Apply"
+      }
+    },
+    "review": {
+      "overallRating": "Overall Rating",
+      "edited": "edited {{date}}",
+      "reply": "Reply",
+      "replies": "{{count}} replies",
+      "repliesSection": "Replies will appear here"
     }
   },
   "about": {

@@ -58,21 +58,42 @@
   },
   "post": {
     "translate": "翻譯",
-    "original": "原文",
+    "showOriginal": "原文",
     "share": "分享",
     "copied": "已複製！",
     "copyText": "複製文本",
     "translateUnavailable": "翻譯功能尚不可用",
     "shareUnavailable": "分享功能暫時不可用，敬請期待！",
     "copyFailed": "複製文本到剪貼板失敗",
-    "justNow": "剛剛",
-    "hoursAgo": "小時前",
-    "daysAgo": "天前",
     "newTitle": "建立新的論壇帖子",
     "titlePlaceholder": "輸入標題",
     "contentPlaceholder": "輸入正文內容",
     "create": "發帖",
     "cancel": "放棄"
+  },
+  "time": {
+    "justNow": "剛剛",
+    "hoursAgo": "小時前",
+    "daysAgo": "天前",
+    "invalidDate": "無效日期"
+  },
+  "comment": {
+    "title": "評論 ({{count}})",
+    "addComment": "發表評論",
+    "noComments": "還沒有評論，來發表第一條評論吧！",
+    "showAll": "查看全部 {{count}} 條評論",
+    "hideAll": "收起評論",
+    "reply": "回覆",
+    "delete": "刪除",
+    "deleting": "刪除中...",
+    "deleted": "此評論已被刪除",
+    "showReplies": "展開 {{count}} 條回覆",
+    "hideReplies": "收起回覆",
+    "loadMore": "載入更多 ({{remaining}} 條)",
+    "translate": "翻譯",
+    "showOriginal": "原文",
+    "avatar": "頭像",
+    "replyTo": "回覆了"
   },
   "common": {
     "note": "注意",
@@ -119,6 +140,113 @@
         "pg": "研究生",
         "all": "全部"
       }
+    }
+  ,
+    "card": {
+      "term": "學期",
+      "semester": {
+        "spring": "春季",
+        "summer": "夏季",
+        "fall": "秋季"
+      },
+      "rating": {
+        "score": "評分",
+        "outOf": "共10分",
+        "reviews": "{{count}} 人評價"
+      },
+      "attributes": {
+        "difficulty": "課程難度",
+        "workload": "課業多少",
+        "grading": "給分好壞",
+        "gain": "收穫大小"
+      },
+      "adjectives": {
+        "veryEasy": "非常容易",
+        "easy": "容易",
+        "medium": "一般",
+        "hard": "較難",
+        "veryHard": "非常難",
+        "light": "很少",
+        "moderate": "適中",
+        "heavy": "較多",
+        "veryHeavy": "非常多",
+        "lenient": "寬鬆",
+        "balanced": "中等",
+        "strict": "嚴格",
+        "low": "較少",
+        "decent": "不錯",
+        "high": "很多"
+      },
+      "teachers": "老師：{{names}}",
+      "lastUpdated": "最近更新：{{date}}",
+      "viewDetails": "查看詳情"
+    ,
+    "labels": {
+      "teachers": "老師",
+      "department": "部門"
+    }
+    },
+    "detail": {
+      "follow": "關注",
+      "recommend": "推薦",
+      "notRecommend": "不推薦",
+      "teachers": "授課教師",
+      "teacherHomepage": "教師主頁",
+      "otherTeachersOfCourse": "其他老師的【{{title}}】課程",
+      "otherTeachers": {
+        "gain": "收獲大小",
+        "grading": "給分好壞"
+      },
+      "aiSummary": "AI 智能總結",
+      "aiSummaryComingSoon": "根據學生評價自動生成的課程概要即將推出，敬請期待。",
+      "courseInfo": "課程資訊",
+      "selectionCategory": "選課類別",
+      "teachingType": "教學類型",
+      "courseCategory": "課程類別",
+      "offeringDepartment": "開課單位",
+      "level": "課程層次",
+      "credits": "學分",
+      "courseHomepage": "課程主頁",
+      "visitOfficialPage": "訪問官方課程頁面",
+      "syllabus": "課程大綱",
+      "viewDetailedSyllabus": "查看詳細課程大綱",
+      "courseLinks": "課程連結",
+      "noLinkAvailable": "暫無連結",
+      "courseNotFound": "找不到課程。",
+      "reviews": {
+        "title": "點評",
+        "writeReview": "寫點評",
+        "deletedNotice": "本課程有 {{count}} 位用戶曾刪除過點評。",
+          "totalReviews": "一共 {{count}} 條 點評",
+        "sort": {
+          "label": "排序",
+          "options": {
+            "mostLiked": "點贊最多",
+            "newest": "最新點評",
+            "oldest": "最舊點評",
+            "ratingHighToLow": "評分高-低",
+            "ratingLowToHigh": "評分低-高"
+          }
+        },
+        "term": {
+          "label": "學期",
+          "select": "選擇學期",
+          "selected": "已選 {{count}} 項"
+        },
+        "rating": {
+          "label": "評分",
+          "min": "最低分",
+          "max": "最高分"
+        },
+        "apply": "應用"
+      }
+    },
+    "review": {
+      "overallRating": "綜合評分",
+      "edited": "編輯於 {{date}}",
+      "reply": "回覆",
+      "replies": "{{count}} 條回覆",
+      "repliesSection": "回覆將顯示在此處"
     }
   },
   "about": {
