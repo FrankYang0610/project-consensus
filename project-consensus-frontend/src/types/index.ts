@@ -22,5 +22,6 @@ export type {
   TeacherInfo,
   OtherTeacherCourse,
   CourseReview,
+  CourseReviewReply,
   Course,
 } from './course';

@@ -108,3 +108,22 @@ export interface Course {
   // Other teachers teaching the same course
   otherTeacherCourses?: OtherTeacherCourse[];
 }
+
+/**
+ * Course review reply information
+ */
+export interface CourseReviewReply {
+  id: string; // Reply unique identifier
+  reviewId: string; // Parent course review ID
+  author: {
+    id: string; // Author ID
+    name: string; // Author name
+    avatarUrl?: string; // Optional avatar URL
+  };
+  content: string; // Reply content (basic HTML allowed)
+  createdAt: string; // Creation time
+  likes: number; // Number of likes
+  isLiked?: boolean; // Whether current user liked this reply
+  replyToUser?: { id: string; name: string }; // Optional: reply target
+  isDeleted?: boolean; // Whether the reply is deleted
+}

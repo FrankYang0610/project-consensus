@@ -3,5 +3,6 @@
   "editor.insertSpaces": true,
   "editor.detectIndentation": false,
   "editor.useTabStops": true,
-  "prettier.useEditorConfig": true
+  "prettier.useEditorConfig": true,
+  "chatgpt.commentCodeLensEnabled": true
 }

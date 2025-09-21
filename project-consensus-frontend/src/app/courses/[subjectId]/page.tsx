@@ -6,6 +6,8 @@ import { SiteNavigation } from "@/components/SiteNavigation";
 import CoursesDetailedCard from "@/components/CoursesDetailedCard";
 import CourseReviewCard from "@/components/CourseReviewCard";
 import { TeacherInfo } from "@/types";
+import CourseReviewReplyCard from "@/components/CourseReviewReplyCard";
+import { getRepliesByReviewId } from "@/data/sampleReviewReplies";
 import { sampleCourses, getOtherTeacherCourses } from "@/data/sampleCourses";
 import { getReviewsBySubjectId } from "@/data/sampleReviews";
 import { useI18n } from "@/hooks/useI18n";
@@ -44,6 +46,31 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
     if (!course) return [];
     return getReviewsBySubjectId(course.subjectId);
   }, [course]);
+
+  // Track which reviews' replies are expanded (default collapsed)
+  const [expandedReviews, setExpandedReviews] = React.useState<Set<string>>(new Set());
+
+  // TODO: Wire to API to like a review
+  const handleLikeReview = React.useCallback((reviewId: string) => {
+    console.log("Like review:", reviewId);
+    // TODO: Call backend endpoint and update local state accordingly
+  }, []);
+
+  // Toggle replies expanded/collapsed per review (default collapsed)
+  const handleToggleReplies = React.useCallback((reviewId: string, nextExpanded: boolean) => {
+    setExpandedReviews(prev => {
+      const next = new Set(prev);
+      if (nextExpanded) next.add(reviewId); else next.delete(reviewId);
+      return next;
+    });
+    // TODO: Optionally lazy-load replies when expanding (fetch if not cached)
+  }, []);
+
+  // TODO: Open editor to post a new reply
+  const handleCreateReply = React.useCallback((reviewId: string) => {
+    console.log("Create reply for review:", reviewId);
+    // TODO: Open reply editor modal/sheet and submit to backend
+  }, []);
 
 
   if (!course) {
@@ -98,21 +125,47 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
             {courseReviews.length > 0 && (
               <div className="px-4">
                 <div className="flex flex-col gap-1">
-                  {courseReviews.map((review) => (
-                    <CourseReviewCard
-                      key={review.id}
-                      review={review}
-                      onLike={(reviewId) => {
-                        console.log("Like review:", reviewId);
-                        // TODO: Implement like functionality
-                      }}
-                      onReply={(reviewId) => {
-                        console.log("Reply to review:", reviewId);
-                        // TODO: Implement reply functionality
-                      }}
-                      showRepliesSection={true}
-                    />
-                  ))}
+                  {courseReviews.map((review) => {
+                    const isExpanded = expandedReviews.has(review.id);
+                    const replies = isExpanded ? getRepliesByReviewId(review.id) : [];
+                    return (
+                      <div key={review.id} className="space-y-0.5">
+                        {/* Review card */}
+                        <CourseReviewCard
+                          review={review}
+                          onLike={handleLikeReview}
+                          onToggleReplies={handleToggleReplies}
+                          repliesExpanded={isExpanded}
+                          onCreateReply={handleCreateReply}
+                          showRepliesSection={false}
+                        />
+
+                        {/* Replies area: only render when expanded */}
+                        {isExpanded && (
+                          <div className="ml-12 space-y-2">
+                            {replies.map((r) => (
+                              <CourseReviewReplyCard
+                                key={r.id}
+                                reply={r}
+                                onLike={(id) => {
+                                  console.log("Like reply:", id);
+                                  // TODO: Wire to API to like a reply
+                                }}
+                                onReply={(id) => {
+                                  console.log("Reply to reply:", id);
+                                  // TODO: Optionally support sub-reply in future (single layer for now)
+                                }}
+                                onDelete={(id) => {
+                                  console.log("Delete reply:", id);
+                                  // TODO: Wire to API to delete a reply and refresh list
+                                }}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -122,4 +175,3 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
     </div>
   );
 }
-
