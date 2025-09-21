@@ -90,8 +90,8 @@ export default function PostPage() {
   return (
     <>
       <SiteNavigation showBackButton={true} onBackClick={handleBackClick} />
-      <div className="min-h-screen bg-background">
-        <main className="w-full py-8">
+      <div className="min-h-screen bg-background overflow-x-hidden">
+        <main className="w-full py-4 sm:py-8">
           <div className="container mx-auto px-4 max-w-4xl">
             <ForumPostDetailCard
               post={post}

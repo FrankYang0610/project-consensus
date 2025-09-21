@@ -117,7 +117,7 @@ export function ForumPostDetailCard({
   };
 
   return (
-    <Card className={cn("w-full", className)}>
+    <Card className={cn("w-full !gap-4 pb-5", className)}>
       <CardHeader className="pb-0">
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-2">
@@ -126,10 +126,10 @@ export function ForumPostDetailCard({
                 <img
                   src={post.author.avatar}
                   alt={post.author.name}
-                  className="w-8 h-8 rounded-full object-cover ring-2 ring-zinc-200 dark:ring-zinc-800 shadow-sm"
+                  className="w-7 h-7 rounded-full object-cover ring-2 ring-zinc-200 dark:ring-zinc-800 shadow-sm"
                 />
               ) : (
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-sm ring-2 ring-zinc-200 dark:ring-zinc-800">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-sm ring-2 ring-zinc-200 dark:ring-zinc-800">
                   <span className="text-white text-xs font-semibold">
                     {post.author.name.charAt(0).toUpperCase()}
                   </span>
@@ -149,18 +149,18 @@ export function ForumPostDetailCard({
         </div>
       </CardHeader>
 
-      <CardContent className="pt-0 pb-0">
+      <CardContent className="pt-0 pb-0 -mt-1">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold line-clamp-2 flex-1">
+          <h1 className="text-xl font-bold line-clamp-2 flex-1">
             {isTranslated ? t('post.translateUnavailable') : post.title}
           </h1>
-          <span className="ml-2 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full whitespace-nowrap">
+          <span className="ml-2 px-1.5 py-0.5 text-[11px] font-medium bg-blue-100 text-blue-800 rounded-full whitespace-nowrap">
             {post.language}
           </span>
         </div>
 
         <div
-          className="prose prose-zinc dark:prose-invert max-w-none mb-3 text-[0.95rem] leading-6"
+          className="prose prose-zinc dark:prose-invert max-w-none mb-2 text-[0.9rem] leading-5"
           dangerouslySetInnerHTML={{
             __html: isTranslated
               ? t('post.translateUnavailable')
@@ -169,11 +169,11 @@ export function ForumPostDetailCard({
         />
 
         {post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-4">
+          <div className="flex flex-wrap gap-1 mb-1">
             {post.tags.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground"
+                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground"
               >
                 #{tag}
               </span>
@@ -184,7 +184,7 @@ export function ForumPostDetailCard({
 
       <CardFooter className="pt-0">
         <div className="flex items-center justify-between w-full">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
             <Button
               variant="ghost"
               size="sm"

@@ -109,7 +109,7 @@ export function ForumPostCommentCard({
   return (
     <div className={cn(
       "py-2",
-      isSubComment && "ml-6 border-l-2 border-muted/50 pl-3"
+      isSubComment && "ml-2 sm:ml-6 border-l-2 border-muted/50 pl-2 sm:pl-3"
     )}>
       <div className="flex items-start gap-3">
         {/* 头像 / Avatar */}
@@ -130,8 +130,8 @@ export function ForumPostCommentCard({
         </div>
 
         {/* 评论内容 / Comment content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span className="font-medium text-sm text-foreground">
               {comment.author.name}
             </span>
@@ -144,7 +144,7 @@ export function ForumPostCommentCard({
           </div>
 
           <div
-            className="prose prose-zinc dark:prose-invert max-w-none text-sm leading-relaxed mb-2"
+            className="prose prose-zinc dark:prose-invert max-w-none text-sm leading-relaxed mb-2 break-words overflow-wrap-anywhere"
             dangerouslySetInnerHTML={{
               __html: isTranslated
                 ? sanitizeHtml(t('post.translateUnavailable'))
@@ -153,31 +153,31 @@ export function ForumPostCommentCard({
           />
 
           {/* 操作按钮 / Actions */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-wrap">
             <Button
               variant="ghost"
               size="sm"
               onClick={handleLike}
               className={cn(
-                "h-7 px-2 text-xs",
+                "h-7 px-2 text-xs min-w-0",
                 comment.isLiked && "text-red-500 hover:text-red-600"
               )}
             >
               <Heart className={cn(
-                "w-3 h-3 mr-1",
+                "w-3 h-3 mr-1 flex-shrink-0",
                 comment.isLiked && "fill-current"
               )} />
-              {comment.likes > 0 && comment.likes}
+              <span className="truncate">{comment.likes > 0 && comment.likes}</span>
             </Button>
 
             <Button
               variant="ghost"
               size="sm"
               onClick={handleReply}
-              className="h-7 px-2 text-xs"
+              className="h-7 px-2 text-xs min-w-0"
             >
-              <Reply className="w-3 h-3 mr-1" />
-              {t('comment.reply')}
+              <Reply className="w-3 h-3 mr-1 flex-shrink-0" />
+              <span className="hidden sm:inline">{t('comment.reply')}</span>
             </Button>
 
             <Button
@@ -185,12 +185,12 @@ export function ForumPostCommentCard({
               size="sm"
               onClick={handleTranslate}
               className={cn(
-                "h-7 px-2 text-xs",
+                "h-7 px-2 text-xs min-w-0",
                 isTranslated ? "text-blue-500 hover:text-blue-600" : "text-gray-500 hover:text-gray-600"
               )}
             >
-              <Languages className="w-3 h-3 mr-1" />
-              {isTranslated ? t('comment.showOriginal') : t('comment.translate')}
+              <Languages className="w-3 h-3 mr-1 flex-shrink-0" />
+              <span className="hidden sm:inline">{isTranslated ? t('comment.showOriginal') : t('comment.translate')}</span>
             </Button>
 
             <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
@@ -199,16 +199,16 @@ export function ForumPostCommentCard({
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    "h-7 px-2 text-xs transition-colors",
+                    "h-7 px-2 text-xs transition-colors min-w-0",
                     isCopySuccess && "text-green-500 hover:text-green-600"
                   )}
                 >
                   {isCopySuccess ? (
-                    <Check className="w-3 h-3 mr-1" />
+                    <Check className="w-3 h-3 mr-1 flex-shrink-0" />
                   ) : (
-                    <Share2 className="w-3 h-3 mr-1" />
+                    <Share2 className="w-3 h-3 mr-1 flex-shrink-0" />
                   )}
-                  {isCopySuccess ? t('comment.copied') : t('comment.share')}
+                  <span className="hidden sm:inline">{isCopySuccess ? t('comment.copied') : t('comment.share')}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-40">
@@ -228,10 +228,10 @@ export function ForumPostCommentCard({
                 size="sm"
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="h-7 px-2 text-xs text-destructive hover:text-destructive"
+                className="h-7 px-2 text-xs text-destructive hover:text-destructive min-w-0"
               >
-                <Trash2 className="w-3 h-3 mr-1" />
-                {isDeleting ? t('comment.deleting') : t('comment.delete')}
+                <Trash2 className="w-3 h-3 mr-1 flex-shrink-0" />
+                <span className="hidden sm:inline">{isDeleting ? t('comment.deleting') : t('comment.delete')}</span>
               </Button>
             )}
           </div>

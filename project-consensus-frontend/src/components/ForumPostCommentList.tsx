@@ -93,7 +93,7 @@ export function ForumPostCommentList({
   const hiddenMainComments = sortedMainComments.length - displayedMainComments.length;
 
   return (
-    <div className="mt-6">
+    <div className="mt-6 px-4 sm:px-0">
       {/* 评论列表头部 / Comment list header */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="flex items-center gap-2 text-lg font-semibold">
@@ -141,7 +141,7 @@ export function ForumPostCommentList({
 
                 {/* 子评论区域 / Sub-comments area */}
                 {subCommentsForMain.length > 0 && (
-                  <div className="ml-2">
+                  <div className="ml-1 sm:ml-2">
                     {isExpanded ? (
                       // 展开状态：显示所有子评论 / Expanded state: show all sub-comments
                       <div className="space-y-1">
@@ -162,7 +162,7 @@ export function ForumPostCommentList({
                           variant="ghost"
                           size="sm"
                           onClick={() => toggleMainCommentExpansion(mainComment.id)}
-                          className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground ml-6"
+                          className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground ml-4 sm:ml-6"
                         >
                           {t('comment.hideReplies')}
                         </Button>
@@ -173,7 +173,7 @@ export function ForumPostCommentList({
                         variant="ghost"
                         size="sm"
                         onClick={() => toggleMainCommentExpansion(mainComment.id)}
-                        className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground ml-6"
+                        className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground ml-4 sm:ml-6"
                       >
                         {t('comment.showReplies', { count: subCommentsForMain.length })}
                       </Button>
