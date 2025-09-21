@@ -121,7 +121,7 @@ export interface CourseReviewReply {
     avatarUrl?: string; // Optional avatar URL
   };
   content: string; // Reply content (basic HTML allowed)
-  createdAt: string | Date; // Creation time
+  createdAt: string; // Creation time
   likes: number; // Number of likes
   isLiked?: boolean; // Whether current user liked this reply
   replyToUser?: { id: string; name: string }; // Optional: reply target
