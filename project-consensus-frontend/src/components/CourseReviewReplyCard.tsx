@@ -66,7 +66,11 @@ export function CourseReviewReplyCard({
     if (!onDelete || isDeleting) return;
     setIsDeleting(true);
     try {
-      onDelete(reply.id);
+      // Await the callback in case it returns a Promise
+      await onDelete(reply.id);
+    } catch (err) {
+      // Optional: surface error to UI/logging
+      console.error('Failed to delete reply', err);
     } finally {
       setIsDeleting(false);
     }

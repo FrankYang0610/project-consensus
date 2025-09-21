@@ -7,12 +7,19 @@ import { decode } from "he";
  * @returns Sanitized HTML string
  */
 export function sanitizeHtml(html: string): string {
+  // Strict allowlist policy: only a small set of safe, text-formatting tags are permitted
+  // - No attributes are allowed (blocks href/src/event handlers entirely)
+  // - Explicitly forbid rich/embedded and scriptable contexts
   return DOMPurify.sanitize(html, {
     ALLOWED_TAGS: [
       'p', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'br',
       'strong', 'em', 'code', 'pre', 'blockquote'
     ],
-    ALLOWED_ATTR: []
+    ALLOWED_ATTR: [],
+    FORBID_TAGS: ['script', 'style', 'iframe', 'svg', 'math'],
+    FORBID_ATTR: ['style'],
+    SAFE_FOR_TEMPLATES: true,
+    ALLOW_UNKNOWN_PROTOCOLS: false,
   });
 }
 
