@@ -93,7 +93,10 @@
     "translate": "翻譯",
     "showOriginal": "原文",
     "avatar": "頭像",
-    "replyTo": "回覆了"
+    "replyTo": "回覆了",
+    "share": "分享",
+    "copied": "已複製！",
+    "copyText": "複製文本"
   },
   "common": {
     "note": "注意",

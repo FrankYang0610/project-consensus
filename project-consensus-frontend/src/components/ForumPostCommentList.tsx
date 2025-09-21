@@ -16,6 +16,7 @@ interface ForumPostCommentListProps {
   onLike?: (commentId: string) => void;
   onReply?: (commentId: string) => void;
   onDelete?: (commentId: string) => void;
+  onShare?: (commentId: string) => void;
   onAddComment?: () => void;
   currentUserId?: string;
   postId: string;
@@ -32,6 +33,7 @@ export function ForumPostCommentList({
   onLike,
   onReply,
   onDelete,
+  onShare,
   onAddComment,
   currentUserId,
   postId
@@ -133,6 +135,7 @@ export function ForumPostCommentList({
                   onLike={onLike}
                   onReply={onReply}
                   onDelete={onDelete}
+                  onShare={onShare}
                   currentUserId={currentUserId}
                 />
 
@@ -149,6 +152,7 @@ export function ForumPostCommentList({
                             onLike={onLike}
                             onReply={onReply}
                             onDelete={onDelete}
+                            onShare={onShare}
                             isSubComment={true}
                             currentUserId={currentUserId}
                           />

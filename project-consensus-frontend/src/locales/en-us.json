@@ -93,7 +93,10 @@
     "translate": "Translate",
     "showOriginal": "Original",
     "avatar": "Avatar",
-    "replyTo": "replied to"
+    "replyTo": "replied to",
+    "share": "Share",
+    "copied": "Copied!",
+    "copyText": "Copy text"
   },
   "common": {
     "note": "Note",

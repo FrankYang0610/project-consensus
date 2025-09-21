@@ -1,9 +1,15 @@
 "use client";
 
 import * as React from "react";
-import { Heart, Reply, MoreHorizontal, Trash2, Languages } from "lucide-react";
+import { Heart, Reply, MoreHorizontal, Trash2, Languages, Share2, FileText, Check } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { useI18n } from "@/hooks/useI18n";
 import { sanitizeHtml } from "@/lib/html-utils";
@@ -17,6 +23,7 @@ interface ForumPostCommentCardProps {
   onLike?: (commentId: string) => void;
   onReply?: (commentId: string) => void;
   onDelete?: (commentId: string) => void;
+  onShare?: (commentId: string) => void;
   isSubComment?: boolean;
   currentUserId?: string;
 }
@@ -26,12 +33,15 @@ export function ForumPostCommentCard({
   onLike,
   onReply,
   onDelete,
+  onShare,
   isSubComment = false,
   currentUserId
 }: ForumPostCommentCardProps) {
   const { t, language } = useI18n();
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [isTranslated, setIsTranslated] = React.useState(false);
+  const [isCopySuccess, setIsCopySuccess] = React.useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
 
 
   const handleLike = () => {
@@ -59,6 +69,28 @@ export function ForumPostCommentCard({
 
   const handleTranslate = async () => {
     setIsTranslated(prev => !prev);
+  };
+
+  const handleShareClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onShare?.(comment.id);
+  };
+
+  const handleCopyText = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const textToCopy = `${comment.content}\n\n- ${comment.author.name}`;
+      await navigator.clipboard.writeText(textToCopy);
+      setIsCopySuccess(true);
+      setIsDropdownOpen(false);
+      setTimeout(() => {
+        setIsCopySuccess(false);
+      }, 2000);
+    } catch (err) {
+      console.error('Failed to copy text:', err);
+    }
   };
 
   const canDelete = currentUserId && currentUserId.trim() && currentUserId === comment.author.id;
@@ -160,6 +192,35 @@ export function ForumPostCommentCard({
               <Languages className="w-3 h-3 mr-1" />
               {isTranslated ? t('comment.showOriginal') : t('comment.translate')}
             </Button>
+
+            <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "h-7 px-2 text-xs transition-colors",
+                    isCopySuccess && "text-green-500 hover:text-green-600"
+                  )}
+                >
+                  {isCopySuccess ? (
+                    <Check className="w-3 h-3 mr-1" />
+                  ) : (
+                    <Share2 className="w-3 h-3 mr-1" />
+                  )}
+                  {isCopySuccess ? t('comment.copied') : t('comment.share')}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuItem
+                  onClick={handleCopyText}
+                  className="cursor-pointer"
+                >
+                  <FileText className="w-3 h-3 mr-2" />
+                  <span className="text-xs">{t('comment.copyText')}</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {canDelete && (
               <Button

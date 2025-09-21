@@ -61,6 +61,11 @@ export default function PostPage() {
     console.log("Reply to comment:", commentId);
   };
 
+  const handleCommentShare = (commentId: string) => {
+    // TODO: Implement comment share functionality
+    console.log("Share comment:", commentId);
+  };
+
   if (!post) {
     return (
       <>
@@ -100,6 +105,7 @@ export default function PostPage() {
               onLike={handleCommentLike}
               onReply={handleReplyToComment}
               onDelete={handleCommentDelete}
+              onShare={handleCommentShare}
               onAddComment={handleAddComment}
               currentUserId={currentUserId}
               postId={postId}
