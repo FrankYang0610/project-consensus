@@ -16,8 +16,6 @@ export function sanitizeHtml(html: string): string {
       'strong', 'em', 'code', 'pre', 'blockquote'
     ],
     ALLOWED_ATTR: [],
-    FORBID_TAGS: ['script', 'style', 'iframe', 'svg', 'math'],
-    FORBID_ATTR: ['style'],
     SAFE_FOR_TEMPLATES: true,
     ALLOW_UNKNOWN_PROTOCOLS: false,
   });
