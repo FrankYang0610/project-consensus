@@ -13,7 +13,7 @@ import type { ForumPostComment } from "@/types/forum";
 
 import ClientOnlyTime from "./ClientOnlyTime";
 
-interface ForumPostCommentProps {
+interface ForumPostCommentCardProps {
   comment: ForumPostComment;
   onLike?: (commentId: string) => void;
   onReply?: (commentId: string) => void;
@@ -22,14 +22,14 @@ interface ForumPostCommentProps {
   currentUserId?: string;
 }
 
-export function ForumPostComment({
+export function ForumPostCommentCard({
   comment,
   onLike,
   onReply,
   onDelete,
   isSubComment = false,
   currentUserId
-}: ForumPostCommentProps) {
+}: ForumPostCommentCardProps) {
   const { t, language } = useI18n();
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [isTranslated, setIsTranslated] = React.useState(false);

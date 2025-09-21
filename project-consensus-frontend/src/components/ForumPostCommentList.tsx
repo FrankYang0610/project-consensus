@@ -2,13 +2,17 @@
 
 import * as React from "react";
 import { ForumPostComment } from "@/types/forum";
-import { ForumPostComment as ForumPostCommentComponent } from "./ForumPostComment";
+import { ForumPostCommentCard as ForumPostCommentComponent } from "./ForumPostCommentCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Plus } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { getSeparatedCommentsByPostId, getSubCommentsByMainCommentId } from "@/data/sampleComments";
 
+/**
+ * 论坛帖子评论列表组件的属性接口
+ * Interface for ForumPostCommentList component props
+ */
 interface ForumPostCommentListProps {
   onLike?: (commentId: string) => void;
   onReply?: (commentId: string) => void;
@@ -18,6 +22,13 @@ interface ForumPostCommentListProps {
   postId: string;
 }
 
+/**
+ * 论坛帖子评论列表组件
+ * 用于显示帖子的所有评论，支持主评论和子评论的层级结构
+ * 
+ * Forum Post Comment List Component
+ * Displays all comments for a post with support for main comments and sub-comments hierarchy
+ */
 export function ForumPostCommentList({
   onLike,
   onReply,
@@ -27,28 +38,41 @@ export function ForumPostCommentList({
   postId
 }: ForumPostCommentListProps) {
   const { t } = useI18n();
+  
+  // 控制是否显示所有评论的状态 / State to control whether to show all comments
   const [showAllComments, setShowAllComments] = React.useState(false);
+  
+  // 控制主评论展开状态的状态 / State to control expanded state of main comments
   const [expandedMainComments, setExpandedMainComments] = React.useState<Set<string>>(new Set());
 
-  // 获取分离后的评论数据
+  // 获取分离后的评论数据 / Get separated comment data
   const { mainComments, subComments } = React.useMemo(() => {
     return getSeparatedCommentsByPostId(postId);
   }, [postId]);
 
-  // 按点赞数排序主评论
+  // 按点赞数排序主评论 / Sort main comments by like count
   const sortedMainComments = React.useMemo(() => {
     return [...mainComments].sort((a, b) => b.likes - a.likes);
   }, [mainComments]);
 
-  // 计算总评论数
+  // 计算总评论数 / Calculate total comment count
   const totalComments = mainComments.length + subComments.length;
 
-  // 获取主评论的子评论
+  /**
+   * 获取主评论的子评论
+   * Get sub-comments for a main comment
+   * @param mainCommentId 主评论ID / Main comment ID
+   * @returns 子评论数组 / Array of sub-comments
+   */
   const getSubCommentsForMainComment = (mainCommentId: string) => {
     return getSubCommentsByMainCommentId(mainCommentId, subComments);
   };
 
-  // 切换主评论的展开状态
+  /**
+   * 切换主评论的展开状态
+   * Toggle expansion state of a main comment
+   * @param mainCommentId 主评论ID / Main comment ID
+   */
   const toggleMainCommentExpansion = (mainCommentId: string) => {
     setExpandedMainComments(prev => {
       const newSet = new Set(prev);
@@ -61,17 +85,22 @@ export function ForumPostCommentList({
     });
   };
 
+  // 计算要显示的主评论 / Calculate main comments to display
   const displayedMainComments = showAllComments ? sortedMainComments : sortedMainComments.slice(0, 3);
+  
+  // 计算隐藏的主评论数量 / Calculate number of hidden main comments
   const hiddenMainComments = sortedMainComments.length - displayedMainComments.length;
 
   return (
     <Card className="mt-6">
+      {/* 评论列表头部 / Comment list header */}
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
             <MessageSquare className="w-5 h-5" />
             {t('comment.title', { count: totalComments })}
           </CardTitle>
+          {/* 添加评论按钮 / Add comment button */}
           {onAddComment && (
             <Button
               onClick={onAddComment}
@@ -85,21 +114,24 @@ export function ForumPostCommentList({
         </div>
       </CardHeader>
 
+      {/* 评论内容区域 / Comment content area */}
       <CardContent className="pt-0">
         {displayedMainComments.length === 0 ? (
+          // 无评论时的空状态 / Empty state when no comments
           <div className="text-center py-8 text-muted-foreground">
             <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
             <p className="text-sm">{t('comment.noComments')}</p>
           </div>
         ) : (
           <div className="space-y-4">
+            {/* 遍历显示主评论 / Iterate through and display main comments */}
             {displayedMainComments.map((mainComment) => {
               const subCommentsForMain = getSubCommentsForMainComment(mainComment.id);
               const isExpanded = expandedMainComments.has(mainComment.id);
 
               return (
                 <div key={mainComment.id} className="space-y-2">
-                  {/* 主评论 / Main comments */}
+                  {/* 主评论组件 / Main comment component */}
                   <ForumPostCommentComponent
                     comment={mainComment}
                     onLike={onLike}
@@ -108,10 +140,11 @@ export function ForumPostCommentList({
                     currentUserId={currentUserId}
                   />
 
-                  {/* 子评论 / Sub-comments */}
+                  {/* 子评论区域 / Sub-comments area */}
                   {subCommentsForMain.length > 0 && (
                     <div className="ml-4 space-y-1">
                       {isExpanded ? (
+                        // 展开状态：显示所有子评论 / Expanded state: show all sub-comments
                         subCommentsForMain.map((subComment) => (
                           <ForumPostCommentComponent
                             key={subComment.id}
@@ -124,6 +157,7 @@ export function ForumPostCommentList({
                           />
                         ))
                       ) : (
+                        // 折叠状态：显示展开按钮 / Collapsed state: show expand button
                         <Button
                           variant="ghost"
                           size="sm"
@@ -134,6 +168,7 @@ export function ForumPostCommentList({
                         </Button>
                       )}
 
+                      {/* 展开状态下的收起按钮 / Collapse button when expanded */}
                       {isExpanded && (
                         <Button
                           variant="ghost"
@@ -150,6 +185,7 @@ export function ForumPostCommentList({
               );
             })}
 
+            {/* 显示更多/隐藏评论按钮 / Show more/hide comments button */}
             {hiddenMainComments > 0 && (
               <div className="text-center pt-2">
                 <Button
