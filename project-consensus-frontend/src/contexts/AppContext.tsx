@@ -98,21 +98,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // 确保 i18n 已初始化
     // Ensure i18n is initialized
     // 
-    // 为什么需要这个检查：
-    // 1. i18n 库需要时间加载和初始化资源文件（翻译文本、语言包等）
-    // 2. 在 i18n 未完全初始化时调用 changeLanguage() 可能导致：
-    //    - 翻译文本显示为 key 而不是实际翻译内容
-    //    - 语言切换失败或出现错误
-    //    - 应用状态不一致（UI 显示语言与 i18n 内部状态不匹配）
-    // 3. 这个检查确保只有在 i18n 完全准备好后才执行语言检测和切换逻辑
-    // 
-    // Why this check is needed:
-    // 1. i18n library needs time to load and initialize resource files (translation texts, language packs, etc.)
-    // 2. Calling changeLanguage() before i18n is fully initialized may cause:
-    //    - Translation texts showing as keys instead of actual translated content
-    //    - Language switching failure or errors
-    //    - Inconsistent app state (UI language doesn't match i18n internal state)
-    // 3. This check ensures language detection and switching logic only runs when i18n is fully ready
+    // 检查 i18n 是否初始化，避免语言切换时出现翻译或状态异常。
+    // Check i18n initialization to prevent translation/state issues during language switching.
+    // See docs/i18n-language-check.md for detailed reasoning.
     if (!i18n.isInitialized) return;
     
     try {
