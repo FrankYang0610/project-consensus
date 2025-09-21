@@ -87,6 +87,7 @@
   },
   "time": {
     "justNow": "Just now",
+    "minutesAgo": "minutes ago",
     "hoursAgo": "hours ago",
     "daysAgo": "days ago",
     "invalidDate": "Invalid date"

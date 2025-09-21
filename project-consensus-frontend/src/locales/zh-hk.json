@@ -87,6 +87,7 @@
   },
   "time": {
     "justNow": "剛剛",
+    "minutesAgo": "分鐘前",
     "hoursAgo": "小時前",
     "daysAgo": "天前",
     "invalidDate": "無效日期"

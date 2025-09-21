@@ -31,10 +31,13 @@ export function formatRelativeTime(dateString: string, t: (key: string) => strin
   }
 
   const now = new Date();
-  const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+  const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+  const diffInHours = Math.floor(diffInMinutes / 60);
 
-  if (diffInHours < 1) {
+  if (diffInMinutes < 1) {
     return t('time.justNow'); // "Just now" / "刚刚"
+  } else if (diffInMinutes < 60) {
+    return `${diffInMinutes} ${t('time.minutesAgo')}`; // "X minutes ago" / "X分钟前"
   } else if (diffInHours < 24) {
     return `${diffInHours} ${t('time.hoursAgo')}`; // "X hours ago" / "X小时前"
   } else if (diffInHours < 168) {
