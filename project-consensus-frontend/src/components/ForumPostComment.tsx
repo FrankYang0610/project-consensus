@@ -1,14 +1,17 @@
 "use client";
 
 import * as React from "react";
-import type { ForumPostComment } from "@/types/forum";
+import { Heart, Reply, MoreHorizontal, Trash2, Languages } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Heart, Reply, MoreHorizontal, Trash2, Languages } from "lucide-react";
-import { cn } from "@/lib/utils";
+
 import { useI18n } from "@/hooks/useI18n";
 import { sanitizeHtml } from "@/lib/html-utils";
-import { formatRelativeTime } from "@/lib/time-utils";
+import { cn } from "@/lib/utils";
+import type { ForumPostComment } from "@/types/forum";
+
+import ClientOnlyTime from "./ClientOnlyTime";
 
 interface ForumPostCommentProps {
   comment: ForumPostComment;
@@ -111,9 +114,7 @@ export function ForumPostComment({
                     {t('comment.replyTo')} {comment.replyToUser.name}
                   </span>
                 )}
-                <span className="text-xs text-muted-foreground">
-                  {formatRelativeTime(comment.createdAt, t, language)}
-                </span>
+                <ClientOnlyTime dateString={comment.createdAt} className="text-xs text-muted-foreground" />
               </div>
 
               <div

@@ -10,13 +10,13 @@ import {
   Check,
 } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardFooter,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -30,11 +30,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
-import { ForumPost } from "@/types";
+
 import { useI18n } from "@/hooks/useI18n";
 import { sanitizeHtml } from "@/lib/html-utils";
-import { formatRelativeTime } from "@/lib/time-utils";
+import { cn } from "@/lib/utils";
+import { ForumPost } from "@/types";
+
+import ClientOnlyTime from "./ClientOnlyTime";
 
 /**
  * 论坛帖子详情卡片组件属性 / Forum post detail card component props
@@ -141,10 +143,7 @@ export function ForumPostDetailCard({
               >
                 {post.author.name}
               </button>
-              <div className="flex items-center text-xs text-muted-foreground">
-                <Calendar className="w-3 h-3 mr-1" />
-                {formatRelativeTime(post.createdAt, t, language)}
-              </div>
+              <ClientOnlyTime dateString={post.createdAt} />
             </div>
           </div>
         </div>
