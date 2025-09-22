@@ -70,9 +70,9 @@ export function TagManager({
       {/* Tags Display */}
       {tags.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {tags.map((tag, index) => (
+          {tags.map((tag) => (
             <div
-              key={index}
+              key={tag}
               className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-sm"
             >
               <span>{tag}</span>
