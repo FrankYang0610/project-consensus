@@ -1,91 +1,92 @@
-# 项目简介
+# Project Overview
 
-Django + DRF + PostgreSQL 17 的后端模板。
+Django + DRF + PostgreSQL 17 backend template.
 
-- Python：3.13.7
-- 依赖已锁定：见 `requirements.txt`
-- DB：通过 Docker 运行 PostgreSQL 17（保证环境一致）
-- 配置：使用 `.env`（不入库）
-- CI：GitHub Actions（每次 push/PR 自动验证能否安装依赖并成功迁移数据库）
+- Python: 3.13.7
+- Locked dependencies: see `requirements.txt`
+- DB: run PostgreSQL 17 via Docker (consistent local env)
+- Config: `.env` (not committed)
+- CI: GitHub Actions (on every push/PR, verify deps install and DB migrations)
 
-> 说明：本 README 位于 `project-consensus-backend/` 根目录，以下命令默认在该目录下执行。
+> Note: This README lives under `project-consensus-backend/`. Commands below assume this directory as the working directory.
 
 ---
 
-## 快速开始（macOS）
+## Quick Start (macOS)
 
-适用于 macOS。首次使用请按顺序执行。
+For macOS. Follow in order for first-time setup.
 
 ```bash
-# 1) 安装 Docker Desktop（二选一）
-#   A) 用 Homebrew（推荐）：
+# 1) Install Docker Desktop (choose one)
+#   A) Homebrew (recommended):
 brew install --cask docker
-#   安装后从“应用程序”里“Docker.app”首次手动打开，等待右上角小鲸鱼变成就绪状态
-#   B) 或到 Docker 官网下载 DMG 安装，再手动打开 Docker.app
+#   After install, open Docker.app once from Applications and wait
+#   for the whale icon to indicate Docker is ready.
+#   B) Or download the DMG from Docker's website and open Docker.app.
 
-# 2) 克隆仓库（如果你还未克隆），并进入后端目录
+# 2) Clone the repo (if you haven't) and enter the backend directory
 # git clone <repo-url> && cd <repo-folder>/project-consensus-backend
 
-# 3) 安装/激活 Python 3.13.7 虚拟环境
-#！注意，如果使用anaconda/conda且默认激活了，需要先进行conda deactivate
+# 3) Install/activate a Python 3.13.7 virtual environment
+#! If using anaconda/conda and it auto-activates, run: conda deactivate
 
-python3 -V                       # 确认是 3.13.7（或 3.13.x）
+python3 -V                       # ensure 3.13.7 (or 3.13.x)
 python3 -m venv .venv
 source .venv/bin/activate
 python -V && pip -V
 
 
-# 4) 安装依赖（已锁定）
+# 4) Install dependencies (locked)
 pip install -r requirements.txt
 
-# 5) 配置环境变量（推荐从示例复制）
+# 5) Configure environment variables (copy from example)
 cp .env.example .env
-# 打开 .env，至少确认：
+# Edit .env and at minimum confirm:
 #   DEBUG=True
-#   SECRET_KEY=任意非空字符串（生产请改为强随机）
+#   SECRET_KEY=any non-empty string (use strong random in production)
 #   ALLOWED_HOSTS=127.0.0.1,localhost
-#   LANGUAGE_CODE=zh-hans（可选，默认 zh-hans；如需英文可设 en-us）
-#   TIME_ZONE=Asia/Shanghai（可选，默认 Asia/Shanghai；可改为 UTC 等）
-#   CORS_ALLOWED_ORIGINS=http://localhost:3000（如有前端）
-#   CSRF_TRUSTED_ORIGINS=http://localhost:8000（如使用 Cookie/会话）
+#   LANGUAGE_CODE=zh-hans (optional, default zh-hans; set en-us for English)
+#   TIME_ZONE=Asia/Shanghai (optional, default Asia/Shanghai; e.g., UTC)
+#   CORS_ALLOWED_ORIGINS=http://localhost:3000 (if you have a frontend)
+#   CSRF_TRUSTED_ORIGINS=http://localhost:8000 (if using cookies/sessions)
 #   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/appdb
 
-# 6) 启动 PostgreSQL 17（确保 Docker Desktop 已经打开并就绪）
+# 6) Start PostgreSQL 17 (ensure Docker Desktop is running)
 docker compose up -d
-docker compose ps    # db 应显示 "healthy"
+docker compose ps    # db should show "healthy"
 
-# 7) 初始化数据库并启动服务
+# 7) Initialize DB and start the dev server
 python manage.py migrate
 python manage.py runserver
 
-# 8) 验证
-# 浏览器打开：http://127.0.0.1:8000/api/health/ ，应返回：
+# 8) Verify
+# Open in browser: http://127.0.0.1:8000/api/health/ ; expected:
 # {"status":"ok"}
 ```
 
 ---
 
-## 配置说明
+## Configuration
 
-- `.env`（本地）：
-  - `DEBUG=True`（开发）
-  - `SECRET_KEY=任意非空字符串`（生产需改为强随机，并通过环境变量注入）
+- `.env` (local):
+  - `DEBUG=True` (development)
+  - `SECRET_KEY=...` (use strong random in production and inject via env)
   - `ALLOWED_HOSTS=127.0.0.1,localhost`
-  - `LANGUAGE_CODE=zh-hans`（可选，默认 zh-hans；例如 `en-us`）
-  - `TIME_ZONE=Asia/Shanghai`（可选，默认 Asia/Shanghai；例如 `UTC`、`Europe/Berlin`）
-  - `CORS_ALLOWED_ORIGINS=http://localhost:3000`（如有前端）
-  - `CSRF_TRUSTED_ORIGINS=http://localhost:8000`（如使用 Cookie/会话）
+  - `LANGUAGE_CODE=zh-hans` (optional, default zh-hans; e.g., `en-us`)
+  - `TIME_ZONE=Asia/Shanghai` (optional, default Asia/Shanghai; e.g., `UTC`, `Europe/Berlin`)
+  - `CORS_ALLOWED_ORIGINS=http://localhost:3000` (if you have a frontend)
+  - `CSRF_TRUSTED_ORIGINS=http://localhost:8000` (if using cookies/sessions)
   - `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/appdb`
-- `docker-compose.yml`：使用 `postgres:17`，端口映射 `5432:5432`，用户名密码均为 `postgres`，数据库名 `appdb`。
+- `docker-compose.yml`: uses `postgres:17`, port `5432:5432`, username/password `postgres`, database `appdb`.
 
-  - 若你本机 5432 被占用，可改成：
+  - If local port 5432 is occupied, change to:
 
     ```yaml
     ports:
       - "55432:5432"
     ```
 
-    同时把 `.env` 的 `DATABASE_URL` 改为：
+    and update `.env` `DATABASE_URL` accordingly:
 
     ```
     postgresql://postgres:postgres@localhost:55432/appdb
@@ -93,99 +94,99 @@ python manage.py runserver
 
 ---
 
-## 常用命令
+## Common Commands
 
-- Docker / 数据库
+- Docker / Database
 
 ```bash
-docker compose up -d               # 启动 DB
-docker compose stop                # 停止 DB
-docker compose logs -f db          # 查看 DB 日志
-docker exec -it dj_db17 psql -U postgres -d appdb   # 进入 psql
-# psql 内常用：
-#   \dt                      -- 列出表
+docker compose up -d               # start DB
+docker compose stop                # stop DB
+docker compose logs -f db          # follow DB logs
+docker exec -it dj_db17 psql -U postgres -d appdb   # enter psql
+# In psql:
+#   \dt
 #   select count(*) from django_migrations;
-#   \q                      -- 退出
+#   \q
 ```
 
 - Django
 
 ```bash
-python manage.py makemigrations     # 根据模型变化生成迁移文件
-python manage.py migrate            # 执行迁移（真正改数据库）
-python manage.py check              # 自检（配置/依赖基本检查）
-python manage.py showmigrations     # 查看迁移状态
-python manage.py runserver          # 启动开发服务器
+python manage.py makemigrations     # generate migration files from model changes
+python manage.py migrate            # apply migrations (change the DB)
+python manage.py check              # self-check (basic config/deps)
+python manage.py showmigrations     # show migration status
+python manage.py runserver          # start dev server
 ```
 
 ---
 
-## 故障排查
+## Troubleshooting
 
-- `docker compose ps` 不 healthy
-  - 打开 Docker Desktop，等待小鲸鱼就绪；
-  - `docker compose logs db` 查看报错；
-  - 如端口被占用，参考上文端口改法。
-- `migrate` 失败
-  - 确认数据库健康；
-  - 对齐 `.env` 的 `DATABASE_URL` 与 compose 的端口/用户名/密码/库名；
-  - 再执行：`python manage.py migrate --plan` 预览步骤。
-- 跨域 / CSRF
-  - CORS：把前端页面的源写到 `CORS_ALLOWED_ORIGINS`；
-  - CSRF：如用 Cookie/Session 发起修改类请求，需要把带协议的页面域写到 `CSRF_TRUSTED_ORIGINS`（如 `https://app.example.com`）。
-
----
-
-## CI：工作流与健康检查
-
-本仓库已包含最小可用的 GitHub Actions 工作流：`/.github/workflows/ci.yml`（位于仓库根目录 `.github/workflows/`）。
-
-注意：该工作流将 steps 的工作目录设置为 `project-consensus-backend/`，因此 `pip install -r requirements.txt`、`python manage.py migrate` 等命令会在后端子目录下执行。
-
-流程包括：
-
-1. 拉取代码（`actions/checkout`）。
-2. 启动 PostgreSQL 17 服务并等待健康（`pg_isready` 健康检查）。
-3. 安装 Python 3.13，创建虚拟环境并安装 `project-consensus-backend/requirements.txt`。
-4. 写入一份用于 CI 的最小 `.env`（`DATABASE_URL` 指向上面那台 Postgres 17）。
-5. 执行 `python manage.py migrate --noinput`。
-6. 执行一次“烟雾测试”（`django.setup()` 成功即通过）。
-
-如何确认 CI 正常工作：
-
-前往 GitHub 仓库 “Actions” 页面查看运行记录，应全部通过（尤其是 Migrate、Smoke test）。
+- `docker compose ps` not healthy
+  - Open Docker Desktop and wait until it is ready.
+  - Check logs with `docker compose logs db`.
+  - If the port is occupied, adjust ports as above.
+- `migrate` fails
+  - Ensure the database is healthy.
+  - Align `.env` `DATABASE_URL` with compose port/username/password/db name.
+  - Preview steps with: `python manage.py migrate --plan`.
+- CORS / CSRF
+  - CORS: add your frontend origin to `CORS_ALLOWED_ORIGINS`.
+  - CSRF: if using cookies/session for modifying requests, add scheme + domain to `CSRF_TRUSTED_ORIGINS` (e.g., `https://app.example.com`).
 
 ---
 
-## 协作规范
+## CI: Workflow & Health Checks
 
-- 请在新分支开发：`feature/<your-task>` → 提 PR → 过 CI → 代码审查 → 合并到 `main`。
-- 有需要升级依赖时：修改 `requirements.in` → 运行 `pip-compile` → 提交 `requirements.in` + `requirements.txt` 一起。
-- 不要把 `.env`、`.venv/`、本地生成缓存入库（请在根仓库 `.gitignore` 配置忽略）。
+A minimal GitHub Actions workflow is included: `/.github/workflows/ci.yml` (under the repo root `.github/workflows/`).
+
+Note: The workflow sets the steps' working directory to `project-consensus-backend/`, so commands like `pip install -r requirements.txt` and `python manage.py migrate` run in the backend subdirectory.
+
+Pipeline includes:
+
+1. Checkout (`actions/checkout`).
+2. Start PostgreSQL 17 and wait for health (`pg_isready`).
+3. Install Python 3.13, create a venv, and install `project-consensus-backend/requirements.txt`.
+4. Write a minimal `.env` for CI (`DATABASE_URL` points to the Postgres 17 service).
+5. Run `python manage.py migrate --noinput`.
+6. Run a smoke test (pass if `django.setup()` succeeds).
+
+To verify CI:
+
+Visit the repository's “Actions” tab; runs should pass (especially Migrate and Smoke test).
 
 ---
 
-## 附录：可选的 pyenv 安装（安装 Python 3.13.7）
+## Collaboration
 
-如果本机还没有 3.13.7，推荐用 pyenv 管理 Python 版本
+- Develop on feature branches: `feature/<your-task>` → PR → pass CI → review → merge into `main`.
+- For dependency upgrades: edit `requirements.in` → run `pip-compile` → commit both `requirements.in` and `requirements.txt`.
+- Do not commit `.env`, `.venv/`, or local caches (configure ignores in the repo root `.gitignore`).
+
+---
+
+## Appendix: Optional pyenv (Install Python 3.13.7)
+
+If you don't have 3.13.7 locally, manage Python with pyenv:
 
 ```bash
-# 安装 Homebrew（若还没有）
-# 参考 brew 官网；或执行：/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+# Install Homebrew (if missing)
+# See brew website; or run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-# 安装 pyenv 及构建依赖
+# Install pyenv and build deps
 brew install pyenv openssl readline sqlite3 xz zlib tcl-tk
 
-# 配置 zsh 初始化
+# Configure zsh initialization
 echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.zshrc
 echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.zshrc
 echo 'eval "$(pyenv init -)"' >> ~/.zshrc
 exec $SHELL
 
-# 安装并全局/本地使用 3.13.7
+# Install and use 3.13.7
 pyenv install 3.13.7
-pyenv local 3.13.7     # 在项目目录下绑定
-python -V               # 应显示 3.13.7
+pyenv local 3.13.7     # bind in the project directory
+python -V               # should show 3.13.7
 ```
 
 ---
