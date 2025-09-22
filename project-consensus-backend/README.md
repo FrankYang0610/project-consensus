@@ -44,6 +44,8 @@ cp .env.example .env
 #   DEBUG=True
 #   SECRET_KEY=任意非空字符串（生产请改为强随机）
 #   ALLOWED_HOSTS=127.0.0.1,localhost
+#   LANGUAGE_CODE=zh-hans（可选，默认 zh-hans；如需英文可设 en-us）
+#   TIME_ZONE=Asia/Shanghai（可选，默认 Asia/Shanghai；可改为 UTC 等）
 #   CORS_ALLOWED_ORIGINS=http://localhost:3000（如有前端）
 #   CSRF_TRUSTED_ORIGINS=http://localhost:8000（如使用 Cookie/会话）
 #   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/appdb
@@ -69,6 +71,8 @@ python manage.py runserver
   - `DEBUG=True`（开发）
   - `SECRET_KEY=任意非空字符串`（生产需改为强随机，并通过环境变量注入）
   - `ALLOWED_HOSTS=127.0.0.1,localhost`
+  - `LANGUAGE_CODE=zh-hans`（可选，默认 zh-hans；例如 `en-us`）
+  - `TIME_ZONE=Asia/Shanghai`（可选，默认 Asia/Shanghai；例如 `UTC`、`Europe/Berlin`）
   - `CORS_ALLOWED_ORIGINS=http://localhost:3000`（如有前端）
   - `CSRF_TRUSTED_ORIGINS=http://localhost:8000`（如使用 Cookie/会话）
   - `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/appdb`
