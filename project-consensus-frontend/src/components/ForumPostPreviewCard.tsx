@@ -171,7 +171,7 @@ export function ForumPostPreviewCard({
             </span>
           </div>
           <p className="text-muted-foreground text-sm leading-relaxed mb-1 break-words overflow-wrap-anywhere line-clamp-2">
-            {isTranslated ? t('post.translateUnavailable') : truncateHtmlContent(post.content, 120)}
+            {isTranslated ? t('post.translateUnavailable') : truncateHtmlContent(post.content)}
           </p>
 
           {post.tags.length > 0 && (
