@@ -263,18 +263,25 @@ body,
   /* 富文本编辑器中代码块的样式 */
   .prose pre {
     @apply bg-muted border border-border rounded-md px-4 py-2 my-3 overflow-x-auto text-sm leading-6;
+    max-width: 100%;
+    word-wrap: break-word;
+    white-space: pre-wrap;
   }
 
   /* Remove double background for code inside pre blocks */
   /* 移除 pre 块内代码的双重背景 */
   .prose pre code {
     @apply bg-transparent p-0 text-inherit;
+    word-wrap: break-word;
+    white-space: pre-wrap;
   }
 
   /* Inline code styling (not inside pre blocks) */
   /* 内联代码样式（不在 pre 块内） */
   .prose :not(pre)>code {
     @apply bg-muted text-foreground/90 px-1 py-0 rounded border border-border text-[0.9em];
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 
   /* ========================================
@@ -298,5 +305,116 @@ body,
   /* 散文内容中列表项的样式 */
   .prose li {
     @apply my-1 leading-6;
+  }
+
+  /* ========================================
+     TABLE STYLES
+     表格样式
+     ======================================== */
+
+  /* Table container styling */
+  /* 表格容器样式 */
+  .prose table {
+    @apply w-full border-collapse my-4 text-sm;
+    border: 1px solid var(--border);
+  }
+
+  /* Table header styling */
+  /* 表格头部样式 */
+  .prose thead {
+    @apply bg-muted;
+  }
+
+  /* Table header cell styling */
+  /* 表格头部单元格样式 */
+  .prose th {
+    @apply border border-border px-3 py-2 text-left font-semibold;
+    background-color: var(--muted);
+    color: var(--muted-foreground);
+  }
+
+  /* Table body cell styling */
+  /* 表格主体单元格样式 */
+  .prose td {
+    @apply border border-border px-3 py-2;
+  }
+
+  /* Table row hover effect */
+  /* 表格行悬停效果 */
+  .prose tbody tr:hover {
+    @apply bg-muted/50;
+  }
+
+  /* Table row alternating colors */
+  /* 表格行交替颜色 */
+  .prose tbody tr:nth-child(even) {
+    @apply bg-muted/30;
+  }
+
+  /* Table responsive wrapper */
+  /* 表格响应式包装器 */
+  .prose .table-wrapper {
+    @apply overflow-x-auto my-4;
+  }
+
+  /* Table caption styling */
+  /* 表格标题样式 */
+  .prose caption {
+    @apply text-sm text-muted-foreground mt-2 mb-1;
+  }
+
+  /* ========================================
+     MOBILE RESPONSIVE STYLES
+     移动端响应式样式
+     ======================================== */
+
+  /* Ensure all content respects viewport width */
+  /* 确保所有内容都遵循视口宽度 */
+  .prose {
+    max-width: 100%;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+  }
+
+  /* Prevent horizontal overflow in all containers */
+  /* 防止所有容器中的水平溢出 */
+  .prose * {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Mobile-specific prose adjustments */
+  /* 移动端特定的散文调整 */
+  @media (max-width: 640px) {
+    .prose {
+      @apply text-sm;
+    }
+    
+    .prose h1 {
+      @apply text-xl;
+    }
+    
+    .prose h2 {
+      @apply text-lg;
+    }
+    
+    .prose h3 {
+      @apply text-base;
+    }
+    
+    .prose pre {
+      @apply text-xs px-2 py-1;
+    }
+
+    /* Mobile table adjustments */
+    /* 移动端表格调整 */
+    .prose table {
+      @apply text-xs;
+    }
+    
+    .prose th,
+    .prose td {
+      @apply px-2 py-1;
+    }
   }
 }
