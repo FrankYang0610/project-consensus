@@ -34,7 +34,7 @@ export function formatRelativeTime(dateString: string, t: (key: string) => strin
   const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
   const diffInHours = Math.floor(diffInMinutes / 60);
 
-  if (diffInMinutes < 1) {
+  if (diffInMinutes <= 0) {
     return t('time.justNow'); // "Just now" / "刚刚"
   } else if (diffInMinutes < 60) {
     return `${diffInMinutes} ${t('time.minutesAgo')}`; // "X minutes ago" / "X分钟前"
