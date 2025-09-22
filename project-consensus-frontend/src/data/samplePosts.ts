@@ -198,7 +198,12 @@ function loadPostsFromStorage(): ForumPost[] {
       // Merge with initial posts to ensure we always have the base data
       const existingIds = new Set(parsed.map((p: ForumPost) => p.id));
       const newInitialPosts = initialSamplePosts.filter(p => !existingIds.has(p.id));
-      return [...parsed, ...newInitialPosts];
+      const mergedPosts = [...parsed, ...newInitialPosts];
+      mergedPosts.sort((a: ForumPost, b: ForumPost) => {
+        // Sort descending (newest first)
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+      return mergedPosts;
     }
   } catch (error) {
     console.error('Error loading posts from localStorage:', error);
