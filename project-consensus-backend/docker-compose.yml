@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:17
+    container_name: dj_db17
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d appdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - db17_data:/var/lib/postgresql/data
+
+volumes:
+  db17_data:
