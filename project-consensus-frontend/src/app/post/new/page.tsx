@@ -79,7 +79,7 @@ export default function NewForumPostPage() {
       // 目前使用samplePosts的addPost方法作为临时实现 / Currently using samplePosts.addPost as temporary implementation
       
       const newPost: ForumPost = {
-        id: `post_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`, // 生成唯一ID / Generate unique ID
+        id: `post_${crypto.randomUUID()}`, // 生成唯一ID / Generate unique ID
         title: title.trim(),
         content: content.trim(),
         author: {
