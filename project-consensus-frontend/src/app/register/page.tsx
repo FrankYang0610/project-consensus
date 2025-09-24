@@ -17,6 +17,7 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 import { useI18n } from '@/hooks/useI18n';
 import { SiteNavigation } from '@/components/SiteNavigation';
 import Link from 'next/link';
+import { ErrorResponse, RegisterSuccessResponse, SendVerificationCodeResponse } from '@/types';
 
 const POLYU_EMAIL_REGEX = /@connect\.polyu\.hk$/i;
 
@@ -63,8 +64,8 @@ export default function RegisterPage() {
         body: JSON.stringify({ email }),
       });
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error((data as any).message || 'Failed to send code');
+        const errorData: ErrorResponse = await res.json().catch(() => ({} as ErrorResponse));
+        throw new Error(errorData.message || errorData.detail || 'Failed to send code');
       }
       setCanInputCode(true);
       setResendCountdown(60);
@@ -109,15 +110,19 @@ export default function RegisterPage() {
           password,
         }),
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error((data as any).message || 'Register failed');
+      const data: RegisterSuccessResponse | ErrorResponse = await res
+        .json()
+        .catch(() => ({ message: 'Register failed' } as ErrorResponse));
+      if (!res.ok || !(data as RegisterSuccessResponse).success) {
+        const err = data as ErrorResponse;
+        throw new Error(err.message || err.detail || 'Register failed');
       }
 
       // Persist auth and go back
-      if ((data as any).token && (data as any).user) {
-        localStorage.setItem('authToken', (data as any).token as string);
-        localStorage.setItem('user', JSON.stringify((data as any).user));
+      const successData = data as RegisterSuccessResponse;
+      if (successData.token && successData.user) {
+        localStorage.setItem('authToken', successData.token);
+        localStorage.setItem('user', JSON.stringify(successData.user));
       }
       window.history.back();
     } catch (e: unknown) {
