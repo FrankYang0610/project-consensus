@@ -55,13 +55,23 @@ export default function RegisterPage() {
     }
     try {
       setIsSendingCode(true);
-      // Mock request, replace with real backend endpoint
-      await new Promise((r) => setTimeout(r, 800));
+      // TODO: Actual server address (backend)
+      // TODO：实际服务器地址（后端）
+      const res = await fetch('http://127.0.0.1:8000/api/accounts/send_verification_code/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data as any).message || 'Failed to send code');
+      }
       setCanInputCode(true);
       setResendCountdown(60);
       setSuccess(t('common.note'));
-    } catch (e) {
-      setError(t('auth.errorNetwork'));
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : t('auth.errorNetwork');
+      setError(message);
     } finally {
       setIsSendingCode(false);
     }
@@ -87,12 +97,32 @@ export default function RegisterPage() {
 
     try {
       setIsRegistering(true);
-      // Mock register request
-      await new Promise((r) => setTimeout(r, 1000));
-      // success behavior: navigate back to previous page
+      // TODO: Actual server address (backend)
+      // TODO：实际服务器地址（后端）
+      const res = await fetch('http://127.0.0.1:8000/api/accounts/register/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nickname,
+          email,
+          verification_code: verificationCode,
+          password,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error((data as any).message || 'Register failed');
+      }
+
+      // Persist auth and go back
+      if ((data as any).token && (data as any).user) {
+        localStorage.setItem('authToken', (data as any).token as string);
+        localStorage.setItem('user', JSON.stringify((data as any).user));
+      }
       window.history.back();
-    } catch (e) {
-      setError(t('auth.errorNetwork'));
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : t('auth.errorNetwork');
+      setError(message);
     } finally {
       setIsRegistering(false);
     }

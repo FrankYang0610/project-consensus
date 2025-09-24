@@ -56,7 +56,9 @@ export function LoginComponent({ className }: LoginComponentProps) {
   // Backend Login API, Incomplete!
   const handleLogin = async (email: string, password: string): Promise<LoginResponse> => {
     try {
-      const response = await fetch('/api/auth/login', {
+      // TODO: Actual server address (backend)
+      // TODO：实际服务器地址（后端）
+      const response = await fetch('http://127.0.0.1:8000/api/accounts/login/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -64,8 +66,6 @@ export function LoginComponent({ className }: LoginComponentProps) {
         body: JSON.stringify({
           email,
           password,
-          device: 'web',
-          userAgent: navigator.userAgent
         }),
       });
 
@@ -231,21 +231,21 @@ export function LoginComponent({ className }: LoginComponentProps) {
                     required
                   />
                 </div>
+
+                {/* Login Button inside the form to trigger submit */}
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading}
+                >
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {t('auth.login')}
+                </Button>
               </div>
             </form>
           </CardContent>
 
           <CardFooter className="flex-col gap-3">
-            {/* Login Button */}
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t('auth.login')}
-            </Button>
-
             {/* Google Login button */}
             <Button
               type="button"
