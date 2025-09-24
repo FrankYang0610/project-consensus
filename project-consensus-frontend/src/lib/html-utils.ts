@@ -13,7 +13,8 @@ export function sanitizeHtml(html: string): string {
   return DOMPurify.sanitize(html, {
     ALLOWED_TAGS: [
       'p', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'br',
-      'strong', 'em', 'code', 'pre', 'blockquote'
+      'strong', 'em', 'code', 'pre', 'blockquote',
+      'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th'
     ],
     ALLOWED_ATTR: [],
     SAFE_FOR_TEMPLATES: true,

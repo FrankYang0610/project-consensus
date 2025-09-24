@@ -61,6 +61,11 @@ export default function PostPage() {
     console.log("Reply to comment:", commentId);
   };
 
+  const handleCommentShare = (commentId: string) => {
+    // TODO: Implement comment share functionality
+    console.log("Share comment:", commentId);
+  };
+
   if (!post) {
     return (
       <>
@@ -85,8 +90,8 @@ export default function PostPage() {
   return (
     <>
       <SiteNavigation showBackButton={true} onBackClick={handleBackClick} />
-      <div className="min-h-screen bg-background">
-        <main className="w-full py-8">
+      <div className="min-h-screen bg-background overflow-x-hidden">
+        <main className="w-full py-4 sm:py-8">
           <div className="container mx-auto px-4 max-w-4xl">
             <ForumPostDetailCard
               post={post}
@@ -100,6 +105,7 @@ export default function PostPage() {
               onLike={handleCommentLike}
               onReply={handleReplyToComment}
               onDelete={handleCommentDelete}
+              onShare={handleCommentShare}
               onAddComment={handleAddComment}
               currentUserId={currentUserId}
               postId={postId}
