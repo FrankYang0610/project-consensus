@@ -327,4 +327,58 @@
       }
     }
   }
+  ,
+  "settings": {
+    "title": "用戶設定",
+    "subtitle": "管理你的個人資料、密碼與私隱偏好。",
+    "requireLogin": "請先登入以訪問設定。",
+    "profile": {
+      "title": "個人資料",
+      "desc": "更新你的暱稱與頭像。",
+      "displayName": "暱稱",
+      "avatarUrl": "頭像 URL",
+      "preview": "預覽",
+      "saved": "個人資料已更新。",
+      "saveFailed": "儲存個人資料失敗。"
+    },
+    "account": {
+      "title": "帳戶安全",
+      "desc": "修改你的登入密碼。",
+      "currentPassword": "當前密碼",
+      "newPassword": "新密碼",
+      "confirmPassword": "確認新密碼",
+      "passwordMismatch": "兩次輸入的新密碼不一致。",
+      "changed": "密碼修改成功。",
+      "changeFailed": "修改密碼失敗。"
+    },
+    "privacy": {
+      "title": "私隱設定",
+      "desc": "控制他人如何查看並聯絡你。",
+      "items": {
+        "showEmail": {
+          "title": "在個人主頁顯示電郵",
+          "desc": "允許他人查看你主頁上的電郵地址。"
+        },
+        "allowDMs": {
+          "title": "允許私訊",
+          "desc": "允許其他用戶向你發送私訊。"
+        },
+        "showOnlineStatus": {
+          "title": "顯示在線狀態",
+          "desc": "允許他人看到你是否在線。"
+        },
+        "showActivity": {
+          "title": "顯示活動",
+          "desc": "展示你的公開活動時間線。"
+        }
+      },
+      "saved": "私隱設定已儲存。",
+      "saveFailed": "儲存私隱設定失敗。"
+    },
+    "actions": {
+      "saveProfile": "儲存資料",
+      "changePassword": "修改密碼",
+      "savePrivacy": "儲存私隱設定"
+    }
+  }
 }

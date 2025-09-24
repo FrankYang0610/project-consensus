@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { User, Settings, LogOut, ChevronDown } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
+import { useI18n } from '@/hooks/useI18n';
 import { cn } from '@/lib/utils';
 
 export interface UserMenuProps {
@@ -19,6 +20,7 @@ export interface UserMenuProps {
 export function UserMenu({ className }: UserMenuProps) {
   const { user, logout } = useApp();
   const [isOpen, setIsOpen] = useState(false);
+  const { t } = useI18n();
 
   if (!user) {
     return null;
@@ -113,7 +115,7 @@ export function UserMenu({ className }: UserMenuProps) {
               onClick={handleProfile}
             >
               <User size={16} />
-              Profile
+              {t('auth.profile')}
             </Button>
 
             <Button
@@ -122,7 +124,7 @@ export function UserMenu({ className }: UserMenuProps) {
               onClick={handleSettings}
             >
               <Settings size={16} />
-              Settings
+              {t('auth.settings')}
             </Button>
 
             <div className="pt-2 border-t">
@@ -132,7 +134,7 @@ export function UserMenu({ className }: UserMenuProps) {
                 onClick={handleLogout}
               >
                 <LogOut size={16} />
-                Logout
+                {t('auth.logout')}
               </Button>
             </div>
           </div>

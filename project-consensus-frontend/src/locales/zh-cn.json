@@ -327,4 +327,58 @@
       }
     }
   }
+  ,
+  "settings": {
+    "title": "用户设置",
+    "subtitle": "管理你的个人资料、密码和隐私偏好。",
+    "requireLogin": "请先登录以访问设置。",
+    "profile": {
+      "title": "个人资料",
+      "desc": "更新你的昵称和头像。",
+      "displayName": "昵称",
+      "avatarUrl": "头像 URL",
+      "preview": "预览",
+      "saved": "个人资料已更新。",
+      "saveFailed": "保存个人资料失败。"
+    },
+    "account": {
+      "title": "账号安全",
+      "desc": "修改你的登录密码。",
+      "currentPassword": "当前密码",
+      "newPassword": "新密码",
+      "confirmPassword": "确认新密码",
+      "passwordMismatch": "两次输入的新密码不一致。",
+      "changed": "密码修改成功。",
+      "changeFailed": "修改密码失败。"
+    },
+    "privacy": {
+      "title": "隐私设置",
+      "desc": "控制他人如何查看并联系你。",
+      "items": {
+        "showEmail": {
+          "title": "在个人主页显示邮箱",
+          "desc": "允许他人查看你主页上的邮箱地址。"
+        },
+        "allowDMs": {
+          "title": "允许私信",
+          "desc": "允许其他用户向你发送私信。"
+        },
+        "showOnlineStatus": {
+          "title": "显示在线状态",
+          "desc": "允许他人看到你是否在线。"
+        },
+        "showActivity": {
+          "title": "显示活动",
+          "desc": "展示你的公开活动时间线。"
+        }
+      },
+      "saved": "隐私设置已保存。",
+      "saveFailed": "保存隐私设置失败。"
+    },
+    "actions": {
+      "saveProfile": "保存资料",
+      "changePassword": "修改密码",
+      "savePrivacy": "保存隐私设置"
+    }
+  }
 }
