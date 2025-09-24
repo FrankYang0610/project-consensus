@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+# Avoid wasting runners on outdated jobs for the same branch
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build & Migrate (PostgreSQL 17)
+    runs-on: ubuntu-latest
+
+    # Run all shell steps from the backend directory
+    defaults:
+      run:
+        working-directory: project-consensus-backend
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: appdb
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - "5432:5432"
+        options: >-
+          --health-cmd="pg_isready -U postgres -d appdb"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Create venv & install dependencies
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          python -m pip install -U pip
+          pip install -r requirements.txt
+
+      - name: Prepare .env for CI
+        run: |
+          cat > .env <<'ENV'
+          DEBUG=False
+          SECRET_KEY=ci-secret-key
+          ALLOWED_HOSTS=127.0.0.1,localhost
+          CORS_ALLOWED_ORIGINS=http://localhost:3000
+          CSRF_TRUSTED_ORIGINS=http://localhost:8000
+          DATABASE_URL=postgresql://postgres:postgres@localhost:5432/appdb
+          ENV
+
+      - name: Django system check
+        run: |
+          source .venv/bin/activate
+          python manage.py check --deploy --fail-level WARNING || true
+
+      - name: Migrate
+        run: |
+          source .venv/bin/activate
+          python manage.py migrate --noinput
+
+      - name: Smoke test (django.setup)
+        run: |
+          source .venv/bin/activate
+          python - <<'PY'
+          import os, django
+          os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+          django.setup()
+          print("Django setup OK")
+          PY
+
+      # If you have tests, enable and customize the step below
+      # - name: Run tests
+      #   run: |
+      #     source .venv/bin/activate
+      #     pip install pytest
+      #     pytest -q

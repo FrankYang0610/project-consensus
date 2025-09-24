@@ -67,12 +67,27 @@
     "copyFailed": "複製文本到剪貼板失敗",
     "newTitle": "建立新的論壇帖子",
     "titlePlaceholder": "輸入標題",
-    "contentPlaceholder": "輸入正文內容",
-    "create": "發帖",
-    "cancel": "放棄"
+    "contentPlaceholder": "輸入帖子內容...",
+    "create": "建立帖子",
+    "submitting": "建立中...",
+    "cancel": "取消",
+    "tags": "標籤",
+    "tagPlaceholder": "輸入標籤名稱",
+    "removeTag": "移除標籤",
+    "maxTagsReached": "最多只能添加 {{max}} 個標籤",
+    "validation": {
+      "titleRequired": "標題不能為空",
+      "titleTooShort": "標題至少需要5個字符",
+      "titleTooLong": "標題不能超過200個字符",
+      "contentRequired": "內容不能為空",
+      "contentTooShort": "內容至少需要10個字符",
+      "tagsRequired": "至少需要一個標籤",
+      "tooManyTags": "最多只能添加10個標籤"
+    }
   },
   "time": {
     "justNow": "剛剛",
+    "minutesAgo": "分鐘前",
     "hoursAgo": "小時前",
     "daysAgo": "天前",
     "invalidDate": "無效日期"
@@ -93,7 +108,10 @@
     "translate": "翻譯",
     "showOriginal": "原文",
     "avatar": "頭像",
-    "replyTo": "回覆了"
+    "replyTo": "回覆了",
+    "share": "分享",
+    "copied": "已複製！",
+    "copyText": "複製文本"
   },
   "common": {
     "note": "注意",

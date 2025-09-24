@@ -4,8 +4,6 @@ import * as React from "react";
 import Link from "next/link";
 
 import {
-  Calendar,
-  User,
   Heart,
   Share2,
   Languages,
@@ -71,8 +69,6 @@ export function ForumPostPreviewCard({
   const isLiked = post.isLiked || false;
   const likesCount = post.likes;
   const [isTranslated, setIsTranslated] = React.useState(false);
-  const [originalTitle, setOriginalTitle] = React.useState(post.title);
-  const [originalContent, setOriginalContent] = React.useState(post.content);
   const [isCopySuccess, setIsCopySuccess] = React.useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
 
@@ -129,11 +125,11 @@ export function ForumPostPreviewCard({
   return (
     <Card
       className={cn(
-        "hover:shadow-md transition-shadow duration-200 flex flex-col",
+        "hover:shadow-md transition-shadow duration-200 flex flex-col gap-2 py-3",
         className
       )}
     >
-      <CardHeader className="pb-0">
+      <CardHeader className="pb-0 pt-0 px-4">
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-2">
             <div className="relative">
@@ -158,32 +154,32 @@ export function ForumPostPreviewCard({
               >
                 {post.author.name}
               </button>
-              <ClientOnlyTime dateString={post.createdAt} />
+              <ClientOnlyTime dateString={post.createdAt} className="text-xs text-muted-foreground" />
             </div>
           </div>
         </div>
       </CardHeader>
 
       <Link href={`/post/${post.id}`} className="block">
-        <CardContent className="pt-0 pb-0 flex-1 min-h-[120px] flex flex-col cursor-pointer">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-lg font-semibold line-clamp-2 flex-1">
+        <CardContent className="pt-0 pb-0 px-4 flex flex-col cursor-pointer gap-1">
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-semibold line-clamp-1 flex-1">
               {isTranslated ? t('post.translateUnavailable') : post.title}
             </h3>
-            <span className="ml-2 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full whitespace-nowrap">
+            <span className="ml-2 px-1.5 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-800 rounded-full whitespace-nowrap">
               {post.language}
             </span>
           </div>
-          <p className="text-muted-foreground text-sm leading-relaxed mb-1 flex-1">
+          <p className="text-muted-foreground text-sm leading-relaxed mb-1 break-words overflow-wrap-anywhere line-clamp-2">
             {isTranslated ? t('post.translateUnavailable') : truncateHtmlContent(post.content)}
           </p>
 
           {post.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mb-0">
+            <div className="flex flex-wrap gap-1 mt-1">
               {post.tags.map(tag => (
                 <span
                   key={tag}
-                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground"
+                  className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[11px] font-medium bg-secondary text-secondary-foreground"
                 >
                   #{tag}
                 </span>
@@ -193,7 +189,7 @@ export function ForumPostPreviewCard({
         </CardContent>
       </Link>
 
-      <CardFooter className="pt-0 mt-auto">
+      <CardFooter className="pt-0 px-4">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center space-x-3">
             <Button
@@ -201,12 +197,12 @@ export function ForumPostPreviewCard({
               size="sm"
               onClick={handleLikeClick}
               className={cn(
-                "flex items-center space-x-1 h-8 px-2",
+                "h-7 px-2 text-xs min-w-0",
                 isLiked && "text-red-500 hover:text-red-600"
               )}
             >
-              <Heart className={cn("w-4 h-4", isLiked && "fill-current")} />
-              <span className="text-sm">{likesCount}</span>
+              <Heart className={cn("w-3 h-3 mr-1 flex-shrink-0", isLiked && "fill-current")} />
+              <span className="truncate">{likesCount}</span>
             </Button>
 
             <Button
@@ -214,14 +210,14 @@ export function ForumPostPreviewCard({
               size="sm"
               onClick={handleTranslateClick}
               className={cn(
-                "flex items-center space-x-1 h-8 px-2",
+                "h-7 px-2 text-xs min-w-0",
                 isTranslated
                   ? "text-blue-500 hover:text-blue-600"
                   : "text-gray-500 hover:text-gray-600"
               )}
             >
-              <Languages className="w-4 h-4" />
-              <span className="text-sm">
+              <Languages className="w-3 h-3 mr-1 flex-shrink-0" />
+              <span className="hidden sm:inline">
                 {isTranslated ? t('post.showOriginal') : t('post.translate')}
               </span>
             </Button>
@@ -233,27 +229,25 @@ export function ForumPostPreviewCard({
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  "flex items-center space-x-1 h-8 px-2 transition-colors",
+                  "h-7 px-2 text-xs transition-colors min-w-0",
                   isCopySuccess && "text-green-500 hover:text-green-600"
                 )}
               >
                 {isCopySuccess ? (
-                  <Check className="w-4 h-4" />
+                  <Check className="w-3 h-3 mr-1 flex-shrink-0" />
                 ) : (
-                  <Share2 className="w-4 h-4" />
+                  <Share2 className="w-3 h-3 mr-1 flex-shrink-0" />
                 )}
-                <span className="text-sm">
-                  {isCopySuccess ? t('post.copied') : t('post.share')}
-                </span>
+                <span className="hidden sm:inline">{isCopySuccess ? t('post.copied') : t('post.share')}</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent align="end" className="w-40">
               <DropdownMenuItem
                 onClick={handleCopyText}
                 className="cursor-pointer"
               >
-                <FileText className="w-4 h-4 mr-2" />
-                <span>{t('post.copyText')}</span>
+                <FileText className="w-3 h-3 mr-2" />
+                <span className="text-xs">{t('post.copyText')}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

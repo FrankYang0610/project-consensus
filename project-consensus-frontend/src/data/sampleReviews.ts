@@ -29,7 +29,7 @@ export const sampleReviews: CourseReview[] = [
       year: 2024,
       semester: "fall"
     },
-    repliesCount: 8
+    repliesCount: 2
   },
   {
     id: "review-2",
@@ -54,7 +54,7 @@ export const sampleReviews: CourseReview[] = [
       year: 2024,
       semester: "fall"
     },
-    repliesCount: 3
+    repliesCount: 1
   },
   {
     id: "review-3",
@@ -79,7 +79,7 @@ export const sampleReviews: CourseReview[] = [
       year: 2024,
       semester: "spring"
     },
-    repliesCount: 12
+    repliesCount: 2
   },
   {
     id: "review-4",
@@ -104,7 +104,7 @@ export const sampleReviews: CourseReview[] = [
       year: 2024,
       semester: "fall"
     },
-    repliesCount: 5
+    repliesCount: 0
   },
   {
     id: "review-5",
@@ -129,7 +129,7 @@ export const sampleReviews: CourseReview[] = [
       year: 2024,
       semester: "fall"
     },
-    repliesCount: 15
+    repliesCount: 0
   },
   {
     id: "review-6",
@@ -154,7 +154,7 @@ export const sampleReviews: CourseReview[] = [
       year: 2024,
       semester: "summer"
     },
-    repliesCount: 18
+    repliesCount: 0
   }
 ];
 

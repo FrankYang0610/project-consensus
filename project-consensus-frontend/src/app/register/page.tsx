@@ -17,6 +17,7 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 import { useI18n } from '@/hooks/useI18n';
 import { SiteNavigation } from '@/components/SiteNavigation';
 import Link from 'next/link';
+import { ErrorResponse, RegisterSuccessResponse, SendVerificationCodeResponse } from '@/types';
 
 const POLYU_EMAIL_REGEX = /@connect\.polyu\.hk$/i;
 
@@ -55,13 +56,23 @@ export default function RegisterPage() {
     }
     try {
       setIsSendingCode(true);
-      // Mock request, replace with real backend endpoint
-      await new Promise((r) => setTimeout(r, 800));
+      // TODO: Actual server address (backend)
+      // TODO：实际服务器地址（后端）
+      const res = await fetch('http://127.0.0.1:8000/api/accounts/send_verification_code/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) {
+        const errorData: ErrorResponse = await res.json().catch(() => ({} as ErrorResponse));
+        throw new Error(errorData.message || errorData.detail || 'Failed to send code');
+      }
       setCanInputCode(true);
       setResendCountdown(60);
       setSuccess(t('common.note'));
-    } catch (e) {
-      setError(t('auth.errorNetwork'));
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : t('auth.errorNetwork');
+      setError(message);
     } finally {
       setIsSendingCode(false);
     }
@@ -87,12 +98,36 @@ export default function RegisterPage() {
 
     try {
       setIsRegistering(true);
-      // Mock register request
-      await new Promise((r) => setTimeout(r, 1000));
-      // success behavior: navigate back to previous page
+      // TODO: Actual server address (backend)
+      // TODO：实际服务器地址（后端）
+      const res = await fetch('http://127.0.0.1:8000/api/accounts/register/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nickname,
+          email,
+          verification_code: verificationCode,
+          password,
+        }),
+      });
+      const data: RegisterSuccessResponse | ErrorResponse = await res
+        .json()
+        .catch(() => ({ message: 'Register failed' } as ErrorResponse));
+      if (!res.ok || !(data as RegisterSuccessResponse).success) {
+        const err = data as ErrorResponse;
+        throw new Error(err.message || err.detail || 'Register failed');
+      }
+
+      // Persist auth and go back
+      const successData = data as RegisterSuccessResponse;
+      if (successData.token && successData.user) {
+        localStorage.setItem('authToken', successData.token);
+        localStorage.setItem('user', JSON.stringify(successData.user));
+      }
       window.history.back();
-    } catch (e) {
-      setError(t('auth.errorNetwork'));
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : t('auth.errorNetwork');
+      setError(message);
     } finally {
       setIsRegistering(false);
     }

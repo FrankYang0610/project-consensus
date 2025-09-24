@@ -7,7 +7,8 @@ import {
   Clock,
   MessageSquare,
   Edit3,
-  Calendar
+  Calendar,
+  Plus
 } from "lucide-react";
 
 import {
@@ -28,7 +29,10 @@ import type {
 export interface CourseReviewCardProps {
   review: CourseReview;
   onLike?: (reviewId: string) => void; // 点赞回调 / Like callback
-  onReply?: (reviewId: string) => void; // 回复回调 / Reply callback
+  onReply?: (reviewId: string) => void; // 回复回调（若未提供 onToggleReplies，将回退使用此回调） / Reply callback (fallback when onToggleReplies not provided)
+  onToggleReplies?: (reviewId: string, nextExpanded: boolean) => void; // 切换展开/折叠回复 / Toggle replies expand/collapse
+  repliesExpanded?: boolean; // 当前是否展开回复（仅用于显示逻辑，可选） / Whether replies are expanded (optional, for display logic)
+  onCreateReply?: (reviewId: string) => void; // 发表回复回调 / Post reply callback
   className?: string;
   showRepliesSection?: boolean; // 是否显示回复区域 / Whether to show replies section
 }
@@ -110,6 +114,9 @@ export function CourseReviewCard({
   review,
   onLike,
   onReply,
+  onToggleReplies,
+  repliesExpanded,
+  onCreateReply,
   className,
   showRepliesSection = true,
 }: CourseReviewCardProps) {
@@ -122,8 +129,13 @@ export function CourseReviewCard({
 
   // Handle reply button click
   const handleReply = React.useCallback(() => {
-    onReply?.(review.id);
-  }, [onReply, review.id]);
+    if (onToggleReplies) {
+      const next = !repliesExpanded;
+      onToggleReplies(review.id, next);
+    } else {
+      onReply?.(review.id);
+    }
+  }, [onReply, onToggleReplies, repliesExpanded, review.id]);
 
   // Format dates with memoization for performance
   const createdAtFormatted = React.useMemo(() =>
@@ -262,12 +274,18 @@ export function CourseReviewCard({
               onClick={handleReply}
             >
               <MessageSquare className="w-4 h-4" />
-              <span className="text-sm">
-                {review.repliesCount ?
-                  t("courses.review.replies", { count: review.repliesCount }) :
-                  t("courses.review.reply")
-                }
-              </span>
+              <span className="text-sm">{t("courses.review.replies", { count: review.repliesCount ?? 0 })}</span>
+            </Button>
+
+            {/* Post Reply Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2 h-8 px-3 text-muted-foreground hover:text-foreground"
+              onClick={() => onCreateReply?.(review.id)}
+            >
+              <Plus className="w-4 h-4" />
+              <span className="text-sm">{t("comment.addComment")}</span>
             </Button>
           </div>
 

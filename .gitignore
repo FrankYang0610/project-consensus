@@ -1,0 +1,59 @@
+# macOS
+.DS_Store
+
+# IDEs / Editors
+.idea/
+.vscode/
+*.iml
+
+# Python bytecode / build
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+build/
+dist/
+pip-wheel-metadata/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Django
+db.sqlite3
+media/
+staticfiles/
+staticfiles_build/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Test / Coverage / Type-check caches
+.pytest_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# Logs
+*.log
+logs/
+
+# Node / Next.js (frontend)
+project-consensus-frontend/node_modules/
+project-consensus-frontend/.next/
+project-consensus-frontend/out/
+project-consensus-frontend/dist/
+project-consensus-frontend/.turbo/
+project-consensus-frontend/.cache/
+project-consensus-frontend/.vercel/
+project-consensus-frontend/.env*
