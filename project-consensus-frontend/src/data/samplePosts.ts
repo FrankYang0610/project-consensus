@@ -181,6 +181,28 @@ LIMIT 10;</code></pre>
   }
 ];
 
+// Auto-extend sample posts for demo purposes
+for (let i = 1; i <= 24; i++) {
+  const language = i % 3 === 0 ? "English (Hong Kong)" : i % 3 === 1 ? "简体中文（普通话）" : "繁体中文（粵語）";
+  const id = `demo-post-${i}`;
+  initialSamplePosts.push({
+    id,
+    title: `Demo Post ${i}: Study Tips and Discussions`,
+    content: `<p>This is demo forum post #${i}. Share your study tips, project experiences, and course insights here. This content is generated for pagination showcase.</p>`,
+    author: {
+      id: `demo_user_${(i % 8) + 1}`,
+      name: `DemoUser${(i % 8) + 1}`,
+      avatar: undefined
+    },
+    createdAt: new Date(Date.now() - (i + 18) * 60 * 60 * 1000).toISOString(),
+    tags: i % 2 === 0 ? ["General", "Study"] : ["Project", "Help"],
+    likes: (i * 2) % 37,
+    comments: (i * 3) % 18,
+    isLiked: false,
+    language
+  });
+}
+
 // Storage key for localStorage
 const STORAGE_KEY = 'project-consensus-posts';
 

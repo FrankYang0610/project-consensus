@@ -45,6 +45,8 @@ export function ForumPostCommentList({
   
   // 控制主评论展开状态的状态 / State to control expanded state of main comments
   const [expandedMainComments, setExpandedMainComments] = React.useState<Set<string>>(new Set());
+  const loaderRef = React.useRef<HTMLDivElement | null>(null);
+  const loadingRef = React.useRef(false);
 
   // 获取分离后的评论数据 / Get separated comment data
   const { mainComments, subComments } = React.useMemo(() => {
@@ -55,6 +57,9 @@ export function ForumPostCommentList({
   const sortedMainComments = React.useMemo(() => {
     return [...mainComments].sort((a, b) => b.likes - a.likes);
   }, [mainComments]);
+
+  // 懒加载主评论（每次加载12条）/ Lazy-load main comments (12 per batch)
+  const [visibleCount, setVisibleCount] = React.useState(12);
 
   // 计算总评论数 / Calculate total comment count
   const totalComments = mainComments.length + subComments.length;
@@ -87,10 +92,34 @@ export function ForumPostCommentList({
   };
 
   // 计算要显示的主评论 / Calculate main comments to display
-  const displayedMainComments = showAllComments ? sortedMainComments : sortedMainComments.slice(0, 3);
+  const displayedMainComments = React.useMemo(() => {
+    if (showAllComments) return sortedMainComments;
+    return sortedMainComments.slice(0, visibleCount);
+  }, [showAllComments, sortedMainComments, visibleCount]);
   
   // 计算隐藏的主评论数量 / Calculate number of hidden main comments
-  const hiddenMainComments = sortedMainComments.length - displayedMainComments.length;
+  const hiddenMainComments = Math.max(0, sortedMainComments.length - displayedMainComments.length);
+
+  React.useEffect(() => {
+    if (!loaderRef.current) return;
+    const target = loaderRef.current;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && hiddenMainComments > 0 && !loadingRef.current) {
+          loadingRef.current = true;
+          setVisibleCount(prev => Math.min(prev + 12, sortedMainComments.length));
+        }
+      },
+      { root: null, rootMargin: '200px 0px', threshold: 0 }
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [hiddenMainComments, sortedMainComments.length]);
+
+  React.useEffect(() => {
+    loadingRef.current = false;
+  }, [visibleCount]);
 
   return (
     <div className="mt-6 px-4 sm:px-0">
@@ -184,21 +213,10 @@ export function ForumPostCommentList({
             );
           })}
 
-          {/* 显示更多/隐藏评论按钮 / Show more/hide comments button */}
-          {hiddenMainComments > 0 && (
-            <div className="text-center pt-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowAllComments(!showAllComments)}
-                className="h-8"
-              >
-                {showAllComments
-                  ? t('comment.hideAll')
-                  : t('comment.showAll', { count: mainComments.length })
-                }
-              </Button>
-            </div>
-          )}
+          {/* Infinite scroll sentinel */}
+          <div className="text-center pt-2">
+            <div ref={loaderRef} className="h-6 w-full" aria-hidden="true" />
+          </div>
         </div>
       )}
     </div>

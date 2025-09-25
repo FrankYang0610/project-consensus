@@ -253,6 +253,24 @@ export const sampleComments: ForumPostComment[] = [
   }
 ];
 
+// Extend sample comments to test pagination (generate many main comments for post a7f3b2c1)
+for (let i = 1; i <= 40; i++) {
+  const id = `bulk-main-${i}`;
+  sampleComments.push({
+    id,
+    content: `This is a generated main comment #${i} for demo pagination. Keep scrolling to load more.`,
+    author: {
+      id: `bulk-user-${(i % 10) + 1}`,
+      name: `BulkUser${(i % 10) + 1}`,
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=bulk${i}`
+    },
+    createdAt: new Date(Date.now() - (i + 1) * 60 * 60 * 1000).toISOString(),
+    likes: (i * 7) % 29,
+    isLiked: false,
+    postId: 'a7f3b2c1'
+  });
+}
+
 /**
  * 根据帖子ID获取评论列表 / Get comments by post ID
  */
