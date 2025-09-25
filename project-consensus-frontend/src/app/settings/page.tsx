@@ -193,6 +193,7 @@ export default function SettingsPage() {
                   alt="avatar preview"
                   className="w-12 h-12 rounded-full border object-cover"
                 />
+                TODO: Implement URL validation to avoid security risks
                 <span className="text-xs text-muted-foreground">{t('settings.profile.preview')}</span>
               </div>
             )}

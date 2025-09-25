@@ -344,8 +344,7 @@
         "content": "如有問題，請聯絡：support@project-consensus.app。"
       }
     }
-  }
-  ,
+  },
   "settings": {
     "title": "用戶設定",
     "subtitle": "管理你的個人資料、密碼與私隱偏好。",

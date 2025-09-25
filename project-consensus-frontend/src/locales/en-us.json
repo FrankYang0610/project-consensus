@@ -342,8 +342,7 @@
         "content": "Questions? Contact us at support@project-consensus.app."
       }
     }
-  }
-  ,
+  },
   "settings": {
     "title": "User Settings",
     "subtitle": "Manage your profile, password, and privacy preferences.",
