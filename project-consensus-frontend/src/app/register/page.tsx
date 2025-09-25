@@ -18,11 +18,14 @@ import { useI18n } from '@/hooks/useI18n';
 import { SiteNavigation } from '@/components/SiteNavigation';
 import Link from 'next/link';
 import { ErrorResponse, RegisterSuccessResponse, SendVerificationCodeResponse } from '@/types';
+import { getCookie } from '@/lib/utils';
+import { useApp } from '@/contexts/AppContext';
 
 const POLYU_EMAIL_REGEX = /@connect\.polyu\.hk$/i;
 
 export default function RegisterPage() {
   const { t } = useI18n();
+  const { login } = useApp();
 
   const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
@@ -58,9 +61,12 @@ export default function RegisterPage() {
       setIsSendingCode(true);
       // TODO: Actual server address (backend)
       // TODO：实际服务器地址（后端）
-      const res = await fetch('http://127.0.0.1:8000/api/accounts/send_verification_code/', {
+      await fetch('http://localhost:8000/api/accounts/csrf/', { method: 'GET', credentials: 'include' });
+      const csrfToken = getCookie('csrftoken');
+      const res = await fetch('http://localhost:8000/api/accounts/send_verification_code/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}) },
+        credentials: 'include',
         body: JSON.stringify({ email }),
       });
       if (!res.ok) {
@@ -100,9 +106,12 @@ export default function RegisterPage() {
       setIsRegistering(true);
       // TODO: Actual server address (backend)
       // TODO：实际服务器地址（后端）
-      const res = await fetch('http://127.0.0.1:8000/api/accounts/register/', {
+      await fetch('http://localhost:8000/api/accounts/csrf/', { method: 'GET', credentials: 'include' });
+      const csrfToken = getCookie('csrftoken');
+      const res = await fetch('http://localhost:8000/api/accounts/register/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}) },
+        credentials: 'include',
         body: JSON.stringify({
           nickname,
           email,
@@ -118,11 +127,10 @@ export default function RegisterPage() {
         throw new Error(err.message || err.detail || 'Register failed');
       }
 
-      // Persist auth and go back
+      // Session cookie is set by backend; update UI state and go back
       const successData = data as RegisterSuccessResponse;
-      if (successData.token && successData.user) {
-        localStorage.setItem('authToken', successData.token);
-        localStorage.setItem('user', JSON.stringify(successData.user));
+      if (successData.user) {
+        login(successData.user);
       }
       window.history.back();
     } catch (e: unknown) {

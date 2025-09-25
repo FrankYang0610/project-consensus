@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { User, AppContextType, ThemeMode } from '@/types';
+import { getCookie } from '@/lib/utils';
 import { normalizeLanguage, defaultLanguage } from '@/lib/locale';
 import { useTranslation } from 'react-i18next';
 
@@ -53,24 +54,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       // 从 localStorage 恢复设置 / Restore settings from localStorage
       const storedTheme = localStorage.getItem('theme') as ThemeMode;
-      const storedUser = localStorage.getItem('user');
-      const storedToken = localStorage.getItem('authToken');
+      // Session-based auth: try to fetch current user using cookie session
+      const restoreUser = async (): Promise<User | null> => {
+        try {
+          // Ensure csrftoken cookie exists to satisfy Django CSRF checks on same-site
+          // (GET /csrf/ sets the cookie; GET /me/ reads session)
+          await fetch('http://localhost:8000/api/accounts/csrf/', {
+            method: 'GET',
+            credentials: 'include',
+          });
+        } catch {}
+        try {
+          const res = await fetch('http://localhost:8000/api/accounts/me/', {
+            method: 'GET',
+            credentials: 'include',
+          });
+          if (!res.ok) return null;
+          const data = (await res.json()) as User;
+          return data;
+        } catch {
+          return null;
+        }
+      };
 
       // 恢复主题设置 / Restore theme settings
       if (storedTheme && ['light', 'dark', 'system'].includes(storedTheme)) {
         setThemeState(storedTheme);
       }
 
-      // 检查用户认证状态 / Check user authentication status
-      if (storedUser && storedToken) {
-        const userData = JSON.parse(storedUser);
-
-        // 这里可以添加令牌验证逻辑 / Here can add token validation logic
-        // 例如：向后端发送请求验证令牌有效性 / For example: send request to backend to validate token validity
-        // const isTokenValid = await validateToken(storedToken);
-
-        // 目前假设 localStorage 中的信息是有效的 / Currently assume the information in localStorage is valid
-        setUser(userData);
+      // 检查用户认证状态（基于会话） / Check user authentication status (session-based)
+      const currentUser = await restoreUser();
+      if (currentUser) {
+        setUser(currentUser);
+      } else {
+        setUser(null);
       }
     } catch (error) {
       console.error('App initialization failed:', error);
@@ -131,20 +148,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch { /* ignore */ }
   }, [i18n]);
 
-  const login = (userData: User, token: string) => {
-    // 保存用户信息和令牌到 localStorage / Save user information and token to localStorage
-    localStorage.setItem('user', JSON.stringify(userData));
-    localStorage.setItem('authToken', token);
+  const login = (userData: User) => {
+    // 会话由后端 cookie 维护 / Session is maintained by HttpOnly cookie
+    // 仅在前端保存用户对象以更新 UI / Keep user in memory for UI
     setUser(userData);
   };
 
-  const logout = () => {
-    // 清除认证相关的 localStorage / Clear auth-related localStorage
-    localStorage.removeItem('user');
-    localStorage.removeItem('authToken');
+  const logout = async () => {
+    try {
+      const csrfToken = getCookie('csrftoken');
+      await fetch('http://localhost:8000/api/accounts/logout/', {
+        method: 'POST',
+        credentials: 'include',
+        headers: csrfToken ? { 'X-CSRFToken': csrfToken } : {},
+      });
+    } catch {}
     setUser(null);
-
-    // 可选：重定向到首页 / Optional: redirect to homepage
     window.location.href = '/';
   };
 
