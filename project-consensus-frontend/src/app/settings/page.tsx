@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 
 type PrivacySettings = {
   showEmail: boolean;
@@ -54,6 +55,14 @@ export default function SettingsPage() {
   const [privacySaving, setPrivacySaving] = useState(false);
   const [privacyMsg, setPrivacyMsg] = useState<string | null>(null);
   const [privacyErr, setPrivacyErr] = useState<string | null>(null);
+
+  // Checkbox ids to improve a11y linking via htmlFor/aria-describedby
+  const checkboxIds = {
+    showEmail: 'privacy-showEmail',
+    allowDMs: 'privacy-allowDMs',
+    showOnlineStatus: 'privacy-showOnlineStatus',
+    showActivity: 'privacy-showActivity',
+  } as const;
 
   useEffect(() => {
     // Initialize profile fields from user
@@ -185,6 +194,7 @@ export default function SettingsPage() {
               onChange={(e) => setAvatarUrl(e.target.value)}
               placeholder="https://..."
             />
+            TODO: validate URL to prevent XSS?
             {avatarPreview && (
               <div className="flex items-center gap-3 mt-1">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -193,7 +203,6 @@ export default function SettingsPage() {
                   alt="avatar preview"
                   className="w-12 h-12 rounded-full border object-cover"
                 />
-                TODO: Implement URL validation to avoid security risks
                 <span className="text-xs text-muted-foreground">{t('settings.profile.preview')}</span>
               </div>
             )}
@@ -275,57 +284,85 @@ export default function SettingsPage() {
             <Alert><AlertDescription>{privacyMsg}</AlertDescription></Alert>
           )}
 
-          <label className="flex items-start gap-3">
-            <input
-              type="checkbox"
+          <div className="flex items-start gap-3">
+            <Checkbox
+              id={checkboxIds.showEmail}
               className="mt-1"
               checked={privacy.showEmail}
-              onChange={(e) => setPrivacy({ ...privacy, showEmail: e.target.checked })}
+              aria-describedby={`${checkboxIds.showEmail}-desc`}
+              onCheckedChange={(checked) =>
+                setPrivacy({ ...privacy, showEmail: checked === true })
+              }
             />
             <div>
-              <div className="font-medium text-sm">{t('settings.privacy.items.showEmail.title')}</div>
-              <div className="text-xs text-muted-foreground">{t('settings.privacy.items.showEmail.desc')}</div>
+              <Label htmlFor={checkboxIds.showEmail} className="font-medium text-sm">
+                {t('settings.privacy.items.showEmail.title')}
+              </Label>
+              <p id={`${checkboxIds.showEmail}-desc`} className="text-xs text-muted-foreground">
+                {t('settings.privacy.items.showEmail.desc')}
+              </p>
             </div>
-          </label>
+          </div>
 
-          <label className="flex items-start gap-3">
-            <input
-              type="checkbox"
+          <div className="flex items-start gap-3">
+            <Checkbox
+              id={checkboxIds.allowDMs}
               className="mt-1"
               checked={privacy.allowDMs}
-              onChange={(e) => setPrivacy({ ...privacy, allowDMs: e.target.checked })}
+              aria-describedby={`${checkboxIds.allowDMs}-desc`}
+              onCheckedChange={(checked) =>
+                setPrivacy({ ...privacy, allowDMs: checked === true })
+              }
             />
             <div>
-              <div className="font-medium text-sm">{t('settings.privacy.items.allowDMs.title')}</div>
-              <div className="text-xs text-muted-foreground">{t('settings.privacy.items.allowDMs.desc')}</div>
+              <Label htmlFor={checkboxIds.allowDMs} className="font-medium text-sm">
+                {t('settings.privacy.items.allowDMs.title')}
+              </Label>
+              <p id={`${checkboxIds.allowDMs}-desc`} className="text-xs text-muted-foreground">
+                {t('settings.privacy.items.allowDMs.desc')}
+              </p>
             </div>
-          </label>
+          </div>
 
-          <label className="flex items-start gap-3">
-            <input
-              type="checkbox"
+          <div className="flex items-start gap-3">
+            <Checkbox
+              id={checkboxIds.showOnlineStatus}
               className="mt-1"
               checked={privacy.showOnlineStatus}
-              onChange={(e) => setPrivacy({ ...privacy, showOnlineStatus: e.target.checked })}
+              aria-describedby={`${checkboxIds.showOnlineStatus}-desc`}
+              onCheckedChange={(checked) =>
+                setPrivacy({ ...privacy, showOnlineStatus: checked === true })
+              }
             />
             <div>
-              <div className="font-medium text-sm">{t('settings.privacy.items.showOnlineStatus.title')}</div>
-              <div className="text-xs text-muted-foreground">{t('settings.privacy.items.showOnlineStatus.desc')}</div>
+              <Label htmlFor={checkboxIds.showOnlineStatus} className="font-medium text-sm">
+                {t('settings.privacy.items.showOnlineStatus.title')}
+              </Label>
+              <p id={`${checkboxIds.showOnlineStatus}-desc`} className="text-xs text-muted-foreground">
+                {t('settings.privacy.items.showOnlineStatus.desc')}
+              </p>
             </div>
-          </label>
+          </div>
 
-          <label className="flex items-start gap-3">
-            <input
-              type="checkbox"
+          <div className="flex items-start gap-3">
+            <Checkbox
+              id={checkboxIds.showActivity}
               className="mt-1"
               checked={privacy.showActivity}
-              onChange={(e) => setPrivacy({ ...privacy, showActivity: e.target.checked })}
+              aria-describedby={`${checkboxIds.showActivity}-desc`}
+              onCheckedChange={(checked) =>
+                setPrivacy({ ...privacy, showActivity: checked === true })
+              }
             />
             <div>
-              <div className="font-medium text-sm">{t('settings.privacy.items.showActivity.title')}</div>
-              <div className="text-xs text-muted-foreground">{t('settings.privacy.items.showActivity.desc')}</div>
+              <Label htmlFor={checkboxIds.showActivity} className="font-medium text-sm">
+                {t('settings.privacy.items.showActivity.title')}
+              </Label>
+              <p id={`${checkboxIds.showActivity}-desc`} className="text-xs text-muted-foreground">
+                {t('settings.privacy.items.showActivity.desc')}
+              </p>
             </div>
-          </label>
+          </div>
 
           <div className="pt-2">
             <Button onClick={handleSavePrivacy} disabled={privacySaving}>
