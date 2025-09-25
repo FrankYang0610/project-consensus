@@ -25,3 +25,13 @@ export type {
   CourseReviewReply,
   Course,
 } from './course';
+
+// API response types
+export type {
+  SendVerificationCodeResponse,
+  RegisterResponse,
+  LoginApiResponse,
+  RegisterSuccessResponse,
+  LoginSuccessResponse,
+  ErrorResponse,
+} from './api';

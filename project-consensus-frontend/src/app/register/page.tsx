@@ -17,11 +17,15 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 import { useI18n } from '@/hooks/useI18n';
 import { SiteNavigation } from '@/components/SiteNavigation';
 import Link from 'next/link';
+import { ErrorResponse, RegisterSuccessResponse, SendVerificationCodeResponse } from '@/types';
+import { getCookie } from '@/lib/utils';
+import { useApp } from '@/contexts/AppContext';
 
 const POLYU_EMAIL_REGEX = /@connect\.polyu\.hk$/i;
 
 export default function RegisterPage() {
   const { t } = useI18n();
+  const { login } = useApp();
 
   const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
@@ -55,13 +59,26 @@ export default function RegisterPage() {
     }
     try {
       setIsSendingCode(true);
-      // Mock request, replace with real backend endpoint
-      await new Promise((r) => setTimeout(r, 800));
+      // TODO: Actual server address (backend)
+      // TODO：实际服务器地址（后端）
+      await fetch('http://localhost:8000/api/accounts/csrf/', { method: 'GET', credentials: 'include' });
+      const csrfToken = getCookie('csrftoken');
+      const res = await fetch('http://localhost:8000/api/accounts/send_verification_code/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}) },
+        credentials: 'include',
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) {
+        const errorData: ErrorResponse = await res.json().catch(() => ({} as ErrorResponse));
+        throw new Error(errorData.message || errorData.detail || 'Failed to send code');
+      }
       setCanInputCode(true);
       setResendCountdown(60);
       setSuccess(t('common.note'));
-    } catch (e) {
-      setError(t('auth.errorNetwork'));
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : t('auth.errorNetwork');
+      setError(message);
     } finally {
       setIsSendingCode(false);
     }
@@ -87,12 +104,38 @@ export default function RegisterPage() {
 
     try {
       setIsRegistering(true);
-      // Mock register request
-      await new Promise((r) => setTimeout(r, 1000));
-      // success behavior: navigate back to previous page
+      // TODO: Actual server address (backend)
+      // TODO：实际服务器地址（后端）
+      await fetch('http://localhost:8000/api/accounts/csrf/', { method: 'GET', credentials: 'include' });
+      const csrfToken = getCookie('csrftoken');
+      const res = await fetch('http://localhost:8000/api/accounts/register/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}) },
+        credentials: 'include',
+        body: JSON.stringify({
+          nickname,
+          email,
+          verification_code: verificationCode,
+          password,
+        }),
+      });
+      const data: RegisterSuccessResponse | ErrorResponse = await res
+        .json()
+        .catch(() => ({ message: 'Register failed' } as ErrorResponse));
+      if (!res.ok || !(data as RegisterSuccessResponse).success) {
+        const err = data as ErrorResponse;
+        throw new Error(err.message || err.detail || 'Register failed');
+      }
+
+      // Session cookie is set by backend; update UI state and go back
+      const successData = data as RegisterSuccessResponse;
+      if (successData.user) {
+        login(successData.user);
+      }
       window.history.back();
-    } catch (e) {
-      setError(t('auth.errorNetwork'));
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : t('auth.errorNetwork');
+      setError(message);
     } finally {
       setIsRegistering(false);
     }
