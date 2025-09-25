@@ -56,6 +56,9 @@ INSTALLED_APPS = [
 
     # Local apps
     'core',
+    'accounts',
+    'courses',
+    'forum',
 ]
 
 MIDDLEWARE = [
@@ -155,3 +158,23 @@ if DEBUG:
     REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"].append(
         "rest_framework.renderers.BrowsableAPIRenderer"
     )
+
+# Allow cookies to be included in cross-origin requests (frontend <-> backend)
+# Ensure CORS_ALLOWED_ORIGINS and CSRF_TRUSTED_ORIGINS are set via environment.
+CORS_ALLOW_CREDENTIALS = True
+
+# Session & CSRF cookie configuration for secure, rolling sessions.
+# Requirement: persist login across refresh/close, expire after 10 days of inactivity.
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 10  # 10 days (in seconds)
+SESSION_SAVE_EVERY_REQUEST = True       # rolling expiry: extend on each request
+
+# Use secure cookies in non-debug environments; Lax is fine for same-site SPA API.
+SESSION_COOKIE_SECURE = not DEBUG
+# Use Lax for same-site (e.g., localhost:3000 -> localhost:8000) and better CSRF posture.
+# If deploying frontend on a different site, switch to 'None' and ensure HTTPS.
+SESSION_COOKIE_SAMESITE = 'Lax'
+
+CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SAMESITE = 'Lax'
+# CSRF token must be readable by JS to set X-CSRFToken header
+CSRF_COOKIE_HTTPONLY = False

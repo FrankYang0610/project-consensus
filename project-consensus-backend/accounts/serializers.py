@@ -54,3 +54,14 @@ class RegisterSerializer(serializers.Serializer):
     verification_code = serializers.CharField(max_length=16)
     password = serializers.CharField(write_only=True)
 
+
+class LoginSerializer(serializers.Serializer):
+    """Request body for login endpoint.
+
+    Fields:
+    - email: user email
+    - password: user password
+    """
+
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)

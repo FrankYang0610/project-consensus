@@ -21,7 +21,8 @@ import { Label } from '@/components/ui/label';
 import { User, Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useApp } from '@/contexts/AppContext';
-import { LoginResponse } from '@/types';
+import { LoginResponse, LoginApiResponse, ErrorResponse, LoginSuccessResponse } from '@/types';
+import { getCookie } from '@/lib/utils';
 import { useI18n } from '@/hooks/useI18n';
 import { cn } from '@/lib/utils';
 
@@ -56,25 +57,40 @@ export function LoginComponent({ className }: LoginComponentProps) {
   // Backend Login API, Incomplete!
   const handleLogin = async (email: string, password: string): Promise<LoginResponse> => {
     try {
-      const response = await fetch('/api/auth/login', {
+      // TODO: Actual server address (backend)
+      // TODO：实际服务器地址（后端）
+      // Ensure CSRF cookie exists (safe GET)
+      await fetch('http://localhost:8000/api/accounts/csrf/', { method: 'GET', credentials: 'include' });
+      const csrfToken = getCookie('csrftoken');
+      const response = await fetch('http://localhost:8000/api/accounts/login/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}),
         },
+        credentials: 'include',
         body: JSON.stringify({
           email,
           password,
-          device: 'web',
-          userAgent: navigator.userAgent
         }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Login failed');
+        const errorData: ErrorResponse = await response
+          .json()
+          .catch(() => ({ message: 'Login failed' } as ErrorResponse));
+        throw new Error(errorData.message || errorData.detail || 'Login failed');
       }
 
-      return response.json();
+      const data: LoginApiResponse = await response
+        .json()
+        .catch(() => ({ message: 'Login failed' } as ErrorResponse));
+      if ('success' in data && data.success) {
+        const success = data as LoginSuccessResponse;
+        return { success: true, user: success.user };
+      }
+      const err = data as ErrorResponse;
+      return { success: false, message: err.message || err.detail || 'Login failed' };
     } catch (err) {
       console.error('Login error:', err);
       throw err;
@@ -110,15 +126,8 @@ export function LoginComponent({ className }: LoginComponentProps) {
       const result = await handleLogin(email, password);
 
       if (result.success && result.user) {
-        // Save token to localStorage or cookie
-        if (result.token) {
-          localStorage.setItem('authToken', result.token);
-          // Or use cookies
-          // document.cookie = `authToken=${result.token}; path=/; secure; samesite=strict`;
-        }
-
         // Use AuthContext to save user information
-        login(result.user, result.token!);
+        login(result.user);
 
         // Close modal and reset form
         setIsOpen(false);
@@ -231,21 +240,21 @@ export function LoginComponent({ className }: LoginComponentProps) {
                     required
                   />
                 </div>
+
+                {/* Login Button inside the form to trigger submit */}
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading}
+                >
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {t('auth.login')}
+                </Button>
               </div>
             </form>
           </CardContent>
 
           <CardFooter className="flex-col gap-3">
-            {/* Login Button */}
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t('auth.login')}
-            </Button>
-
             {/* Google Login button */}
             <Button
               type="button"
