@@ -22,6 +22,7 @@ import { User, Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useApp } from '@/contexts/AppContext';
 import { LoginResponse, LoginApiResponse, ErrorResponse, LoginSuccessResponse } from '@/types';
+import { getCookie } from '@/lib/utils';
 import { useI18n } from '@/hooks/useI18n';
 import { cn } from '@/lib/utils';
 
@@ -58,11 +59,16 @@ export function LoginComponent({ className }: LoginComponentProps) {
     try {
       // TODO: Actual server address (backend)
       // TODO：实际服务器地址（后端）
-      const response = await fetch('http://127.0.0.1:8000/api/accounts/login/', {
+      // Ensure CSRF cookie exists (safe GET)
+      await fetch('http://localhost:8000/api/accounts/csrf/', { method: 'GET', credentials: 'include' });
+      const csrfToken = getCookie('csrftoken');
+      const response = await fetch('http://localhost:8000/api/accounts/login/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}),
         },
+        credentials: 'include',
         body: JSON.stringify({
           email,
           password,
@@ -81,7 +87,7 @@ export function LoginComponent({ className }: LoginComponentProps) {
         .catch(() => ({ message: 'Login failed' } as ErrorResponse));
       if ('success' in data && data.success) {
         const success = data as LoginSuccessResponse;
-        return { success: true, user: success.user, token: success.token };
+        return { success: true, user: success.user };
       }
       const err = data as ErrorResponse;
       return { success: false, message: err.message || err.detail || 'Login failed' };
@@ -120,15 +126,8 @@ export function LoginComponent({ className }: LoginComponentProps) {
       const result = await handleLogin(email, password);
 
       if (result.success && result.user) {
-        // Save token to localStorage or cookie
-        if (result.token) {
-          localStorage.setItem('authToken', result.token);
-          // Or use cookies
-          // document.cookie = `authToken=${result.token}; path=/; secure; samesite=strict`;
-        }
-
         // Use AuthContext to save user information
-        login(result.user, result.token!);
+        login(result.user);
 
         // Close modal and reset form
         setIsOpen(false);

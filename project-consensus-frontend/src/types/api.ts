@@ -14,7 +14,6 @@ export interface SendVerificationCodeResponse {
 export interface RegisterSuccessResponse {
   success: true;
   user: User;
-  token: string;
 }
 
 export interface ErrorResponse {
@@ -26,7 +25,6 @@ export interface ErrorResponse {
 export interface LoginSuccessResponse {
   success: true;
   user: User;
-  token: string;
 }
 
 export type RegisterResponse = RegisterSuccessResponse | ErrorResponse;

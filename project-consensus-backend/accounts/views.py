@@ -3,7 +3,7 @@ from __future__ import annotations
 import secrets
 from datetime import timedelta
 
-from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth import authenticate, get_user_model, login as django_login, logout as django_logout
 from django.conf import settings
 import logging
 from django.db import transaction
@@ -11,6 +11,7 @@ from django.utils import timezone
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from .models import EmailVerification, Profile
 from .serializers import SendCodeSerializer, RegisterSerializer, LoginSerializer
@@ -81,16 +82,22 @@ def register(request):
     verification.is_used = True
     verification.save(update_fields=["is_used"])
 
-    # For demo purposes, return a fake token and minimal user payload
-    token = secrets.token_hex(16)
+    # Log the user in to establish a server-side session
+    django_login(request, user)
     return Response(
         {
             "success": True,
             "user": {"id": str(user.pk), "email": user.email, "name": nickname},
-            "token": token,
         },
         status=status.HTTP_201_CREATED,
     )
+
+
+@api_view(["GET"])
+@ensure_csrf_cookie
+def csrf(request):
+    """Ensure a CSRF cookie is set on the client."""
+    return Response({"success": True})
 
 
 @api_view(["POST"])
@@ -109,14 +116,31 @@ def login_view(request):
     if not user:
         return Response({"message": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
 
-    # success; return profile name if available
+    # success; establish session and return profile payload
+    django_login(request, user)
     display_name = getattr(getattr(user, "profile", None), "display_name", None) or user.get_username()
-    token = secrets.token_hex(16)
     return Response(
         {
             "success": True,
             "user": {"id": str(user.pk), "email": user.email, "name": display_name},
-            "token": token,
         }
     )
+
+
+@api_view(["POST"])
+def logout_view(request):
+    django_logout(request)
+    return Response({"success": True})
+
+
+@api_view(["GET"])
+def me(request):
+    if not request.user.is_authenticated:
+        return Response({"message": "Not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
+    display_name = getattr(getattr(request.user, "profile", None), "display_name", None) or request.user.get_username()
+    return Response({
+        "id": str(request.user.pk),
+        "email": request.user.email,
+        "name": display_name,
+    })
 
