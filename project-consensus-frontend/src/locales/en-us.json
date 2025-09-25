@@ -390,6 +390,11 @@
       "saved": "Privacy settings saved.",
       "saveFailed": "Failed to save privacy settings."
     },
+    "language": {
+      "title": "Preferred Language",
+      "desc": "Choose your display language.",
+      "hint": "Changes apply immediately for this device."
+    },
     "actions": {
       "saveProfile": "Save Profile",
       "changePassword": "Change Password",

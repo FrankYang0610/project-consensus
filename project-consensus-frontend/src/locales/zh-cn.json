@@ -392,6 +392,11 @@
       "saved": "隐私设置已保存。",
       "saveFailed": "保存隐私设置失败。"
     },
+    "language": {
+      "title": "偏好语言",
+      "desc": "选择你的界面显示语言。",
+      "hint": "更改会立即在此设备生效。"
+    },
     "actions": {
       "saveProfile": "保存资料",
       "changePassword": "修改密码",

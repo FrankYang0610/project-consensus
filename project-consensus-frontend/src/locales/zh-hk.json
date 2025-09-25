@@ -392,6 +392,11 @@
       "saved": "私隱設定已儲存。",
       "saveFailed": "儲存私隱設定失敗。"
     },
+    "language": {
+      "title": "偏好語言",
+      "desc": "選擇你的介面顯示語言。",
+      "hint": "更改會即時在此裝置生效。"
+    },
     "actions": {
       "saveProfile": "儲存資料",
       "changePassword": "修改密碼",

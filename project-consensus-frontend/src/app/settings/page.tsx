@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { useI18n } from '@/hooks/useI18n';
+import { SiteNavigation } from '@/components/SiteNavigation';
 import {
   Card,
   CardContent,
@@ -16,6 +17,14 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ChevronDown } from 'lucide-react';
+import { Language } from '@/types';
 
 type PrivacySettings = {
   showEmail: boolean;
@@ -27,7 +36,7 @@ type PrivacySettings = {
 const PRIVACY_KEY = 'privacySettings';
 
 export default function SettingsPage() {
-  const { t } = useI18n();
+  const { t, language, changeLanguage } = useI18n();
   const { user, isLoggedIn, updateUser } = useApp();
 
   // Profile form
@@ -83,16 +92,31 @@ export default function SettingsPage() {
 
   const avatarPreview = useMemo(() => avatarUrl?.trim() || '', [avatarUrl]);
 
+  // Language options (keep in sync with SiteNavigation)
+  const languageOptions = [
+    { code: 'zh-HK' as Language, name: '繁體中文', flag: '🇭🇰' },
+    { code: 'zh-CN' as Language, name: '简体中文', flag: '🇨🇳' },
+    { code: 'en-US' as Language, name: 'English', flag: '🇺🇸' },
+  ];
+
+  const getCurrentLanguage = () =>
+    languageOptions.find((l) => l.code === language) || languageOptions[0];
+
   if (!isLoggedIn || !user) {
     return (
-      <main className="max-w-3xl mx-auto px-4 py-10">
-        <h1 className="text-2xl font-semibold mb-4">{t('settings.title')}</h1>
-        <Alert>
-          <AlertDescription>
-            {t('settings.requireLogin')}
-          </AlertDescription>
-        </Alert>
-      </main>
+      <>
+        <SiteNavigation />
+        <div className="min-h-screen bg-background">
+          <main className="max-w-3xl mx-auto px-4 py-10">
+            <h1 className="text-2xl font-semibold mb-4">{t('settings.title')}</h1>
+            <Alert>
+              <AlertDescription>
+                {t('settings.requireLogin')}
+              </AlertDescription>
+            </Alert>
+          </main>
+        </div>
+      </>
     );
   }
 
@@ -158,9 +182,12 @@ export default function SettingsPage() {
   };
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-semibold mb-2">{t('settings.title')}</h1>
-      <p className="text-muted-foreground mb-8">{t('settings.subtitle')}</p>
+    <>
+      <SiteNavigation />
+      <div className="min-h-screen bg-background">
+        <main className="max-w-3xl mx-auto px-4 py-10">
+          <h1 className="text-2xl font-semibold mb-2">{t('settings.title')}</h1>
+          <p className="text-muted-foreground mb-8">{t('settings.subtitle')}</p>
 
       {/* Profile Section */}
       <Card className="mb-6">
@@ -213,6 +240,45 @@ export default function SettingsPage() {
               {profileSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {t('settings.actions.saveProfile')}
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Preferred Language Section */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>{t('settings.language.title')}</CardTitle>
+          <CardDescription>{t('settings.language.desc')}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center gap-3">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="flex items-center gap-2 h-9 px-3">
+                  <span className="text-sm">{getCurrentLanguage().flag}</span>
+                  <span className="text-sm">{getCurrentLanguage().name}</span>
+                  <ChevronDown size={12} className="opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-40">
+                {languageOptions.map((langOption) => (
+                  <DropdownMenuItem
+                    key={langOption.code}
+                    onClick={() => changeLanguage(langOption.code)}
+                    className={
+                      language === langOption.code ? 'bg-accent text-accent-foreground' : ''
+                    }
+                  >
+                    <span className="mr-2">{langOption.flag}</span>
+                    <span className="text-sm">{langOption.name}</span>
+                    {language === langOption.code && (
+                      <span className="ml-auto text-xs">✓</span>
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <span className="text-xs text-muted-foreground">{t('settings.language.hint')}</span>
           </div>
         </CardContent>
       </Card>
@@ -372,6 +438,8 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
-    </main>
+        </main>
+      </div>
+    </>
   );
 }
