@@ -329,37 +329,39 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
           {/* Theme toggle */}
           <ThemeToggle />
 
-          {/* Language Switcher - visible on larger screens */}
-          <div className="hidden md:block">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="flex items-center gap-2 h-9 px-3">
-                  <span className="text-sm">{getCurrentLanguage().flag}</span>
-                  <span className="hidden lg:inline text-sm">{getCurrentLanguage().name}</span>
-                  <span className="lg:hidden">{getCurrentLanguage().flag}</span>
-                  <ChevronDown size={12} className="opacity-50" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
-                {languageOptions.map((langOption) => (
-                  <DropdownMenuItem
-                    key={langOption.code}
-                    onClick={() => handleLanguageChange(langOption.code)}
-                    className={cn(
-                      "flex items-center gap-2 cursor-pointer",
-                      language === langOption.code && "bg-accent text-accent-foreground"
-                    )}
-                  >
-                    <span>{langOption.flag}</span>
-                    <span className="text-sm">{langOption.name}</span>
-                    {language === langOption.code && (
-                      <span className="ml-auto text-xs">✓</span>
-                    )}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          {/* Language Switcher - visible on larger screens (hidden after login) */}
+          {!isLoggedIn && (
+            <div className="hidden md:block">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex items-center gap-2 h-9 px-3">
+                    <span className="text-sm">{getCurrentLanguage().flag}</span>
+                    <span className="hidden lg:inline text-sm">{getCurrentLanguage().name}</span>
+                    <span className="lg:hidden">{getCurrentLanguage().flag}</span>
+                    <ChevronDown size={12} className="opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  {languageOptions.map((langOption) => (
+                    <DropdownMenuItem
+                      key={langOption.code}
+                      onClick={() => handleLanguageChange(langOption.code)}
+                      className={cn(
+                        "flex items-center gap-2 cursor-pointer",
+                        language === langOption.code && "bg-accent text-accent-foreground"
+                      )}
+                    >
+                      <span>{langOption.flag}</span>
+                      <span className="text-sm">{langOption.name}</span>
+                      {language === langOption.code && (
+                        <span className="ml-auto text-xs">✓</span>
+                      )}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
 
           {/* User authentication component - visible on larger screens */}
           <div className="hidden md:block">

@@ -342,5 +342,63 @@
         "content": "Questions? Contact us at support@project-consensus.app."
       }
     }
+  },
+  "settings": {
+    "title": "User Settings",
+    "subtitle": "Manage your profile, password, and privacy preferences.",
+    "requireLogin": "Please login to access settings.",
+    "profile": {
+      "title": "Profile",
+      "desc": "Update your display name and avatar.",
+      "displayName": "Display Name",
+      "avatarUrl": "Avatar URL",
+      "preview": "Preview",
+      "saved": "Profile updated.",
+      "saveFailed": "Failed to save profile."
+    },
+    "account": {
+      "title": "Account Security",
+      "desc": "Change your password.",
+      "currentPassword": "Current Password",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm New Password",
+      "passwordMismatch": "New passwords do not match.",
+      "changed": "Password changed successfully.",
+      "changeFailed": "Failed to change password."
+    },
+    "privacy": {
+      "title": "Privacy",
+      "desc": "Control how others can see and contact you.",
+      "items": {
+        "showEmail": {
+          "title": "Show email on profile",
+          "desc": "Allow others to see your email on your profile."
+        },
+        "allowDMs": {
+          "title": "Allow direct messages",
+          "desc": "Allow others to send you private messages."
+        },
+        "showOnlineStatus": {
+          "title": "Show online status",
+          "desc": "Let others see when you're online."
+        },
+        "showActivity": {
+          "title": "Show activity",
+          "desc": "Display your public activity timeline."
+        }
+      },
+      "saved": "Privacy settings saved.",
+      "saveFailed": "Failed to save privacy settings."
+    },
+    "language": {
+      "title": "Preferred Language",
+      "desc": "Choose your display language.",
+      "hint": "Changes apply immediately for this device."
+    },
+    "actions": {
+      "saveProfile": "Save Profile",
+      "changePassword": "Change Password",
+      "savePrivacy": "Save Privacy"
+    }
   }
 }

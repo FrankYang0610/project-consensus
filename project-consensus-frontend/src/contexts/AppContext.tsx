@@ -167,6 +167,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     window.location.href = '/';
   };
 
+  // 更新用户信息（本地存储 + 状态）/ Update user info (localStorage + state)
+  const updateUser = (updates: Partial<User>) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, ...updates } as User;
+      try {
+        localStorage.setItem('user', JSON.stringify(next));
+      } catch { /* ignore */ }
+      return next;
+    });
+  };
+
   const setTheme = (newTheme: ThemeMode) => {
     setThemeState(newTheme);
     localStorage.setItem('theme', newTheme);
@@ -178,6 +190,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     isLoggedIn: !!user,
     login,
     logout,
+    updateUser,
 
     // 主题设置 / Theme settings
     theme,
@@ -204,4 +217,3 @@ export function useApp() {
   }
   return context;
 }
-
