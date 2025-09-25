@@ -48,7 +48,7 @@ cp .env.example .env
 #   LANGUAGE_CODE=zh-hans (optional, default zh-hans; set en-us for English)
 #   TIME_ZONE=Asia/Shanghai (optional, default Asia/Shanghai; e.g., UTC)
 #   CORS_ALLOWED_ORIGINS=http://localhost:3000 (if you have a frontend)
-#   CSRF_TRUSTED_ORIGINS=http://localhost:8000 (if using cookies/sessions)
+#   CSRF_TRUSTED_ORIGINS=http://localhost:3000 (the frontend origin making POST requests)
 #   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/appdb
 
 # 6) Start PostgreSQL 17 (ensure Docker Desktop is running)
@@ -75,7 +75,7 @@ python manage.py runserver
   - `LANGUAGE_CODE=zh-hans` (optional, default zh-hans; e.g., `en-us`)
   - `TIME_ZONE=Asia/Shanghai` (optional, default Asia/Shanghai; e.g., `UTC`, `Europe/Berlin`)
   - `CORS_ALLOWED_ORIGINS=http://localhost:3000` (if you have a frontend)
-  - `CSRF_TRUSTED_ORIGINS=http://localhost:8000` (if using cookies/sessions)
+  - `CSRF_TRUSTED_ORIGINS=http://localhost:3000` (the frontend origin making POST requests)
   - `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/appdb`
 - `docker-compose.yml`: uses `postgres:17`, port `5432:5432`, username/password `postgres`, database `appdb`.
 
