@@ -49,13 +49,13 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
-                "verbose_name": "帖子",
-                "verbose_name_plural": "帖子",
+                "verbose_name": "ForumPost",
+                "verbose_name_plural": "ForumPosts",
                 "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name="ForumComment",
+            name="ForumPostComment",
             fields=[
                 (
                     "id",
@@ -90,7 +90,7 @@ class Migration(migrations.Migration):
                         null=True,
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="replies",
-                        to="forum.forumcomment",
+                        to="forum.forumpostcomment",
                     ),
                 ),
                 (
@@ -113,8 +113,8 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
-                "verbose_name": "评论",
-                "verbose_name_plural": "评论",
+                "verbose_name": "ForumPostComment",
+                "verbose_name_plural": "ForumPostComments",
                 "ordering": ["created_at"],
             },
         ),

@@ -6,25 +6,30 @@ import { Card, CardContent } from "@/components/ui/card";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { ForumPostDetailCard } from "@/components/ForumPostDetailCard";
 import { ForumPostCommentList } from "@/components/ForumPostCommentList";
-import { samplePosts, toggleLikeById, getPostById } from "@/data/samplePosts";
-import { toggleCommentLike, deleteComment } from "@/data/sampleComments";
+import { apiGet } from "@/lib/utils";
+import { useApp } from "@/contexts/AppContext";
+import { ForumPost } from "@/types";
 
 export default function PostPage() {
   const params = useParams();
   const router = useRouter();
   const postId = params.postId as string;
 
-  // Find the post by ID and keep it in local state so UI updates
-  // TODO: Replace with actual backend API call / 待替换为真正的后端API调用
-  // Currently using sample data, should be replaced with: / 当前使用示例数据，应替换为：
-  // const [post, setPost] = React.useState<ForumPost | null>(null);
-  // React.useEffect(() => {
-  //   fetchPostById(postId).then(setPost);
-  // }, [postId]);
-  const [post, setPost] = React.useState(() => getPostById(postId));
+  const [post, setPost] = React.useState<ForumPost | null>(null);
+  React.useEffect(() => {
+    let mounted = true;
+    apiGet<ForumPost>(`/api/forum/posts/${postId}/`)
+      .then((data) => {
+        if (mounted) setPost(data);
+      })
+      .catch((e) => console.error(e));
+    return () => {
+      mounted = false;
+    };
+  }, [postId]);
 
-  // Mock current user ID (in real app, this would come from auth context)
-  const currentUserId = "user-1";
+  const { user } = useApp();
+  const currentUserId = user?.id;
 
   // Scroll to top when component mounts
   React.useEffect(() => {
@@ -36,29 +41,19 @@ export default function PostPage() {
   };
 
   const handleCommentLike = (commentId: string) => {
-    const updatedComment = toggleCommentLike(commentId);
-    if (updatedComment) {
-      // In a real app, you might want to trigger a re-render or update state
-      console.log("Comment liked:", commentId);
-    }
+    // TODO: call backend like endpoint when available
   };
 
   const handleCommentDelete = (commentId: string) => {
-    const success = deleteComment(commentId);
-    if (success) {
-      // In a real app, you might want to trigger a re-render or update state
-      console.log("Comment deleted:", commentId);
-    }
+    // TODO: call backend delete endpoint when available
   };
 
   const handleAddComment = () => {
-    // TODO: Implement add comment functionality
-    console.log("Add comment clicked");
+    // TODO: open comment editor / call backend
   };
 
   const handleReplyToComment = (commentId: string) => {
-    // TODO: Implement reply to comment functionality
-    console.log("Reply to comment:", commentId);
+    // TODO: open reply editor / call backend
   };
 
   const handleCommentShare = (commentId: string) => {
@@ -96,9 +91,7 @@ export default function PostPage() {
             <ForumPostDetailCard
               post={post}
               onLike={(id) => {
-                const updated = toggleLikeById(id);
-                if (!updated) return;
-                setPost(prev => prev ? { ...prev, isLiked: updated.isLiked, likes: updated.likes } : prev);
+                setPost(prev => prev ? { ...prev, isLiked: !prev.isLiked, likes: Math.max(0, prev.likes + (!prev.isLiked ? 1 : -1)) } : prev);
               }}
             />
             <ForumPostCommentList
@@ -109,6 +102,7 @@ export default function PostPage() {
               onAddComment={handleAddComment}
               currentUserId={currentUserId}
               postId={postId}
+              totalCount={post.comments ?? 0}
             />
           </div>
         </main>

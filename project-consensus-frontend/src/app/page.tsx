@@ -4,19 +4,80 @@ import * as React from "react";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ForumPostPreviewCard } from "@/components/ForumPostPreviewCard";
-import { samplePosts, toggleLikeById } from "@/data/samplePosts";
 import { useI18n } from "@/hooks/useI18n";
 import CreateForumPostButton from "@/components/CreateForumPostButton";
+import { useApp } from "@/contexts/AppContext";
+import { Button } from "@/components/ui/button";
+import { apiGet } from "@/lib/utils";
+import { ListPostsResponse } from "@/types/api";
+import { ForumPost } from "@/types";
 
 export default function HomePage() {
   const { t } = useI18n();
-  const [posts, setPosts] = React.useState(() => [...samplePosts]);
+  const { isLoggedIn } = useApp();
+  const [posts, setPosts] = React.useState<ForumPost[]>([]);
+  const loaderRef = React.useRef<HTMLDivElement | null>(null);
+  const loadingRef = React.useRef(false);
+  const [nextUrl, setNextUrl] = React.useState<string | null>("/api/forum/posts/?page=1&page_size=12");
+  const [loadError, setLoadError] = React.useState(false);
 
   const handleLike = (id: string) => {
-    const updated = toggleLikeById(id);
-    if (!updated) return;
-    setPosts(prev => prev.map(p => (p.id === id ? { ...p, isLiked: updated.isLiked, likes: updated.likes } : p)));
+    // Client-side only like toggle for demo
+    setPosts(prev => prev.map(p => {
+      if (p.id !== id) return p;
+      const nextLiked = !p.isLiked;
+      const nextLikes = Math.max(0, p.likes + (nextLiked ? 1 : -1));
+      return { ...p, isLiked: nextLiked, likes: nextLikes };
+    }));
   };
+
+  const visiblePosts = posts; // We append pages from server; all posts are visible
+  const remaining = nextUrl ? 1 : 0; // sentinel uses presence of next page
+
+  const fetchMore = React.useCallback(async () => {
+    if (!nextUrl || loadingRef.current) return;
+    loadingRef.current = true;
+    try {
+      const data = await apiGet<ListPostsResponse>(nextUrl);
+      setPosts(prev => {
+        const existing = new Set(prev.map(p => p.id));
+        const deduped = data.results.filter(p => !existing.has(p.id));
+        return [...prev, ...deduped];
+      });
+      setNextUrl(data.next ? new URL(data.next).pathname + new URL(data.next).search : null);
+      setLoadError(false);
+    } catch (err) {
+      console.error(err);
+      setLoadError(true);
+    } finally {
+      loadingRef.current = false;
+    }
+  }, [nextUrl]);
+
+  React.useEffect(() => {
+    // initial fetch
+    if (posts.length === 0 && nextUrl) {
+      fetchMore();
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (!loaderRef.current) return;
+    const target = loaderRef.current;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && remaining > 0) {
+          fetchMore();
+        }
+      },
+      { root: null, rootMargin: '200px 0px', threshold: 0 }
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [remaining, fetchMore]);
+
+  // no-op
 
   return (
     <>
@@ -36,13 +97,29 @@ export default function HomePage() {
 
           <div className="w-full p-6 pt-0">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto">
-              {posts.map(post => (
+              {visiblePosts.map(post => (
                 <ForumPostPreviewCard key={post.id} post={post} onLike={handleLike} />
               ))}
+            </div>
+
+            {/* Infinite scroll sentinel */}
+            <div className="max-w-7xl mx-auto flex justify-center mt-6">
+              <div ref={loaderRef} className="h-8 w-full" aria-hidden="true" />
             </div>
           </div>
         </main>
       </div>
+      {loadError && nextUrl && (
+        <Button
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-red-600 hover:bg-red-700 text-white"
+          onClick={() => {
+            setLoadError(false);
+            fetchMore();
+          }}
+        >
+          {t('common.loadFailedRetry')}
+        </Button>
+      )}
       <CreateForumPostButton />
     </>
   );

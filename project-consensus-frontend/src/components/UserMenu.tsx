@@ -6,6 +6,7 @@ import {
   Dialog,
   DialogContent,
   DialogTrigger,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { User, Settings, LogOut, ChevronDown } from 'lucide-react';
@@ -85,6 +86,7 @@ export function UserMenu({ className }: UserMenuProps) {
       </DialogTrigger>
 
       <DialogContent className="p-0 max-w-sm">
+        <DialogTitle className="sr-only">User Menu</DialogTitle>
         <div className="p-4">
           {/* User information header */}
           <div className="flex items-center gap-3 pb-4 border-b">

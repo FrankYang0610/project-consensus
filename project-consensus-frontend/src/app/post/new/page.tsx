@@ -13,12 +13,24 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { useI18n } from "@/hooks/useI18n";
 import { useRouter } from "next/navigation";
-import { addPost } from "@/data/samplePosts";
 import { ForumPost } from "@/types";
+import { apiPost } from "@/lib/utils";
+import { useApp } from "@/contexts/AppContext";
 
 export default function NewForumPostPage() {
   const { t } = useI18n();
   const router = useRouter();
+  const { isLoggedIn, isLoading, openLoginModal } = useApp();
+  // 在发帖页未登录或退出登录时，打开登录弹窗
+  // When not logged in or logged out on this page, open the login modal
+  React.useEffect(() => {
+    // 等待认证状态加载完成，避免未初始化时误判
+    // Wait for authentication status to load, avoid misjudgment when not initialized
+    if (isLoading) return;
+    if (!isLoggedIn) {
+      openLoginModal();
+    }
+  }, [isLoggedIn, isLoading, router]);
   const [title, setTitle] = React.useState("");
   const [content, setContent] = React.useState("");
   const [tags, setTags] = React.useState<string[]>([]);
@@ -67,6 +79,10 @@ export default function NewForumPostPage() {
 
   // 提交处理函数 / Submit handler function
   const handleSubmit = async () => {
+    if (!isLoggedIn) {
+      openLoginModal();
+      return;
+    }
     // 验证表单 / Validate form
     if (!validateForm()) {
       return;
@@ -75,35 +91,16 @@ export default function NewForumPostPage() {
     setIsSubmitting(true);
     
     try {
-      // TODO: 这里需要替换为实际的后端API调用 / Replace with actual backend API call
-      // 目前使用samplePosts的addPost方法作为临时实现 / Currently using samplePosts.addPost as temporary implementation
-      
-      const newPost: ForumPost = {
-        id: `post_${crypto.randomUUID()}`, // 生成唯一ID / Generate unique ID
+      const payload = {
         title: title.trim(),
         content: content.trim(),
-        author: {
-          id: "current_user", // TODO: 从用户上下文获取当前用户ID / Get current user ID from user context
-          name: "Current User", // TODO: 从用户上下文获取当前用户名 / Get current user name from user context
-          avatar: undefined // TODO: 从用户上下文获取当前用户头像 / Get current user avatar from user context
-        },
-        createdAt: new Date().toISOString(),
         tags: tags,
-        likes: 0,
-        comments: 0,
-        isLiked: false,
-        language: "简体中文（普通话）" // TODO: 根据用户设置或检测到的语言设置 / Set based on user settings or detected language
+        language: "zh-hans",
       };
-      
-      // 调用samplePosts的addPost方法 / Call samplePosts.addPost method
-      const createdPost = addPost(newPost);
-      
-      // 跳转到帖子列表页面 / redirect to posts list page
-      router.push(`/post/${createdPost.id}`);
-      
+      const created = await apiPost<ForumPost>(`/api/forum/posts/`, payload);
+      router.push(`/post/${created.id}`);
     } catch (error) {
       console.error("提交帖子时出错 / Error submitting post:", error);
-      // TODO: 显示错误提示给用户 / Show error message to user
     } finally {
       setIsSubmitting(false);
     }
@@ -179,8 +176,12 @@ export default function NewForumPostPage() {
                 <CardFooter className="gap-3">
                   <Button 
                     onClick={handleSubmit}
-                    disabled={isSubmitting}
-                    className="min-w-[100px]"
+                    // 未登录时禁用提交按钮；登录后或加载完成才可用
+                    // Disable submit when not logged in; enable only after login or when loading finished
+                    disabled={isSubmitting || isLoading || !isLoggedIn}
+                    // 禁用时视觉置灰（背景/文字/阴影）
+                    // Visually gray out when disabled (background/text/shadow)
+                    className="min-w-[100px] disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 disabled:shadow-none"
                   >
                     {isSubmitting ? t("post.submitting") : t("post.create")}
                   </Button>

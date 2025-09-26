@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import type { ForumPostComment } from "@/types/forum";
 
 import ClientOnlyTime from "./ClientOnlyTime";
+import { useApp } from "@/contexts/AppContext";
 
 interface ForumPostCommentCardProps {
   comment: ForumPostComment;
@@ -38,6 +39,7 @@ export function ForumPostCommentCard({
   currentUserId
 }: ForumPostCommentCardProps) {
   const { t, language } = useI18n();
+  const { isLoggedIn, openLoginModal } = useApp();
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [isTranslated, setIsTranslated] = React.useState(false);
   const [isCopySuccess, setIsCopySuccess] = React.useState(false);
@@ -45,18 +47,30 @@ export function ForumPostCommentCard({
 
 
   const handleLike = () => {
+    if (!isLoggedIn) {
+      openLoginModal();
+      return;
+    }
     if (onLike) {
       onLike(comment.id);
     }
   };
 
   const handleReply = () => {
+    if (!isLoggedIn) {
+      openLoginModal();
+      return;
+    }
     if (onReply) {
       onReply(comment.id);
     }
   };
 
   const handleDelete = async () => {
+    if (!isLoggedIn) {
+      openLoginModal();
+      return;
+    }
     if (onDelete && !isDeleting) {
       setIsDeleting(true);
       try {

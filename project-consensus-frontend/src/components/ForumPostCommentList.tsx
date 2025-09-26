@@ -6,7 +6,9 @@ import { ForumPostCommentCard as ForumPostCommentComponent } from "./ForumPostCo
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Plus } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
-import { getSeparatedCommentsByPostId, getSubCommentsByMainCommentId } from "@/data/sampleComments";
+import { apiGet } from "@/lib/utils";
+import { ListCommentsResponse } from "@/types/api";
+import { useApp } from "@/contexts/AppContext";
 
 /**
  * 论坛帖子评论列表组件的属性接口
@@ -20,6 +22,7 @@ interface ForumPostCommentListProps {
   onAddComment?: () => void;
   currentUserId?: string;
   postId: string;
+  totalCount?: number;
 }
 
 /**
@@ -36,43 +39,77 @@ export function ForumPostCommentList({
   onShare,
   onAddComment,
   currentUserId,
-  postId
+  postId,
+  totalCount
 }: ForumPostCommentListProps) {
   const { t } = useI18n();
-  
-  // 控制是否显示所有评论的状态 / State to control whether to show all comments
-  const [showAllComments, setShowAllComments] = React.useState(false);
+  const { isLoggedIn, openLoginModal } = useApp();
   
   // 控制主评论展开状态的状态 / State to control expanded state of main comments
   const [expandedMainComments, setExpandedMainComments] = React.useState<Set<string>>(new Set());
+  const loaderRef = React.useRef<HTMLDivElement | null>(null);
+  const loadingRef = React.useRef(false);
 
-  // 获取分离后的评论数据 / Get separated comment data
-  const { mainComments, subComments } = React.useMemo(() => {
-    return getSeparatedCommentsByPostId(postId);
+  // 主评论：服务端分页 / Main comments with server pagination
+  const [mainComments, setMainComments] = React.useState<ForumPostComment[]>([]);
+  const [mainNextUrl, setMainNextUrl] = React.useState<string | null>(`/api/forum/comments/?postId=${postId}&isMain=1&page=1&page_size=12`);
+  const [loadError, setLoadError] = React.useState(false);
+
+  // 子评论缓存 / Replies cache per main comment
+  const [subCommentsMap, setSubCommentsMap] = React.useState<Record<string, ForumPostComment[]>>({});
+
+  // Reset when postId changes
+  React.useEffect(() => {
+    setMainComments([]);
+    setMainNextUrl(`/api/forum/comments/?postId=${postId}&isMain=1&page=1&page_size=12`);
+    setSubCommentsMap({});
+    setExpandedMainComments(new Set());
   }, [postId]);
+
+  const fetchMoreMain = React.useCallback(async () => {
+    if (!mainNextUrl || loadingRef.current) return;
+    loadingRef.current = true;
+    try {
+      const data = await apiGet<ListCommentsResponse>(mainNextUrl);
+      setMainComments(prev => {
+        const existing = new Set(prev.map(c => c.id));
+        const deduped = data.results.filter(c => !existing.has(c.id));
+        return [...prev, ...deduped];
+      });
+      setMainNextUrl(data.next ? new URL(data.next).pathname + new URL(data.next).search : null);
+      setLoadError(false);
+    } catch (e) {
+      console.error(e);
+      setLoadError(true);
+    } finally {
+      loadingRef.current = false;
+    }
+  }, [mainNextUrl]);
+
+  // 初次加载主评论 / Initial load of main comments
+  React.useEffect(() => {
+    if (mainComments.length === 0 && mainNextUrl) {
+      fetchMoreMain();
+    }
+  }, [mainComments.length, mainNextUrl, fetchMoreMain]);
 
   // 按点赞数排序主评论 / Sort main comments by like count
   const sortedMainComments = React.useMemo(() => {
     return [...mainComments].sort((a, b) => b.likes - a.likes);
   }, [mainComments]);
 
-  // 计算总评论数 / Calculate total comment count
-  const totalComments = mainComments.length + subComments.length;
+  // 总评论数（从 parent 组件传入或根据已加载数据估算）/ Total comments count
+  const totalComments = totalCount ?? (mainComments.length + Object.values(subCommentsMap).reduce((acc, arr) => acc + arr.length, 0));
 
   /**
    * 获取主评论的子评论
-   * Get sub-comments for a main comment
-   * @param mainCommentId 主评论ID / Main comment ID
-   * @returns 子评论数组 / Array of sub-comments
    */
   const getSubCommentsForMainComment = (mainCommentId: string) => {
-    return getSubCommentsByMainCommentId(mainCommentId, subComments);
+    return subCommentsMap[mainCommentId] ?? [];
   };
 
   /**
-   * 切换主评论的展开状态
-   * Toggle expansion state of a main comment
-   * @param mainCommentId 主评论ID / Main comment ID
+   * 切换主评论的展开状态并按需加载子评论
    */
   const toggleMainCommentExpansion = (mainCommentId: string) => {
     setExpandedMainComments(prev => {
@@ -84,13 +121,37 @@ export function ForumPostCommentList({
       }
       return newSet;
     });
+    // 懒加载该主评论的子评论 / Lazy-load replies for this main comment
+    if (!subCommentsMap[mainCommentId]) {
+      apiGet<ListCommentsResponse>(`/api/forum/comments/?parentId=${mainCommentId}&page=1&page_size=100`)
+        .then(data => {
+          setSubCommentsMap(prev => ({ ...prev, [mainCommentId]: data.results }));
+        })
+        .catch(e => console.error(e));
+    }
   };
 
-  // 计算要显示的主评论 / Calculate main comments to display
-  const displayedMainComments = showAllComments ? sortedMainComments : sortedMainComments.slice(0, 3);
-  
-  // 计算隐藏的主评论数量 / Calculate number of hidden main comments
-  const hiddenMainComments = sortedMainComments.length - displayedMainComments.length;
+  // 计算要显示的主评论（服务端分页后即为已加载的所有主评论）
+  const displayedMainComments = sortedMainComments;
+
+  // 还有更多可加载的主评论？ / Whether more pages exist
+  const hiddenMainComments = mainNextUrl ? 1 : 0;
+
+  React.useEffect(() => {
+    if (!loaderRef.current) return;
+    const target = loaderRef.current;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && hiddenMainComments > 0) {
+          fetchMoreMain();
+        }
+      },
+      { root: null, rootMargin: '200px 0px', threshold: 0 }
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [hiddenMainComments, fetchMoreMain]);
 
   return (
     <div className="mt-6 px-4 sm:px-0">
@@ -103,7 +164,13 @@ export function ForumPostCommentList({
         {/* 添加评论按钮 / Add comment button */}
         {onAddComment && (
           <Button
-            onClick={onAddComment}
+            onClick={() => {
+              if (!isLoggedIn) {
+                openLoginModal();
+                return;
+              }
+              onAddComment();
+            }}
             size="sm"
             className="h-8"
           >
@@ -184,22 +251,23 @@ export function ForumPostCommentList({
             );
           })}
 
-          {/* 显示更多/隐藏评论按钮 / Show more/hide comments button */}
-          {hiddenMainComments > 0 && (
-            <div className="text-center pt-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowAllComments(!showAllComments)}
-                className="h-8"
-              >
-                {showAllComments
-                  ? t('comment.hideAll')
-                  : t('comment.showAll', { count: mainComments.length })
-                }
-              </Button>
-            </div>
-          )}
+          {/* Infinite scroll sentinel */}
+          <div className="text-center pt-2">
+            <div ref={loaderRef} className="h-6 w-full" aria-hidden="true" />
+          </div>
         </div>
+      )}
+
+      {loadError && mainNextUrl && (
+        <Button
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-red-600 hover:bg-red-700 text-white"
+          onClick={() => {
+            setLoadError(false);
+            fetchMoreMain();
+          }}
+        >
+          {t('common.loadFailedRetry')}
+        </Button>
       )}
     </div>
   );

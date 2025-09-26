@@ -190,3 +190,27 @@ python -V               # should show 3.13.7
 ```
 
 ---
+
+## One-command Dev Reset Script (Only for Development Environment!!!!)
+
+For convenience, a helper script resets the dev environment, frees port 8000, re-creates the database (Docker Postgres), runs migrations (including forum seed), and starts the server.
+
+```bash
+cd /Users/frankyang/project-consensus/project-consensus-backend
+bash scripts/dev_reset.sh
+```
+
+Run only up to migration without starting the server:
+
+```bash
+NO_RUN=1 bash scripts/dev_reset.sh
+```
+
+What the script does:
+- Create `.venv` if missing and install requirements
+- Create `.env` if missing (Postgres on localhost:5432)
+- `docker compose down -v && docker compose up -d db`
+- Wait for container `dj_db17` to be ready
+- Kill any process on port 8000
+- Run `python manage.py migrate`
+- Run `python manage.py runserver` (unless `NO_RUN=1`)

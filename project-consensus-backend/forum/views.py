@@ -2,9 +2,17 @@ from __future__ import annotations
 
 from rest_framework import viewsets, permissions, filters
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.request import Request
 
-from .models import ForumPost, ForumComment
-from .serializers import ForumPostSerializer, ForumCommentSerializer
+from .models import ForumPost, ForumPostComment
+from .serializers import ForumPostSerializer, ForumPostCommentSerializer
+
+
+class DefaultPageNumberPagination(PageNumberPagination):
+    page_size = 12
+    page_size_query_param = "page_size"
+    max_page_size = 100
 
 
 class ForumPostViewSet(viewsets.ModelViewSet):
@@ -19,12 +27,21 @@ class ForumPostViewSet(viewsets.ModelViewSet):
 
     queryset = ForumPost.objects.select_related("author").prefetch_related("comments")
     serializer_class = ForumPostSerializer
-    permission_classes = [permissions.AllowAny]
+    # Read-only for anonymous, write requires auth
+    def get_permissions(self):  # type: ignore[override]
+        if self.action in ["list", "retrieve"]:
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
+    def perform_create(self, serializer):  # type: ignore[override]
+        # Force the author to the current user
+        serializer.save(author=self.request.user)
+
     filter_backends = [filters.SearchFilter]
     search_fields = ["title", "content", "tags"]
+    pagination_class = DefaultPageNumberPagination
 
 
-class ForumCommentViewSet(viewsets.ModelViewSet):
+class ForumPostCommentViewSet(viewsets.ModelViewSet):
     """CRUD endpoints for comments (filter by postId/parentId).
 
     - GET /api/forum/comments/?postId=<uuid>          filter by post
@@ -33,9 +50,14 @@ class ForumCommentViewSet(viewsets.ModelViewSet):
     - others same as standard REST actions
     """
 
-    queryset = ForumComment.objects.select_related("author", "post", "reply_to_user", "parent")
-    serializer_class = ForumCommentSerializer
-    permission_classes = [permissions.AllowAny]
+    queryset = ForumPostComment.objects.select_related("author", "post", "reply_to_user", "parent")
+    serializer_class = ForumPostCommentSerializer
+    # Read-only for anonymous, write requires auth
+    def get_permissions(self):  # type: ignore[override]
+        if self.action in ["list", "retrieve"]:
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
+    pagination_class = DefaultPageNumberPagination
 
     def get_queryset(self):  # type: ignore[override]
         qs = super().get_queryset()
@@ -45,4 +67,16 @@ class ForumCommentViewSet(viewsets.ModelViewSet):
             qs = qs.filter(post_id=post_id)
         if parent_id:
             qs = qs.filter(parent_id=parent_id)
+        # Optional filter: only main comments (no parent)
+        is_main = self.request.query_params.get("isMain")
+        if is_main in {"1", "true", "True"}:
+            qs = qs.filter(parent__isnull=True)
         return qs
+
+    def perform_create(self, serializer):  # type: ignore[override]
+        # Always set the author to current user; derive reply_to_user from parent if provided
+        parent = serializer.validated_data.get("parent")
+        reply_to_user = None
+        if parent:
+            reply_to_user = parent.author
+        serializer.save(author=self.request.user, reply_to_user=reply_to_user)

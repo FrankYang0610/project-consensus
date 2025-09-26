@@ -5,13 +5,13 @@ from rest_framework import serializers
 
 from accounts.models import Profile
 from accounts.serializers import AuthorSerializer
-from .models import ForumPost, ForumComment
+from .models import ForumPost, ForumPostComment
 
 
 User = get_user_model()
 
 
-def _author_payload_for(user: User) -> dict:
+def _author_payload_for(user) -> dict:
     """Build an Author dict compatible with the frontend type.
 
     Prefer Profile.display_name / avatar_url; fallback to username.
@@ -34,10 +34,11 @@ class ForumPostSerializer(serializers.ModelSerializer):
     - isLiked: session-related; fixed False here (can be wired to Like model)
     """
 
-    author = AuthorSerializer(source="*")
+    author = serializers.SerializerMethodField()
     likes = serializers.IntegerField(source="likes_count", read_only=True)
     comments = serializers.SerializerMethodField()
     isLiked = serializers.SerializerMethodField()
+    createdAt = serializers.DateTimeField(source="created_at", read_only=True)
 
     class Meta:
         model = ForumPost
@@ -46,21 +47,17 @@ class ForumPostSerializer(serializers.ModelSerializer):
             "title",
             "content",
             "author",
-            "created_at",
+            "createdAt",
             "tags",
             "likes",
             "comments",
             "isLiked",
             "language",
         ]
-        read_only_fields = ["id", "created_at"]
+        read_only_fields = ["id", "createdAt", "author"]
 
-    def to_representation(self, instance: ForumPost):  # type: ignore[override]
-        data = super().to_representation(instance)
-        # Replace author field with Author-shaped payload
-        data["author"] = _author_payload_for(instance.author)
-        # Datetime formatting is handled by DRF; frontend uses ISO strings
-        return data
+    def get_author(self, obj: ForumPost) -> dict:
+        return _author_payload_for(obj.author)
 
     def get_comments(self, obj: ForumPost) -> int:
         return obj.comments.count()
@@ -69,7 +66,7 @@ class ForumPostSerializer(serializers.ModelSerializer):
         return False
 
 
-class ForumCommentSerializer(serializers.ModelSerializer):
+class ForumPostCommentSerializer(serializers.ModelSerializer):
     """Serializer for forum comments (compatible with frontend type)."""
 
     author = serializers.SerializerMethodField()
@@ -78,28 +75,28 @@ class ForumCommentSerializer(serializers.ModelSerializer):
     createdAt = serializers.DateTimeField(source="created_at", read_only=True)
     parentId = serializers.UUIDField(source="parent_id", allow_null=True, required=False)
     postId = serializers.UUIDField(source="post_id")
+    isDeleted = serializers.BooleanField(source="is_deleted", read_only=True)
 
     class Meta:
-        model = ForumComment
+        model = ForumPostComment
         fields = [
             "id",
             "content",
             "author",
             "createdAt",
             "likes",
-            "is_deleted",
+            "isDeleted",
             "parentId",
             "postId",
             "replyToUser",
         ]
-        extra_kwargs = {
-            "is_deleted": {"source": "is_deleted", "read_only": True},
-        }
+        extra_kwargs = {}
+        read_only_fields = ["id", "createdAt", "author", "replyToUser", "isDeleted", "likes"]
 
-    def get_author(self, obj: ForumComment) -> dict:
+    def get_author(self, obj: ForumPostComment) -> dict:
         return _author_payload_for(obj.author)
 
-    def get_replyToUser(self, obj: ForumComment):
+    def get_replyToUser(self, obj: ForumPostComment):
         if obj.reply_to_user_id:
             return _author_payload_for(obj.reply_to_user)  # type: ignore[arg-type]
         return None

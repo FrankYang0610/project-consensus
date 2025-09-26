@@ -1,4 +1,5 @@
 import { User } from './user';
+import { ForumPost, ForumPostComment } from './forum';
 
 /**
  * API response types aligned with backend accounts endpoints.
@@ -31,3 +32,13 @@ export type RegisterResponse = RegisterSuccessResponse | ErrorResponse;
 export type LoginApiResponse = LoginSuccessResponse | ErrorResponse;
 
 
+// DRF paginated response
+export interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
+export type ListPostsResponse = PaginatedResponse<ForumPost>
+export type ListCommentsResponse = PaginatedResponse<ForumPostComment>

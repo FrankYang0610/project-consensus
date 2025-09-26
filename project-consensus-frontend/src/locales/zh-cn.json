@@ -115,7 +115,8 @@
   },
   "common": {
     "note": "注意",
-    "developmentNotice": "本网站正在积极开发中，界面和功能可能会频繁更改。"
+    "developmentNotice": "本网站正在积极开发中，界面和功能可能会频繁更改。",
+    "loadFailedRetry": "加载失败 重新加载"
   },
   "courses": {
     "topbar": {
