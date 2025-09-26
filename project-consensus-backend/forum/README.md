@@ -9,7 +9,7 @@ The Forum app implements posts and two-level comments (main comment + reply). It
   - `tags` (JSON list), `language` (string), `likes_count` (int)
   - The session-level field `isLiked` is not stored; it can be derived by adding a Like model later
 
-- `ForumComment`
+- `ForumPostComment`
   - UUID primary key
   - `post` (FK to `ForumPost`)
   - `parent` (nullable self-FK) — null for main comments, non-null for replies
@@ -21,7 +21,7 @@ The Forum app implements posts and two-level comments (main comment + reply). It
 - `ForumPostSerializer`
   - Adds `author` payload (from Profile), `likes` (mapped from `likes_count`), `comments` (count), `isLiked` (false placeholder)
 
-- `ForumCommentSerializer`
+- `ForumPostCommentSerializer`
   - Matches the frontend fields including `parentId`, `postId`, `replyToUser`, and `createdAt`
 
 ## ViewSets & Routes

@@ -4,6 +4,7 @@ import uuid
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+ 
 
 
 class ForumPost(models.Model):
@@ -31,14 +32,14 @@ class ForumPost(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
-        verbose_name = "Post"
-        verbose_name_plural = "Posts"
+        verbose_name = "ForumPost"
+        verbose_name_plural = "ForumPosts"
 
     def __str__(self) -> str:  # pragma: no cover
         return f"{self.title}"
 
 
-class ForumComment(models.Model):
+class ForumPostComment(models.Model):
     """Forum comment model (two-level: main + reply).
 
     Conventions:
@@ -61,8 +62,8 @@ class ForumComment(models.Model):
 
     class Meta:
         ordering = ["created_at"]
-        verbose_name = "Comment"
-        verbose_name_plural = "Comments"
+        verbose_name = "ForumPostComment"
+        verbose_name_plural = "ForumPostComments"
 
     def __str__(self) -> str:  # pragma: no cover
         return f"{self.author_id} -> {self.post_id}"

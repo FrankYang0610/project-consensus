@@ -38,8 +38,8 @@ class Migration(migrations.Migration):
                 ("is_used", models.BooleanField(default=False)),
             ],
             options={
-                "verbose_name": "邮件验证码",
-                "verbose_name_plural": "邮件验证码",
+                "verbose_name": "Email verification",
+                "verbose_name_plural": "Email verifications",
                 "indexes": [
                     models.Index(
                         fields=["email", "created_at"],
@@ -80,8 +80,8 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
-                "verbose_name": "用户资料",
-                "verbose_name_plural": "用户资料",
+                "verbose_name": "Profile",
+                "verbose_name_plural": "Profiles",
             },
         ),
     ]

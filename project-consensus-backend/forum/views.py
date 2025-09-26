@@ -2,9 +2,16 @@ from __future__ import annotations
 
 from rest_framework import viewsets, permissions, filters
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
 
-from .models import ForumPost, ForumComment
-from .serializers import ForumPostSerializer, ForumCommentSerializer
+from .models import ForumPost, ForumPostComment
+from .serializers import ForumPostSerializer, ForumPostCommentSerializer
+
+
+class DefaultPageNumberPagination(PageNumberPagination):
+    page_size = 12
+    page_size_query_param = "page_size"
+    max_page_size = 100
 
 
 class ForumPostViewSet(viewsets.ModelViewSet):
@@ -22,9 +29,10 @@ class ForumPostViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.AllowAny]
     filter_backends = [filters.SearchFilter]
     search_fields = ["title", "content", "tags"]
+    pagination_class = DefaultPageNumberPagination
 
 
-class ForumCommentViewSet(viewsets.ModelViewSet):
+class ForumPostCommentViewSet(viewsets.ModelViewSet):
     """CRUD endpoints for comments (filter by postId/parentId).
 
     - GET /api/forum/comments/?postId=<uuid>          filter by post
@@ -33,9 +41,10 @@ class ForumCommentViewSet(viewsets.ModelViewSet):
     - others same as standard REST actions
     """
 
-    queryset = ForumComment.objects.select_related("author", "post", "reply_to_user", "parent")
-    serializer_class = ForumCommentSerializer
+    queryset = ForumPostComment.objects.select_related("author", "post", "reply_to_user", "parent")
+    serializer_class = ForumPostCommentSerializer
     permission_classes = [permissions.AllowAny]
+    pagination_class = DefaultPageNumberPagination
 
     def get_queryset(self):  # type: ignore[override]
         qs = super().get_queryset()
@@ -45,4 +54,8 @@ class ForumCommentViewSet(viewsets.ModelViewSet):
             qs = qs.filter(post_id=post_id)
         if parent_id:
             qs = qs.filter(parent_id=parent_id)
+        # Optional filter: only main comments (no parent)
+        is_main = self.request.query_params.get("isMain")
+        if is_main in {"1", "true", "True"}:
+            qs = qs.filter(parent__isnull=True)
         return qs

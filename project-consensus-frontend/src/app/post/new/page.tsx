@@ -13,8 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { useI18n } from "@/hooks/useI18n";
 import { useRouter } from "next/navigation";
-import { addPost } from "@/data/samplePosts";
 import { ForumPost } from "@/types";
+import { apiPost } from "@/lib/utils";
 
 export default function NewForumPostPage() {
   const { t } = useI18n();
@@ -75,35 +75,16 @@ export default function NewForumPostPage() {
     setIsSubmitting(true);
     
     try {
-      // TODO: 这里需要替换为实际的后端API调用 / Replace with actual backend API call
-      // 目前使用samplePosts的addPost方法作为临时实现 / Currently using samplePosts.addPost as temporary implementation
-      
-      const newPost: ForumPost = {
-        id: `post_${crypto.randomUUID()}`, // 生成唯一ID / Generate unique ID
+      const payload = {
         title: title.trim(),
         content: content.trim(),
-        author: {
-          id: "current_user", // TODO: 从用户上下文获取当前用户ID / Get current user ID from user context
-          name: "Current User", // TODO: 从用户上下文获取当前用户名 / Get current user name from user context
-          avatar: undefined // TODO: 从用户上下文获取当前用户头像 / Get current user avatar from user context
-        },
-        createdAt: new Date().toISOString(),
         tags: tags,
-        likes: 0,
-        comments: 0,
-        isLiked: false,
-        language: "简体中文（普通话）" // TODO: 根据用户设置或检测到的语言设置 / Set based on user settings or detected language
+        language: "zh-hans",
       };
-      
-      // 调用samplePosts的addPost方法 / Call samplePosts.addPost method
-      const createdPost = addPost(newPost);
-      
-      // 跳转到帖子列表页面 / redirect to posts list page
-      router.push(`/post/${createdPost.id}`);
-      
+      const created = await apiPost<ForumPost>(`/api/forum/posts/`, payload);
+      router.push(`/post/${created.id}`);
     } catch (error) {
       console.error("提交帖子时出错 / Error submitting post:", error);
-      // TODO: 显示错误提示给用户 / Show error message to user
     } finally {
       setIsSubmitting(false);
     }
