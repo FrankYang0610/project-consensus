@@ -150,11 +150,6 @@ export function ForumPostCommentList({
     return () => observer.disconnect();
   }, [hiddenMainComments, fetchMoreMain]);
 
-  React.useEffect(() => {
-    // release loading lock after updates
-    loadingRef.current = false;
-  }, [mainComments.length]);
-
   return (
     <div className="mt-6 px-4 sm:px-0">
       {/* 评论列表头部 / Comment list header */}
