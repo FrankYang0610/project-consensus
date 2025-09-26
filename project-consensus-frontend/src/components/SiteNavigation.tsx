@@ -23,7 +23,6 @@ import { useI18n } from '@/hooks/useI18n';
 import { Menu, X, ChevronDown, ArrowLeft } from 'lucide-react';
 import Image from "next/image";
 //Local Components
-import { LoginComponent } from './LoginComponent';
 import { SearchBar } from './SearchBar';
 import { UserMenu } from './UserMenu';
 import { useApp } from '@/contexts/AppContext';
@@ -119,7 +118,7 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
   const { t, language, changeLanguage } = useI18n();
 
   // Auth状态 / Auth status
-  const { isLoggedIn, isLoading } = useApp();
+  const { isLoggedIn, isLoading, openLoginModal } = useApp();
 
   // Controls mobile menu open/close state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -367,7 +366,7 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
               isLoggedIn ? (
                 <UserMenu />
               ) : (
-                <LoginComponent />
+                <Button variant="outline" size="sm" onClick={openLoginModal}>{t('auth.login')}</Button>
               )
             )}
           </div>
@@ -396,7 +395,7 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                 isLoggedIn ? (
                   <UserMenu />
                 ) : (
-                  <LoginComponent />
+                  <Button variant="outline" size="sm" onClick={openLoginModal}>{t('auth.login')}</Button>
                 )
               )}
             </div>

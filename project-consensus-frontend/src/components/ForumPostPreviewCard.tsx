@@ -36,6 +36,7 @@ import { cn } from "@/lib/utils";
 import { stripHtmlTags, truncateHtmlContent } from "@/lib/html-utils";
 import { ForumPost } from "@/types";
 import { useI18n } from "@/hooks/useI18n";
+import { useApp } from "@/contexts/AppContext";
 
 import ClientOnlyTime from "./ClientOnlyTime";
 
@@ -61,6 +62,7 @@ export function ForumPostPreviewCard({
 }: ForumPostPreviewCardProps) {
   // i18n translation
   const { t } = useI18n();
+  const { isLoggedIn, openLoginModal } = useApp();
 
   const [showDialog, setShowDialog] = React.useState(false);
   const [dialogMessage, setDialogMessage] = React.useState("");
@@ -73,6 +75,10 @@ export function ForumPostPreviewCard({
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
 
   const handleLikeClick = () => {
+    if (!isLoggedIn) {
+      openLoginModal();
+      return;
+    }
     onLike?.(post.id);
   };
 

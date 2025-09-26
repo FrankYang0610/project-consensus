@@ -7,6 +7,7 @@ import { SiteNavigation } from "@/components/SiteNavigation";
 import { ForumPostDetailCard } from "@/components/ForumPostDetailCard";
 import { ForumPostCommentList } from "@/components/ForumPostCommentList";
 import { apiGet } from "@/lib/utils";
+import { useApp } from "@/contexts/AppContext";
 import { ForumPost } from "@/types";
 
 export default function PostPage() {
@@ -27,8 +28,8 @@ export default function PostPage() {
     };
   }, [postId]);
 
-  // Mock current user ID (in real app, this would come from auth context)
-  const currentUserId = "user-1";
+  const { user } = useApp();
+  const currentUserId = user?.id;
 
   // Scroll to top when component mounts
   React.useEffect(() => {
@@ -40,21 +41,19 @@ export default function PostPage() {
   };
 
   const handleCommentLike = (commentId: string) => {
-    console.log("Comment liked:", commentId);
+    // TODO: call backend like endpoint when available
   };
 
   const handleCommentDelete = (commentId: string) => {
-    console.log("Comment deleted:", commentId);
+    // TODO: call backend delete endpoint when available
   };
 
   const handleAddComment = () => {
-    // TODO: Implement add comment functionality
-    console.log("Add comment clicked");
+    // TODO: open comment editor / call backend
   };
 
   const handleReplyToComment = (commentId: string) => {
-    // TODO: Implement reply to comment functionality
-    console.log("Reply to comment:", commentId);
+    // TODO: open reply editor / call backend
   };
 
   const handleCommentShare = (commentId: string) => {

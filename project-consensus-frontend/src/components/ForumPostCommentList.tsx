@@ -8,6 +8,7 @@ import { MessageSquare, Plus } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { apiGet } from "@/lib/utils";
 import { ListCommentsResponse } from "@/types/api";
+import { useApp } from "@/contexts/AppContext";
 
 /**
  * 论坛帖子评论列表组件的属性接口
@@ -42,6 +43,7 @@ export function ForumPostCommentList({
   totalCount
 }: ForumPostCommentListProps) {
   const { t } = useI18n();
+  const { isLoggedIn, openLoginModal } = useApp();
   
   // 控制主评论展开状态的状态 / State to control expanded state of main comments
   const [expandedMainComments, setExpandedMainComments] = React.useState<Set<string>>(new Set());
@@ -164,7 +166,13 @@ export function ForumPostCommentList({
         {/* 添加评论按钮 / Add comment button */}
         {onAddComment && (
           <Button
-            onClick={onAddComment}
+            onClick={() => {
+              if (!isLoggedIn) {
+                openLoginModal();
+                return;
+              }
+              onAddComment();
+            }}
             size="sm"
             className="h-8"
           >

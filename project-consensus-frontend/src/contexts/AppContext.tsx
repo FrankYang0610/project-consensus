@@ -21,6 +21,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // 登录弹窗控制 / Login modal control
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+
   // 主题设置 / Theme settings
   const [theme, setThemeState] = useState<ThemeMode>('system');
 
@@ -164,7 +167,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       });
     } catch {}
     setUser(null);
-    window.location.href = '/';
   };
 
   const setTheme = (newTheme: ThemeMode) => {
@@ -178,6 +180,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     isLoggedIn: !!user,
     login,
     logout,
+
+    // 登录弹窗控制 / Login modal control
+    loginModalOpen,
+    openLoginModal: () => setLoginModalOpen(true),
+    closeLoginModal: () => setLoginModalOpen(false),
 
     // 主题设置 / Theme settings
     theme,

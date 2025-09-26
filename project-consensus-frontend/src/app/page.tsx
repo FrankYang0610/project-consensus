@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ForumPostPreviewCard } from "@/components/ForumPostPreviewCard";
 import { useI18n } from "@/hooks/useI18n";
 import CreateForumPostButton from "@/components/CreateForumPostButton";
+import { useApp } from "@/contexts/AppContext";
 import { Button } from "@/components/ui/button";
 import { apiGet } from "@/lib/utils";
 import { ListPostsResponse } from "@/types/api";
@@ -13,6 +14,7 @@ import { ForumPost } from "@/types";
 
 export default function HomePage() {
   const { t } = useI18n();
+  const { isLoggedIn } = useApp();
   const [posts, setPosts] = React.useState<ForumPost[]>([]);
   const loaderRef = React.useRef<HTMLDivElement | null>(null);
   const loadingRef = React.useRef(false);

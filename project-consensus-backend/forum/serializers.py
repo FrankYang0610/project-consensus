@@ -54,7 +54,7 @@ class ForumPostSerializer(serializers.ModelSerializer):
             "isLiked",
             "language",
         ]
-        read_only_fields = ["id", "createdAt"]
+        read_only_fields = ["id", "createdAt", "author"]
 
     def get_author(self, obj: ForumPost) -> dict:
         return _author_payload_for(obj.author)
@@ -91,6 +91,7 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
             "replyToUser",
         ]
         extra_kwargs = {}
+        read_only_fields = ["id", "createdAt", "author", "replyToUser", "isDeleted", "likes"]
 
     def get_author(self, obj: ForumPostComment) -> dict:
         return _author_payload_for(obj.author)

@@ -15,10 +15,23 @@ import { useI18n } from "@/hooks/useI18n";
 import { useRouter } from "next/navigation";
 import { ForumPost } from "@/types";
 import { apiPost } from "@/lib/utils";
+import { useApp } from "@/contexts/AppContext";
 
 export default function NewForumPostPage() {
   const { t } = useI18n();
   const router = useRouter();
+  const { isLoggedIn, openLoginModal } = useApp();
+  // 如果在发帖页退出登录，返回上一页
+  React.useEffect(() => {
+    if (!isLoggedIn) {
+      // 若是直接输入地址打开且未登录，也保持现状（留在此页），直到尝试提交时弹登录
+      // 仅在用户由已登录 -> 退出登录的状态变更时，执行返回
+      // 通过历史记录检测：如果有可返回历史则返回
+      if (window.history.length > 1) {
+        router.back();
+      }
+    }
+  }, [isLoggedIn, router]);
   const [title, setTitle] = React.useState("");
   const [content, setContent] = React.useState("");
   const [tags, setTags] = React.useState<string[]>([]);
@@ -67,6 +80,10 @@ export default function NewForumPostPage() {
 
   // 提交处理函数 / Submit handler function
   const handleSubmit = async () => {
+    if (!isLoggedIn) {
+      openLoginModal();
+      return;
+    }
     // 验证表单 / Validate form
     if (!validateForm()) {
       return;

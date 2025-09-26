@@ -27,6 +27,11 @@ export interface AppContextType {
   login: (userData: User) => void; // 登录函数 / Login function
   logout: () => void; // 登出函数 / Logout function
 
+  // 登录弹窗控制 / Login modal control
+  loginModalOpen: boolean; // 登录弹窗是否打开 / Whether login modal is open
+  openLoginModal: () => void; // 打开登录弹窗 / Open login modal
+  closeLoginModal: () => void; // 关闭登录弹窗 / Close login modal
+
   // 主题设置 / Theme settings
   theme: ThemeMode; // 主题模式 / Theme mode
   setTheme: (theme: ThemeMode) => void; // 设置主题函数 / Set theme function
