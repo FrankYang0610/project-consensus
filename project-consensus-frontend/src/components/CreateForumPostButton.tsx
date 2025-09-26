@@ -19,19 +19,23 @@ export default function CreateForumPostButton() {
   return (
     <div className="fixed bottom-6 right-6 z-50">
       <Button
+        asChild
         size="lg"
         className="rounded-full px-5 py-3 shadow-lg hover:shadow-xl transition-shadow"
-        onClick={() => {
-          if (!isLoggedIn) {
-            openLoginModal()
-            return
-          }
-          router.push("/post/new")
-        }}
-        aria-label={t("post.create")}
       >
-        <Plus className="mr-2" />
-        <span>{t("post.create")}</span>
+        <Link
+          href="/post/new"
+          aria-label={t("post.create")}
+          onClick={(e) => {
+            if (!isLoggedIn) {
+              e.preventDefault()
+              openLoginModal()
+            }
+          }}
+        >
+          <Plus className="mr-2" />
+          <span>{t("post.create")}</span>
+        </Link>
       </Button>
     </div>
   )
