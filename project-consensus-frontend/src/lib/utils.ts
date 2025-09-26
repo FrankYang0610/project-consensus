@@ -6,13 +6,29 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // Simple API helper for backend requests
-export function getApiBaseUrl(): string {
+export function getAPIBaseUrl(): string {
   // Prefer NEXT_PUBLIC_API_BASE_URL if provided, fallback to local dev default
-  return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
+  return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+}
+
+// Ensure CSRF cookie exists for session-authenticated write operations
+export async function ensureCSRFCookie(): Promise<void> {
+  const existing = getCookie('csrftoken');
+  if (existing) return;
+  const base = getAPIBaseUrl();
+  try {
+    await fetch(`${base}/api/accounts/csrf/`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: { 'Accept': 'application/json' },
+    });
+  } catch {
+    // Best-effort only; backend may set CSRF later or be unnecessary in some contexts
+  }
 }
 
 export async function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
-  const base = getApiBaseUrl();
+  const base = getAPIBaseUrl();
   const url = `${base}${path}`;
   const res = await fetch(url, {
     method: 'GET',
@@ -30,9 +46,13 @@ export async function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export async function apiPost<T>(path: string, body: unknown, init?: RequestInit): Promise<T> {
-  const base = getApiBaseUrl();
+  const base = getAPIBaseUrl();
   const url = `${base}${path}`;
-  const csrftoken = getCookie('csrftoken');
+  let csrftoken = getCookie('csrftoken');
+  if (!csrftoken) {
+    await ensureCSRFCookie();
+    csrftoken = getCookie('csrftoken');
+  }
   const res = await fetch(url, {
     method: 'POST',
     credentials: 'include',

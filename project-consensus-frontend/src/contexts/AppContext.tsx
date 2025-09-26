@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { User, AppContextType, ThemeMode } from '@/types';
-import { getCookie } from '@/lib/utils';
+import { getCookie, getAPIBaseUrl } from '@/lib/utils';
 import { normalizeLanguage, defaultLanguage } from '@/lib/locale';
 import { useTranslation } from 'react-i18next';
 
@@ -62,13 +62,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         try {
           // Ensure csrftoken cookie exists to satisfy Django CSRF checks on same-site
           // (GET /csrf/ sets the cookie; GET /me/ reads session)
-          await fetch('http://localhost:8000/api/accounts/csrf/', {
+          await fetch(`${getAPIBaseUrl()}/api/accounts/csrf/`, {
             method: 'GET',
             credentials: 'include',
           });
         } catch {}
         try {
-          const res = await fetch('http://localhost:8000/api/accounts/me/', {
+          const res = await fetch(`${getAPIBaseUrl()}/api/accounts/me/`, {
             method: 'GET',
             credentials: 'include',
           });
@@ -160,7 +160,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try {
       const csrfToken = getCookie('csrftoken');
-      await fetch('http://localhost:8000/api/accounts/logout/', {
+      await fetch(`${getAPIBaseUrl()}/api/accounts/logout/`, {
         method: 'POST',
         credentials: 'include',
         headers: csrfToken ? { 'X-CSRFToken': csrfToken } : {},

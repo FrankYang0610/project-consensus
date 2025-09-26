@@ -17,7 +17,7 @@ import { Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useApp } from '@/contexts/AppContext';
 import { LoginResponse, LoginApiResponse, ErrorResponse, LoginSuccessResponse } from '@/types';
-import { getCookie } from '@/lib/utils';
+import { getCookie, getAPIBaseUrl } from '@/lib/utils';
 import { useI18n } from '@/hooks/useI18n';
 import { cn } from '@/lib/utils';
 
@@ -56,9 +56,9 @@ export function LoginModal({ className, onLoginSuccess }: LoginModalProps) {
       // TODO: Actual server address (backend)
       // TODO：实际服务器地址（后端）
       // Ensure CSRF cookie exists (safe GET)
-      await fetch('http://localhost:8000/api/accounts/csrf/', { method: 'GET', credentials: 'include' });
+      await fetch(`${getAPIBaseUrl()}/api/accounts/csrf/`, { method: 'GET', credentials: 'include' });
       const csrfToken = getCookie('csrftoken');
-      const response = await fetch('http://localhost:8000/api/accounts/login/', {
+      const response = await fetch(`${getAPIBaseUrl()}/api/accounts/login/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
