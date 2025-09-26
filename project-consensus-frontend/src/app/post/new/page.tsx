@@ -20,18 +20,17 @@ import { useApp } from "@/contexts/AppContext";
 export default function NewForumPostPage() {
   const { t } = useI18n();
   const router = useRouter();
-  const { isLoggedIn, openLoginModal } = useApp();
-  // 如果在发帖页退出登录，返回上一页
+  const { isLoggedIn, isLoading, openLoginModal } = useApp();
+  // 在发帖页未登录或退出登录时，打开登录弹窗
+  // When not logged in or logged out on this page, open the login modal
   React.useEffect(() => {
+    // 等待认证状态加载完成，避免未初始化时误判
+    // Wait for authentication status to load, avoid misjudgment when not initialized
+    if (isLoading) return;
     if (!isLoggedIn) {
-      // 若是直接输入地址打开且未登录，也保持现状（留在此页），直到尝试提交时弹登录
-      // 仅在用户由已登录 -> 退出登录的状态变更时，执行返回
-      // 通过历史记录检测：如果有可返回历史则返回
-      if (window.history.length > 1) {
-        router.back();
-      }
+      openLoginModal();
     }
-  }, [isLoggedIn, router]);
+  }, [isLoggedIn, isLoading, router]);
   const [title, setTitle] = React.useState("");
   const [content, setContent] = React.useState("");
   const [tags, setTags] = React.useState<string[]>([]);
@@ -177,8 +176,12 @@ export default function NewForumPostPage() {
                 <CardFooter className="gap-3">
                   <Button 
                     onClick={handleSubmit}
-                    disabled={isSubmitting}
-                    className="min-w-[100px]"
+                    // 未登录时禁用提交按钮；登录后或加载完成才可用
+                    // Disable submit when not logged in; enable only after login or when loading finished
+                    disabled={isSubmitting || isLoading || !isLoggedIn}
+                    // 禁用时视觉置灰（背景/文字/阴影）
+                    // Visually gray out when disabled (background/text/shadow)
+                    className="min-w-[100px] disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 disabled:shadow-none"
                   >
                     {isSubmitting ? t("post.submitting") : t("post.create")}
                   </Button>
