@@ -50,7 +50,7 @@ export default function RootLayout({
           <AppProvider>
             {children}
             <Watermark />
-            <LoginModal global />
+            <LoginModal />
           </AppProvider>
         </ThemeProvider>
       </body>

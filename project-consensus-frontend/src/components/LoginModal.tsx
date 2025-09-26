@@ -27,8 +27,6 @@ import { cn } from '@/lib/utils';
 export interface LoginModalProps {
   className?: string; // 自定义CSS类名（可选） / Custom CSS class name (optional)
   onLoginSuccess?: (user: import('@/types/user').User) => void; // 登录成功回调（可选） / Login success callback (optional)
-  // Compatibility: allow <LoginModal global /> though it's not used internally
-  global?: boolean;
 }
 
 export function LoginModal({ className, onLoginSuccess }: LoginModalProps) {
