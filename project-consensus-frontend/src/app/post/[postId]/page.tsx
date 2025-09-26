@@ -102,7 +102,7 @@ export default function PostPage() {
               onAddComment={handleAddComment}
               currentUserId={currentUserId}
               postId={postId}
-              totalCount={post.comments}
+              totalCount={post.comments ?? 0}
             />
           </div>
         </main>
