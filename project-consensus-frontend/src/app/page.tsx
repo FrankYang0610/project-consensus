@@ -19,6 +19,7 @@ export default function HomePage() {
   const loaderRef = React.useRef<HTMLDivElement | null>(null);
   const loadingRef = React.useRef(false);
   const [nextUrl, setNextUrl] = React.useState<string | null>("/api/forum/posts/?page=1&page_size=12");
+  const [loadError, setLoadError] = React.useState(false);
 
   const handleLike = (id: string) => {
     // Client-side only like toggle for demo
@@ -44,8 +45,10 @@ export default function HomePage() {
         return [...prev, ...deduped];
       });
       setNextUrl(data.next ? new URL(data.next).pathname + new URL(data.next).search : null);
+      setLoadError(false);
     } catch (err) {
       console.error(err);
+      setLoadError(true);
     } finally {
       loadingRef.current = false;
     }
@@ -106,6 +109,17 @@ export default function HomePage() {
           </div>
         </main>
       </div>
+      {loadError && nextUrl && (
+        <Button
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-red-600 hover:bg-red-700 text-white"
+          onClick={() => {
+            setLoadError(false);
+            fetchMore();
+          }}
+        >
+          {t('common.loadFailedRetry')}
+        </Button>
+      )}
       <CreateForumPostButton />
     </>
   );

@@ -115,7 +115,8 @@
   },
   "common": {
     "note": "Note",
-    "developmentNotice": "This site is under active development. UI and features may change frequently."
+    "developmentNotice": "This site is under active development. UI and features may change frequently.",
+    "loadFailedRetry": "Load failed. Retry"
   },
   "courses": {
     "topbar": {

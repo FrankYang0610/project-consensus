@@ -53,6 +53,7 @@ export function ForumPostCommentList({
   // 主评论：服务端分页 / Main comments with server pagination
   const [mainComments, setMainComments] = React.useState<ForumPostComment[]>([]);
   const [mainNextUrl, setMainNextUrl] = React.useState<string | null>(`/api/forum/comments/?postId=${postId}&isMain=1&page=1&page_size=12`);
+  const [loadError, setLoadError] = React.useState(false);
 
   // 子评论缓存 / Replies cache per main comment
   const [subCommentsMap, setSubCommentsMap] = React.useState<Record<string, ForumPostComment[]>>({});
@@ -76,8 +77,10 @@ export function ForumPostCommentList({
         return [...prev, ...deduped];
       });
       setMainNextUrl(data.next ? new URL(data.next).pathname + new URL(data.next).search : null);
+      setLoadError(false);
     } catch (e) {
       console.error(e);
+      setLoadError(true);
     } finally {
       loadingRef.current = false;
     }
@@ -253,6 +256,18 @@ export function ForumPostCommentList({
             <div ref={loaderRef} className="h-6 w-full" aria-hidden="true" />
           </div>
         </div>
+      )}
+
+      {loadError && mainNextUrl && (
+        <Button
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-red-600 hover:bg-red-700 text-white"
+          onClick={() => {
+            setLoadError(false);
+            fetchMoreMain();
+          }}
+        >
+          {t('common.loadFailedRetry')}
+        </Button>
       )}
     </div>
   );
