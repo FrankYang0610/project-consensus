@@ -269,7 +269,7 @@ export function LoginModal({ className, onLoginSuccess }: LoginModalProps) {
   );
 
   return (
-    <Dialog open={loginModalOpen} onOpenChange={(open) => { if (open) openLoginModal(); else closeLoginModal(); }}>
+    <Dialog open={loginModalOpen} onOpenChange={(open) => !open && closeLoginModal()}>
       <DialogContent className={cn("p-0 max-w-sm overflow-hidden rounded-xl", className)}>
         <DialogTitle className="sr-only">{t('auth.login')}</DialogTitle>
         {LoginBody}
