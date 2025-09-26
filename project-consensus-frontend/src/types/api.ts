@@ -40,5 +40,5 @@ export interface PaginatedResponse<T> {
   results: T[];
 }
 
-export type ListPostsResponse = PaginatedResponse<ForumPost & { createdAt: string }>
+export type ListPostsResponse = PaginatedResponse<ForumPost>
 export type ListCommentsResponse = PaginatedResponse<ForumPostComment>

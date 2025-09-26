@@ -40,7 +40,7 @@ export default function HomePage() {
       const data = await apiGet<ListPostsResponse>(nextUrl);
       setPosts(prev => {
         const existing = new Set(prev.map(p => p.id));
-        const deduped = (data.results as unknown as ForumPost[]).filter(p => !existing.has(p.id));
+        const deduped = data.results.filter(p => !existing.has(p.id));
         return [...prev, ...deduped];
       });
       setNextUrl(data.next ? new URL(data.next).pathname + new URL(data.next).search : null);
