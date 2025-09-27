@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { ForumPostDetailCard } from "@/components/ForumPostDetailCard";
 import { ForumPostCommentList } from "@/components/ForumPostCommentList";
-import { apiGet } from "@/lib/utils";
+import { apiGet, apiPostVoid } from "@/lib/utils";
 import { useApp } from "@/contexts/AppContext";
 import { ForumPost } from "@/types";
 
@@ -91,7 +91,30 @@ export default function PostPage() {
             <ForumPostDetailCard
               post={post}
               onLike={(id) => {
-                setPost(prev => prev ? { ...prev, isLiked: !prev.isLiked, likes: Math.max(0, prev.likes + (!prev.isLiked ? 1 : -1)) } : prev);
+                if (!post) return;
+                const wasLiked = post.isLiked ?? false;
+                const willLike = !wasLiked;
+                // optimistic
+                setPost(prev => prev ? { ...prev, isLiked: willLike, likes: Math.max(0, prev.likes + (willLike ? 1 : -1)) } : prev);
+
+                let reverted = false;
+                const timer = setTimeout(() => {
+                  if (reverted) return;
+                  setPost(prev => prev ? { ...prev, isLiked: wasLiked, likes: Math.max(0, prev.likes + (willLike ? -1 : 1)) } : prev);
+                  reverted = true;
+                }, 3000);
+
+                const endpoint = willLike ? `/api/forum/posts/${id}/like/` : `/api/forum/posts/${id}/unlike/`;
+                apiPostVoid(endpoint)
+                  .then(() => {
+                    if (reverted) return;
+                    clearTimeout(timer);
+                  })
+                  .catch(() => {
+                    if (reverted) return;
+                    clearTimeout(timer);
+                    setPost(prev => prev ? { ...prev, isLiked: wasLiked, likes: Math.max(0, prev.likes + (willLike ? -1 : 1)) } : prev);
+                  });
               }}
             />
             <ForumPostCommentList

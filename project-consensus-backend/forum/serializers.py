@@ -62,7 +62,11 @@ class ForumPostSerializer(serializers.ModelSerializer):
     def get_comments(self, obj: ForumPost) -> int:
         return obj.comments.count()
 
-    def get_isLiked(self, obj: ForumPost) -> bool:  # session-level, default False
+    def get_isLiked(self, obj: ForumPost) -> bool:
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        if user is not None and getattr(user, "is_authenticated", False):
+            return obj.likes.filter(user=user).exists()
         return False
 
 

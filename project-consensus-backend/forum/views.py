@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-from rest_framework import viewsets, permissions, filters
+from rest_framework import viewsets, permissions, filters, status
 from rest_framework.response import Response
+from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 
 from django.db.models import Count
-from .models import ForumPost, ForumPostComment
+from django.db import transaction
+from django.db.models import F
+from .models import ForumPost, ForumPostComment, ForumPostLike
 from .serializers import ForumPostSerializer, ForumPostCommentSerializer
 
 
@@ -40,6 +43,41 @@ class ForumPostViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ["title", "content", "tags"]
     pagination_class = DefaultPageNumberPagination
+
+    @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
+    def like(self, request: Request, pk: str | None = None):
+        """Current user likes the post. Idempotent: multiple calls have no additional effect."""
+        assert pk is not None
+        post = self.get_object()
+        user = request.user
+        try:
+            with transaction.atomic():
+                created = False
+                like, created = ForumPostLike.objects.get_or_create(post=post, user=user)
+                if created:
+                    ForumPost.objects.filter(pk=post.pk).update(likes_count=F("likes_count") + 1)
+            post.refresh_from_db(fields=["likes_count"])
+            serializer = self.get_serializer(post, context={"request": request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:  # pragma: no cover
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
+    def unlike(self, request: Request, pk: str | None = None):
+        """Current user unlikes the post. Idempotent: if not liked, no change."""
+        assert pk is not None
+        post = self.get_object()
+        user = request.user
+        try:
+            with transaction.atomic():
+                deleted, _ = ForumPostLike.objects.filter(post=post, user=user).delete()
+                if deleted:
+                    ForumPost.objects.filter(pk=post.pk, likes_count__gt=0).update(likes_count=F("likes_count") - 1)
+            post.refresh_from_db(fields=["likes_count"])
+            serializer = self.get_serializer(post, context={"request": request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:  # pragma: no cover
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ForumPostCommentViewSet(viewsets.ModelViewSet):
