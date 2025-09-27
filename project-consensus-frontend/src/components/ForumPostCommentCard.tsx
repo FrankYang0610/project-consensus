@@ -25,7 +25,7 @@ interface ForumPostCommentCardProps {
   onReply?: (commentId: string) => void;
   onDelete?: (commentId: string) => void;
   onShare?: (commentId: string) => void;
-  isSubComment?: boolean;
+  isReply?: boolean;
   currentUserId?: string;
 }
 
@@ -35,7 +35,7 @@ export function ForumPostCommentCard({
   onReply,
   onDelete,
   onShare,
-  isSubComment = false,
+  isReply = false,
   currentUserId
 }: ForumPostCommentCardProps) {
   const { t, language } = useI18n();
@@ -113,7 +113,7 @@ export function ForumPostCommentCard({
     return (
       <div className={cn(
         "text-muted-foreground text-sm italic py-2",
-        isSubComment && "ml-8"
+        isReply && "ml-8"
       )}>
         {t('comment.deleted')}
       </div>
@@ -123,7 +123,7 @@ export function ForumPostCommentCard({
   return (
     <div className={cn(
       "py-2",
-      isSubComment && "ml-2 sm:ml-6 border-l-2 border-muted/50 pl-2 sm:pl-3"
+      isReply && "ml-2 sm:ml-6 border-l-2 border-muted/50 pl-2 sm:pl-3"
     )}>
       <div className="flex items-start gap-3">
         {/* 头像 / Avatar */}

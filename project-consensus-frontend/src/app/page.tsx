@@ -8,7 +8,7 @@ import { useI18n } from "@/hooks/useI18n";
 import CreateForumPostButton from "@/components/CreateForumPostButton";
 import { useApp } from "@/contexts/AppContext";
 import { Button } from "@/components/ui/button";
-import { apiGet } from "@/lib/utils";
+import { apiGet, apiPostVoid } from "@/lib/utils";
 import { ListPostsResponse } from "@/types/api";
 import { ForumPost } from "@/types";
 
@@ -21,15 +21,46 @@ export default function HomePage() {
   const [nextUrl, setNextUrl] = React.useState<string | null>("/api/forum/posts/?page=1&page_size=12");
   const [loadError, setLoadError] = React.useState(false);
 
-  const handleLike = (id: string) => {
-    // Client-side only like toggle for demo
+  const handleLike = React.useCallback((id: string) => {
+    const wasLiked = posts.find(p => p.id === id)?.isLiked ?? false;
+    const willLike = !wasLiked;
+
+    // Optimistic UI update
     setPosts(prev => prev.map(p => {
       if (p.id !== id) return p;
-      const nextLiked = !p.isLiked;
-      const nextLikes = Math.max(0, p.likes + (nextLiked ? 1 : -1));
-      return { ...p, isLiked: nextLiked, likes: nextLikes };
+      const nextLikes = Math.max(0, p.likes + (willLike ? 1 : -1));
+      return { ...p, isLiked: willLike, likes: nextLikes };
     }));
-  };
+
+    let reverted = false;
+    const timer = setTimeout(() => {
+      if (reverted) return;
+      // Revert after 3s timeout
+      setPosts(prev => prev.map(p => {
+        if (p.id !== id) return p;
+        const nextLikes = Math.max(0, p.likes + (willLike ? -1 : 1));
+        return { ...p, isLiked: wasLiked, likes: nextLikes };
+      }));
+      reverted = true;
+    }, 3000);
+
+    const endpoint = willLike ? `/api/forum/posts/${id}/like/` : `/api/forum/posts/${id}/unlike/`;
+    apiPostVoid(endpoint)
+      .then(() => {
+        if (reverted) return;
+        clearTimeout(timer);
+      })
+      .catch(() => {
+        if (reverted) return;
+        clearTimeout(timer);
+        // revert on error
+        setPosts(prev => prev.map(p => {
+          if (p.id !== id) return p;
+          const nextLikes = Math.max(0, p.likes + (willLike ? -1 : 1));
+          return { ...p, isLiked: wasLiked, likes: nextLikes };
+        }));
+      });
+  }, [posts]);
 
   const visiblePosts = posts; // We append pages from server; all posts are visible
   const remaining = nextUrl ? 1 : 0; // sentinel uses presence of next page

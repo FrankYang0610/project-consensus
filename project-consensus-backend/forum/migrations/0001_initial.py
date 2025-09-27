@@ -94,6 +94,16 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
+                    "main_comment",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="all_replies",
+                        to="forum.forumpostcomment",
+                    ),
+                ),
+                (
                     "reply_to_user",
                     models.ForeignKey(
                         blank=True,
@@ -117,5 +127,40 @@ class Migration(migrations.Migration):
                 "verbose_name_plural": "ForumPostComments",
                 "ordering": ["created_at"],
             },
+        ),
+        migrations.CreateModel(
+            name="ForumPostLike",
+            fields=[
+                ("id", models.BigAutoField(primary_key=True, serialize=False)),
+                ("created_at", models.DateTimeField(db_index=True, default=django.utils.timezone.now)),
+                (
+                    "post",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="likes",
+                        to="forum.forumpost",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="forum_post_likes",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+            ],
+            options={
+                "verbose_name": "ForumPostLike",
+                "verbose_name_plural": "ForumPostLikes",
+            },
+        ),
+        migrations.AddIndex(
+            model_name="forumpostlike",
+            index=models.Index(fields=["post", "user"], name="forum_like_post_user_idx"),
+        ),
+        migrations.AlterUniqueTogether(
+            name="forumpostlike",
+            unique_together={("post", "user")},
         ),
     ]

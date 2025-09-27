@@ -71,6 +71,31 @@ export async function apiPost<T>(path: string, body: unknown, init?: RequestInit
   return res.json();
 }
 
+export async function apiPostVoid(path: string, body?: unknown, init?: RequestInit): Promise<void> {
+  const base = getAPIBaseUrl();
+  const url = `${base}${path}`;
+  let csrftoken = getCookie('csrftoken');
+  if (!csrftoken) {
+    await ensureCSRFCookie();
+    csrftoken = getCookie('csrftoken');
+  }
+  const res = await fetch(url, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      ...(csrftoken ? { 'X-CSRFToken': csrftoken } : {}),
+    },
+    body: JSON.stringify(body ?? {}),
+    ...init,
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`POST ${url} failed: ${res.status} ${text}`);
+  }
+}
+
 // Read a cookie value by name. Used for CSRF token.
 export function getCookie(name: string): string | null {
   if (typeof document === 'undefined') return null;

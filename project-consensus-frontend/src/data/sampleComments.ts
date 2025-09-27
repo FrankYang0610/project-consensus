@@ -279,36 +279,36 @@ export function getCommentsByPostId(postId: string): ForumPostComment[] {
 }
 
 /**
- * 分离主评论和子评论 / Separate main comments and sub-comments
- * 将扁平化的评论数据分离为主评论和子评论两个数组
+ * 分离主评论和回复 / Separate main comments and replies
+ * 将扁平化的评论数据分离为主评论和回复两个数组
  */
 export function separateComments(comments: ForumPostComment[]): {
   mainComments: ForumPostComment[];
-  subComments: ForumPostComment[];
+  replies: ForumPostComment[];
 } {
   const mainComments: ForumPostComment[] = [];
-  const subComments: ForumPostComment[] = [];
+  const replies: ForumPostComment[] = [];
 
   comments.forEach(comment => {
     if (!comment.parentId) {
       mainComments.push(comment);
     } else {
-      subComments.push(comment);
+      replies.push(comment);
     }
   });
 
-  // 按创建时间排序 - 创建新数组而不是修改原数组
+  // 按创建时间排序 - 创建新数组而不是修改原数组 / Sort by creation time - create new array instead of modifying the original array
   const sortedMainComments = [...mainComments].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-  const sortedSubComments = [...subComments].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  const sortedReplies = [...replies].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
-  return { mainComments: sortedMainComments, subComments: sortedSubComments };
+  return { mainComments: sortedMainComments, replies: sortedReplies };
 }
 
 /**
- * 根据主评论ID获取其子评论 / Get sub-comments by main comment ID
+ * 根据主评论ID获取其回复 / Get replies by main comment ID
  */
-export function getSubCommentsByMainCommentId(mainCommentId: string, subComments: ForumPostComment[]): ForumPostComment[] {
-  return subComments.filter(comment =>
+export function getRepliesByMainCommentId(mainCommentId: string, replies: ForumPostComment[]): ForumPostComment[] {
+  return replies.filter(comment =>
     comment.parentId === mainCommentId
   );
 }
@@ -318,7 +318,7 @@ export function getSubCommentsByMainCommentId(mainCommentId: string, subComments
  */
 export function getSeparatedCommentsByPostId(postId: string): {
   mainComments: ForumPostComment[];
-  subComments: ForumPostComment[];
+  replies: ForumPostComment[];
 } {
   const comments = getCommentsByPostId(postId);
   return separateComments(comments);

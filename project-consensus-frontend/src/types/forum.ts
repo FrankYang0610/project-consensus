@@ -38,4 +38,6 @@ export interface ForumPostComment {
   postId: string; // 所属帖子ID / Post ID this comment belongs to
   isDeleted?: boolean; // 是否已删除 / Whether comment is deleted
   replyToUser?: Author; // 回复的目标用户，仅子评论有此字段 / Target user being replied to, only for sub-comments
+  repliesCount?: number; // 直接子回复数量 / Number of direct replies
+  mainCommentId?: string; // 顶层主评论ID（仅子评论会携带）/ Top-level main comment ID (only for replies)
 }

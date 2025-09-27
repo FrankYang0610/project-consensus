@@ -3,7 +3,7 @@ from __future__ import annotations
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from .models import Profile, EmailVerification
+from .models import Profile
 
 
 User = get_user_model()

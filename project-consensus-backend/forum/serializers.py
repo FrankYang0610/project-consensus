@@ -62,7 +62,11 @@ class ForumPostSerializer(serializers.ModelSerializer):
     def get_comments(self, obj: ForumPost) -> int:
         return obj.comments.count()
 
-    def get_isLiked(self, obj: ForumPost) -> bool:  # session-level, default False
+    def get_isLiked(self, obj: ForumPost) -> bool:
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        if user is not None and getattr(user, "is_authenticated", False):
+            return obj.likes.filter(user=user).exists()
         return False
 
 
@@ -76,6 +80,10 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
     parentId = serializers.UUIDField(source="parent_id", allow_null=True, required=False)
     postId = serializers.UUIDField(source="post_id")
     isDeleted = serializers.BooleanField(source="is_deleted", read_only=True)
+    # repliesCount: present only for main comments
+    repliesCount = serializers.SerializerMethodField()
+    # Expose mainCommentId to simplify frontend logic if needed (optional, read-only)
+    mainCommentId = serializers.UUIDField(source="main_comment_id", allow_null=True, read_only=True)
 
     class Meta:
         model = ForumPostComment
@@ -89,6 +97,8 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
             "parentId",
             "postId",
             "replyToUser",
+            "repliesCount",
+            "mainCommentId",
         ]
         extra_kwargs = {}
         read_only_fields = ["id", "createdAt", "author", "replyToUser", "isDeleted", "likes"]
@@ -100,3 +110,16 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
         if obj.reply_to_user_id:
             return _author_payload_for(obj.reply_to_user)  # type: ignore[arg-type]
         return None
+
+    def get_repliesCount(self, obj: ForumPostComment) -> int:
+        # Only main comments carry replies count
+        if obj.parent_id is None:
+            return getattr(obj, "replies_count_main", 0)
+        return 0
+
+    def to_representation(self, instance: ForumPostComment):  # type: ignore[override]
+        data = super().to_representation(instance)
+        # Do not include repliesCount for non-main comments
+        if instance.parent_id is not None:
+            data.pop("repliesCount", None)
+        return data
