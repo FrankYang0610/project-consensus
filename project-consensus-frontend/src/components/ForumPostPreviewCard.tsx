@@ -9,6 +9,7 @@ import {
   Languages,
   FileText,
   Check,
+  MessageSquare,
 } from "lucide-react";
 
 import {
@@ -17,7 +18,7 @@ import {
   CardHeader,
   CardFooter,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -176,7 +177,7 @@ export function ForumPostPreviewCard({
               {post.language}
             </span>
           </div>
-          <p className="text-muted-foreground text-sm leading-relaxed mb-1 break-words overflow-wrap-anywhere line-clamp-2">
+          <p className="text-muted-foreground text-sm leading-relaxed mb-1 break-words overflow-wrap-anywhere line-clamp-2 min-h-[3.25em]">
             {isTranslated ? t('post.translateUnavailable') : truncateHtmlContent(post.content)}
           </p>
 
@@ -195,7 +196,7 @@ export function ForumPostPreviewCard({
         </CardContent>
       </Link>
 
-      <CardFooter className="pt-0 px-4">
+      <CardFooter className="pt-0 px-4 mt-auto">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center space-x-3">
             <Button
@@ -210,6 +211,19 @@ export function ForumPostPreviewCard({
               <Heart className={cn("w-3 h-3 mr-1 flex-shrink-0", isLiked && "fill-current")} />
               <span className="truncate">{likesCount}</span>
             </Button>
+
+            <span
+              className={cn(
+                buttonVariants({ variant: "ghost", size: "sm" }),
+                "h-7 px-2 text-xs min-w-0 cursor-default select-none pointer-events-none"
+              )}
+              aria-label={t('comment.title', { count: post.comments })}
+              role="status"
+              tabIndex={-1}
+            >
+              <MessageSquare className="w-3 h-3 mr-1 flex-shrink-0" />
+              <span className="truncate">{post.comments}</span>
+            </span>
 
             <Button
               variant="ghost"
