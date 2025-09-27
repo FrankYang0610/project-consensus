@@ -32,6 +32,15 @@ def seed_forum_data(apps, schema_editor):
 
     now = timezone.now()
     random.seed(42)
+    # Language options for demo posts
+    LANG_OPTIONS = [
+        "简体中文（普通话）",
+        "繁體中文（粵語）",
+        "繁體中文（國語）",
+        "English",
+        "Not Specified",
+        "Others",
+    ]
 
     # Create several sample users and profiles / 创建一些示例用户和个人资料
     sample_users_data = [
@@ -69,7 +78,7 @@ def seed_forum_data(apps, schema_editor):
                 author=author,
                 created_at=now - timezone.timedelta(hours=i),
                 tags=[],
-                language="",
+                language=random.choice(LANG_OPTIONS),
                 likes_count=0,
             )
         )
