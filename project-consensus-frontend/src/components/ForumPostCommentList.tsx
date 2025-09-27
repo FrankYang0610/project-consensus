@@ -55,14 +55,17 @@ export function ForumPostCommentList({
   const [mainNextUrl, setMainNextUrl] = React.useState<string | null>(`/api/forum/comments/?postId=${postId}&isMain=1&page=1&page_size=12`);
   const [loadError, setLoadError] = React.useState(false);
 
-  // 子评论缓存 / Replies cache per main comment
-  const [subCommentsMap, setSubCommentsMap] = React.useState<Record<string, ForumPostComment[]>>({});
+  // 回复缓存（按主评论分组）/ Replies cache per main comment
+  const [repliesMap, setRepliesMap] = React.useState<Record<string, ForumPostComment[]>>({});
+  // 回复下一页链接（用于“加载剩余”）/ Next page URL per main comment for manual loading
+  const [repliesNextUrlMap, setRepliesNextUrlMap] = React.useState<Record<string, string | null>>({});
 
   // Reset when postId changes
   React.useEffect(() => {
     setMainComments([]);
     setMainNextUrl(`/api/forum/comments/?postId=${postId}&isMain=1&page=1&page_size=12`);
-    setSubCommentsMap({});
+    setRepliesMap({});
+    setRepliesNextUrlMap({});
     setExpandedMainComments(new Set());
   }, [postId]);
 
@@ -93,24 +96,47 @@ export function ForumPostCommentList({
     }
   }, [mainComments.length, mainNextUrl, fetchMoreMain]);
 
-  // 按点赞数排序主评论 / Sort main comments by like count
+  // 按发布时间倒序排序主评论 / Sort main comments by createdAt desc
   const sortedMainComments = React.useMemo(() => {
-    return [...mainComments].sort((a, b) => b.likes - a.likes);
+    return [...mainComments].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
   }, [mainComments]);
 
   // 总评论数（从 parent 组件传入或根据已加载数据估算）/ Total comments count
-  const totalComments = totalCount ?? (mainComments.length + Object.values(subCommentsMap).reduce((acc, arr) => acc + arr.length, 0));
+  const totalComments = totalCount ?? (mainComments.length + Object.values(repliesMap).reduce((acc, arr) => acc + arr.length, 0));
 
   /**
    * 获取主评论的子评论
    */
-  const getSubCommentsForMainComment = (mainCommentId: string) => {
-    return subCommentsMap[mainCommentId] ?? [];
+  const getRepliesForMainComment = (mainCommentId: string) => {
+    const arr = repliesMap[mainCommentId] ?? [];
+    return [...arr].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
   };
 
   /**
    * 切换主评论的展开状态并按需加载子评论
    */
+  const fetchMoreRepliesForMain = React.useCallback(async (mainCommentId: string) => {
+    const nextUrl = repliesNextUrlMap[mainCommentId] ?? `/api/forum/comments/?mainCommentId=${mainCommentId}&page=1&page_size=5`;
+    if (!nextUrl) return;
+    try {
+      const data = await apiGet<ListCommentsResponse>(nextUrl);
+      setRepliesMap(prev => {
+        const prevArr = prev[mainCommentId] ?? [];
+        const existing = new Set(prevArr.map(c => c.id));
+        const deduped = data.results.filter(c => !existing.has(c.id));
+        return { ...prev, [mainCommentId]: [...prevArr, ...deduped] };
+      });
+      const next = data.next ? new URL(data.next).pathname + new URL(data.next).search : null;
+      setRepliesNextUrlMap(prev => ({ ...prev, [mainCommentId]: next }));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [repliesNextUrlMap]);
+
   const toggleMainCommentExpansion = (mainCommentId: string) => {
     setExpandedMainComments(prev => {
       const newSet = new Set(prev);
@@ -121,13 +147,9 @@ export function ForumPostCommentList({
       }
       return newSet;
     });
-    // 懒加载该主评论的子评论 / Lazy-load replies for this main comment
-    if (!subCommentsMap[mainCommentId]) {
-      apiGet<ListCommentsResponse>(`/api/forum/comments/?parentId=${mainCommentId}&page=1&page_size=100`)
-        .then(data => {
-          setSubCommentsMap(prev => ({ ...prev, [mainCommentId]: data.results }));
-        })
-        .catch(e => console.error(e));
+    // 初次展开时加载第一页 / Load first page when expanded the first time
+    if (!repliesMap[mainCommentId]) {
+      fetchMoreRepliesForMain(mainCommentId);
     }
   };
 
@@ -191,8 +213,13 @@ export function ForumPostCommentList({
         <div className="space-y-3">
           {/* 遍历显示主评论 / Iterate through and display main comments */}
           {displayedMainComments.map((mainComment) => {
-            const subCommentsForMain = getSubCommentsForMainComment(mainComment.id);
+            const repliesForMain = getRepliesForMainComment(mainComment.id);
             const isExpanded = expandedMainComments.has(mainComment.id);
+            const repliesCount = mainComment.repliesCount ?? repliesForMain.length;
+            const repliesNextUrl = repliesNextUrlMap[mainComment.id] ?? null;
+            const remaining = typeof mainComment.repliesCount === 'number'
+              ? Math.max(mainComment.repliesCount - repliesForMain.length, 0)
+              : 0;
 
             return (
               <div key={mainComment.id} className="space-y-1">
@@ -206,47 +233,57 @@ export function ForumPostCommentList({
                   currentUserId={currentUserId}
                 />
 
-                {/* 子评论区域 / Sub-comments area */}
-                {subCommentsForMain.length > 0 && (
-                  <div className="ml-1 sm:ml-2">
-                    {isExpanded ? (
-                      // 展开状态：显示所有子评论 / Expanded state: show all sub-comments
-                      <div className="space-y-1">
-                        {subCommentsForMain.map((subComment) => (
-                          <ForumPostCommentComponent
-                            key={subComment.id}
-                            comment={subComment}
-                            onLike={onLike}
-                            onReply={onReply}
-                            onDelete={onDelete}
-                            onShare={onShare}
-                            isSubComment={true}
-                            currentUserId={currentUserId}
-                          />
-                        ))}
-                        {/* 展开状态下的收起按钮 / Collapse button when expanded */}
+                {/* 回复区域 / Replies area */}
+                <div className="ml-1 sm:ml-2">
+                  {isExpanded ? (
+                    // 展开状态：显示所有回复 / Expanded state: show all replies
+                    <div className="space-y-1">
+                      {repliesForMain.map((reply) => (
+                        <ForumPostCommentComponent
+                          key={reply.id}
+                          comment={reply}
+                          onLike={onLike}
+                          onReply={onReply}
+                          onDelete={onDelete}
+                          onShare={onShare}
+                          isReply={true}
+                          currentUserId={currentUserId}
+                        />
+                      ))}
+                      {repliesNextUrl && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => toggleMainCommentExpansion(mainComment.id)}
+                          onClick={() => fetchMoreRepliesForMain(mainComment.id)}
                           className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground ml-4 sm:ml-6"
                         >
-                          {t('comment.hideReplies')}
+                          {t('comment.loadRemaining', { count: remaining })}
                         </Button>
-                      </div>
-                    ) : (
-                      // 折叠状态：显示展开按钮 / Collapsed state: show expand button
+                      )}
+                      {/* 展开状态下的收起按钮 / Collapse button when expanded */}
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => toggleMainCommentExpansion(mainComment.id)}
                         className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground ml-4 sm:ml-6"
                       >
-                        {t('comment.showReplies', { count: subCommentsForMain.length })}
+                        {t('comment.hideReplies')}
                       </Button>
-                    )}
-                  </div>
-                )}
+                    </div>
+                  ) : (
+                    // 折叠状态：显示展开按钮 / Collapsed state: show expand button
+                    repliesCount > 0 ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleMainCommentExpansion(mainComment.id)}
+                        className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground ml-4 sm:ml-6"
+                      >
+                        {t('comment.showReplies', { count: repliesCount })}
+                      </Button>
+                    ) : null
+                  )}
+                </div>
               </div>
             );
           })}

@@ -105,6 +105,7 @@
     "showReplies": "Show {{count}} replies",
     "hideReplies": "Hide replies",
     "loadMore": "Load more ({{remaining}} remaining)",
+    "loadRemaining": "Load remaining {{count}} replies",
     "translate": "Translate",
     "showOriginal": "Original",
     "avatar": "Avatar",

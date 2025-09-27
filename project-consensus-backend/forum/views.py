@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 
+from django.db.models import Count
 from .models import ForumPost, ForumPostComment
 from .serializers import ForumPostSerializer, ForumPostCommentSerializer
 
@@ -42,7 +43,7 @@ class ForumPostViewSet(viewsets.ModelViewSet):
 
 
 class ForumPostCommentViewSet(viewsets.ModelViewSet):
-    """CRUD endpoints for comments (filter by postId/parentId).
+    """CRUD endpoints for comments (filter by postId/parentId/mainCommentId).
 
     - GET /api/forum/comments/?postId=<uuid>          filter by post
     - GET /api/forum/comments/?parentId=<uuid>        filter by parent comment
@@ -50,7 +51,7 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
     - others same as standard REST actions
     """
 
-    queryset = ForumPostComment.objects.select_related("author", "post", "reply_to_user", "parent")
+    queryset = ForumPostComment.objects.select_related("author", "post", "reply_to_user", "parent", "main_comment")
     serializer_class = ForumPostCommentSerializer
     # Read-only for anonymous, write requires auth
     def get_permissions(self):  # type: ignore[override]
@@ -63,20 +64,30 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
         qs = super().get_queryset()
         post_id = self.request.query_params.get("postId")
         parent_id = self.request.query_params.get("parentId")
+        main_comment_id = self.request.query_params.get("mainCommentId")
         if post_id:
             qs = qs.filter(post_id=post_id)
         if parent_id:
             qs = qs.filter(parent_id=parent_id)
+        if main_comment_id:
+            qs = qs.filter(main_comment_id=main_comment_id)
         # Optional filter: only main comments (no parent)
         is_main = self.request.query_params.get("isMain")
         if is_main in {"1", "true", "True"}:
             qs = qs.filter(parent__isnull=True)
-        return qs
+        # Annotate total number of replies under the same main thread, only for main comments
+        qs = qs.annotate(
+            replies_count_main=Count("all_replies", distinct=True),
+        )
+        # Consistent ordering: latest first
+        return qs.order_by("-created_at")
 
     def perform_create(self, serializer):  # type: ignore[override]
-        # Always set the author to current user; derive reply_to_user from parent if provided
-        parent = serializer.validated_data.get("parent")
+        # Always set the author to current user; derive reply_to_user and main from parent if provided
+        parent: ForumPostComment | None = serializer.validated_data.get("parent")
         reply_to_user = None
+        main_comment = None
         if parent:
             reply_to_user = parent.author
-        serializer.save(author=self.request.user, reply_to_user=reply_to_user)
+            main_comment = parent if parent.parent_id is None else parent.main_comment
+        serializer.save(author=self.request.user, reply_to_user=reply_to_user, main_comment=main_comment)

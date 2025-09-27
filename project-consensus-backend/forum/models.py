@@ -53,6 +53,9 @@ class ForumPostComment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     post = models.ForeignKey(ForumPost, on_delete=models.CASCADE, related_name="comments")
     parent = models.ForeignKey("self", null=True, blank=True, on_delete=models.CASCADE, related_name="replies")
+    # Reference to the main (top-level) comment this reply belongs to.
+    # For top-level comments, this is null. For replies (any depth), this points to the top-level comment.
+    main_comment = models.ForeignKey("self", null=True, blank=True, on_delete=models.CASCADE, related_name="all_replies")
     content = models.TextField()
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="forum_comments")
     reply_to_user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="forum_reply_targets")
@@ -61,7 +64,8 @@ class ForumPostComment(models.Model):
     likes_count = models.PositiveIntegerField(default=0)
 
     class Meta:
-        ordering = ["created_at"]
+        # Default to newest-first for comments / 评论按时间倒序（最新在前）
+        ordering = ["-created_at"]
         verbose_name = "ForumPostComment"
         verbose_name_plural = "ForumPostComments"
 

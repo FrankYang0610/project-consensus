@@ -105,6 +105,7 @@
     "showReplies": "展开 {{count}} 条回复",
     "hideReplies": "收起回复",
     "loadMore": "加载更多 ({{remaining}} 条)",
+    "loadRemaining": "加载剩余 {{count}} 条回复",
     "translate": "翻译",
     "showOriginal": "原文",
     "avatar": "头像",

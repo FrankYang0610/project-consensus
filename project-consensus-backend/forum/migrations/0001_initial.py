@@ -94,6 +94,16 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
+                    "main_comment",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="all_replies",
+                        to="forum.forumpostcomment",
+                    ),
+                ),
+                (
                     "reply_to_user",
                     models.ForeignKey(
                         blank=True,
