@@ -153,6 +153,15 @@ REST_FRAMEWORK = {
     "DEFAULT_PARSER_CLASSES": ["rest_framework.parsers.JSONParser"],
 }
 
+# Cache configuration (LocMem by default; override with CACHE_URL)
+CACHES = {
+    'default': env.cache('CACHE_URL', default='locmemcache://'),
+}
+
+# Email verification settings
+AUTH_VERIFICATION_CODE_TTL_SECONDS = env.int('AUTH_VERIFICATION_CODE_TTL_SECONDS', default=60 * 15)
+AUTH_VERIFICATION_REQUEST_INTERVAL_SECONDS = env.int('AUTH_VERIFICATION_REQUEST_INTERVAL_SECONDS', default=60)
+
 # Enable Browsable API only in development for convenient exploration.
 if DEBUG:
     REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"].append(

@@ -43,30 +43,3 @@ class Profile(models.Model):
             "name": self.display_name or self.user.get_username(),
             "avatar": self.avatar_url or None,
         }
-
-
-class EmailVerification(models.Model):
-    """Email verification record for the demo register flow.
-
-    Used by:
-    - send_verification_code: create (email, code)
-    - register: validate code within TTL and unused, then create user/profile
-
-    Production: integrate a real email provider and add guardrails
-    (rate limiting / deny lists / bounce handling, etc.).
-    """
-
-    email = models.EmailField(db_index=True)
-    code = models.CharField(max_length=16)
-    created_at = models.DateTimeField(default=timezone.now, db_index=True)
-    is_used = models.BooleanField(default=False)
-
-    class Meta:
-        indexes = [
-            models.Index(fields=["email", "created_at"]),
-        ]
-        verbose_name = "Email verification"
-        verbose_name_plural = "Email verifications"
-
-    def __str__(self) -> str:  # pragma: no cover
-        return f"{self.email} / {self.code} / used={self.is_used}"

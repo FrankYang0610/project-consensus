@@ -26,6 +26,12 @@ export interface AppContextType {
   isLoggedIn: boolean; // 是否已登录 / Whether user is logged in
   login: (userData: User) => void; // 登录函数 / Login function
   logout: () => void; // 登出函数 / Logout function
+  updateUser?: (updates: Partial<User>) => void; // 更新当前用户信息（可选，前端本地） / Update current user info (optional, frontend-local)
+
+  // 登录弹窗控制 / Login modal control
+  loginModalOpen: boolean; // 登录弹窗是否打开 / Whether login modal is open
+  openLoginModal: () => void; // 打开登录弹窗 / Open login modal
+  closeLoginModal: () => void; // 关闭登录弹窗 / Close login modal
 
   // 主题设置 / Theme settings
   theme: ThemeMode; // 主题模式 / Theme mode

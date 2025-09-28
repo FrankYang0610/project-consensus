@@ -111,8 +111,8 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
-                "verbose_name": "课程",
-                "verbose_name_plural": "课程",
+                "verbose_name": "Course",
+                "verbose_name_plural": "Courses",
                 "indexes": [
                     models.Index(
                         fields=["subject_id"], name="courses_cou_subject_3506dc_idx"
@@ -225,8 +225,8 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
-                "verbose_name": "课程评价",
-                "verbose_name_plural": "课程评价",
+                "verbose_name": "Course review",
+                "verbose_name_plural": "Course reviews",
                 "ordering": ["-created_at"],
             },
         ),
@@ -278,8 +278,8 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
-                "verbose_name": "课程评价回复",
-                "verbose_name_plural": "课程评价回复",
+                "verbose_name": "Course review reply",
+                "verbose_name_plural": "Course review replies",
                 "ordering": ["created_at"],
             },
         ),

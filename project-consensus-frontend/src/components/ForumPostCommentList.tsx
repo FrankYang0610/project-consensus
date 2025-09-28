@@ -1,12 +1,21 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import { ForumPostComment } from "@/types/forum";
 import { ForumPostCommentCard as ForumPostCommentComponent } from "./ForumPostCommentCard";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Plus } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { MessageSquare, Plus, X } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
-import { getSeparatedCommentsByPostId, getSubCommentsByMainCommentId } from "@/data/sampleComments";
+import { apiGet, cn, isContentEmpty } from "@/lib/utils";
+import { GetForumPostCommentPositionResponse, ListCommentsResponse } from "@/types/api";
+import { useApp } from "@/contexts/AppContext";
+import ForumPostCommentComposer from "@/components/ForumPostCommentComposer";
+
+// Use a stable component identity for the editor to avoid remounts on each render
+const RichTextEditor = dynamic(() => import("@/components/RichTextEditor"), { ssr: false });
 
 /**
  * 论坛帖子评论列表组件的属性接口
@@ -20,14 +29,24 @@ interface ForumPostCommentListProps {
   onAddComment?: () => void;
   currentUserId?: string;
   postId: string;
+  totalCount?: number;
+  // Composer controls
+  isComposerOpen?: boolean;
+  replyToId?: string;
+  composerValue?: string;
+  onComposerChange?: (html: string) => void;
+  composerIsAnonymous?: boolean;
+  onComposerAnonymousChange?: (checked: boolean) => void;
+  onSubmitComposer?: () => void;
+  onCancelComposer?: () => void;
 }
 
 /**
  * 论坛帖子评论列表组件
- * 用于显示帖子的所有评论，支持主评论和子评论的层级结构
+ * 平级展示所有评论（主评/回复/子回复）并按时间从早到晚排序
  * 
  * Forum Post Comment List Component
- * Displays all comments for a post with support for main comments and sub-comments hierarchy
+ * Flat list of all comments (including replies) in chronological ascending order
  */
 export function ForumPostCommentList({
   onLike,
@@ -36,61 +55,167 @@ export function ForumPostCommentList({
   onShare,
   onAddComment,
   currentUserId,
-  postId
+  postId,
+  totalCount,
+  isComposerOpen = false,
+  replyToId,
+  composerValue = "",
+  onComposerChange,
+  composerIsAnonymous = false,
+  onComposerAnonymousChange,
+  onSubmitComposer,
+  onCancelComposer
 }: ForumPostCommentListProps) {
   const { t } = useI18n();
+  const { isLoggedIn, openLoginModal } = useApp();
   
-  // 控制是否显示所有评论的状态 / State to control whether to show all comments
-  const [showAllComments, setShowAllComments] = React.useState(false);
-  
-  // 控制主评论展开状态的状态 / State to control expanded state of main comments
-  const [expandedMainComments, setExpandedMainComments] = React.useState<Set<string>>(new Set());
+  const loaderRef = React.useRef<HTMLDivElement | null>(null);
+  const loadingRef = React.useRef(false);
 
-  // 获取分离后的评论数据 / Get separated comment data
-  const { mainComments, subComments } = React.useMemo(() => {
-    return getSeparatedCommentsByPostId(postId);
+  // 扁平评论流：服务端分页 / Flat comments feed with server pagination
+  const [comments, setComments] = React.useState<ForumPostComment[]>([]);
+  const [nextUrl, setNextUrl] = React.useState<string | null>(`/api/forum/comments/?postId=${postId}&page=1&page_size=20`);
+  const [loadError, setLoadError] = React.useState(false);
+  const [isJumpLoading, setIsJumpLoading] = React.useState(false);
+
+  // Reset when postId changes
+  React.useEffect(() => {
+    setComments([]);
+    setNextUrl(`/api/forum/comments/?postId=${postId}&page=1&page_size=20`);
   }, [postId]);
 
-  // 按点赞数排序主评论 / Sort main comments by like count
-  const sortedMainComments = React.useMemo(() => {
-    return [...mainComments].sort((a, b) => b.likes - a.likes);
-  }, [mainComments]);
+  const fetchMore = React.useCallback(async () => {
+    if (!nextUrl || loadingRef.current) return;
+    loadingRef.current = true;
+    try {
+      const data = await apiGet<ListCommentsResponse>(nextUrl);
+      setComments(prev => {
+        const existing = new Set(prev.map(c => c.id));
+        const deduped = data.results.filter(c => !existing.has(c.id));
+        const merged = [...prev, ...deduped];
+        // 按时间升序确保顺序稳定 / ensure chronological ascending order
+        return merged.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      });
+      setNextUrl(data.next ? new URL(data.next).pathname + new URL(data.next).search : null);
+      setLoadError(false);
+    } catch (e) {
+      console.error(e);
+      setLoadError(true);
+    } finally {
+      loadingRef.current = false;
+    }
+  }, [nextUrl]);
 
-  // 计算总评论数 / Calculate total comment count
-  const totalComments = mainComments.length + subComments.length;
+  // 平滑滚动到指定评论位置 / Smooth scroll to a comment by id
+  const scrollToComment = React.useCallback((targetId: string) => {
+    console.log('Attempting to scroll to comment:', targetId);
+    const el = document.getElementById(`comment-${targetId}`);
+    console.log('Found element:', el);
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      const absoluteTop = rect.top + window.pageYOffset;
+      const targetTop = Math.max(absoluteTop - (window.innerHeight / 2 - rect.height / 2), 0);
+      console.log('Scrolling to position:', targetTop);
+      window.scrollTo({ top: targetTop, behavior: 'smooth' });
+      // brief highlight
+      el.classList.add('ring-2', 'ring-primary/40');
+      setTimeout(() => el.classList.remove('ring-2', 'ring-primary/40'), 2000);
+    } else {
+      console.warn('Comment element not found:', `comment-${targetId}`);
+    }
+  }, []);
 
-  /**
-   * 获取主评论的子评论
-   * Get sub-comments for a main comment
-   * @param mainCommentId 主评论ID / Main comment ID
-   * @returns 子评论数组 / Array of sub-comments
-   */
-  const getSubCommentsForMainComment = (mainCommentId: string) => {
-    return getSubCommentsByMainCommentId(mainCommentId, subComments);
-  };
-
-  /**
-   * 切换主评论的展开状态
-   * Toggle expansion state of a main comment
-   * @param mainCommentId 主评论ID / Main comment ID
-   */
-  const toggleMainCommentExpansion = (mainCommentId: string) => {
-    setExpandedMainComments(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(mainCommentId)) {
-        newSet.delete(mainCommentId);
-      } else {
-        newSet.add(mainCommentId);
+  // Public method: load until a target comment is available, then scroll to it
+  const loadUntilAndScroll = React.useCallback(
+    async (targetCommentId: string) => {
+      if (!targetCommentId) return;
+      // Fast path: if already loaded, just scroll
+      if (idToComment.current?.has(targetCommentId)) { scrollToComment(targetCommentId); return; }
+      setIsJumpLoading(true);
+      try {
+        // Ask backend for anchor page and URLs
+        const position = await apiGet<GetForumPostCommentPositionResponse>(
+          `/api/forum/comments/position/?postId=${postId}&commentId=${targetCommentId}&page_size=20`
+        );
+        // Load all pages up to the anchor page sequentially (each page depends on the previous nextUrl state)
+        for (const url of position.pageUrls) {
+          // If we already have moved past or have the comment, break early
+          if (idToComment.current?.has(targetCommentId)) break;
+          const data = await apiGet<ListCommentsResponse>(url);
+          setComments(prev => {
+            const existing = new Set(prev.map(c => c.id));
+            const deduped = data.results.filter(c => !existing.has(c.id));
+            const merged = [...prev, ...deduped];
+            return merged.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+          });
+        }
+        // Ensure map is up to date and then scroll
+        // Use requestAnimationFrame to ensure DOM is updated
+        requestAnimationFrame(() => {
+          setTimeout(() => scrollToComment(targetCommentId), 100);
+        });
+      } catch (e) {
+        console.error(e);
+        setLoadError(true);
+      } finally {
+        setIsJumpLoading(false);
       }
-      return newSet;
-    });
-  };
+    },
+    [postId, scrollToComment]
+  );
 
-  // 计算要显示的主评论 / Calculate main comments to display
-  const displayedMainComments = showAllComments ? sortedMainComments : sortedMainComments.slice(0, 3);
-  
-  // 计算隐藏的主评论数量 / Calculate number of hidden main comments
-  const hiddenMainComments = sortedMainComments.length - displayedMainComments.length;
+  // 初次加载评论 / Initial load of comments
+  React.useEffect(() => {
+    if (comments.length === 0 && nextUrl) {
+      fetchMore();
+    }
+  }, [comments.length, nextUrl, fetchMore]);
+
+  // 总评论数（从 parent 组件传入或根据已加载数据估算）/ Total comments count
+  const totalComments = totalCount ?? comments.length;
+
+  // 还有更多可加载的评论？ / Whether more pages exist
+  const hasMore = nextUrl ? 1 : 0;
+
+  React.useEffect(() => {
+    if (!loaderRef.current) return;
+    const target = loaderRef.current;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && hasMore > 0) {
+          fetchMore();
+        }
+      },
+      { root: null, rootMargin: '200px 0px', threshold: 0 }
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [hasMore, fetchMore]);
+
+  // 用于快速查找 parent 评论 / Map for quick parent lookup
+  const idToComment = React.useRef<Map<string, ForumPostComment>>(new Map());
+  React.useEffect(() => {
+    const map = new Map<string, ForumPostComment>();
+    for (const c of comments) map.set(c.id, c);
+    idToComment.current = map;
+  }, [comments]);
+
+  // Expose method via custom event for child cards to request a jump
+  React.useEffect(() => {
+    const handler = (e: Event) => {
+      const custom = e as CustomEvent<{ id: string }>;
+      if (custom.detail?.id) {
+        loadUntilAndScroll(custom.detail.id);
+      }
+    };
+    window.addEventListener('pc:jump-to-comment', handler as EventListener);
+    return () => window.removeEventListener('pc:jump-to-comment', handler as EventListener);
+  }, [loadUntilAndScroll]);
+
+  const isComposerContentEmpty = React.useMemo(() => {
+    return isContentEmpty(composerValue);
+  }, [composerValue]);
 
   return (
     <div className="mt-6 px-4 sm:px-0">
@@ -103,7 +228,13 @@ export function ForumPostCommentList({
         {/* 添加评论按钮 / Add comment button */}
         {onAddComment && (
           <Button
-            onClick={onAddComment}
+            onClick={() => {
+              if (!isLoggedIn) {
+                openLoginModal();
+                return;
+              }
+              onAddComment();
+            }}
             size="sm"
             className="h-8"
           >
@@ -113,8 +244,26 @@ export function ForumPostCommentList({
         )}
       </div>
 
+      {/* 顶部评论写作区（当未指定回复对象时） / Top-level composer when not replying to a specific comment */}
+      {isComposerOpen && !replyToId && (
+        <ForumPostCommentComposer
+          anchorId="composer-top"
+          value={composerValue ?? ""}
+          onChange={(v: string) => onComposerChange?.(v)}
+          placeholder={t('comment.writePlaceholder') || 'Write a comment…'}
+          isAnonymous={!!composerIsAnonymous}
+          onAnonymousChange={(v) => onComposerAnonymousChange?.(Boolean(v))}
+          onSubmit={onSubmitComposer}
+          onCancel={onCancelComposer}
+          isSubmitDisabled={isComposerContentEmpty}
+          closeAriaLabel={t('common.close') || 'Close'}
+          anonymousLabel={t('comment.anonymous') || 'Comment anonymously'}
+          postLabel={t('comment.post') || 'Post'}
+        />
+      )}
+
       {/* 评论内容区域 / Comment content area */}
-      {displayedMainComments.length === 0 ? (
+      {comments.length === 0 ? (
         // 无评论时的空状态 / Empty state when no comments
         <div className="text-center py-8 text-muted-foreground">
           <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -122,83 +271,67 @@ export function ForumPostCommentList({
         </div>
       ) : (
         <div className="space-y-3">
-          {/* 遍历显示主评论 / Iterate through and display main comments */}
-          {displayedMainComments.map((mainComment) => {
-            const subCommentsForMain = getSubCommentsForMainComment(mainComment.id);
-            const isExpanded = expandedMainComments.has(mainComment.id);
-
+          {/* 遍历显示扁平评论 / Iterate through and display flat comments */}
+          {comments.map((comment) => {
+            const isReply = Boolean(comment.replyTo);
+            const parentComment = isReply && comment.replyTo ? idToComment.current.get(comment.replyTo) : undefined;
             return (
-              <div key={mainComment.id} className="space-y-1">
-                {/* 主评论组件 / Main comment component */}
+              <React.Fragment key={comment.id}>
                 <ForumPostCommentComponent
-                  comment={mainComment}
+                  comment={comment}
                   onLike={onLike}
                   onReply={onReply}
                   onDelete={onDelete}
                   onShare={onShare}
                   currentUserId={currentUserId}
+                  isReply={isReply}
+                  parentComment={parentComment}
+                  onClickParent={() => {
+                    if (comment.replyTo) scrollToComment(comment.replyTo);
+                  }}
                 />
-
-                {/* 子评论区域 / Sub-comments area */}
-                {subCommentsForMain.length > 0 && (
-                  <div className="ml-1 sm:ml-2">
-                    {isExpanded ? (
-                      // 展开状态：显示所有子评论 / Expanded state: show all sub-comments
-                      <div className="space-y-1">
-                        {subCommentsForMain.map((subComment) => (
-                          <ForumPostCommentComponent
-                            key={subComment.id}
-                            comment={subComment}
-                            onLike={onLike}
-                            onReply={onReply}
-                            onDelete={onDelete}
-                            onShare={onShare}
-                            isSubComment={true}
-                            currentUserId={currentUserId}
-                          />
-                        ))}
-                        {/* 展开状态下的收起按钮 / Collapse button when expanded */}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleMainCommentExpansion(mainComment.id)}
-                          className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground ml-4 sm:ml-6"
-                        >
-                          {t('comment.hideReplies')}
-                        </Button>
-                      </div>
-                    ) : (
-                      // 折叠状态：显示展开按钮 / Collapsed state: show expand button
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleMainCommentExpansion(mainComment.id)}
-                        className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground ml-4 sm:ml-6"
-                      >
-                        {t('comment.showReplies', { count: subCommentsForMain.length })}
-                      </Button>
-                    )}
-                  </div>
+                {isComposerOpen && replyToId === comment.id && (
+                  <ForumPostCommentComposer
+                    anchorId={`composer-for-comment-${comment.id}`}
+                    isReply
+                    value={composerValue ?? ""}
+                    onChange={(v: string) => onComposerChange?.(v)}
+                    placeholder={t('comment.writePlaceholder') || 'Write a comment…'}
+                    isAnonymous={!!composerIsAnonymous}
+                    onAnonymousChange={(v) => onComposerAnonymousChange?.(Boolean(v))}
+                    onSubmit={onSubmitComposer}
+                    onCancel={onCancelComposer}
+                    isSubmitDisabled={isComposerContentEmpty}
+                    closeAriaLabel={t('common.close') || 'Close'}
+                    anonymousLabel={t('comment.anonymous') || 'Comment anonymously'}
+                    postLabel={t('comment.post') || 'Post'}
+                  />
                 )}
-              </div>
+              </React.Fragment>
             );
           })}
 
-          {/* 显示更多/隐藏评论按钮 / Show more/hide comments button */}
-          {hiddenMainComments > 0 && (
-            <div className="text-center pt-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowAllComments(!showAllComments)}
-                className="h-8"
-              >
-                {showAllComments
-                  ? t('comment.hideAll')
-                  : t('comment.showAll', { count: mainComments.length })
-                }
-              </Button>
-            </div>
-          )}
+          {/* Infinite scroll sentinel */}
+          <div className="text-center pt-2">
+            <div ref={loaderRef} className="h-6 w-full" aria-hidden="true" />
+          </div>
+        </div>
+      )}
+
+      {loadError && nextUrl && (
+        <Button
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-red-600 hover:bg-red-700 text-white"
+          onClick={() => {
+            setLoadError(false);
+            fetchMore();
+          }}
+        >
+          {t('common.loadFailedRetry')}
+        </Button>
+      )}
+      {isJumpLoading && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-background border rounded-md px-3 py-1 text-xs text-muted-foreground shadow">
+          {t('comment.loadingTargetReply')}
         </div>
       )}
     </div>

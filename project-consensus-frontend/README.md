@@ -117,7 +117,7 @@ project-consensus-frontend/
 │   ├── components/                           # Reusable UI Components
 │   │   ├── SiteNavigation.tsx                # Main navigation component
 │   │   ├── UserMenu.tsx                      # User dropdown menu
-│   │   ├── LoginComponent.tsx                # Authentication component
+│   │   ├── LoginModal.tsx                    # Authentication modal (global)
 │   │   ├── SearchBar.tsx                     # Global search functionality
 │   │   ├── ThemeProvider.tsx                 # Dark/light theme context
 │   │   ├── ThemeToggle.tsx                   # Theme switcher button
@@ -213,6 +213,22 @@ project-consensus-frontend/
 
 #### Development Workflow
 The project uses modern React patterns with hooks, context for state management, and TypeScript for type safety. Components are organized by feature and reusability, with clear separation between UI components, business logic, and data management.
+
+#### Authentication Modal Design
+
+- Global component: `LoginModal` is controlled by `AppContext` (`openLoginModal/closeLoginModal`)
+- Typical gating usage:
+
+```tsx
+import { useApp } from '@/contexts/AppContext'
+
+const { isLoggedIn, openLoginModal } = useApp()
+
+function onAction() {
+  if (!isLoggedIn) return openLoginModal()
+  // proceed
+}
+```
 
 ### Appendix: Node.js Documentations
 

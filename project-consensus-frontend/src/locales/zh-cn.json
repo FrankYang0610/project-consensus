@@ -105,17 +105,28 @@
     "showReplies": "展开 {{count}} 条回复",
     "hideReplies": "收起回复",
     "loadMore": "加载更多 ({{remaining}} 条)",
+    "loadRemaining": "加载剩余 {{count}} 条回复",
     "translate": "翻译",
     "showOriginal": "原文",
     "avatar": "头像",
     "replyTo": "回复了",
     "share": "分享",
     "copied": "已复制！",
-    "copyText": "复制文本"
+    "copyText": "复制文本",
+    "repliesTo": "回复 {{name}} 的内容",
+    "writePlaceholder": "写评论...",
+    "anonymous": "匿名评论",
+    "post": "发布",
+    "loadingReplies": "加载中…",
+    "loadingTargetReply": "加载目标回复中…",
+    "loadRepliesFailed": "加载回复失败"
   },
   "common": {
     "note": "注意",
-    "developmentNotice": "本网站正在积极开发中，界面和功能可能会频繁更改。"
+    "developmentNotice": "本网站正在积极开发中，界面和功能可能会频繁更改。",
+    "loadFailedRetry": "加载失败 重新加载",
+    "me": "我",
+    "anonymous": "匿名"
   },
   "courses": {
     "topbar": {
@@ -343,6 +354,64 @@
         "title": "10. 联系方式",
         "content": "如有问题，请联系：support@project-consensus.app。"
       }
+    }
+  },
+  "settings": {
+    "title": "用户设置",
+    "subtitle": "管理你的个人资料、密码和隐私偏好。",
+    "requireLogin": "请先登录以访问设置。",
+    "profile": {
+      "title": "个人资料",
+      "desc": "更新你的昵称和头像。",
+      "displayName": "昵称",
+      "avatarUrl": "头像 URL",
+      "preview": "预览",
+      "saved": "个人资料已更新。",
+      "saveFailed": "保存个人资料失败。"
+    },
+    "account": {
+      "title": "账号安全",
+      "desc": "修改你的登录密码。",
+      "currentPassword": "当前密码",
+      "newPassword": "新密码",
+      "confirmPassword": "确认新密码",
+      "passwordMismatch": "两次输入的新密码不一致。",
+      "changed": "密码修改成功。",
+      "changeFailed": "修改密码失败。"
+    },
+    "privacy": {
+      "title": "隐私设置",
+      "desc": "控制他人如何查看并联系你。",
+      "items": {
+        "showEmail": {
+          "title": "在个人主页显示邮箱",
+          "desc": "允许他人查看你主页上的邮箱地址。"
+        },
+        "allowDMs": {
+          "title": "允许私信",
+          "desc": "允许其他用户向你发送私信。"
+        },
+        "showOnlineStatus": {
+          "title": "显示在线状态",
+          "desc": "允许他人看到你是否在线。"
+        },
+        "showActivity": {
+          "title": "显示活动",
+          "desc": "展示你的公开活动时间线。"
+        }
+      },
+      "saved": "隐私设置已保存。",
+      "saveFailed": "保存隐私设置失败。"
+    },
+    "language": {
+      "title": "偏好语言",
+      "desc": "选择你的界面显示语言。",
+      "hint": "更改会立即在此设备生效。"
+    },
+    "actions": {
+      "saveProfile": "保存资料",
+      "changePassword": "修改密码",
+      "savePrivacy": "保存隐私设置"
     }
   }
 }

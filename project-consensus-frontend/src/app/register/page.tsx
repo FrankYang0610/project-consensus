@@ -18,7 +18,7 @@ import { useI18n } from '@/hooks/useI18n';
 import { SiteNavigation } from '@/components/SiteNavigation';
 import Link from 'next/link';
 import { ErrorResponse, RegisterSuccessResponse, SendVerificationCodeResponse } from '@/types';
-import { getCookie } from '@/lib/utils';
+import { getCookie, getAPIBaseUrl } from '@/lib/utils';
 import { useApp } from '@/contexts/AppContext';
 
 const POLYU_EMAIL_REGEX = /@connect\.polyu\.hk$/i;
@@ -61,9 +61,9 @@ export default function RegisterPage() {
       setIsSendingCode(true);
       // TODO: Actual server address (backend)
       // TODO：实际服务器地址（后端）
-      await fetch('http://localhost:8000/api/accounts/csrf/', { method: 'GET', credentials: 'include' });
+      await fetch(`${getAPIBaseUrl()}/api/accounts/csrf/`, { method: 'GET', credentials: 'include' });
       const csrfToken = getCookie('csrftoken');
-      const res = await fetch('http://localhost:8000/api/accounts/send_verification_code/', {
+      const res = await fetch(`${getAPIBaseUrl()}/api/accounts/send_verification_code/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}) },
         credentials: 'include',
@@ -106,9 +106,9 @@ export default function RegisterPage() {
       setIsRegistering(true);
       // TODO: Actual server address (backend)
       // TODO：实际服务器地址（后端）
-      await fetch('http://localhost:8000/api/accounts/csrf/', { method: 'GET', credentials: 'include' });
+      await fetch(`${getAPIBaseUrl()}/api/accounts/csrf/`, { method: 'GET', credentials: 'include' });
       const csrfToken = getCookie('csrftoken');
-      const res = await fetch('http://localhost:8000/api/accounts/register/', {
+      const res = await fetch(`${getAPIBaseUrl()}/api/accounts/register/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}) },
         credentials: 'include',

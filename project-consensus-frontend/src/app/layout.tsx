@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import Watermark from "@/components/Watermark";
 import { AppProvider } from "@/contexts/AppContext";
 import { cn } from "@/lib/utils";
+import { LoginModal } from "@/components/LoginModal";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -49,6 +50,7 @@ export default function RootLayout({
           <AppProvider>
             {children}
             <Watermark />
+            <LoginModal />
           </AppProvider>
         </ThemeProvider>
       </body>
