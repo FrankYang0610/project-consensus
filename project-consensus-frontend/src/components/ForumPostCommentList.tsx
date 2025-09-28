@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { MessageSquare, Plus, X } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
-import { apiGet, cn } from "@/lib/utils";
+import { apiGet, cn, isContentEmpty } from "@/lib/utils";
 import { GetForumPostCommentPositionResponse, ListCommentsResponse } from "@/types/api";
 import { useApp } from "@/contexts/AppContext";
 import ForumPostCommentComposer from "@/components/ForumPostCommentComposer";
@@ -213,9 +213,8 @@ export function ForumPostCommentList({
     return () => window.removeEventListener('pc:jump-to-comment', handler as EventListener);
   }, [loadUntilAndScroll]);
 
-  const isContentEmpty = React.useMemo(() => {
-    const content = (composerValue ?? "").trim();
-    return !content || content === '<p></p>' || content === '<p><br></p>';
+  const isComposerContentEmpty = React.useMemo(() => {
+    return isContentEmpty(composerValue);
   }, [composerValue]);
 
   return (
@@ -256,7 +255,7 @@ export function ForumPostCommentList({
           onAnonymousChange={(v) => onComposerAnonymousChange?.(Boolean(v))}
           onSubmit={onSubmitComposer}
           onCancel={onCancelComposer}
-          isSubmitDisabled={isContentEmpty}
+          isSubmitDisabled={isComposerContentEmpty}
           closeAriaLabel={t('common.close') || 'Close'}
           anonymousLabel={t('comment.anonymous') || 'Comment anonymously'}
           postLabel={t('comment.post') || 'Post'}
@@ -302,7 +301,7 @@ export function ForumPostCommentList({
                     onAnonymousChange={(v) => onComposerAnonymousChange?.(Boolean(v))}
                     onSubmit={onSubmitComposer}
                     onCancel={onCancelComposer}
-                    isSubmitDisabled={isContentEmpty}
+                    isSubmitDisabled={isComposerContentEmpty}
                     closeAriaLabel={t('common.close') || 'Close'}
                     anonymousLabel={t('comment.anonymous') || 'Comment anonymously'}
                     postLabel={t('comment.post') || 'Post'}

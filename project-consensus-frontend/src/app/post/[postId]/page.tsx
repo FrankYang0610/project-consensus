@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { ForumPostDetailCard } from "@/components/ForumPostDetailCard";
 import { ForumPostCommentList } from "@/components/ForumPostCommentList";
-import { apiGet, apiPost, apiPostVoid } from "@/lib/utils";
+import { apiGet, apiPost, apiPostVoid, isContentEmpty } from "@/lib/utils";
 import { useApp } from "@/contexts/AppContext";
 import { ForumPost } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -88,11 +88,10 @@ export default function PostPage() {
   const handleSubmitComment = async () => {
     if (!post) return;
     // For rich text content, we need to check if there's actual content beyond just HTML tags
-    const content = commentContent.trim();
-    if (!content || content === '<p></p>' || content === '<p><br></p>') return;
+    if (isContentEmpty(commentContent)) return;
     try {
       const created = await apiPost<ForumPostComment>(`/api/forum/comments/`, {
-        content,
+        content: commentContent.trim(),
         postId: postId,
         replyTo: replyToId,
         isAnonymous: commentIsAnonymous,
