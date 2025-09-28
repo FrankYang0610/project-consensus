@@ -114,7 +114,6 @@ export function ForumPostPreviewCard({
     }
   };
 
-
   const handleTranslateClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -126,10 +125,9 @@ export function ForumPostPreviewCard({
   const handleAuthorClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (post.isAnonymous) return;
     onAuthorClick?.(post.author.id);
   };
-
-
 
   return (
     <Card

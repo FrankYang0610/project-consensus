@@ -212,7 +212,7 @@ export function ForumPostCommentCard({
         <div className="flex-1 min-w-0 overflow-hidden">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span className="font-medium text-sm text-foreground">
-              {comment.author.isAnonymous 
+              {comment.isAnonymous 
                 ? (currentUserId && comment.author.id === currentUserId 
                     ? `${comment.author.name} (${t('common.anonymous')})` 
                     : t('common.anonymous'))
@@ -234,7 +234,7 @@ export function ForumPostCommentCard({
             >
               <span className="font-medium flex-shrink-0">
                 {t('comment.repliesTo', { 
-                  name: parentComment.author.isAnonymous 
+                  name: parentComment.isAnonymous 
                     ? (currentUserId && parentComment.author.id === currentUserId 
                         ? `${parentComment.author.name} (${t('common.anonymous')})` 
                         : t('common.anonymous'))
@@ -377,7 +377,7 @@ export function ForumPostCommentCard({
                           title={stripHtmlTags(r.content)}
                         >
                           <span className="font-medium flex-shrink-0">
-                            {r.author.isAnonymous 
+                            {r.isAnonymous 
                               ? (currentUserId && r.author.id === currentUserId 
                                   ? `${r.author.name} (${t('common.anonymous')})` 
                                   : t('common.anonymous'))
