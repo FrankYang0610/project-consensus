@@ -360,10 +360,10 @@ export function ForumPostCommentCard({
               ) : (
                 <>
                   {isRepliesLoading && (
-                    <div className="text-xs text-muted-foreground">Loading…</div>
+                    <div className="text-xs text-muted-foreground">{t('comment.loadingReplies')}</div>
                   )}
                   {repliesError && (
-                    <div className="text-xs text-red-600">Failed to load replies</div>
+                    <div className="text-xs text-red-600">{t('comment.loadRepliesFailed')}</div>
                   )}
                   {!isRepliesLoading && !repliesError && replies && replies.length > 0 && (
                     <div className="space-y-1">

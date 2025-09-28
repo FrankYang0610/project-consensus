@@ -116,7 +116,10 @@
     "repliesTo": "回覆 {{name}} 的內容",
     "writePlaceholder": "寫評論...",
     "anonymous": "匿名評論",
-    "post": "發布"
+    "post": "發布",
+    "loadingReplies": "載入中…",
+    "loadingTargetReply": "載入目標回覆中…",
+    "loadRepliesFailed": "載入回覆失敗"
   },
   "common": {
     "note": "注意",

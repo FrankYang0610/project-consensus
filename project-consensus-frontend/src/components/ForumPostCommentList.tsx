@@ -332,7 +332,7 @@ export function ForumPostCommentList({
       )}
       {isJumpLoading && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-background border rounded-md px-3 py-1 text-xs text-muted-foreground shadow">
-          Loading target reply…
+          {t('comment.loadingTargetReply')}
         </div>
       )}
     </div>

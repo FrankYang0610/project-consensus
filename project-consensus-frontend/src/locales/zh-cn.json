@@ -116,7 +116,10 @@
     "repliesTo": "回复 {{name}} 的内容",
     "writePlaceholder": "写评论...",
     "anonymous": "匿名评论",
-    "post": "发布"
+    "post": "发布",
+    "loadingReplies": "加载中…",
+    "loadingTargetReply": "加载目标回复中…",
+    "loadRepliesFailed": "加载回复失败"
   },
   "common": {
     "note": "注意",

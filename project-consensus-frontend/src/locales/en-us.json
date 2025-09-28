@@ -116,7 +116,10 @@
     "repliesTo": "Replies to {{name}}",
     "writePlaceholder": "Write a comment…",
     "anonymous": "Comment anonymously",
-    "post": "Post"
+    "post": "Post",
+    "loadingReplies": "Loading…",
+    "loadingTargetReply": "Loading target reply…",
+    "loadRepliesFailed": "Failed to load replies"
   },
   "common": {
     "note": "Note",
