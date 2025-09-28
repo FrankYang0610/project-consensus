@@ -6,9 +6,8 @@ from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 
-from django.db.models import Count
 from django.db import transaction
-from django.db.models import F
+from django.db.models import F, Count, Q
 from .models import ForumPost, ForumPostComment, ForumPostLike
 from .serializers import ForumPostSerializer, ForumPostCommentSerializer
 
@@ -81,19 +80,19 @@ class ForumPostViewSet(viewsets.ModelViewSet):
 
 
 class ForumPostCommentViewSet(viewsets.ModelViewSet):
-    """CRUD endpoints for comments (filter by postId/parentId/mainCommentId).
+    """CRUD endpoints for comments (filter by postId/replyTo).
 
     - GET /api/forum/comments/?postId=<uuid>          filter by post
-    - GET /api/forum/comments/?parentId=<uuid>        filter by parent comment
-    - POST /api/forum/comments/                        create
+    - GET /api/forum/comments/?replyTo=<uuid>         filter by reply target (parent comment)
+    - POST /api/forum/comments/                       create
     - others same as standard REST actions
     """
 
-    queryset = ForumPostComment.objects.select_related("author", "post", "reply_to_user", "parent", "main_comment")
+    queryset = ForumPostComment.objects.select_related("author", "post", "reply_to")
     serializer_class = ForumPostCommentSerializer
     # Read-only for anonymous, write requires auth
     def get_permissions(self):  # type: ignore[override]
-        if self.action in ["list", "retrieve"]:
+        if self.action in ["list", "retrieve", "position"]:
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated()]
     pagination_class = DefaultPageNumberPagination
@@ -101,31 +100,83 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
     def get_queryset(self):  # type: ignore[override]
         qs = super().get_queryset()
         post_id = self.request.query_params.get("postId")
-        parent_id = self.request.query_params.get("parentId")
-        main_comment_id = self.request.query_params.get("mainCommentId")
+        reply_to_id = self.request.query_params.get("replyTo")
         if post_id:
             qs = qs.filter(post_id=post_id)
-        if parent_id:
-            qs = qs.filter(parent_id=parent_id)
-        if main_comment_id:
-            qs = qs.filter(main_comment_id=main_comment_id)
-        # Optional filter: only main comments (no parent)
-        is_main = self.request.query_params.get("isMain")
-        if is_main in {"1", "true", "True"}:
-            qs = qs.filter(parent__isnull=True)
-        # Annotate total number of replies under the same main thread, only for main comments
-        qs = qs.annotate(
-            replies_count_main=Count("all_replies", distinct=True),
-        )
-        # Consistent ordering: latest first
-        return qs.order_by("-created_at")
+        if reply_to_id:
+            qs = qs.filter(reply_to_id=reply_to_id)
+        # Consistent ordering: oldest first (ascending)
+        qs = qs.order_by("created_at", "id")
+        # Annotate direct replies count (exclude soft-deleted replies)
+        return qs.annotate(replies_count=Count("replies", filter=Q(replies__is_deleted=False)))
 
     def perform_create(self, serializer):  # type: ignore[override]
-        # Always set the author to current user; derive reply_to_user and main from parent if provided
-        parent: ForumPostComment | None = serializer.validated_data.get("parent")
-        reply_to_user = None
-        main_comment = None
-        if parent:
-            reply_to_user = parent.author
-            main_comment = parent if parent.parent_id is None else parent.main_comment
-        serializer.save(author=self.request.user, reply_to_user=reply_to_user, main_comment=main_comment)
+        # Always set the author to current user; no main thread tracking in flat model
+        serializer.save(author=self.request.user)
+
+    @action(detail=False, methods=["GET"], url_path="position", permission_classes=[permissions.AllowAny])
+    def position(self, request: Request):
+        """Compute the anchor position of a comment within its post feed.
+
+        Request query params:
+        - postId: UUID of the post
+        - commentId: UUID of the target comment
+        - page_size: optional page size used by the client (defaults to paginator default)
+
+        Returns JSON with the zero-based index, 1-based page, and convenience URLs for pages up to that anchor.
+        """
+        post_id = request.query_params.get("postId")
+        comment_id = request.query_params.get("commentId")
+        page_size_param = request.query_params.get("page_size")
+
+        if not post_id or not comment_id:
+            return Response(
+                {"detail": "postId and commentId are required"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            target = ForumPostComment.objects.only("id", "created_at", "post_id").get(pk=comment_id)
+        except ForumPostComment.DoesNotExist:
+            return Response({"detail": "Comment not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if str(target.post_id) != str(post_id):
+            return Response(
+                {"detail": "commentId does not belong to the given postId"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        base_qs = ForumPostComment.objects.filter(post_id=post_id)
+        # Count of items strictly before the target by ordering (created_at asc, id asc)
+        less_count = base_qs.filter(created_at__lt=target.created_at).count()
+        tie_count = base_qs.filter(created_at=target.created_at, id__lte=target.id).count()
+        index = max(less_count + tie_count - 1, 0)
+
+        total_count = base_qs.count()
+
+        # Determine page size
+        default_page_size = getattr(self.pagination_class, "page_size", 20) or 20
+        max_page_size = getattr(self.pagination_class, "max_page_size", 100) or 100
+        try:
+            page_size = int(page_size_param) if page_size_param else int(default_page_size)
+        except (TypeError, ValueError):
+            page_size = int(default_page_size)
+        page_size = max(1, min(page_size, int(max_page_size)))
+
+        page = index // page_size + 1
+        pages_before = max(page - 1, 0)
+
+        # Convenience URLs for pages 1..page (relative path)
+        page_urls = [
+            f"/api/forum/comments/?postId={post_id}&page={i}&page_size={page_size}"
+            for i in range(1, page + 1)
+        ]
+
+        payload = {
+            "index": index,
+            "page": page,
+            "pageSize": page_size,
+            "countBefore": index,
+            "pagesBefore": pages_before,
+            "totalCount": total_count,
+            "pageUrls": page_urls,
+        }
+        return Response(payload, status=status.HTTP_200_OK)

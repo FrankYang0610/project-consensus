@@ -26,7 +26,7 @@
 /* 用于：ClassicEditor 主编辑区域；控制高度、滚动、描边与配色
    Used in: ClassicEditor main editable; controls height, scrolling, border and colors */
 .container :global(.ck-editor__editable) {
-  min-height: 300px !important;
+  min-height: 150px !important;
   resize: vertical !important;
   overflow: auto !important;
   border: 1px solid var(--border) !important;

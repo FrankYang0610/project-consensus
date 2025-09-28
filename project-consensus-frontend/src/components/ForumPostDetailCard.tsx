@@ -61,7 +61,7 @@ export function ForumPostDetailCard({
 }: ForumPostDetailCardProps) {
   // i18n translation
   const { t, language } = useI18n();
-  const { isLoggedIn, openLoginModal } = useApp();
+  const { isLoggedIn, openLoginModal, user } = useApp();
 
   const [showDialog, setShowDialog] = React.useState(false);
   const [dialogMessage, setDialogMessage] = React.useState("");
@@ -119,6 +119,7 @@ export function ForumPostDetailCard({
   const handleAuthorClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (post.isAnonymous || post.author.id === 'anonymous') return;
     onAuthorClick?.(post.author.id);
   };
 
@@ -147,7 +148,14 @@ export function ForumPostDetailCard({
                 onClick={handleAuthorClick}
                 className="text-sm font-medium text-left hover:text-primary transition-colors"
               >
-                {post.author.name}
+                {post.author.isAnonymous 
+                  ? (user && post.author.id === user.id 
+                      ? `${post.author.name} (${t('common.anonymous')})` 
+                      : t('common.anonymous'))
+                  : post.author.name}
+                {user && post.author.id === user.id && (
+                  <span className="text-muted-foreground"> ({t('common.me')})</span>
+                )}
               </button>
               <ClientOnlyTime dateString={post.createdAt} />
             </div>

@@ -51,6 +51,7 @@ export interface ForumPostPreviewCardProps {
   onTranslate?: (postId: string) => void; // 翻译回调函数（可选） / Translate callback function (optional)
   onAuthorClick?: (authorId: string) => void; // 作者点击回调函数（可选） / Author click callback function (optional)
   className?: string; // 自定义CSS类名（可选） / Custom CSS class name (optional)
+  currentUserId?: string; // 当前用户ID（可选） / Current user ID (optional)
 }
 
 export function ForumPostPreviewCard({
@@ -60,6 +61,7 @@ export function ForumPostPreviewCard({
   onTranslate,
   onAuthorClick,
   className,
+  currentUserId,
 }: ForumPostPreviewCardProps) {
   // i18n translation
   const { t } = useI18n();
@@ -159,7 +161,14 @@ export function ForumPostPreviewCard({
                 onClick={handleAuthorClick}
                 className="text-sm font-medium text-left hover:text-primary transition-colors"
               >
-                {post.author.name}
+                {post.isAnonymous 
+                  ? (currentUserId && post.author.id === currentUserId 
+                      ? `${post.author.name} (${t('common.anonymous')})` 
+                      : t('common.anonymous'))
+                  : post.author.name}
+                {currentUserId && post.author.id === currentUserId && (
+                  <span className="text-muted-foreground"> ({t('common.me')})</span>
+                )}
               </button>
               <ClientOnlyTime dateString={post.createdAt} className="text-xs text-muted-foreground" />
             </div>
