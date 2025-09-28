@@ -155,6 +155,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // 会话由后端 cookie 维护 / Session is maintained by HttpOnly cookie
     // 仅在前端保存用户对象以更新 UI / Keep user in memory for UI
     setUser(userData);
+    // 登录后重新加载页面以确保状态一致 / Reload page to ensure consistent state
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
   };
 
   const logout = async () => {
@@ -167,6 +171,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       });
     } catch {}
     setUser(null);
+    // 退出登录后重新加载页面以确保状态一致 / Reload page to ensure consistent state
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
   };
 
   // 更新用户信息（本地存储 + 状态）/ Update user info (localStorage + state)

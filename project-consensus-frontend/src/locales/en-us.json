@@ -113,12 +113,17 @@
     "share": "Share",
     "copied": "Copied!",
     "copyText": "Copy text",
-    "repliesTo": "Replies to {{name}}"
+    "repliesTo": "Replies to {{name}}",
+    "writePlaceholder": "Write a comment…",
+    "anonymous": "Comment anonymously",
+    "post": "Post"
   },
   "common": {
     "note": "Note",
     "developmentNotice": "This site is under active development. UI and features may change frequently.",
-    "loadFailedRetry": "Load failed. Retry"
+    "loadFailedRetry": "Load failed. Retry",
+    "me": "Me",
+    "anonymous": "Anonymous"
   },
   "courses": {
     "topbar": {

@@ -18,6 +18,7 @@ export interface ForumPost {
   comments: number; // 评论数量 / Number of comments
   isLiked?: boolean; // 当前用户是否已点赞（可选） / Whether current user has liked (optional)
   language: string; // 帖子语言 / Post language
+  isAnonymous?: boolean; // 是否匿名发布 / Whether author is anonymous
 }
 
 /**
@@ -37,4 +38,6 @@ export interface ForumPostComment {
   postId: string; // 所属帖子ID / Post ID this comment belongs to
   isDeleted?: boolean; // 是否已删除 / Whether comment is deleted
   replies?: number; // 直接回复数量 / Count of direct replies
+  isAnonymous?: boolean; // 是否匿名评论 / Whether author is anonymous
+  canDelete?: boolean; // 当前用户是否可删除 / Whether current user can delete
 }

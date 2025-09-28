@@ -121,7 +121,7 @@ export function ForumPostCommentCard({
     }
   };
 
-  const canDelete = currentUserId && currentUserId.trim() && currentUserId === comment.author.id;
+  const canDelete = comment.canDelete === true;
 
   const toRelative = React.useCallback((url: string | null): string | null => {
     if (!url) return null;
@@ -212,7 +212,14 @@ export function ForumPostCommentCard({
         <div className="flex-1 min-w-0 overflow-hidden">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span className="font-medium text-sm text-foreground">
-              {comment.author.name}
+              {comment.author.isAnonymous 
+                ? (currentUserId && comment.author.id === currentUserId 
+                    ? `${comment.author.name} (${t('common.anonymous')})` 
+                    : t('common.anonymous'))
+                : comment.author.name}
+              {currentUserId && comment.author.id === currentUserId && (
+                <span className="text-muted-foreground"> ({t('common.me')})</span>
+              )}
             </span>
             <ClientOnlyTime dateString={comment.createdAt} className="text-xs text-muted-foreground" />
           </div>
@@ -226,7 +233,16 @@ export function ForumPostCommentCard({
               title={stripHtmlTags(parentComment.content)}
             >
               <span className="font-medium flex-shrink-0">
-                {t('comment.repliesTo', { name: parentComment.author.name })}:
+                {t('comment.repliesTo', { 
+                  name: parentComment.author.isAnonymous 
+                    ? (currentUserId && parentComment.author.id === currentUserId 
+                        ? `${parentComment.author.name} (${t('common.anonymous')})` 
+                        : t('common.anonymous'))
+                    : parentComment.author.name 
+                })}
+                {currentUserId && parentComment.author.id === currentUserId && (
+                  <span className="text-muted-foreground"> ({t('common.me')})</span>
+                )}:
               </span>
               <span className="min-w-0 truncate">
                 {stripHtmlTags(parentComment.content)}
@@ -361,7 +377,14 @@ export function ForumPostCommentCard({
                           title={stripHtmlTags(r.content)}
                         >
                           <span className="font-medium flex-shrink-0">
-                            {r.author.name}:
+                            {r.author.isAnonymous 
+                              ? (currentUserId && r.author.id === currentUserId 
+                                  ? `${r.author.name} (${t('common.anonymous')})` 
+                                  : t('common.anonymous'))
+                              : r.author.name}
+                            {currentUserId && r.author.id === currentUserId && (
+                              <span className="text-muted-foreground"> ({t('common.me')})</span>
+                            )}:
                           </span>
                           <span className="min-w-0 flex-1 truncate">
                             {truncateHtmlContent(r.content, 80)}

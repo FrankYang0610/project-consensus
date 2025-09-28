@@ -29,6 +29,7 @@ class ForumPost(models.Model):
     tags = models.JSONField(default=list, blank=True)
     language = models.CharField(max_length=50, default="")
     likes_count = models.PositiveIntegerField(default=0)
+    is_anonymous = models.BooleanField(default=False) # Whether the post should display the author as Anonymous on the client
 
     class Meta:
         ordering = ["-created_at"]
@@ -57,6 +58,7 @@ class ForumPostComment(models.Model):
     created_at = models.DateTimeField(default=timezone.now, db_index=True)
     is_deleted = models.BooleanField(default=False)
     likes_count = models.PositiveIntegerField(default=0)
+    is_anonymous = models.BooleanField(default=False)  # Whether the comment should display the author as Anonymous on the client
 
     class Meta:
         # Default to oldest-first for comments / 评论按时间正序（最早在前）

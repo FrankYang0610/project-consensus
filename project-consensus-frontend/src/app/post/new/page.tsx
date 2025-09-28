@@ -10,6 +10,8 @@ import { SiteNavigation } from "@/components/SiteNavigation";
 import { TagManager } from "@/components/TagManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { useI18n } from "@/hooks/useI18n";
 import { useRouter } from "next/navigation";
@@ -34,6 +36,7 @@ export default function NewForumPostPage() {
   const [title, setTitle] = React.useState("");
   const [content, setContent] = React.useState("");
   const [tags, setTags] = React.useState<string[]>([]);
+  const [isAnonymous, setIsAnonymous] = React.useState(false);
   
   // 表单状态管理 / Form state management
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -96,6 +99,7 @@ export default function NewForumPostPage() {
         content: content.trim(),
         tags: tags,
         language: "zh-hans",
+        isAnonymous,
       };
       const created = await apiPost<ForumPost>(`/api/forum/posts/`, payload);
       router.push(`/post/${created.id}`);
@@ -174,6 +178,12 @@ export default function NewForumPostPage() {
                   { /* NOTE: Images are embedded as Base64 for now. TODO: server upload. */}
                 </CardContent>
                 <CardFooter className="gap-3">
+                  <div className="flex items-center gap-2 mr-auto">
+                    <Checkbox id="anonymous" checked={isAnonymous} onCheckedChange={(v) => setIsAnonymous(Boolean(v))} />
+                    <Label htmlFor="anonymous" className="text-sm cursor-pointer select-none">
+                      {t("post.postAnonymously") || "Post anonymously"}
+                    </Label>
+                  </div>
                   <Button 
                     onClick={handleSubmit}
                     // 未登录时禁用提交按钮；登录后或加载完成才可用

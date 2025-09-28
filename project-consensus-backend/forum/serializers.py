@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
@@ -24,6 +25,14 @@ def _author_payload_for(user) -> dict:
         return {"id": str(user.pk), "name": user.get_username(), "avatar": None}
 
 
+def _generate_anonymous_id() -> str:
+    """Generate a unique anonymous ID for anonymous posts/comments.
+    
+    Uses UUID4 to ensure uniqueness across all anonymous content.
+    """
+    return f"anonymous_{uuid.uuid4().hex[:8]}"
+
+
 class ForumPostSerializer(serializers.ModelSerializer):
     """Serializer for forum posts.
 
@@ -39,6 +48,7 @@ class ForumPostSerializer(serializers.ModelSerializer):
     comments = serializers.SerializerMethodField()
     isLiked = serializers.SerializerMethodField()
     createdAt = serializers.DateTimeField(source="created_at", read_only=True)
+    isAnonymous = serializers.BooleanField(source="is_anonymous", required=False)
 
     class Meta:
         model = ForumPost
@@ -53,10 +63,30 @@ class ForumPostSerializer(serializers.ModelSerializer):
             "comments",
             "isLiked",
             "language",
+            "isAnonymous",
         ]
         read_only_fields = ["id", "createdAt", "author"]
 
     def get_author(self, obj: ForumPost) -> dict:
+        if getattr(obj, "is_anonymous", False):
+            # Check if current user is the author of this anonymous post
+            request = self.context.get("request")
+            user = getattr(request, "user", None)
+            if user is not None and getattr(user, "is_authenticated", False) and str(user.pk) == str(obj.author_id):
+                # Current user is the author of this anonymous post, show real author info with anonymous flag
+                real_author = _author_payload_for(obj.author)
+                return {
+                    **real_author,
+                    "isAnonymous": True
+                }
+            else:
+                # Mask author information when anonymous for other users
+                return {
+                    "id": _generate_anonymous_id(),
+                    "name": "Anonymous", 
+                    "avatar": None,
+                    "isAnonymous": True
+                }
         return _author_payload_for(obj.author)
 
     def get_comments(self, obj: ForumPost) -> int:
@@ -83,6 +113,8 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
     postId = serializers.UUIDField(source="post_id")
     isDeleted = serializers.BooleanField(source="is_deleted", read_only=True)
     replies = serializers.IntegerField(source="replies_count", read_only=True)
+    isAnonymous = serializers.BooleanField(source="is_anonymous", required=False)
+    canDelete = serializers.SerializerMethodField()
 
     class Meta:
         model = ForumPostComment
@@ -96,9 +128,37 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
             "replyTo",
             "postId",
             "replies",
+            "isAnonymous",
+            "canDelete",
         ]
         extra_kwargs = {}
         read_only_fields = ["id", "createdAt", "author", "isDeleted", "likes"]
 
     def get_author(self, obj: ForumPostComment) -> dict:
+        if getattr(obj, "is_anonymous", False):
+            # Check if current user is the author of this anonymous comment
+            request = self.context.get("request")
+            user = getattr(request, "user", None)
+            if user is not None and getattr(user, "is_authenticated", False) and str(user.pk) == str(obj.author_id):
+                # Current user is the author of this anonymous comment, show real author info with anonymous flag
+                real_author = _author_payload_for(obj.author)
+                return {
+                    **real_author,
+                    "isAnonymous": True
+                }
+            else:
+                # Mask author information when anonymous for other users
+                return {
+                    "id": _generate_anonymous_id(),
+                    "name": "Anonymous",
+                    "avatar": None,
+                    "isAnonymous": True
+                }
         return _author_payload_for(obj.author)
+
+    def get_canDelete(self, obj: ForumPostComment) -> bool:
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        if user is not None and getattr(user, "is_authenticated", False):
+            return str(user.pk) == str(obj.author_id)
+        return False

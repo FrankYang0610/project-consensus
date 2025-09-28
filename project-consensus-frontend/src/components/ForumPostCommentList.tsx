@@ -1,14 +1,21 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import { ForumPostComment } from "@/types/forum";
 import { ForumPostCommentCard as ForumPostCommentComponent } from "./ForumPostCommentCard";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Plus } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { MessageSquare, Plus, X } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
-import { apiGet } from "@/lib/utils";
+import { apiGet, cn } from "@/lib/utils";
 import { GetForumPostCommentPositionResponse, ListCommentsResponse } from "@/types/api";
 import { useApp } from "@/contexts/AppContext";
+import ForumPostCommentComposer from "@/components/ForumPostCommentComposer";
+
+// Use a stable component identity for the editor to avoid remounts on each render
+const RichTextEditor = dynamic(() => import("@/components/RichTextEditor"), { ssr: false });
 
 /**
  * 论坛帖子评论列表组件的属性接口
@@ -23,6 +30,15 @@ interface ForumPostCommentListProps {
   currentUserId?: string;
   postId: string;
   totalCount?: number;
+  // Composer controls
+  isComposerOpen?: boolean;
+  replyToId?: string;
+  composerValue?: string;
+  onComposerChange?: (html: string) => void;
+  composerIsAnonymous?: boolean;
+  onComposerAnonymousChange?: (checked: boolean) => void;
+  onSubmitComposer?: () => void;
+  onCancelComposer?: () => void;
 }
 
 /**
@@ -40,7 +56,15 @@ export function ForumPostCommentList({
   onAddComment,
   currentUserId,
   postId,
-  totalCount
+  totalCount,
+  isComposerOpen = false,
+  replyToId,
+  composerValue = "",
+  onComposerChange,
+  composerIsAnonymous = false,
+  onComposerAnonymousChange,
+  onSubmitComposer,
+  onCancelComposer
 }: ForumPostCommentListProps) {
   const { t } = useI18n();
   const { isLoggedIn, openLoginModal } = useApp();
@@ -189,6 +213,11 @@ export function ForumPostCommentList({
     return () => window.removeEventListener('pc:jump-to-comment', handler as EventListener);
   }, [loadUntilAndScroll]);
 
+  const isContentEmpty = React.useMemo(() => {
+    const content = (composerValue ?? "").trim();
+    return !content || content === '<p></p>' || content === '<p><br></p>';
+  }, [composerValue]);
+
   return (
     <div className="mt-6 px-4 sm:px-0">
       {/* 评论列表头部 / Comment list header */}
@@ -216,6 +245,24 @@ export function ForumPostCommentList({
         )}
       </div>
 
+      {/* 顶部评论写作区（当未指定回复对象时） / Top-level composer when not replying to a specific comment */}
+      {isComposerOpen && !replyToId && (
+        <ForumPostCommentComposer
+          anchorId="composer-top"
+          value={composerValue ?? ""}
+          onChange={(v: string) => onComposerChange?.(v)}
+          placeholder={t('comment.writePlaceholder') || 'Write a comment…'}
+          isAnonymous={!!composerIsAnonymous}
+          onAnonymousChange={(v) => onComposerAnonymousChange?.(Boolean(v))}
+          onSubmit={onSubmitComposer}
+          onCancel={onCancelComposer}
+          isSubmitDisabled={isContentEmpty}
+          closeAriaLabel={t('common.close') || 'Close'}
+          anonymousLabel={t('comment.anonymous') || 'Comment anonymously'}
+          postLabel={t('comment.post') || 'Post'}
+        />
+      )}
+
       {/* 评论内容区域 / Comment content area */}
       {comments.length === 0 ? (
         // 无评论时的空状态 / Empty state when no comments
@@ -230,20 +277,38 @@ export function ForumPostCommentList({
             const isReply = Boolean(comment.replyTo);
             const parentComment = isReply && comment.replyTo ? idToComment.current.get(comment.replyTo) : undefined;
             return (
-              <ForumPostCommentComponent
-                key={comment.id}
-                comment={comment}
-                onLike={onLike}
-                onReply={onReply}
-                onDelete={onDelete}
-                onShare={onShare}
-                currentUserId={currentUserId}
-                isReply={isReply}
-                parentComment={parentComment}
-                onClickParent={() => {
-                  if (comment.replyTo) scrollToComment(comment.replyTo);
-                }}
-              />
+              <React.Fragment key={comment.id}>
+                <ForumPostCommentComponent
+                  comment={comment}
+                  onLike={onLike}
+                  onReply={onReply}
+                  onDelete={onDelete}
+                  onShare={onShare}
+                  currentUserId={currentUserId}
+                  isReply={isReply}
+                  parentComment={parentComment}
+                  onClickParent={() => {
+                    if (comment.replyTo) scrollToComment(comment.replyTo);
+                  }}
+                />
+                {isComposerOpen && replyToId === comment.id && (
+                  <ForumPostCommentComposer
+                    anchorId={`composer-for-comment-${comment.id}`}
+                    isReply
+                    value={composerValue ?? ""}
+                    onChange={(v: string) => onComposerChange?.(v)}
+                    placeholder={t('comment.writePlaceholder') || 'Write a comment…'}
+                    isAnonymous={!!composerIsAnonymous}
+                    onAnonymousChange={(v) => onComposerAnonymousChange?.(Boolean(v))}
+                    onSubmit={onSubmitComposer}
+                    onCancel={onCancelComposer}
+                    isSubmitDisabled={isContentEmpty}
+                    closeAriaLabel={t('common.close') || 'Close'}
+                    anonymousLabel={t('comment.anonymous') || 'Comment anonymously'}
+                    postLabel={t('comment.post') || 'Post'}
+                  />
+                )}
+              </React.Fragment>
             );
           })}
 

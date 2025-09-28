@@ -39,6 +39,7 @@ class Migration(migrations.Migration):
                 ("tags", models.JSONField(blank=True, default=list)),
                 ("language", models.CharField(default="", max_length=50)),
                 ("likes_count", models.PositiveIntegerField(default=0)),
+                ("is_anonymous", models.BooleanField(default=False)),
                 (
                     "author",
                     models.ForeignKey(
@@ -75,6 +76,7 @@ class Migration(migrations.Migration):
                 ),
                 ("is_deleted", models.BooleanField(default=False)),
                 ("likes_count", models.PositiveIntegerField(default=0)),
+                ("is_anonymous", models.BooleanField(default=False)),
                 (
                     "author",
                     models.ForeignKey(

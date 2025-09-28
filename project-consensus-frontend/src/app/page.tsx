@@ -14,7 +14,7 @@ import { ForumPost } from "@/types";
 
 export default function HomePage() {
   const { t } = useI18n();
-  const { isLoggedIn } = useApp();
+  const { isLoggedIn, user } = useApp();
   const [posts, setPosts] = React.useState<ForumPost[]>([]);
   const loaderRef = React.useRef<HTMLDivElement | null>(null);
   const loadingRef = React.useRef(false);
@@ -129,7 +129,7 @@ export default function HomePage() {
           <div className="w-full p-6 pt-0">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto">
               {visiblePosts.map(post => (
-                <ForumPostPreviewCard key={post.id} post={post} onLike={handleLike} />
+                <ForumPostPreviewCard key={post.id} post={post} onLike={handleLike} currentUserId={user?.id} />
               ))}
             </div>
 

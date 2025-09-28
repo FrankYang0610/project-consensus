@@ -244,6 +244,7 @@ def seed_forum_data(apps, schema_editor):
             content=comment_data["content"],
             author=author,
             created_at=comment_data["created_at"],
+            is_anonymous=comment_data.get("is_anonymous", False),
         )
         main_comments.append(comment)
 
@@ -416,6 +417,7 @@ def seed_forum_data(apps, schema_editor):
             "author": "demo@connect.polyu.hk",
             "reply_to": main_comments[0],  # Replies to the first main comment
             "created_at": now - timezone.timedelta(hours=6),
+            "is_anonymous": True,
         },
         {
             "content": "[2] 确实，Rossini嘅序曲真係经典！我特别钟意里面嘅弦乐部分，层次感好丰富。",
@@ -428,6 +430,7 @@ def seed_forum_data(apps, schema_editor):
             "author": "demo@connect.polyu.hk",
             "reply_to": main_comments[0],  # Replies to the first main comment
             "created_at": now - timezone.timedelta(hours=4),
+            "is_anonymous": True,
         },
         {
             "content": "[4] 同意！Rossini嘅音乐真係好有感染力，每次听都觉得好振奋人心。",
@@ -440,6 +443,7 @@ def seed_forum_data(apps, schema_editor):
             "author": "demo@connect.polyu.hk",
             "reply_to": main_comments[0],  # Replies to the first main comment
             "created_at": now - timezone.timedelta(hours=2),
+            "is_anonymous": True,
         },
     ]
 
@@ -452,6 +456,7 @@ def seed_forum_data(apps, schema_editor):
             author=author,
             reply_to=reply_data["reply_to"],
             created_at=reply_data["created_at"],
+            is_anonymous=reply_data.get("is_anonymous", False),
         )
 
     # Create some nested replies (replies to replies)
@@ -528,6 +533,7 @@ def seed_forum_data(apps, schema_editor):
             author=author,
             reply_to=reply_to_comment,
             created_at=nested_data["created_at"],
+            is_anonymous=nested_data.get("is_anonymous", False),
         )
 
 
