@@ -137,7 +137,24 @@ class CourseSerializer(serializers.ModelSerializer):
             result.append(payload)
         return result
 
-    def validate_curriculum(self, value):  # lightweight structure validation
+    def validate_curriculum(self, value):
+        """
+        Validate the curriculum structure.
+
+        The curriculum must be a list of colleges, where each college is a dict with a "majors" key
+        containing a list of majors. Each major is a dict with a "semesters" key containing a list of semesters.
+        Each semester is a dict that may contain:
+            - "year": an integer
+            - "semester": one of "spring", "summer", or "fall"
+
+        Validation rules:
+        - The top-level value must be a list (or None/"", which is treated as empty).
+        - Each college must be a dict with a "majors" key (list).
+        - Each major must be a dict with a "semesters" key (list).
+        - Each semester must be a dict.
+        - If present, "year" must be an integer.
+        - If present, "semester" must be one of: "spring", "summer", "fall".
+        """
         if value in (None, ""):
             return []
         if not isinstance(value, list):
