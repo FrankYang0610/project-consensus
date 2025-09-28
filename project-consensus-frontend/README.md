@@ -125,10 +125,10 @@ project-consensus-frontend/
 │   │   ├── ClientOnlyTime.tsx                # Client-side time display
 │   │   │
 │   │   ├── # Course Components
-│   │   ├── CoursesPreviewCard.tsx            # Course preview cards for listings
-│   │   ├── CoursesDetailedCard.tsx           # Detailed course information cards
-│   │   ├── CoursesBackgroundCard.tsx         # Background cards for course sections
-│   │   ├── CoursesFilterBar.tsx              # Course filtering and sorting controls
+│   │   ├── CoursePreviewCard.tsx            # Course preview cards for listings
+│   │   ├── CourseDetailCard.tsx           # Detailed course information cards
+│   │   ├── CourseBackgroundCard.tsx         # Background cards for course sections
+│   │   ├── CourseFilterBar.tsx              # Course filtering and sorting controls
 │   │   └── CourseReviewCard.tsx              # Individual course review cards
 │   │   │
 │   │   ├── # Forum Components

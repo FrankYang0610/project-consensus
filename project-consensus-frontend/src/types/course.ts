@@ -12,9 +12,33 @@ export type SemesterKey = "spring" | "summer" | "fall";
  * 教师信息 / Teacher information
  */
 export interface TeacherInfo {
+  id: string; // Teacher UUID
   name: string;
   avatarUrl?: string;
-  homepageUrl?: string;
+  // Note: teacher homepage URL removed; we navigate by UUID to internal profile page
+}
+
+// Curriculum types (Phase 1 JSON field)
+export type CurriculumYearLevel = 'y1' | 'y2' | 'y3' | 'y4' | 'y5';
+
+export interface CurriculumSemester {
+  id: string;
+  year: number;
+  semester: SemesterKey;
+  url: string;
+  yearLevel?: CurriculumYearLevel;
+}
+
+export interface CurriculumMajor {
+  id: string;
+  name: string;
+  semesters: CurriculumSemester[];
+}
+
+export interface CurriculumCollege {
+  id: string;
+  name: string;
+  majors: CurriculumMajor[];
 }
 
 /**
@@ -40,8 +64,8 @@ export interface OtherTeacherCourse {
  * 课程评价信息 / Course review information
  */
 export interface CourseReview {
-  id: string; // 评价唯一标识符 / Review unique identifier
-  subjectId: string; // 课程ID / Course ID
+  id: string; // 评价唯一标识符（UUID） / Review unique identifier (UUID)
+  subjectId: string; // 课程ID（后端为 UUID 字符串） / Course ID (UUID string)
   author: {
     id: string; // 作者ID / Author ID
     name: string; // 作者姓名 / Author name  
@@ -70,7 +94,7 @@ export interface CourseReview {
  * 课程基础信息 / Course basic information
  */
 export interface Course {
-  subjectId: string;
+  subjectId: string; // 后端为 UUID 字符串 / Backend UUID string
   subjectCode: string;
   title: string;
   term: {
@@ -93,9 +117,15 @@ export interface Course {
     grading: 'lenient' | 'balanced' | 'strict';
     gain: 'low' | 'decent' | 'high';
   };
-  teachers: TeacherInfo[];
+  // Backend should return teachers with both id and name for display and routing
+  // Note: transitional `teacherIds` has been removed; use `teachers[].id` instead
+  teachers?: TeacherInfo[];
   department?: string;
   lastUpdated?: string | Date;
+  /**
+   * AI generated course summary text. When empty or missing, UI should show a fallback.
+   */
+  aiSummary?: string;
   // Course metadata
   selectionCategory?: string;
   teachingType?: string;
@@ -107,6 +137,8 @@ export interface Course {
   syllabusUrl?: string;
   // Other teachers teaching the same course
   otherTeacherCourses?: OtherTeacherCourse[];
+  // Curriculum colleges/majors/semesters
+  curriculum?: CurriculumCollege[];
 }
 
 /**

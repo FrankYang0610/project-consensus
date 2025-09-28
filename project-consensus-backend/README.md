@@ -12,6 +12,54 @@ Django + DRF + PostgreSQL 17 backend template.
 
 ---
 
+## API: Teachers
+
+Endpoints exposed by the `teachers` app (aligned to frontend types):
+
+- `GET /api/teachers/` — list teachers (search by `?q=...` over name/department).
+- `GET /api/teachers/{id}/` — teacher detail.
+- `GET /api/teachers/{id}/courses/` — courses taught by the teacher (returns `{ subjectId, subjectCode, title }`).
+
+Notes:
+- The `courses` API now uses an explicit M2M relation to `teachers.Teacher` and returns minimal teacher refs for each course as `[{ id, name }]`. Use `/api/teachers/{id}/` to fetch full teacher profiles.
+
+---
+
+## API: Courses
+
+Endpoints exposed by the `courses` app:
+
+- `GET /api/courses/` — list courses (search by `subject_code`, `title`, `department`; filters `subjectCode`, `department`, `teacherId`).
+- `GET /api/courses/{subjectId}/` — course detail (lookup by `subject_id`).
+- `GET|POST /api/courses/{subjectId}/reviews/` — list/create reviews for the course.
+
+Response fields align to frontend camelCase. Notable fields:
+
+- `teachers`: `[{ id, name, avatarUrl? }]` (minimal teacher refs)
+- `terms`: list of `{ year, semester }` with `semester ∈ {spring, summer, fall}`
+- `otherTeacherCourses`: same subjectCode taught by other teachers, summarized
+- `curriculum`: curriculum tree describing colleges → majors → semesters
+  - Example shape:
+    ```json
+    [
+      {
+        "id": "eng",
+        "name": "Faculty of Engineering",
+        "majors": [
+          {
+            "id": "cs",
+            "name": "Computer Science",
+            "semesters": [
+              { "id": "cs-2024-fall", "year": 2024, "semester": "fall", "url": "/programs/eng/cs/2024-fall", "yearLevel": "y3" }
+            ]
+          }
+        ]
+      }
+    ]
+    ```
+
+---
+
 ## Quick Start (macOS)
 
 For macOS. Follow in order for first-time setup.
