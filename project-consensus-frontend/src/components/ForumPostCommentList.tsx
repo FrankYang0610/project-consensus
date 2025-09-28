@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { MessageSquare, Plus } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { apiGet } from "@/lib/utils";
-import { ListCommentsResponse } from "@/types/api";
+import { GetForumPostCommentPositionResponse, ListCommentsResponse } from "@/types/api";
 import { useApp } from "@/contexts/AppContext";
 
 /**
@@ -52,6 +52,7 @@ export function ForumPostCommentList({
   const [comments, setComments] = React.useState<ForumPostComment[]>([]);
   const [nextUrl, setNextUrl] = React.useState<string | null>(`/api/forum/comments/?postId=${postId}&page=1&page_size=20`);
   const [loadError, setLoadError] = React.useState(false);
+  const [isJumpLoading, setIsJumpLoading] = React.useState(false);
 
   // Reset when postId changes
   React.useEffect(() => {
@@ -68,7 +69,7 @@ export function ForumPostCommentList({
         const existing = new Set(prev.map(c => c.id));
         const deduped = data.results.filter(c => !existing.has(c.id));
         const merged = [...prev, ...deduped];
-        // 保险：按时间升序确保顺序稳定 / ensure chronological ascending order
+        // 按时间升序确保顺序稳定 / ensure chronological ascending order
         return merged.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
       });
       setNextUrl(data.next ? new URL(data.next).pathname + new URL(data.next).search : null);
@@ -80,6 +81,64 @@ export function ForumPostCommentList({
       loadingRef.current = false;
     }
   }, [nextUrl]);
+
+  // 平滑滚动到指定评论位置 / Smooth scroll to a comment by id
+  const scrollToComment = React.useCallback((targetId: string) => {
+    console.log('Attempting to scroll to comment:', targetId);
+    const el = document.getElementById(`comment-${targetId}`);
+    console.log('Found element:', el);
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      const absoluteTop = rect.top + window.pageYOffset;
+      const targetTop = Math.max(absoluteTop - (window.innerHeight / 2 - rect.height / 2), 0);
+      console.log('Scrolling to position:', targetTop);
+      window.scrollTo({ top: targetTop, behavior: 'smooth' });
+      // brief highlight
+      el.classList.add('ring-2', 'ring-primary/40');
+      setTimeout(() => el.classList.remove('ring-2', 'ring-primary/40'), 2000);
+    } else {
+      console.warn('Comment element not found:', `comment-${targetId}`);
+    }
+  }, []);
+
+  // Public method: load until a target comment is available, then scroll to it
+  const loadUntilAndScroll = React.useCallback(
+    async (targetCommentId: string) => {
+      if (!targetCommentId) return;
+      // Fast path: if already loaded, just scroll
+      if (idToComment.current?.has(targetCommentId)) { scrollToComment(targetCommentId); return; }
+      setIsJumpLoading(true);
+      try {
+        // Ask backend for anchor page and URLs
+        const position = await apiGet<GetForumPostCommentPositionResponse>(
+          `/api/forum/comments/position/?postId=${postId}&commentId=${targetCommentId}&page_size=20`
+        );
+        // Load all pages up to the anchor page sequentially (each page depends on the previous nextUrl state)
+        for (const url of position.pageUrls) {
+          // If we already have moved past or have the comment, break early
+          if (idToComment.current?.has(targetCommentId)) break;
+          const data = await apiGet<ListCommentsResponse>(url);
+          setComments(prev => {
+            const existing = new Set(prev.map(c => c.id));
+            const deduped = data.results.filter(c => !existing.has(c.id));
+            const merged = [...prev, ...deduped];
+            return merged.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+          });
+        }
+        // Ensure map is up to date and then scroll
+        // Use requestAnimationFrame to ensure DOM is updated
+        requestAnimationFrame(() => {
+          setTimeout(() => scrollToComment(targetCommentId), 100);
+        });
+      } catch (e) {
+        console.error(e);
+        setLoadError(true);
+      } finally {
+        setIsJumpLoading(false);
+      }
+    },
+    [postId, scrollToComment]
+  );
 
   // 初次加载评论 / Initial load of comments
   React.useEffect(() => {
@@ -111,27 +170,24 @@ export function ForumPostCommentList({
   }, [hasMore, fetchMore]);
 
   // 用于快速查找 parent 评论 / Map for quick parent lookup
-  const idToComment = React.useMemo(() => {
+  const idToComment = React.useRef<Map<string, ForumPostComment>>(new Map());
+  React.useEffect(() => {
     const map = new Map<string, ForumPostComment>();
-    for (const c of comments) {
-      map.set(c.id, c);
-    }
-    return map;
+    for (const c of comments) map.set(c.id, c);
+    idToComment.current = map;
   }, [comments]);
 
-  // 平滑滚动到指定评论位置 / Smooth scroll to a comment by id
-  const scrollToComment = React.useCallback((targetId: string) => {
-    const el = document.getElementById(`comment-${targetId}`);
-    if (el) {
-      const rect = el.getBoundingClientRect();
-      const absoluteTop = rect.top + window.pageYOffset;
-      const targetTop = Math.max(absoluteTop - (window.innerHeight / 2 - rect.height / 2), 0);
-      window.scrollTo({ top: targetTop, behavior: 'smooth' });
-      // brief highlight
-      el.classList.add('ring-2', 'ring-primary/40');
-      setTimeout(() => el.classList.remove('ring-2', 'ring-primary/40'), 2000);
-    }
-  }, []);
+  // Expose method via custom event for child cards to request a jump
+  React.useEffect(() => {
+    const handler = (e: Event) => {
+      const custom = e as CustomEvent<{ id: string }>;
+      if (custom.detail?.id) {
+        loadUntilAndScroll(custom.detail.id);
+      }
+    };
+    window.addEventListener('pc:jump-to-comment', handler as EventListener);
+    return () => window.removeEventListener('pc:jump-to-comment', handler as EventListener);
+  }, [loadUntilAndScroll]);
 
   return (
     <div className="mt-6 px-4 sm:px-0">
@@ -172,7 +228,7 @@ export function ForumPostCommentList({
           {/* 遍历显示扁平评论 / Iterate through and display flat comments */}
           {comments.map((comment) => {
             const isReply = Boolean(comment.replyTo);
-            const parentComment = isReply && comment.replyTo ? idToComment.get(comment.replyTo) : undefined;
+            const parentComment = isReply && comment.replyTo ? idToComment.current.get(comment.replyTo) : undefined;
             return (
               <ForumPostCommentComponent
                 key={comment.id}
@@ -208,6 +264,11 @@ export function ForumPostCommentList({
         >
           {t('common.loadFailedRetry')}
         </Button>
+      )}
+      {isJumpLoading && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-background border rounded-md px-3 py-1 text-xs text-muted-foreground shadow">
+          Loading target reply…
+        </div>
       )}
     </div>
   );

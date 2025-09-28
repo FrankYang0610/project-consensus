@@ -15,7 +15,9 @@ import { useI18n } from "@/hooks/useI18n";
 import { sanitizeHtml } from "@/lib/html-utils";
 import { cn } from "@/lib/utils";
 import type { ForumPostComment } from "@/types/forum";
-import { stripHtmlTags } from "@/lib/html-utils";
+import { stripHtmlTags, truncateHtmlContent } from "@/lib/html-utils";
+import { apiGet } from "@/lib/utils";
+import type { ListCommentsResponse } from "@/types/api";
 
 import ClientOnlyTime from "./ClientOnlyTime";
 import { useApp } from "@/contexts/AppContext";
@@ -49,6 +51,13 @@ export function ForumPostCommentCard({
   const [isTranslated, setIsTranslated] = React.useState(false);
   const [isCopySuccess, setIsCopySuccess] = React.useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
+  const [isRepliesOpen, setIsRepliesOpen] = React.useState(false);
+  const [isRepliesLoading, setIsRepliesLoading] = React.useState(false);
+  const [repliesError, setRepliesError] = React.useState<string | null>(null);
+  const [replies, setReplies] = React.useState<ForumPostComment[] | null>(null);
+  const [repliesNextUrl, setRepliesNextUrl] = React.useState<string | null>(null);
+
+  const repliesCount = (typeof comment.replies === 'number' ? comment.replies : undefined) ?? (replies?.length ?? 0);
 
 
   const handleLike = () => {
@@ -114,6 +123,56 @@ export function ForumPostCommentCard({
 
   const canDelete = currentUserId && currentUserId.trim() && currentUserId === comment.author.id;
 
+  const toRelative = React.useCallback((url: string | null): string | null => {
+    if (!url) return null;
+    try {
+      const u = new URL(url);
+      return u.pathname + u.search;
+    } catch {
+      return url;
+    }
+  }, []);
+
+  const fetchRepliesIfNeeded = React.useCallback(async () => {
+    if (replies !== null || isRepliesLoading) return;
+    setIsRepliesLoading(true);
+    setRepliesError(null);
+    try {
+      const data = await apiGet<ListCommentsResponse>(`/api/forum/comments/?replyTo=${comment.id}&page=1&page_size=5`);
+      setReplies(data.results);
+      setRepliesNextUrl(toRelative(data.next));
+    } catch (e) {
+      console.error(e);
+      setRepliesError('failed');
+    } finally {
+      setIsRepliesLoading(false);
+    }
+  }, [comment.id, replies, isRepliesLoading, toRelative]);
+
+  const loadRemainingReplies = React.useCallback(async () => {
+    if (!repliesNextUrl || isRepliesLoading) return;
+    setIsRepliesLoading(true);
+    setRepliesError(null);
+    try {
+      let url: string | null = repliesNextUrl;
+      while (url) {
+        const data = await apiGet<ListCommentsResponse>(url);
+        setReplies(prev => {
+          const existing = new Set((prev ?? []).map(c => c.id));
+          const deduped = data.results.filter(c => !existing.has(c.id));
+          return [ ...(prev ?? []), ...deduped ];
+        });
+        url = toRelative(data.next);
+      }
+      setRepliesNextUrl(null);
+    } catch (e) {
+      console.error(e);
+      setRepliesError('failed');
+    } finally {
+      setIsRepliesLoading(false);
+    }
+  }, [repliesNextUrl, isRepliesLoading, toRelative]);
+
   if (comment.isDeleted) {
     return (
       <div className={cn(
@@ -164,6 +223,7 @@ export function ForumPostCommentCard({
               role="button"
               onClick={onClickParent}
               className="mb-2 text-xs text-muted-foreground hover:text-foreground/80 cursor-pointer flex items-center gap-1 whitespace-nowrap overflow-hidden"
+              title={stripHtmlTags(parentComment.content)}
             >
               <span className="font-medium flex-shrink-0">
                 {t('comment.repliesTo', { name: parentComment.author.name })}:
@@ -185,6 +245,7 @@ export function ForumPostCommentCard({
 
           {/* 操作按钮 / Actions */}
           <div className="flex items-center gap-1 flex-wrap">
+
             <Button
               variant="ghost"
               size="sm"
@@ -266,6 +327,74 @@ export function ForumPostCommentCard({
               </Button>
             )}
           </div>
+
+          {/* 展开回复 & 预览回复项放在操作按钮下方 / Dropdown menu for replies & preview replies are placed below the actions */}
+          {repliesCount > 0 && (
+            <div className="mt-2 space-y-1">
+              {!isRepliesOpen ? (
+                <button
+                  className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+                  onClick={() => {
+                    setIsRepliesOpen(true);
+                    fetchRepliesIfNeeded();
+                  }}
+                >
+                  {t('comment.showReplies', { count: repliesCount })}
+                </button>
+              ) : (
+                <>
+                  {isRepliesLoading && (
+                    <div className="text-xs text-muted-foreground">Loading…</div>
+                  )}
+                  {repliesError && (
+                    <div className="text-xs text-red-600">Failed to load replies</div>
+                  )}
+                  {!isRepliesLoading && !repliesError && replies && replies.length > 0 && (
+                    <div className="space-y-1">
+                      {replies.map((r) => (
+                        <button
+                          key={r.id}
+                          className="flex items-baseline gap-1 w-full text-left text-xs text-muted-foreground hover:text-foreground"
+                          onClick={() => {
+                            window.dispatchEvent(new CustomEvent('pc:jump-to-comment', { detail: { id: r.id } }));
+                          }}
+                          title={stripHtmlTags(r.content)}
+                        >
+                          <span className="font-medium flex-shrink-0">
+                            {r.author.name}:
+                          </span>
+                          <span className="min-w-0 flex-1 truncate">
+                            {truncateHtmlContent(r.content, 80)}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-3 mt-2">
+                    {(() => {
+                      const loaded = replies?.length ?? 0;
+                      const total = typeof comment.replies === 'number' ? comment.replies : 0;
+                      const remaining = Math.max(total - loaded, 0);
+                      return remaining > 0 && repliesNextUrl ? (
+                        <button
+                          className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+                          onClick={loadRemainingReplies}
+                        >
+                          {t('comment.loadRemaining', { count: remaining })}
+                        </button>
+                      ) : null;
+                    })()}
+                    <button
+                      className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+                      onClick={() => setIsRepliesOpen(false)}
+                    >
+                      {t('comment.hideReplies')}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

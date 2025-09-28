@@ -82,6 +82,7 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
     replyTo = serializers.UUIDField(source="reply_to_id", allow_null=True, required=False)
     postId = serializers.UUIDField(source="post_id")
     isDeleted = serializers.BooleanField(source="is_deleted", read_only=True)
+    replies = serializers.IntegerField(source="replies_count", read_only=True)
 
     class Meta:
         model = ForumPostComment
@@ -94,6 +95,7 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
             "isDeleted",
             "replyTo",
             "postId",
+            "replies",
         ]
         extra_kwargs = {}
         read_only_fields = ["id", "createdAt", "author", "isDeleted", "likes"]

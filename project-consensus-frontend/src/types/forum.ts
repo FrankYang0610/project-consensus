@@ -36,4 +36,5 @@ export interface ForumPostComment {
   replyTo?: string; // 被回复的评论ID：直接回复帖子时无此字段 / The comment ID being replied to; undefined when replying to the post
   postId: string; // 所属帖子ID / Post ID this comment belongs to
   isDeleted?: boolean; // 是否已删除 / Whether comment is deleted
+  replies?: number; // 直接回复数量 / Count of direct replies
 }
