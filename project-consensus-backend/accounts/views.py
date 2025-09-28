@@ -7,13 +7,13 @@ from django.contrib.auth import authenticate, get_user_model, login as django_lo
 from django.conf import settings
 import logging
 from django.db import transaction
-from django.utils import timezone
+from django.core.cache import cache
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from .models import EmailVerification, Profile
+from .models import Profile
 from .serializers import SendCodeSerializer, RegisterSerializer, LoginSerializer
 
 
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 @api_view(["POST"])
 def send_verification_code(request):
     """
-    Create an EmailVerification record and (in real life) send email.
+    Generate a verification code and store it in cache (TTL), then (in real life) send email.
 
     Body: { "email": string }
     """
@@ -32,14 +32,17 @@ def send_verification_code(request):
     serializer.is_valid(raise_exception=True)
     email = serializer.validated_data["email"].lower()
 
-    # throttle by allowing only one active code per 60s window per email
-    one_minute_ago = timezone.now() - timedelta(seconds=60)
-    recent_exists = EmailVerification.objects.filter(email=email, created_at__gte=one_minute_ago, is_used=False).exists()
-    if recent_exists:
+    # throttle: allow only one request per configured window per email
+    request_interval = getattr(settings, "AUTH_VERIFICATION_REQUEST_INTERVAL_SECONDS", 60)
+    throttle_key = f"accounts:verify:throttle:{email}"
+    if cache.get(throttle_key):
         return Response({"message": "Please wait before requesting another code."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
 
     code = f"{secrets.randbelow(999999):06d}"  # 6-digit numeric
-    EmailVerification.objects.create(email=email, code=code)
+    ttl_seconds = getattr(settings, "AUTH_VERIFICATION_CODE_TTL_SECONDS", 60 * 15)
+    code_key = f"accounts:verify:code:{email}"
+    cache.set(code_key, code, timeout=ttl_seconds)
+    cache.set(throttle_key, True, timeout=request_interval)
 
     logger.warning("[PLEASE REMOVE THIS WHEN DONE WITH DEVELOPMENT] Email verification code for %s: %s", email, code)
 
@@ -62,15 +65,10 @@ def register(request):
     code = serializer.validated_data["verification_code"]
     password = serializer.validated_data["password"]
 
-    # find a recent unused code within 15 minutes
-    ttl_cutoff = timezone.now() - timedelta(minutes=15)
-    verification = (
-        EmailVerification.objects.select_for_update()
-        .filter(email=email, code=code, is_used=False, created_at__gte=ttl_cutoff)
-        .order_by("-created_at")
-        .first()
-    )
-    if not verification:
+    # Validate code from cache (must match and be within TTL)
+    code_key = f"accounts:verify:code:{email}"
+    expected_code = cache.get(code_key)
+    if not expected_code or expected_code != code:
         return Response({"message": "Invalid or expired verification code."}, status=status.HTTP_400_BAD_REQUEST)
 
     if User.objects.filter(email=email).exists():
@@ -79,8 +77,8 @@ def register(request):
     user = User.objects.create_user(username=email, email=email, password=password)
     Profile.objects.create(user=user, display_name=nickname)
 
-    verification.is_used = True
-    verification.save(update_fields=["is_used"])
+    # Invalidate the code to prevent reuse
+    cache.delete(code_key)
 
     # Log the user in to establish a server-side session
     django_login(request, user)

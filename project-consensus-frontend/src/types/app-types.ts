@@ -28,6 +28,11 @@ export interface AppContextType {
   logout: () => void; // 登出函数 / Logout function
   updateUser?: (updates: Partial<User>) => void; // 更新当前用户信息（可选，前端本地） / Update current user info (optional, frontend-local)
 
+  // 登录弹窗控制 / Login modal control
+  loginModalOpen: boolean; // 登录弹窗是否打开 / Whether login modal is open
+  openLoginModal: () => void; // 打开登录弹窗 / Open login modal
+  closeLoginModal: () => void; // 关闭登录弹窗 / Close login modal
+
   // 主题设置 / Theme settings
   theme: ThemeMode; // 主题模式 / Theme mode
   setTheme: (theme: ThemeMode) => void; // 设置主题函数 / Set theme function

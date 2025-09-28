@@ -15,8 +15,12 @@ import { useI18n } from "@/hooks/useI18n";
 import { sanitizeHtml } from "@/lib/html-utils";
 import { cn } from "@/lib/utils";
 import type { ForumPostComment } from "@/types/forum";
+import { stripHtmlTags, truncateHtmlContent } from "@/lib/html-utils";
+import { apiGet } from "@/lib/utils";
+import type { ListCommentsResponse } from "@/types/api";
 
 import ClientOnlyTime from "./ClientOnlyTime";
+import { useApp } from "@/contexts/AppContext";
 
 interface ForumPostCommentCardProps {
   comment: ForumPostComment;
@@ -24,8 +28,10 @@ interface ForumPostCommentCardProps {
   onReply?: (commentId: string) => void;
   onDelete?: (commentId: string) => void;
   onShare?: (commentId: string) => void;
-  isSubComment?: boolean;
+  isReply?: boolean;
   currentUserId?: string;
+  parentComment?: ForumPostComment;
+  onClickParent?: () => void;
 }
 
 export function ForumPostCommentCard({
@@ -34,29 +40,51 @@ export function ForumPostCommentCard({
   onReply,
   onDelete,
   onShare,
-  isSubComment = false,
-  currentUserId
+  isReply = false,
+  currentUserId,
+  parentComment,
+  onClickParent
 }: ForumPostCommentCardProps) {
   const { t, language } = useI18n();
+  const { isLoggedIn, openLoginModal } = useApp();
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [isTranslated, setIsTranslated] = React.useState(false);
   const [isCopySuccess, setIsCopySuccess] = React.useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
+  const [isRepliesOpen, setIsRepliesOpen] = React.useState(false);
+  const [isRepliesLoading, setIsRepliesLoading] = React.useState(false);
+  const [repliesError, setRepliesError] = React.useState<string | null>(null);
+  const [replies, setReplies] = React.useState<ForumPostComment[] | null>(null);
+  const [repliesNextUrl, setRepliesNextUrl] = React.useState<string | null>(null);
+
+  const repliesCount = (typeof comment.replies === 'number' ? comment.replies : undefined) ?? (replies?.length ?? 0);
 
 
   const handleLike = () => {
+    if (!isLoggedIn) {
+      openLoginModal();
+      return;
+    }
     if (onLike) {
       onLike(comment.id);
     }
   };
 
   const handleReply = () => {
+    if (!isLoggedIn) {
+      openLoginModal();
+      return;
+    }
     if (onReply) {
       onReply(comment.id);
     }
   };
 
   const handleDelete = async () => {
+    if (!isLoggedIn) {
+      openLoginModal();
+      return;
+    }
     if (onDelete && !isDeleting) {
       setIsDeleting(true);
       try {
@@ -93,13 +121,62 @@ export function ForumPostCommentCard({
     }
   };
 
-  const canDelete = currentUserId && currentUserId.trim() && currentUserId === comment.author.id;
+  const canDelete = comment.canDelete === true;
+
+  const toRelative = React.useCallback((url: string | null): string | null => {
+    if (!url) return null;
+    try {
+      const u = new URL(url);
+      return u.pathname + u.search;
+    } catch {
+      return url;
+    }
+  }, []);
+
+  const fetchRepliesIfNeeded = React.useCallback(async () => {
+    if (replies !== null || isRepliesLoading) return;
+    setIsRepliesLoading(true);
+    setRepliesError(null);
+    try {
+      const data = await apiGet<ListCommentsResponse>(`/api/forum/comments/?replyTo=${comment.id}&page=1&page_size=5`);
+      setReplies(data.results);
+      setRepliesNextUrl(toRelative(data.next));
+    } catch (e) {
+      console.error(e);
+      setRepliesError('failed');
+    } finally {
+      setIsRepliesLoading(false);
+    }
+  }, [comment.id, replies, isRepliesLoading, toRelative]);
+
+  const loadRemainingReplies = React.useCallback(async () => {
+    if (!repliesNextUrl || isRepliesLoading) return;
+    setIsRepliesLoading(true);
+    setRepliesError(null);
+    try {
+      let url: string | null = repliesNextUrl;
+      while (url) {
+        const data = await apiGet<ListCommentsResponse>(url);
+        setReplies(prev => {
+          const existing = new Set((prev ?? []).map(c => c.id));
+          const deduped = data.results.filter(c => !existing.has(c.id));
+          return [ ...(prev ?? []), ...deduped ];
+        });
+        url = toRelative(data.next);
+      }
+      setRepliesNextUrl(null);
+    } catch (e) {
+      console.error(e);
+      setRepliesError('failed');
+    } finally {
+      setIsRepliesLoading(false);
+    }
+  }, [repliesNextUrl, isRepliesLoading, toRelative]);
 
   if (comment.isDeleted) {
     return (
       <div className={cn(
-        "text-muted-foreground text-sm italic py-2",
-        isSubComment && "ml-8"
+        "text-muted-foreground text-sm italic py-2"
       )}>
         {t('comment.deleted')}
       </div>
@@ -107,10 +184,12 @@ export function ForumPostCommentCard({
   }
 
   return (
-    <div className={cn(
-      "py-2",
-      isSubComment && "ml-2 sm:ml-6 border-l-2 border-muted/50 pl-2 sm:pl-3"
-    )}>
+    <div
+      id={`comment-${comment.id}`}
+      className={cn(
+        "py-2"
+      )}
+    >
       <div className="flex items-start gap-3">
         {/* 头像 / Avatar */}
         <div className="flex-shrink-0">
@@ -133,15 +212,43 @@ export function ForumPostCommentCard({
         <div className="flex-1 min-w-0 overflow-hidden">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span className="font-medium text-sm text-foreground">
-              {comment.author.name}
+              {comment.author.isAnonymous 
+                ? (currentUserId && comment.author.id === currentUserId 
+                    ? `${comment.author.name} (${t('common.anonymous')})` 
+                    : t('common.anonymous'))
+                : comment.author.name}
+              {currentUserId && comment.author.id === currentUserId && (
+                <span className="text-muted-foreground"> ({t('common.me')})</span>
+              )}
             </span>
-            {comment.replyToUser && (
-              <span className="text-xs text-muted-foreground">
-                {t('comment.replyTo')} {comment.replyToUser.name}
-              </span>
-            )}
             <ClientOnlyTime dateString={comment.createdAt} className="text-xs text-muted-foreground" />
           </div>
+
+          {/* Parent snippet under meta */}
+          {isReply && parentComment && (
+            <div
+              role="button"
+              onClick={onClickParent}
+              className="mb-2 text-xs text-muted-foreground hover:text-foreground/80 cursor-pointer flex items-center gap-1 whitespace-nowrap overflow-hidden"
+              title={stripHtmlTags(parentComment.content)}
+            >
+              <span className="font-medium flex-shrink-0">
+                {t('comment.repliesTo', { 
+                  name: parentComment.author.isAnonymous 
+                    ? (currentUserId && parentComment.author.id === currentUserId 
+                        ? `${parentComment.author.name} (${t('common.anonymous')})` 
+                        : t('common.anonymous'))
+                    : parentComment.author.name 
+                })}
+                {currentUserId && parentComment.author.id === currentUserId && (
+                  <span className="text-muted-foreground"> ({t('common.me')})</span>
+                )}:
+              </span>
+              <span className="min-w-0 truncate">
+                {stripHtmlTags(parentComment.content)}
+              </span>
+            </div>
+          )}
 
           <div
             className="prose prose-zinc dark:prose-invert max-w-none text-sm leading-relaxed mb-2 break-words overflow-wrap-anywhere"
@@ -154,6 +261,7 @@ export function ForumPostCommentCard({
 
           {/* 操作按钮 / Actions */}
           <div className="flex items-center gap-1 flex-wrap">
+
             <Button
               variant="ghost"
               size="sm"
@@ -235,6 +343,81 @@ export function ForumPostCommentCard({
               </Button>
             )}
           </div>
+
+          {/* 展开回复 & 预览回复项放在操作按钮下方 / Dropdown menu for replies & preview replies are placed below the actions */}
+          {repliesCount > 0 && (
+            <div className="mt-2 space-y-1">
+              {!isRepliesOpen ? (
+                <button
+                  className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+                  onClick={() => {
+                    setIsRepliesOpen(true);
+                    fetchRepliesIfNeeded();
+                  }}
+                >
+                  {t('comment.showReplies', { count: repliesCount })}
+                </button>
+              ) : (
+                <>
+                  {isRepliesLoading && (
+                    <div className="text-xs text-muted-foreground">{t('comment.loadingReplies')}</div>
+                  )}
+                  {repliesError && (
+                    <div className="text-xs text-red-600">{t('comment.loadRepliesFailed')}</div>
+                  )}
+                  {!isRepliesLoading && !repliesError && replies && replies.length > 0 && (
+                    <div className="space-y-1">
+                      {replies.map((r) => (
+                        <button
+                          key={r.id}
+                          className="flex items-baseline gap-1 w-full text-left text-xs text-muted-foreground hover:text-foreground"
+                          onClick={() => {
+                            window.dispatchEvent(new CustomEvent('pc:jump-to-comment', { detail: { id: r.id } }));
+                          }}
+                          title={stripHtmlTags(r.content)}
+                        >
+                          <span className="font-medium flex-shrink-0">
+                            {r.author.isAnonymous 
+                              ? (currentUserId && r.author.id === currentUserId 
+                                  ? `${r.author.name} (${t('common.anonymous')})` 
+                                  : t('common.anonymous'))
+                              : r.author.name}
+                            {currentUserId && r.author.id === currentUserId && (
+                              <span className="text-muted-foreground"> ({t('common.me')})</span>
+                            )}:
+                          </span>
+                          <span className="min-w-0 flex-1 truncate">
+                            {truncateHtmlContent(r.content, 80)}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-3 mt-2">
+                    {(() => {
+                      const loaded = replies?.length ?? 0;
+                      const total = typeof comment.replies === 'number' ? comment.replies : 0;
+                      const remaining = Math.max(total - loaded, 0);
+                      return remaining > 0 && repliesNextUrl ? (
+                        <button
+                          className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+                          onClick={loadRemainingReplies}
+                        >
+                          {t('comment.loadRemaining', { count: remaining })}
+                        </button>
+                      ) : null;
+                    })()}
+                    <button
+                      className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+                      onClick={() => setIsRepliesOpen(false)}
+                    >
+                      {t('comment.hideReplies')}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

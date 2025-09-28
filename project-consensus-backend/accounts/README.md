@@ -9,9 +9,8 @@ The Accounts app provides user-related models and endpoints, including a user Pr
   - Fields: `display_name`, `avatar_url`
   - Helper: `author_payload` returns `{ id, name, avatar }` used by the frontend "Author" type
 
-- `EmailVerification`
-  - Stores `{ email, code, created_at, is_used }` for the demo register flow
-  - TTL is enforced by the register endpoint using `AUTH_VERIFICATION_CODE_TTL_SECONDS` (default 600 seconds). Configure via environment variable in `.env`.
+Note: Email verification codes are not stored in the database. They are
+cached with a TTL for the registration flow.
 
 ## Serializers
 
@@ -26,8 +25,7 @@ Base path: `/api/auth/`
 
 - `POST /api/auth/send_verification_code/`
   - Body: `{ "email": "user@connect.polyu.hk" }`
-  - Behavior: Generates a numeric code and stores it in the DB
-  - In `DEBUG` mode, returns `{"debug_code": "XXXXXX"}` for local dev convenience (do not return codes in production)
+  - Behavior: Generates a numeric code and stores it in cache with TTL
 
 - `POST /api/auth/register/`
   - Body: `{ "nickname": "Alice", "email": "user@connect.polyu.hk", "verification_code": "123456", "password": "secret" }`
@@ -35,7 +33,8 @@ Base path: `/api/auth/`
 
 ## Settings
 
-- `AUTH_VERIFICATION_CODE_TTL_SECONDS`: integer TTL (seconds), default `600` if unspecified. Read from environment variables via `django-environ`.
+- `AUTH_VERIFICATION_CODE_TTL_SECONDS`: integer TTL (seconds), default `900`.
+- `AUTH_VERIFICATION_REQUEST_INTERVAL_SECONDS`: throttle per email, default `60` seconds.
 
 ## Notes
 

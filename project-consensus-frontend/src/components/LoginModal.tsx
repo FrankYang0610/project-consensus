@@ -9,35 +9,30 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { User, Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useApp } from '@/contexts/AppContext';
 import { LoginResponse, LoginApiResponse, ErrorResponse, LoginSuccessResponse } from '@/types';
-import { getCookie } from '@/lib/utils';
+import { getCookie, getAPIBaseUrl } from '@/lib/utils';
 import { useI18n } from '@/hooks/useI18n';
 import { cn } from '@/lib/utils';
 
 /**
- * 登录组件属性 / Login component props
+ * 登录模态框属性 / Login modal props
  */
-export interface LoginComponentProps {
+export interface LoginModalProps {
   className?: string; // 自定义CSS类名（可选） / Custom CSS class name (optional)
   onLoginSuccess?: (user: import('@/types/user').User) => void; // 登录成功回调（可选） / Login success callback (optional)
 }
 
-export function LoginComponent({ className }: LoginComponentProps) {
+export function LoginModal({ className, onLoginSuccess }: LoginModalProps) {
   const { t } = useI18n();
   // Auth context
-  const { login } = useApp();
+  const { login, closeLoginModal, openLoginModal, loginModalOpen } = useApp();
 
   // State management
   const [email, setEmail] = useState('');
@@ -45,7 +40,6 @@ export function LoginComponent({ className }: LoginComponentProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState('');
-  const [isOpen, setIsOpen] = useState(false);
 
   // Reset Form
   const resetForm = () => {
@@ -60,9 +54,9 @@ export function LoginComponent({ className }: LoginComponentProps) {
       // TODO: Actual server address (backend)
       // TODO：实际服务器地址（后端）
       // Ensure CSRF cookie exists (safe GET)
-      await fetch('http://localhost:8000/api/accounts/csrf/', { method: 'GET', credentials: 'include' });
+      await fetch(`${getAPIBaseUrl()}/api/accounts/csrf/`, { method: 'GET', credentials: 'include' });
       const csrfToken = getCookie('csrftoken');
-      const response = await fetch('http://localhost:8000/api/accounts/login/', {
+      const response = await fetch(`${getAPIBaseUrl()}/api/accounts/login/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -130,8 +124,13 @@ export function LoginComponent({ className }: LoginComponentProps) {
         login(result.user);
 
         // Close modal and reset form
-        setIsOpen(false);
+        closeLoginModal();
         resetForm();
+
+        // External callback
+        if (typeof onLoginSuccess === 'function') {
+          onLoginSuccess(result.user);
+        }
 
         // No need to refresh page, AuthContext will automatically update UI
 
@@ -168,25 +167,12 @@ export function LoginComponent({ className }: LoginComponentProps) {
 
   // Sign up handling
   const handleSignUp = () => {
-    setIsOpen(false);
+    closeLoginModal();
     window.location.href = '/register';
   };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          size="default"
-          className={cn("items-center gap-2", className)}
-        >
-          <User size={16} />
-          <span>{t('auth.login')}</span>
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="p-0 max-w-sm overflow-hidden rounded-xl">
-        <DialogTitle className="sr-only">{t('auth.login')}</DialogTitle>
-        <Card className="border-0 shadow-none rounded-none">
+  const LoginBody = (
+    <Card className="border-0 shadow-none rounded-none">
           <CardHeader className="text-center">
             <CardTitle>{t('auth.welcomeBack')}</CardTitle>
             <CardDescription>
@@ -280,6 +266,13 @@ export function LoginComponent({ className }: LoginComponentProps) {
             </div>
           </CardFooter>
         </Card>
+  );
+
+  return (
+    <Dialog open={loginModalOpen} onOpenChange={(open) => !open && closeLoginModal()}>
+      <DialogContent className={cn("p-0 max-w-sm overflow-hidden rounded-xl", className)}>
+        <DialogTitle className="sr-only">{t('auth.login')}</DialogTitle>
+        {LoginBody}
       </DialogContent>
     </Dialog>
   );

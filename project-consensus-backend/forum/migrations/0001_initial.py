@@ -39,6 +39,7 @@ class Migration(migrations.Migration):
                 ("tags", models.JSONField(blank=True, default=list)),
                 ("language", models.CharField(default="", max_length=50)),
                 ("likes_count", models.PositiveIntegerField(default=0)),
+                ("is_anonymous", models.BooleanField(default=False)),
                 (
                     "author",
                     models.ForeignKey(
@@ -49,13 +50,13 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
-                "verbose_name": "帖子",
-                "verbose_name_plural": "帖子",
+                "verbose_name": "ForumPost",
+                "verbose_name_plural": "ForumPosts",
                 "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name="ForumComment",
+            name="ForumPostComment",
             fields=[
                 (
                     "id",
@@ -75,6 +76,7 @@ class Migration(migrations.Migration):
                 ),
                 ("is_deleted", models.BooleanField(default=False)),
                 ("likes_count", models.PositiveIntegerField(default=0)),
+                ("is_anonymous", models.BooleanField(default=False)),
                 (
                     "author",
                     models.ForeignKey(
@@ -84,23 +86,13 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
-                    "parent",
+                    "reply_to",
                     models.ForeignKey(
                         blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="replies",
-                        to="forum.forumcomment",
-                    ),
-                ),
-                (
-                    "reply_to_user",
-                    models.ForeignKey(
-                        blank=True,
-                        null=True,
-                        on_delete=django.db.models.deletion.SET_NULL,
-                        related_name="forum_reply_targets",
-                        to=settings.AUTH_USER_MODEL,
+                        to="forum.forumpostcomment",
                     ),
                 ),
                 (
@@ -113,9 +105,44 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
-                "verbose_name": "评论",
-                "verbose_name_plural": "评论",
-                "ordering": ["created_at"],
+                "verbose_name": "ForumPostComment",
+                "verbose_name_plural": "ForumPostComments",
+                "ordering": ["created_at", "id"],
             },
+        ),
+        migrations.CreateModel(
+            name="ForumPostLike",
+            fields=[
+                ("id", models.BigAutoField(primary_key=True, serialize=False)),
+                ("created_at", models.DateTimeField(db_index=True, default=django.utils.timezone.now)),
+                (
+                    "post",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="likes",
+                        to="forum.forumpost",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="forum_post_likes",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+            ],
+            options={
+                "verbose_name": "ForumPostLike",
+                "verbose_name_plural": "ForumPostLikes",
+            },
+        ),
+        migrations.AddIndex(
+            model_name="forumpostlike",
+            index=models.Index(fields=["post", "user"], name="forum_like_post_user_idx"),
+        ),
+        migrations.AlterUniqueTogether(
+            name="forumpostlike",
+            unique_together={("post", "user")},
         ),
     ]

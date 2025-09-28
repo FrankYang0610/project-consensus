@@ -9,6 +9,7 @@ import {
   Languages,
   FileText,
   Check,
+  MessageSquare,
 } from "lucide-react";
 
 import {
@@ -17,7 +18,7 @@ import {
   CardHeader,
   CardFooter,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -36,6 +37,7 @@ import { cn } from "@/lib/utils";
 import { stripHtmlTags, truncateHtmlContent } from "@/lib/html-utils";
 import { ForumPost } from "@/types";
 import { useI18n } from "@/hooks/useI18n";
+import { useApp } from "@/contexts/AppContext";
 
 import ClientOnlyTime from "./ClientOnlyTime";
 
@@ -49,6 +51,7 @@ export interface ForumPostPreviewCardProps {
   onTranslate?: (postId: string) => void; // 翻译回调函数（可选） / Translate callback function (optional)
   onAuthorClick?: (authorId: string) => void; // 作者点击回调函数（可选） / Author click callback function (optional)
   className?: string; // 自定义CSS类名（可选） / Custom CSS class name (optional)
+  currentUserId?: string; // 当前用户ID（可选） / Current user ID (optional)
 }
 
 export function ForumPostPreviewCard({
@@ -58,9 +61,11 @@ export function ForumPostPreviewCard({
   onTranslate,
   onAuthorClick,
   className,
+  currentUserId,
 }: ForumPostPreviewCardProps) {
   // i18n translation
   const { t } = useI18n();
+  const { isLoggedIn, openLoginModal } = useApp();
 
   const [showDialog, setShowDialog] = React.useState(false);
   const [dialogMessage, setDialogMessage] = React.useState("");
@@ -73,6 +78,10 @@ export function ForumPostPreviewCard({
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
 
   const handleLikeClick = () => {
+    if (!isLoggedIn) {
+      openLoginModal();
+      return;
+    }
     onLike?.(post.id);
   };
 
@@ -152,7 +161,14 @@ export function ForumPostPreviewCard({
                 onClick={handleAuthorClick}
                 className="text-sm font-medium text-left hover:text-primary transition-colors"
               >
-                {post.author.name}
+                {post.isAnonymous 
+                  ? (currentUserId && post.author.id === currentUserId 
+                      ? `${post.author.name} (${t('common.anonymous')})` 
+                      : t('common.anonymous'))
+                  : post.author.name}
+                {currentUserId && post.author.id === currentUserId && (
+                  <span className="text-muted-foreground"> ({t('common.me')})</span>
+                )}
               </button>
               <ClientOnlyTime dateString={post.createdAt} className="text-xs text-muted-foreground" />
             </div>
@@ -170,7 +186,7 @@ export function ForumPostPreviewCard({
               {post.language}
             </span>
           </div>
-          <p className="text-muted-foreground text-sm leading-relaxed mb-1 break-words overflow-wrap-anywhere line-clamp-2">
+          <p className="text-muted-foreground text-sm leading-relaxed mb-1 break-words overflow-wrap-anywhere line-clamp-2 min-h-[3.25em]">
             {isTranslated ? t('post.translateUnavailable') : truncateHtmlContent(post.content)}
           </p>
 
@@ -189,7 +205,7 @@ export function ForumPostPreviewCard({
         </CardContent>
       </Link>
 
-      <CardFooter className="pt-0 px-4">
+      <CardFooter className="pt-0 px-4 mt-auto">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center space-x-3">
             <Button
@@ -204,6 +220,19 @@ export function ForumPostPreviewCard({
               <Heart className={cn("w-3 h-3 mr-1 flex-shrink-0", isLiked && "fill-current")} />
               <span className="truncate">{likesCount}</span>
             </Button>
+
+            <span
+              className={cn(
+                buttonVariants({ variant: "ghost", size: "sm" }),
+                "h-7 px-2 text-xs min-w-0 cursor-default select-none pointer-events-none"
+              )}
+              aria-label={t('comment.title', { count: post.comments })}
+              role="status"
+              tabIndex={-1}
+            >
+              <MessageSquare className="w-3 h-3 mr-1 flex-shrink-0" />
+              <span className="truncate">{post.comments}</span>
+            </span>
 
             <Button
               variant="ghost"
