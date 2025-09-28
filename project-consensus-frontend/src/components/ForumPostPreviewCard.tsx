@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import {
   Heart,
-  Share2,
+  MoreHorizontal,
   Languages,
   FileText,
   Check,
@@ -263,9 +263,9 @@ export function ForumPostPreviewCard({
                 {isCopySuccess ? (
                   <Check className="w-3 h-3 mr-1 flex-shrink-0" />
                 ) : (
-                  <Share2 className="w-3 h-3 mr-1 flex-shrink-0" />
+                  <MoreHorizontal className="w-3 h-3 mr-1 flex-shrink-0" />
                 )}
-                <span className="hidden sm:inline">{isCopySuccess ? t('post.copied') : t('post.share')}</span>
+                <span className="hidden sm:inline">{isCopySuccess ? t('post.copied') : t('post.more')}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">

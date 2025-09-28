@@ -4,10 +4,11 @@ import * as React from "react";
 import {
   Calendar,
   Heart,
-  Share2,
+  MoreHorizontal,
   Languages,
   FileText,
   Check,
+  Trash2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ export interface ForumPostDetailCardProps {
   onShare?: (postId: string) => void; // 分享回调函数（可选） / Share callback function (optional)
   onTranslate?: (postId: string) => void; // 翻译回调函数（可选） / Translate callback function (optional)
   onAuthorClick?: (authorId: string) => void; // 作者点击回调函数（可选） / Author click callback function (optional)
+  onDelete?: (postId: string) => void; // 删除回调（可选） / Delete callback (optional)
   className?: string; // 自定义CSS类名（可选） / Custom CSS class name (optional)
 }
 
@@ -57,6 +59,7 @@ export function ForumPostDetailCard({
   onShare,
   onTranslate,
   onAuthorClick,
+  onDelete,
   className,
 }: ForumPostDetailCardProps) {
   // i18n translation
@@ -66,6 +69,7 @@ export function ForumPostDetailCard({
   const [showDialog, setShowDialog] = React.useState(false);
   const [dialogMessage, setDialogMessage] = React.useState("");
   const [dialogTitle, setDialogTitle] = React.useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
   // Controlled: derive from props
   const isLiked = post.isLiked || false;
   const likesCount = post.likes;
@@ -121,6 +125,21 @@ export function ForumPostDetailCard({
     e.stopPropagation();
     if (post.isAnonymous) return;
     onAuthorClick?.(post.author.id);
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    setShowDeleteConfirm(false);
+    onDelete?.(post.id);
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(false);
   };
 
   return (
@@ -243,10 +262,10 @@ export function ForumPostDetailCard({
                 {isCopySuccess ? (
                   <Check className="w-4 h-4" />
                 ) : (
-                  <Share2 className="w-4 h-4" />
+                  <MoreHorizontal className="w-4 h-4" />
                 )}
                 <span className="text-sm">
-                  {isCopySuccess ? t('post.copied') : t('post.share')}
+                  {isCopySuccess ? t('post.copied') : t('post.more')}
                 </span>
               </Button>
             </DropdownMenuTrigger>
@@ -258,6 +277,15 @@ export function ForumPostDetailCard({
                 <FileText className="w-4 h-4 mr-2" />
                 <span>{t('post.copyText')}</span>
               </DropdownMenuItem>
+            {user && post.author.id === user.id && (
+              <DropdownMenuItem
+                onClick={handleDeleteClick}
+                className="cursor-pointer text-red-600 focus:text-red-700"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                <span>{t('post.delete')}</span>
+              </DropdownMenuItem>
+            )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -269,6 +297,29 @@ export function ForumPostDetailCard({
             <DialogTitle>{dialogTitle}</DialogTitle>
             <DialogDescription>{dialogMessage}</DialogDescription>
           </DialogHeader>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('post.deleteConfirm.title')}</DialogTitle>
+            <DialogDescription>{t('post.deleteConfirm.message')}</DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end space-x-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={handleDeleteCancel}
+            >
+              {t('post.deleteConfirm.cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+            >
+              {t('post.deleteConfirm.confirm')}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </Card>

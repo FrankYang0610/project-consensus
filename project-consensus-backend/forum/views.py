@@ -43,6 +43,13 @@ class ForumPostViewSet(viewsets.ModelViewSet):
     search_fields = ["title", "content", "tags"]
     pagination_class = DefaultPageNumberPagination
 
+    def destroy(self, request: Request, *args, **kwargs):  # type: ignore[override]
+        """Only the author can delete their own post."""
+        post = self.get_object()
+        if request.user != post.author:
+            return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+        return super().destroy(request, *args, **kwargs)
+
     @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
     def like(self, request: Request, pk: str | None = None):
         """Current user likes the post. Idempotent: multiple calls have no additional effect."""

@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { ForumPostDetailCard } from "@/components/ForumPostDetailCard";
 import { ForumPostCommentList } from "@/components/ForumPostCommentList";
-import { apiGet, apiPost, apiPostVoid, isContentEmpty } from "@/lib/utils";
+import { apiGet, apiPost, apiPostVoid, apiDeleteVoid, isContentEmpty } from "@/lib/utils";
 import { useApp } from "@/contexts/AppContext";
 import { ForumPost } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -85,6 +85,15 @@ export default function PostPage() {
   const handleCommentShare = (commentId: string) => {
     // TODO: Implement comment share functionality
     console.log("Share comment:", commentId);
+  };
+
+  const handleDeletePost = async (id: string) => {
+    try {
+      await apiDeleteVoid(`/api/forum/posts/${id}/`);
+      router.push("/");
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handleSubmitComment = async () => {
@@ -168,6 +177,7 @@ export default function PostPage() {
                     setPost(prev => prev ? { ...prev, isLiked: wasLiked, likes: Math.max(0, prev.likes + (willLike ? -1 : 1)) } : prev);
                   });
               }}
+              onDelete={handleDeletePost}
             />
             <ForumPostCommentList
               onLike={handleCommentLike}

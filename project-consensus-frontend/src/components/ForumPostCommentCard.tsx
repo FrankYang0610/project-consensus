@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Heart, Reply, MoreHorizontal, Trash2, Languages, Share2, FileText, Check } from "lucide-react";
+import { Heart, Reply, MoreHorizontal, Trash2, Languages, FileText, Check } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -314,9 +314,9 @@ export function ForumPostCommentCard({
                   {isCopySuccess ? (
                     <Check className="w-3 h-3 mr-1 flex-shrink-0" />
                   ) : (
-                    <Share2 className="w-3 h-3 mr-1 flex-shrink-0" />
+                    <MoreHorizontal className="w-3 h-3 mr-1 flex-shrink-0" />
                   )}
-                  <span className="hidden sm:inline">{isCopySuccess ? t('comment.copied') : t('comment.share')}</span>
+                  <span className="hidden sm:inline">{isCopySuccess ? t('comment.copied') : t('comment.more')}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-40">
