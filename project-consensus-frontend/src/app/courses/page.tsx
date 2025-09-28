@@ -4,9 +4,9 @@ import * as React from "react";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useI18n } from "@/hooks/useI18n";
-import { CoursesBackgroundCard } from "@/components/CoursesBackgroundCard";
-import { CoursesFilterBar } from "@/components/CoursesFilterBar";
-import { CoursesPreviewCard } from "@/components/CoursesPreviewCard";
+import { CourseBackgroundCard } from "@/components/CourseBackgroundCard";
+import { CourseFilterBar } from "@/components/CourseFilterBar";
+import { CoursePreviewCard } from "@/components/CoursePreviewCard";
 import { sampleCourses } from "@/data/sampleCourses";
 
 export default function CoursesPage() {
@@ -27,12 +27,12 @@ export default function CoursesPage() {
               </Alert>
             </div>
             <div className="max-w-7xl mx-auto grid grid-cols-1 gap-6 pt-4">
-              <CoursesBackgroundCard>
+              <CourseBackgroundCard>
                 <div className="space-y-4">
-                  <CoursesFilterBar onApply={() => { /* TODO: wire filters to list */ }} />
+                  <CourseFilterBar onApply={() => { /* TODO: wire filters to list */ }} />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {sampleCourses.map(course => (
-                      <CoursesPreviewCard
+                      <CoursePreviewCard
                         key={course.subjectId}
                         subjectId={course.subjectId}
                         subjectCode={course.subjectCode}
@@ -48,7 +48,7 @@ export default function CoursesPage() {
                     ))}
                   </div>
                 </div>
-              </CoursesBackgroundCard>
+              </CourseBackgroundCard>
             </div>
           </div>
         </main>

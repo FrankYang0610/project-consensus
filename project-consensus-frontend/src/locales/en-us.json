@@ -203,6 +203,25 @@
       }
     },
     "detail": {
+      "curriculumPlan": {
+        "button": "Curriculum Plan",
+        "college": "College",
+        "major": "Major",
+        "semester": "Semester",
+        "cohortDisplay": "Class of {{year}}",
+        "yearLevel": {
+          "y1": "Year 1",
+          "y2": "Year 2",
+          "y3": "Year 3",
+          "y4": "Year 4",
+          "y5": "Year 5"
+        },
+        "semesterShort": {
+          "spring": "Spring",
+          "summer": "Summer",
+          "fall": "Fall"
+        }
+      },
       "follow": "Follow",
       "recommend": "Recommend",
       "notRecommend": "Not Recommend",
@@ -214,7 +233,7 @@
         "grading": "Grading"
       },
       "aiSummary": "AI Summary",
-      "aiSummaryComingSoon": "AI-generated course summary based on student reviews coming soon.",
+      "noAiSummary": "No AI summary yet.",
       "courseInfo": "Course Information",
       "selectionCategory": "Selection Category",
       "teachingType": "Teaching Type",
@@ -263,6 +282,27 @@
       "reply": "Reply",
       "replies": "{{count}} replies",
       "repliesSection": "Replies will appear here"
+    },
+    "reviewForm": {
+      "title": "Write Course Review",
+      "rating": "Star Rating",
+      "term": { "label": "Term", "select": "Select term" },
+      "onlyText": "Text-only review (no scores)",
+      "onlyTextHint": "If checked, you can submit without star rating and dimensions",
+      "noRating": "No rating",
+      "anonymous": "Anonymous mode",
+      "anonymousOn": "On",
+      "anonymousOff": "Off",
+      "contentPlaceholder": "Share your experience, tips, and suggestions...",
+      "submit": "Post Review",
+      "submitting": "Posting...",
+      "cancel": "Cancel",
+      "validation": {
+        "ratingRequired": "Please provide a 1–5 star rating",
+        "dimensionsRequired": "Please select all four dimensions",
+        "contentRequired": "Review content is required",
+        "contentTooShort": "Review content must be at least 10 characters"
+      }
     }
   },
   "about": {
@@ -399,6 +439,35 @@
       "saveProfile": "Save Profile",
       "changePassword": "Change Password",
       "savePrivacy": "Save Privacy"
+    }
+  },
+  "teachers": {
+    "title": "Teachers",
+    "searchPlaceholder": "Search teachers by name, department, tags",
+    "total": "{{count}} results",
+    "rating": "Rating",
+    "reviews": "{{count}} reviews",
+    "coursesTaught": "Courses",
+    "viewProfile": "View Profile",
+    "noBio": "No bio available",
+    "notFound": "Teacher not found"
+  },
+  "teacher": {
+    "about": "About",
+    "contact": "Contact",
+    "email": "Email",
+    "office": "Office",
+    "officeHours": "Office Hours",
+    "homepage": "Homepage",
+    "yearsExperience": "Years of Experience",
+    "languages": "Languages",
+    "coursesTaught": "Courses Taught",
+    "noCourses": "No courses are currently listed",
+    "stats": {
+      "overall": "Overall",
+      "difficulty": "Difficulty",
+      "reviews": "Reviews",
+      "courses": "Courses"
     }
   }
 }

@@ -14,7 +14,7 @@ class Course(models.Model):
     - term: year + semester (choices)
     - rating: score (0–10) and reviews_count
     - attributes: difficulty/workload/grading/gain (choices)
-    - teachers: JSON list of strings (teacher names in this scaffold)
+    - teachers: ManyToMany to teachers.Teacher
     - department/last_updated, etc.
     """
 
@@ -46,7 +46,7 @@ class Course(models.Model):
         DECENT = "decent", "decent"
         HIGH = "high", "high"
 
-    subject_id = models.CharField(max_length=64, unique=True)
+    subject_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     subject_code = models.CharField(max_length=64)
     title = models.CharField(max_length=200)
 
@@ -55,15 +55,33 @@ class Course(models.Model):
 
     rating_score = models.FloatField(default=0)
     rating_reviews_count = models.PositiveIntegerField(default=0)
+    # Extra rating counters used by frontend voting UI
+    rating_recommend_count = models.PositiveIntegerField(default=0)
+    rating_not_recommend_count = models.PositiveIntegerField(default=0)
 
     attr_difficulty = models.CharField(max_length=10, choices=Difficulty.choices, default=Difficulty.MEDIUM)
     attr_workload = models.CharField(max_length=10, choices=Workload.choices, default=Workload.MODERATE)
     attr_grading = models.CharField(max_length=10, choices=Grading.choices, default=Grading.BALANCED)
     attr_gain = models.CharField(max_length=10, choices=Gain.choices, default=Gain.DECENT)
 
-    teachers = models.JSONField(default=list, blank=True, help_text="教师姓名列表，例如 ['Alice','Bob']")
+    # Terms history: list of {year:int, semester:"spring|summer|fall"}
+    terms = models.JSONField(default=list, blank=True, help_text="List of offered terms")
+
+    teachers = models.ManyToManyField('teachers.Teacher', related_name='courses', blank=True)
     department = models.CharField(max_length=200, blank=True)
     last_updated = models.DateTimeField(default=timezone.now)
+
+    # Optional metadata used by CourseDetailCard
+    ai_summary = models.TextField(blank=True)
+    selection_category = models.CharField(max_length=100, blank=True)
+    teaching_type = models.CharField(max_length=100, blank=True)
+    course_category = models.CharField(max_length=100, blank=True)
+    offering_department = models.CharField(max_length=200, blank=True)
+    level = models.CharField(max_length=50, blank=True)
+    # credits can be number or string on the frontend, store as string for flexibility
+    credits = models.CharField(max_length=20, blank=True)
+    course_homepage_url = models.URLField(blank=True)
+    syllabus_url = models.URLField(blank=True)
 
     class Meta:
         indexes = [
@@ -90,6 +108,8 @@ class CourseReview(models.Model):
     attr_gain = models.CharField(max_length=10, choices=Course.Gain.choices, default=Course.Gain.DECENT)
 
     content = models.TextField()
+    is_anonymous = models.BooleanField(default=False)
+    only_text = models.BooleanField(default=False, help_text="如果为真，则仅文本评价（不含星级/维度）")
     likes_count = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(default=timezone.now, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -121,3 +141,39 @@ class CourseReviewReply(models.Model):
         ordering = ["created_at"]
         verbose_name = "Course review reply"
         verbose_name_plural = "Course review replies"
+
+
+class CourseReviewLike(models.Model):
+    """User like for a CourseReview (for per-user isLiked and counting)."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    review = models.ForeignKey(CourseReview, on_delete=models.CASCADE, related_name="likes")
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user", "review"], name="unique_review_like"),
+        ]
+        indexes = [
+            models.Index(fields=["review", "user"]),
+        ]
+        verbose_name = "Course review like"
+        verbose_name_plural = "Course review likes"
+
+
+class CourseReviewReplyLike(models.Model):
+    """User like for a CourseReviewReply."""
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    reply = models.ForeignKey(CourseReviewReply, on_delete=models.CASCADE, related_name="likes")
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user", "reply"], name="unique_reply_like"),
+        ]
+        indexes = [
+            models.Index(fields=["reply", "user"]),
+        ]
+        verbose_name = "Course review reply like"
+        verbose_name_plural = "Course review reply likes"

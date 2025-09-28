@@ -12,6 +12,19 @@ Django + DRF + PostgreSQL 17 backend template.
 
 ---
 
+## API: Teachers
+
+Endpoints exposed by the `teachers` app (aligned to frontend types):
+
+- `GET /api/teachers/` — list teachers (search by `?q=...` over name/department).
+- `GET /api/teachers/{id}/` — teacher detail.
+- `GET /api/teachers/{id}/courses/` — courses taught by the teacher (returns `{ subjectId, subjectCode, title }`).
+
+Notes:
+- The `courses` API now uses an explicit M2M relation to `teachers.Teacher` and returns minimal teacher refs for each course as `[{ id, name }]`. Use `/api/teachers/{id}/` to fetch full teacher profiles.
+
+---
+
 ## Quick Start (macOS)
 
 For macOS. Follow in order for first-time setup.

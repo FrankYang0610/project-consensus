@@ -26,6 +26,13 @@ export type {
   Course,
 } from './course';
 
+// 教师相关类型 / Teacher-related types
+export type {
+  Teacher,
+  TeacherRating,
+  TeacherCourseRef,
+} from './teacher';
+
 // API response types
 export type {
   SendVerificationCodeResponse,

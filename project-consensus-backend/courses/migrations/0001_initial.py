@@ -13,22 +13,14 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        ('teachers', '0001_initial'),
     ]
 
     operations = [
         migrations.CreateModel(
             name="Course",
             fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True,
-                        primary_key=True,
-                        serialize=False,
-                        verbose_name="ID",
-                    ),
-                ),
-                ("subject_id", models.CharField(max_length=64, unique=True)),
+                ("subject_id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ("subject_code", models.CharField(max_length=64)),
                 ("title", models.CharField(max_length=200)),
                 ("term_year", models.PositiveIntegerField()),
@@ -45,6 +37,8 @@ class Migration(migrations.Migration):
                 ),
                 ("rating_score", models.FloatField(default=0)),
                 ("rating_reviews_count", models.PositiveIntegerField(default=0)),
+                ("rating_recommend_count", models.PositiveIntegerField(default=0)),
+                ("rating_not_recommend_count", models.PositiveIntegerField(default=0)),
                 (
                     "attr_difficulty",
                     models.CharField(
@@ -96,29 +90,31 @@ class Migration(migrations.Migration):
                         max_length=10,
                     ),
                 ),
-                (
-                    "teachers",
-                    models.JSONField(
-                        blank=True,
-                        default=list,
-                        help_text="教师姓名列表，例如 ['Alice','Bob']",
-                    ),
-                ),
+                ("terms", models.JSONField(blank=True, default=list, help_text="List of offered terms")),
                 ("department", models.CharField(blank=True, max_length=200)),
                 (
                     "last_updated",
                     models.DateTimeField(default=django.utils.timezone.now),
                 ),
+                ("ai_summary", models.TextField(blank=True)),
+                ("selection_category", models.CharField(blank=True, max_length=100)),
+                ("teaching_type", models.CharField(blank=True, max_length=100)),
+                ("course_category", models.CharField(blank=True, max_length=100)),
+                ("offering_department", models.CharField(blank=True, max_length=200)),
+                ("level", models.CharField(blank=True, max_length=50)),
+                ("credits", models.CharField(blank=True, max_length=20)),
+                ("course_homepage_url", models.URLField(blank=True)),
+                ("syllabus_url", models.URLField(blank=True)),
             ],
             options={
                 "verbose_name": "课程",
                 "verbose_name_plural": "课程",
-                "indexes": [
-                    models.Index(
-                        fields=["subject_id"], name="courses_cou_subject_3506dc_idx"
-                    )
-                ],
             },
+        ),
+        migrations.AddField(
+            model_name='course',
+            name='teachers',
+            field=models.ManyToManyField(blank=True, related_name='courses', to='teachers.teacher'),
         ),
         migrations.CreateModel(
             name="CourseReview",
@@ -185,6 +181,8 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("content", models.TextField()),
+                ("is_anonymous", models.BooleanField(default=False)),
+                ("only_text", models.BooleanField(default=False, help_text="如果为真，则仅文本评价（不含星级/维度）")),
                 ("likes_count", models.PositiveIntegerField(default=0)),
                 (
                     "created_at",
@@ -281,6 +279,62 @@ class Migration(migrations.Migration):
                 "verbose_name": "课程评价回复",
                 "verbose_name_plural": "课程评价回复",
                 "ordering": ["created_at"],
+            },
+        ),
+        migrations.CreateModel(
+            name="CourseReviewLike",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID"),
+                ),
+                ("created_at", models.DateTimeField(db_index=True, default=django.utils.timezone.now)),
+                (
+                    "review",
+                    models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name="likes", to="courses.coursereview"),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL),
+                ),
+            ],
+            options={
+                "verbose_name": "课程评价点赞",
+                "verbose_name_plural": "课程评价点赞",
+                "indexes": [
+                    models.Index(fields=["review", "user"], name="courses_cou_review_user_like_idx"),
+                ],
+                "constraints": [
+                    models.UniqueConstraint(fields=("user", "review"), name="unique_review_like"),
+                ],
+            },
+        ),
+        migrations.CreateModel(
+            name="CourseReviewReplyLike",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID"),
+                ),
+                ("created_at", models.DateTimeField(db_index=True, default=django.utils.timezone.now)),
+                (
+                    "reply",
+                    models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name="likes", to="courses.coursereviewreply"),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL),
+                ),
+            ],
+            options={
+                "verbose_name": "课程评价回复点赞",
+                "verbose_name_plural": "课程评价回复点赞",
+                "indexes": [
+                    models.Index(fields=["reply", "user"], name="courses_cou_reply_user_like_idx"),
+                ],
+                "constraints": [
+                    models.UniqueConstraint(fields=("user", "reply"), name="unique_reply_like"),
+                ],
             },
         ),
     ]

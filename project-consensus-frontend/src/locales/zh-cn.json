@@ -205,6 +205,25 @@
     }
     },
     "detail": {
+      "curriculumPlan": {
+        "button": "所属培养方案",
+        "college": "学院",
+        "major": "专业",
+        "semester": "学期",
+        "cohortDisplay": "{{year}}届",
+        "yearLevel": {
+          "y1": "大一",
+          "y2": "大二",
+          "y3": "大三",
+          "y4": "大四",
+          "y5": "大五"
+        },
+        "semesterShort": {
+          "spring": "春",
+          "summer": "夏",
+          "fall": "秋"
+        }
+      },
       "follow": "关注",
       "recommend": "推荐",
       "notRecommend": "不推荐",
@@ -216,7 +235,7 @@
         "grading": "给分好坏"
       },
       "aiSummary": "AI 智能总结",
-      "aiSummaryComingSoon": "根据学生评价自动生成的课程概要即将推出，敬请期待。",
+      "noAiSummary": "目前暂无AI总结",
       "courseInfo": "课程信息",
       "selectionCategory": "选课类别",
       "teachingType": "教学类型",
@@ -265,6 +284,27 @@
       "reply": "回复",
       "replies": "{{count}} 条回复",
       "repliesSection": "回复将显示在此处"
+    },
+    "reviewForm": {
+      "title": "撰写课程点评",
+      "rating": "星级评分",
+      "term": { "label": "学期", "select": "选择学期" },
+      "onlyText": "只写点评（不打分）",
+      "onlyTextHint": "勾选后可以不选择评分和维度",
+      "noRating": "未评分",
+      "anonymous": "匿名模式",
+      "anonymousOn": "已启用",
+      "anonymousOff": "未启用",
+      "contentPlaceholder": "在此输入你的课程体验、建议等...",
+      "submit": "发布点评",
+      "submitting": "发布中...",
+      "cancel": "取消",
+      "validation": {
+        "ratingRequired": "请给出 1-5 星评分",
+        "dimensionsRequired": "请选择全部四个维度",
+        "contentRequired": "点评内容不能为空",
+        "contentTooShort": "点评内容至少需要 10 个字符"
+      }
     }
   },
   "about": {
@@ -401,6 +441,35 @@
       "saveProfile": "保存资料",
       "changePassword": "修改密码",
       "savePrivacy": "保存隐私设置"
+    }
+  },
+  "teachers": {
+    "title": "教师",
+    "searchPlaceholder": "按姓名、院系或标签搜索教师",
+    "total": "{{count}} 位",
+    "rating": "评分",
+    "reviews": "{{count}} 条评价",
+    "coursesTaught": "课程",
+    "viewProfile": "查看主页",
+    "noBio": "暂无简介",
+    "notFound": "未找到该教师"
+  },
+  "teacher": {
+    "about": "简介",
+    "contact": "联系",
+    "email": "邮箱",
+    "office": "办公室",
+    "officeHours": "办公时间",
+    "homepage": "主页",
+    "yearsExperience": "任教年限",
+    "languages": "授课语言",
+    "coursesTaught": "授课课程",
+    "noCourses": "暂无课程记录",
+    "stats": {
+      "overall": "总体",
+      "difficulty": "难度",
+      "reviews": "评价数",
+      "courses": "课程"
     }
   }
 }

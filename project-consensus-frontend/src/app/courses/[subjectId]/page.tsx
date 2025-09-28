@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useSearchParams } from "next/navigation";
 import { SiteNavigation } from "@/components/SiteNavigation";
-import CoursesDetailedCard from "@/components/CoursesDetailedCard";
+import CourseDetailCard from "@/components/CourseDetailCard";
 import CourseReviewCard from "@/components/CourseReviewCard";
 import { TeacherInfo } from "@/types";
 import CourseReviewReplyCard from "@/components/CourseReviewReplyCard";
@@ -11,6 +11,7 @@ import { getRepliesByReviewId } from "@/data/sampleReviewReplies";
 import { sampleCourses, getOtherTeacherCourses } from "@/data/sampleCourses";
 import { getReviewsBySubjectId } from "@/data/sampleReviews";
 import { useI18n } from "@/hooks/useI18n";
+// No longer needed to map names -> ids; sample courses already carry {id,name}
 
 export default function CourseDetailPage({ params }: { params: Promise<{ subjectId: string }> }) {
   const { t } = useI18n();
@@ -23,17 +24,15 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
 
   const course = React.useMemo(() => sampleCourses.find(c => c.subjectId === subjectId) ?? null, [subjectId]);
 
-  // Simple hydration-safe fallback for teacher info
+  // Use teachers from data (already {id,name}); if ?teacher=name 提供，则将该老师置顶显示
   const teachers: TeacherInfo[] = React.useMemo(() => {
-    const names = course?.teachers ?? [];
-    return names.map(n => ({ name: n }));
-  }, [course]);
-
-  const highlightedTeachers = React.useMemo(() => {
-    return teachers.length > 0 && teacherQuery
-      ? [{ name: teacherQuery }, ...teachers.filter(t => t.name !== teacherQuery)]
-      : teachers;
-  }, [teachers, teacherQuery]);
+    const list = course?.teachers ?? [];
+    if (!teacherQuery) return list;
+    const idx = list.findIndex(t => t.name === teacherQuery);
+    if (idx <= 0) return list;
+    const picked = list[idx];
+    return [picked, ...list.filter((_, i) => i !== idx)];
+  }, [course, teacherQuery]);
 
   // Get other teachers teaching the same course
   const otherTeacherCourses = React.useMemo(() => {
@@ -93,7 +92,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
         <div className="w-full p-6">
           <div className="max-w-6xl mx-auto grid grid-cols-1 gap-6 pt-2">
             <div className="px-4">
-              <CoursesDetailedCard
+              <CourseDetailCard
                 subjectId={course.subjectId}
                 subjectCode={course.subjectCode}
                 title={course.title}
@@ -105,7 +104,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
                   notRecommendCount: Math.floor(course.rating.reviewsCount * 0.2)
                 }}
                 attributes={course.attributes}
-                teachers={highlightedTeachers}
+                teachers={teachers}
                 department={course.department}
                 lastUpdated={course.lastUpdated}
                 // placeholders - can be wired later
