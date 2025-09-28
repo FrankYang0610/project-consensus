@@ -84,33 +84,13 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
-                    "parent",
+                    "reply_to",
                     models.ForeignKey(
                         blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="replies",
                         to="forum.forumpostcomment",
-                    ),
-                ),
-                (
-                    "main_comment",
-                    models.ForeignKey(
-                        blank=True,
-                        null=True,
-                        on_delete=django.db.models.deletion.CASCADE,
-                        related_name="all_replies",
-                        to="forum.forumpostcomment",
-                    ),
-                ),
-                (
-                    "reply_to_user",
-                    models.ForeignKey(
-                        blank=True,
-                        null=True,
-                        on_delete=django.db.models.deletion.SET_NULL,
-                        related_name="forum_reply_targets",
-                        to=settings.AUTH_USER_MODEL,
                     ),
                 ),
                 (
@@ -125,7 +105,7 @@ class Migration(migrations.Migration):
             options={
                 "verbose_name": "ForumPostComment",
                 "verbose_name_plural": "ForumPostComments",
-                "ordering": ["created_at"],
+                "ordering": ["created_at", "id"],
             },
         ),
         migrations.CreateModel(

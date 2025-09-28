@@ -15,6 +15,7 @@ import { useI18n } from "@/hooks/useI18n";
 import { sanitizeHtml } from "@/lib/html-utils";
 import { cn } from "@/lib/utils";
 import type { ForumPostComment } from "@/types/forum";
+import { stripHtmlTags } from "@/lib/html-utils";
 
 import ClientOnlyTime from "./ClientOnlyTime";
 import { useApp } from "@/contexts/AppContext";
@@ -27,6 +28,8 @@ interface ForumPostCommentCardProps {
   onShare?: (commentId: string) => void;
   isReply?: boolean;
   currentUserId?: string;
+  parentComment?: ForumPostComment;
+  onClickParent?: () => void;
 }
 
 export function ForumPostCommentCard({
@@ -36,7 +39,9 @@ export function ForumPostCommentCard({
   onDelete,
   onShare,
   isReply = false,
-  currentUserId
+  currentUserId,
+  parentComment,
+  onClickParent
 }: ForumPostCommentCardProps) {
   const { t, language } = useI18n();
   const { isLoggedIn, openLoginModal } = useApp();
@@ -112,8 +117,7 @@ export function ForumPostCommentCard({
   if (comment.isDeleted) {
     return (
       <div className={cn(
-        "text-muted-foreground text-sm italic py-2",
-        isReply && "ml-8"
+        "text-muted-foreground text-sm italic py-2"
       )}>
         {t('comment.deleted')}
       </div>
@@ -121,10 +125,12 @@ export function ForumPostCommentCard({
   }
 
   return (
-    <div className={cn(
-      "py-2",
-      isReply && "ml-2 sm:ml-6 border-l-2 border-muted/50 pl-2 sm:pl-3"
-    )}>
+    <div
+      id={`comment-${comment.id}`}
+      className={cn(
+        "py-2"
+      )}
+    >
       <div className="flex items-start gap-3">
         {/* 头像 / Avatar */}
         <div className="flex-shrink-0">
@@ -149,13 +155,24 @@ export function ForumPostCommentCard({
             <span className="font-medium text-sm text-foreground">
               {comment.author.name}
             </span>
-            {comment.replyToUser && (
-              <span className="text-xs text-muted-foreground">
-                {t('comment.replyTo')} {comment.replyToUser.name}
-              </span>
-            )}
             <ClientOnlyTime dateString={comment.createdAt} className="text-xs text-muted-foreground" />
           </div>
+
+          {/* Parent snippet under meta */}
+          {isReply && parentComment && (
+            <div
+              role="button"
+              onClick={onClickParent}
+              className="mb-2 text-xs text-muted-foreground hover:text-foreground/80 cursor-pointer flex items-center gap-1 whitespace-nowrap overflow-hidden"
+            >
+              <span className="font-medium flex-shrink-0">
+                {t('comment.repliesTo', { name: parentComment.author.name })}:
+              </span>
+              <span className="min-w-0 truncate">
+                {stripHtmlTags(parentComment.content)}
+              </span>
+            </div>
+          )}
 
           <div
             className="prose prose-zinc dark:prose-invert max-w-none text-sm leading-relaxed mb-2 break-words overflow-wrap-anywhere"

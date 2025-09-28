@@ -1,6 +1,6 @@
 # Forum App
 
-The Forum app implements posts and two-level comments (main comment + reply). It matches the frontend types `ForumPost` and `ForumPostComment`.
+The Forum app implements posts and flat comments with optional replies via `replyTo`. It matches the frontend types `ForumPost` and `ForumPostComment`.
 
 ## Models
 
@@ -12,17 +12,21 @@ The Forum app implements posts and two-level comments (main comment + reply). It
 - `ForumPostComment`
   - UUID primary key
   - `post` (FK to `ForumPost`)
-  - `parent` (nullable self-FK) — null for main comments, non-null for replies
-  - `content`, `author` (FK), `reply_to_user` (nullable FK), `created_at`
+  - `reply_to` (nullable self-FK) — null for comments replying to the post; non-null for replies to another comment
+  - `content`, `author` (FK), `created_at`
   - `is_deleted` (soft delete), `likes_count`
 
 ## Serializers
 
 - `ForumPostSerializer`
-  - Adds `author` payload (from Profile), `likes` (mapped from `likes_count`), `comments` (count), `isLiked` (false placeholder)
+  - Adds `author` (from Profile), `likes` (mapped from `likes_count`), `comments` (count), `isLiked` (session-derived)
 
 - `ForumPostCommentSerializer`
-  - Matches the frontend fields including `parentId`, `postId`, `replyToUser`, and `createdAt`
+  - Fields: `id`, `content`, `author`, `createdAt`, `likes`, `isDeleted`, `replyTo`, `postId`
+  - Does not expose the replied-to user. Use `replyTo` on the frontend to locate parent comment
+  - Common filters:
+    - Comments under post: `/api/forum/comments/?postId=<postId>`
+    - Direct replies of a comment: `/api/forum/comments/?replyTo=<commentId>`
 
 ## ViewSets & Routes
 
@@ -33,8 +37,9 @@ Base path: `/api/forum/` (via DRF Router)
   - Search support on `title`, `content`, `tags` (DRF SearchFilter)
 
 - `/api/forum/comments/`
-  - Filter by `?postId=<uuid>` or `?parentId=<uuid>`
+  - Filter by `?postId=<uuid>` or `?replyTo=<uuid>`
   - Standard REST actions (list/create/retrieve/update/destroy)
+  - Default ordering: ascending by `created_at` (oldest first). This allows the frontend to render a flat, chronological feed where comments and replies are shown together by time.
 
 ## Examples
 

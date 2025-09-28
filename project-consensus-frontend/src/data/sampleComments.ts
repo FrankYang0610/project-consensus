@@ -1,12 +1,12 @@
 import { ForumPostComment } from '@/types/forum';
 
 /**
- * 示例评论数据 - 扁平化两级结构
- * 主评论：直接回复帖子
- * 子评论：回复主评论或其他子评论，通过replyToUser记录回复的是谁
+ * 示例评论数据 - 扁平化两级结构 / Example comments data - flat two-level structure
+ * 评论：直接回复帖子 / Comment: reply to post
+ * 回复：回复评论或其他评论；不直接记录被回复用户，仅记录 parent 评论 / Reply: reply to comment or other comment; no direct record of the replied user, only record parent comment
  */
 export const sampleComments: ForumPostComment[] = [
-  // 主评论
+  // 主评论 / Main comments
   {
     id: 'comment-1',
     content: '好問題！我來分享下我嘅理解：\n\n<strong>接口（Interface）</strong>：\n<ul>\n<li>可以實現多個接口（多重繼承）</li>\n<li>只定義方法簽名，冇具體實現</li>\n<li>適合定義「契約」或「能力」</li>\n</ul>\n\n<strong>抽象類（Abstract Class）</strong>：\n<ul>\n<li>只能繼承一個抽象類</li>\n<li>可以有具體方法實現</li>\n<li>適合提供共同嘅基礎功能</li>\n</ul>\n\n例如：<code>Animal</code>抽象類提供<code>eat()</code>嘅通用實現，而<code>Flyable</code>接口定義<code>fly()</code>嘅能力。',
@@ -71,13 +71,8 @@ export const sampleComments: ForumPostComment[] = [
     createdAt: '2024-01-15T11:15:00Z',
     likes: 5,
     isLiked: true,
-    parentId: 'comment-1',
-    postId: 'a7f3b2c1',
-    replyToUser: {
-      id: 'user-2',
-      name: 'Alex Johnson',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alex'
-    }
+    replyTo: 'comment-1',
+    postId: 'a7f3b2c1'
   },
   {
     id: 'comment-1-2',
@@ -90,13 +85,8 @@ export const sampleComments: ForumPostComment[] = [
     createdAt: '2024-01-15T14:20:00Z',
     likes: 3,
     isLiked: false,
-    parentId: 'comment-1',
-    postId: 'a7f3b2c1',
-    replyToUser: {
-      id: 'user-2',
-      name: 'Alex Johnson',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alex'
-    }
+    replyTo: 'comment-1',
+    postId: 'a7f3b2c1'
   },
   {
     id: 'comment-1-2-1',
@@ -109,13 +99,8 @@ export const sampleComments: ForumPostComment[] = [
     createdAt: '2024-01-15T15:30:00Z',
     likes: 8,
     isLiked: false,
-    parentId: 'comment-1-2',
-    postId: 'a7f3b2c1',
-    replyToUser: {
-      id: 'user-4',
-      name: 'James Wong',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=james'
-    }
+    replyTo: 'comment-1-2',
+    postId: 'a7f3b2c1'
   },
   {
     id: 'comment-3-1',
@@ -128,13 +113,8 @@ export const sampleComments: ForumPostComment[] = [
     createdAt: '2024-01-16T10:15:00Z',
     likes: 4,
     isLiked: false,
-    parentId: 'comment-3',
-    postId: 'a7f3b2c1',
-    replyToUser: {
-      id: 'user-6',
-      name: 'Sarah Wilson',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=sarah'
-    }
+    replyTo: 'comment-3',
+    postId: 'a7f3b2c1'
   },
   // 添加更多子评论来测试分页功能
   {
@@ -148,13 +128,8 @@ export const sampleComments: ForumPostComment[] = [
     createdAt: '2024-01-16T11:30:00Z',
     likes: 2,
     isLiked: false,
-    parentId: 'comment-1',
-    postId: 'a7f3b2c1',
-    replyToUser: {
-      id: 'user-2',
-      name: 'Alex Johnson',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alex'
-    }
+    replyTo: 'comment-1',
+    postId: 'a7f3b2c1'
   },
   {
     id: 'comment-1-4',
@@ -167,13 +142,8 @@ export const sampleComments: ForumPostComment[] = [
     createdAt: '2024-01-16T12:00:00Z',
     likes: 6,
     isLiked: true,
-    parentId: 'comment-1',
-    postId: 'a7f3b2c1',
-    replyToUser: {
-      id: 'user-2',
-      name: 'Alex Johnson',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alex'
-    }
+    replyTo: 'comment-1',
+    postId: 'a7f3b2c1'
   },
   {
     id: 'comment-1-5',
@@ -186,13 +156,8 @@ export const sampleComments: ForumPostComment[] = [
     createdAt: '2024-01-16T12:30:00Z',
     likes: 3,
     isLiked: false,
-    parentId: 'comment-1',
-    postId: 'a7f3b2c1',
-    replyToUser: {
-      id: 'user-2',
-      name: 'Alex Johnson',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alex'
-    }
+    replyTo: 'comment-1',
+    postId: 'a7f3b2c1'
   },
   {
     id: 'comment-1-6',
@@ -205,13 +170,8 @@ export const sampleComments: ForumPostComment[] = [
     createdAt: '2024-01-16T13:00:00Z',
     likes: 1,
     isLiked: false,
-    parentId: 'comment-1',
-    postId: 'a7f3b2c1',
-    replyToUser: {
-      id: 'user-2',
-      name: 'Alex Johnson',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alex'
-    }
+    replyTo: 'comment-1',
+    postId: 'a7f3b2c1'
   },
   {
     id: 'comment-1-7',
@@ -224,13 +184,8 @@ export const sampleComments: ForumPostComment[] = [
     createdAt: '2024-01-16T13:30:00Z',
     likes: 4,
     isLiked: false,
-    parentId: 'comment-1',
-    postId: 'a7f3b2c1',
-    replyToUser: {
-      id: 'user-2',
-      name: 'Alex Johnson',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alex'
-    }
+    replyTo: 'comment-1',
+    postId: 'a7f3b2c1'
   },
   {
     id: 'comment-1-8',
@@ -243,13 +198,8 @@ export const sampleComments: ForumPostComment[] = [
     createdAt: '2024-01-16T14:00:00Z',
     likes: 8,
     isLiked: true,
-    parentId: 'comment-1',
-    postId: 'a7f3b2c1',
-    replyToUser: {
-      id: 'user-2',
-      name: 'Alex Johnson',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alex'
-    }
+    replyTo: 'comment-1',
+    postId: 'a7f3b2c1'
   }
 ];
 
@@ -290,7 +240,7 @@ export function separateComments(comments: ForumPostComment[]): {
   const replies: ForumPostComment[] = [];
 
   comments.forEach(comment => {
-    if (!comment.parentId) {
+    if (!comment.replyTo) {
       mainComments.push(comment);
     } else {
       replies.push(comment);
@@ -309,7 +259,7 @@ export function separateComments(comments: ForumPostComment[]): {
  */
 export function getRepliesByMainCommentId(mainCommentId: string, replies: ForumPostComment[]): ForumPostComment[] {
   return replies.filter(comment =>
-    comment.parentId === mainCommentId
+    comment.replyTo === mainCommentId
   );
 }
 

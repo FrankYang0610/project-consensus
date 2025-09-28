@@ -71,19 +71,17 @@ class ForumPostSerializer(serializers.ModelSerializer):
 
 
 class ForumPostCommentSerializer(serializers.ModelSerializer):
-    """Serializer for forum comments (compatible with frontend type)."""
+    """Serializer for forum comments (flat; optional reply target).
+
+    Exposes `replyTo` to let the frontend know if a comment is replying to another comment.
+    """
 
     author = serializers.SerializerMethodField()
-    replyToUser = serializers.SerializerMethodField()
     likes = serializers.IntegerField(source="likes_count", read_only=True)
     createdAt = serializers.DateTimeField(source="created_at", read_only=True)
-    parentId = serializers.UUIDField(source="parent_id", allow_null=True, required=False)
+    replyTo = serializers.UUIDField(source="reply_to_id", allow_null=True, required=False)
     postId = serializers.UUIDField(source="post_id")
     isDeleted = serializers.BooleanField(source="is_deleted", read_only=True)
-    # repliesCount: present only for main comments
-    repliesCount = serializers.SerializerMethodField()
-    # Expose mainCommentId to simplify frontend logic if needed (optional, read-only)
-    mainCommentId = serializers.UUIDField(source="main_comment_id", allow_null=True, read_only=True)
 
     class Meta:
         model = ForumPostComment
@@ -94,32 +92,11 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
             "createdAt",
             "likes",
             "isDeleted",
-            "parentId",
+            "replyTo",
             "postId",
-            "replyToUser",
-            "repliesCount",
-            "mainCommentId",
         ]
         extra_kwargs = {}
-        read_only_fields = ["id", "createdAt", "author", "replyToUser", "isDeleted", "likes"]
+        read_only_fields = ["id", "createdAt", "author", "isDeleted", "likes"]
 
     def get_author(self, obj: ForumPostComment) -> dict:
         return _author_payload_for(obj.author)
-
-    def get_replyToUser(self, obj: ForumPostComment):
-        if obj.reply_to_user_id:
-            return _author_payload_for(obj.reply_to_user)  # type: ignore[arg-type]
-        return None
-
-    def get_repliesCount(self, obj: ForumPostComment) -> int:
-        # Only main comments carry replies count
-        if obj.parent_id is None:
-            return getattr(obj, "replies_count_main", 0)
-        return 0
-
-    def to_representation(self, instance: ForumPostComment):  # type: ignore[override]
-        data = super().to_representation(instance)
-        # Do not include repliesCount for non-main comments
-        if instance.parent_id is not None:
-            data.pop("repliesCount", None)
-        return data

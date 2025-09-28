@@ -112,7 +112,8 @@
     "replyTo": "replied to",
     "share": "Share",
     "copied": "Copied!",
-    "copyText": "Copy text"
+    "copyText": "Copy text",
+    "repliesTo": "Replies to {{name}}"
   },
   "common": {
     "note": "Note",

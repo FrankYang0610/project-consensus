@@ -112,7 +112,8 @@
     "replyTo": "回覆了",
     "share": "分享",
     "copied": "已複製！",
-    "copyText": "複製文本"
+    "copyText": "複製文本",
+    "repliesTo": "回覆 {{name}} 的內容"
   },
   "common": {
     "note": "注意",
