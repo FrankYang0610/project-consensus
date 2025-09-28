@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { MessageSquare, Plus, X } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
-import { apiGet, cn, isContentEmpty } from "@/lib/utils";
+import { apiGet, apiPostVoid, cn, isContentEmpty } from "@/lib/utils";
 import { GetForumPostCommentPositionResponse, ListCommentsResponse } from "@/types/api";
 import { useApp } from "@/contexts/AppContext";
 import ForumPostCommentComposer from "@/components/ForumPostCommentComposer";
@@ -212,6 +212,59 @@ export function ForumPostCommentList({
     window.addEventListener('pc:jump-to-comment', handler as EventListener);
     return () => window.removeEventListener('pc:jump-to-comment', handler as EventListener);
   }, [loadUntilAndScroll]);
+
+  // Optimistic like toggle listener
+  React.useEffect(() => {
+    const handler = (e: Event) => {
+      const custom = e as CustomEvent<{ id: string }>;
+      const id = custom.detail?.id;
+      if (!id) return;
+      setComments(prev => {
+        const next = prev.map(c => {
+          if (c.id !== id) return c;
+          const wasLiked = !!c.isLiked;
+          const willLike = !wasLiked;
+          return { ...c, isLiked: willLike, likes: Math.max(0, c.likes + (willLike ? 1 : -1)) };
+        });
+        return next;
+      });
+
+      // fire API request
+      const comment = idToComment.current.get(id);
+      // Note: we used updated state above; compute willLike again for request
+      const willLike = !(comment?.isLiked ?? false);
+      const url = willLike ? `/api/forum/comments/${id}/like/` : `/api/forum/comments/${id}/unlike/`;
+      let reverted = false;
+      const timer = setTimeout(() => {
+        if (reverted) return;
+        // revert on timeout
+        setComments(prev => prev.map(c => {
+          if (c.id !== id) return c;
+          const revertLike = !willLike;
+          // revert to previous value
+          return { ...c, isLiked: revertLike, likes: Math.max(0, c.likes + (willLike ? -1 : 1)) };
+        }));
+        reverted = true;
+      }, 3000);
+      apiPostVoid(url)
+        .then(() => {
+          if (reverted) return;
+          clearTimeout(timer);
+        })
+        .catch(() => {
+          if (reverted) return;
+          clearTimeout(timer);
+          // revert on error
+          setComments(prev => prev.map(c => {
+            if (c.id !== id) return c;
+            const revertLike = !willLike;
+            return { ...c, isLiked: revertLike, likes: Math.max(0, c.likes + (willLike ? -1 : 1)) };
+          }));
+        });
+    };
+    window.addEventListener('pc:toggle-comment-like', handler as EventListener);
+    return () => window.removeEventListener('pc:toggle-comment-like', handler as EventListener);
+  }, []);
 
   const isComposerContentEmpty = React.useMemo(() => {
     return isContentEmpty(composerValue);

@@ -55,7 +55,9 @@ export default function PostPage() {
   };
 
   const handleCommentLike = (commentId: string) => {
-    // TODO: call backend like endpoint when available
+    // Optimistic toggle like state for comment within the list via custom event update
+    const toggleEvent = new CustomEvent('pc:toggle-comment-like', { detail: { id: commentId } });
+    window.dispatchEvent(toggleEvent);
   };
 
   const handleCommentDelete = (commentId: string) => {

@@ -8,7 +8,7 @@ from rest_framework.request import Request
 
 from django.db import transaction
 from django.db.models import F, Count, Q
-from .models import ForumPost, ForumPostComment, ForumPostLike
+from .models import ForumPost, ForumPostComment, ForumPostLike, ForumCommentLike
 from .serializers import ForumPostSerializer, ForumPostCommentSerializer
 
 
@@ -180,3 +180,37 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
             "pageUrls": page_urls,
         }
         return Response(payload, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
+    def like(self, request: Request, pk: str | None = None):
+        """Current user likes the comment. Idempotent: multiple calls have no additional effect."""
+        assert pk is not None
+        comment = self.get_object()
+        user = request.user
+        try:
+            with transaction.atomic():
+                _, created = ForumCommentLike.objects.get_or_create(comment=comment, user=user)
+                if created:
+                    ForumPostComment.objects.filter(pk=comment.pk).update(likes_count=F("likes_count") + 1)
+            comment.refresh_from_db(fields=["likes_count"])
+            serializer = self.get_serializer(comment, context={"request": request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:  # pragma: no cover
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
+    def unlike(self, request: Request, pk: str | None = None):
+        """Current user unlikes the comment. Idempotent: if not liked, no change."""
+        assert pk is not None
+        comment = self.get_object()
+        user = request.user
+        try:
+            with transaction.atomic():
+                deleted, _ = ForumCommentLike.objects.filter(comment=comment, user=user).delete()
+                if deleted:
+                    ForumPostComment.objects.filter(pk=comment.pk, likes_count__gt=0).update(likes_count=F("likes_count") - 1)
+            comment.refresh_from_db(fields=["likes_count"])
+            serializer = self.get_serializer(comment, context={"request": request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:  # pragma: no cover
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
