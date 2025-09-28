@@ -119,7 +119,7 @@ export function ForumPostDetailCard({
   const handleAuthorClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (post.isAnonymous || post.author.id === 'anonymous') return;
+    if (post.isAnonymous) return;
     onAuthorClick?.(post.author.id);
   };
 
@@ -148,7 +148,7 @@ export function ForumPostDetailCard({
                 onClick={handleAuthorClick}
                 className="text-sm font-medium text-left hover:text-primary transition-colors"
               >
-                {post.author.isAnonymous 
+                {post.isAnonymous 
                   ? (user && post.author.id === user.id 
                       ? `${post.author.name} (${t('common.anonymous')})` 
                       : t('common.anonymous'))
