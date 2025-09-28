@@ -82,6 +82,12 @@ class Course(models.Model):
     credits = models.CharField(max_length=20, blank=True)
     course_homepage_url = models.URLField(blank=True)
     syllabus_url = models.URLField(blank=True)
+    # Curriculum: list of colleges -> majors -> semesters
+    # Shape (camelCase) aligns with frontend expectations:
+    # [
+    #   { id, name, majors: [ { id, name, semesters: [ { id, year, semester, url, yearLevel? } ] } ] }
+    # ]
+    curriculum = models.JSONField(default=list, blank=True, help_text="List of curriculum colleges with majors and semesters")
 
     class Meta:
         indexes = [

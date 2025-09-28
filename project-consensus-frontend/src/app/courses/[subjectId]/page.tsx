@@ -8,9 +8,11 @@ import CourseReviewCard from "@/components/CourseReviewCard";
 import { TeacherInfo } from "@/types";
 import CourseReviewReplyCard from "@/components/CourseReviewReplyCard";
 import { getRepliesByReviewId } from "@/data/sampleReviewReplies";
-import { sampleCourses, getOtherTeacherCourses } from "@/data/sampleCourses";
+// TODO: reviews to be migrated to backend; currently sample
 import { getReviewsBySubjectId } from "@/data/sampleReviews";
 import { useI18n } from "@/hooks/useI18n";
+import { fetchCourseById } from "@/lib/api/courses";
+import type { Course, TeacherInfo } from "@/types";
 // No longer needed to map names -> ids; sample courses already carry {id,name}
 
 export default function CourseDetailPage({ params }: { params: Promise<{ subjectId: string }> }) {
@@ -22,7 +24,17 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
   const resolvedParams = React.use(params);
   const { subjectId } = resolvedParams;
 
-  const course = React.useMemo(() => sampleCourses.find(c => c.subjectId === subjectId) ?? null, [subjectId]);
+  const [course, setCourse] = React.useState<Course | null>(null);
+
+  // Fetch from backend when subjectId changes
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const data = await fetchCourseById(subjectId);
+      if (!cancelled) setCourse(data);
+    })();
+    return () => { cancelled = true; };
+  }, [subjectId]);
 
   // Use teachers from data (already {id,name}); if ?teacher=name 提供，则将该老师置顶显示
   const teachers: TeacherInfo[] = React.useMemo(() => {
@@ -35,10 +47,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
   }, [course, teacherQuery]);
 
   // Get other teachers teaching the same course
-  const otherTeacherCourses = React.useMemo(() => {
-    if (!course) return [];
-    return getOtherTeacherCourses(course.subjectId, course.subjectCode);
-  }, [course]);
+  const otherTeacherCourses = React.useMemo(() => (course?.otherTeacherCourses ?? []), [course]);
 
   // Get reviews for this course
   const courseReviews = React.useMemo(() => {
@@ -98,24 +107,21 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
                 title={course.title}
                 term={course.term}
                 terms={course.terms}
-                rating={{
-                  ...course.rating,
-                  recommendCount: Math.floor(course.rating.reviewsCount * 0.7),
-                  notRecommendCount: Math.floor(course.rating.reviewsCount * 0.2)
-                }}
+                rating={course.rating}
                 attributes={course.attributes}
                 teachers={teachers}
                 department={course.department}
                 lastUpdated={course.lastUpdated}
+                curriculum={course.curriculum}
                 // placeholders - can be wired later
                 selectionCategory={"—"}
                 teachingType={"—"}
                 courseCategory={"—"}
-                offeringDepartment={course.department}
-                level={"—"}
-                credits={"—"}
-                courseHomepageUrl={undefined}
-                syllabusUrl={undefined}
+                offeringDepartment={course.offeringDepartment ?? course.department}
+                level={course.level}
+                credits={course.credits}
+                courseHomepageUrl={course.courseHomepageUrl}
+                syllabusUrl={course.syllabusUrl}
                 otherTeacherCourses={otherTeacherCourses}
               />
             </div>

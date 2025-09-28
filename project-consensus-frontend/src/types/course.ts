@@ -18,6 +18,29 @@ export interface TeacherInfo {
   // Note: teacher homepage URL removed; we navigate by UUID to internal profile page
 }
 
+// Curriculum types (Phase 1 JSON field)
+export type CurriculumYearLevel = 'y1' | 'y2' | 'y3' | 'y4' | 'y5';
+
+export interface CurriculumSemester {
+  id: string;
+  year: number;
+  semester: SemesterKey;
+  url: string;
+  yearLevel?: CurriculumYearLevel;
+}
+
+export interface CurriculumMajor {
+  id: string;
+  name: string;
+  semesters: CurriculumSemester[];
+}
+
+export interface CurriculumCollege {
+  id: string;
+  name: string;
+  majors: CurriculumMajor[];
+}
+
 /**
  * 其他教师的同课程信息 / Other teacher's course info
  */
@@ -114,6 +137,8 @@ export interface Course {
   syllabusUrl?: string;
   // Other teachers teaching the same course
   otherTeacherCourses?: OtherTeacherCourse[];
+  // Curriculum colleges/majors/semesters
+  curriculum?: CurriculumCollege[];
 }
 
 /**

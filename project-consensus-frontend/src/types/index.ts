@@ -24,6 +24,10 @@ export type {
   CourseReview,
   CourseReviewReply,
   Course,
+  CurriculumYearLevel,
+  CurriculumSemester,
+  CurriculumMajor,
+  CurriculumCollege,
 } from './course';
 
 // 教师相关类型 / Teacher-related types

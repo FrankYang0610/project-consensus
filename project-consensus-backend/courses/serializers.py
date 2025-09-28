@@ -47,6 +47,7 @@ class CourseSerializer(serializers.ModelSerializer):
     courseHomepageUrl = serializers.URLField(source="course_homepage_url", required=False, allow_blank=True)
     syllabusUrl = serializers.URLField(source="syllabus_url", required=False, allow_blank=True)
     otherTeacherCourses = serializers.SerializerMethodField()
+    curriculum = serializers.JSONField(required=False)
 
     class Meta:
         model = Course
@@ -70,6 +71,7 @@ class CourseSerializer(serializers.ModelSerializer):
             "credits",
             "courseHomepageUrl",
             "syllabusUrl",
+            "curriculum",
             "otherTeacherCourses",
         ]
         read_only_fields = ["lastUpdated"]
@@ -134,6 +136,30 @@ class CourseSerializer(serializers.ModelSerializer):
             }
             result.append(payload)
         return result
+
+    def validate_curriculum(self, value):  # lightweight structure validation
+        if value in (None, ""):
+            return []
+        if not isinstance(value, list):
+            raise serializers.ValidationError("curriculum must be a list of colleges")
+        for college in value:
+            if not isinstance(college, dict):
+                raise serializers.ValidationError("college entries must be objects")
+            if "majors" not in college or not isinstance(college.get("majors"), list):
+                raise serializers.ValidationError("college.majors must be a list")
+            for major in college["majors"]:
+                if not isinstance(major, dict):
+                    raise serializers.ValidationError("major must be an object")
+                if "semesters" not in major or not isinstance(major.get("semesters"), list):
+                    raise serializers.ValidationError("major.semesters must be a list")
+                for sem in major["semesters"]:
+                    if not isinstance(sem, dict):
+                        raise serializers.ValidationError("semester must be an object")
+                    if "year" in sem and not isinstance(sem["year"], int):
+                        raise serializers.ValidationError("semester.year must be integer")
+                    if "semester" in sem and sem["semester"] not in ("spring", "summer", "fall"):
+                        raise serializers.ValidationError("semester.semester must be one of: spring, summer, fall")
+        return value
 
 
 class CourseReviewSerializer(serializers.ModelSerializer):

@@ -21,8 +21,8 @@ import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import { stripHtmlTags } from "@/lib/html-utils";
 import { formatTerm, sortTerms } from "@/lib/course-utils";
-import { sampleCourses } from "@/data/sampleCourses";
-import type { SemesterKey } from "@/types";
+import { fetchCourseById } from "@/lib/api/courses";
+import type { SemesterKey, Course } from "@/types";
 
 // Rich text editor (CKEditor 5) is client-only
 const RichTextEditor = dynamic(() => import("@/components/RichTextEditor"), { ssr: false });
@@ -56,7 +56,15 @@ export default function CourseReviewCreatePage({ params }: { params: Promise<{ s
   const [selectedTerm, setSelectedTerm] = React.useState<{ year: number; semester: SemesterKey } | undefined>(undefined);
 
   // Load course to get available terms
-  const course = React.useMemo(() => sampleCourses.find(c => c.subjectId === subjectId) ?? null, [subjectId]);
+  const [course, setCourse] = React.useState<Course | null>(null);
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const data = await fetchCourseById(subjectId);
+      if (!cancelled) setCourse(data);
+    })();
+    return () => { cancelled = true; };
+  }, [subjectId]);
   const availableTerms = React.useMemo(() => {
     if (!course) return [] as Array<{ year: number; semester: SemesterKey }>;
     const source = course.terms && course.terms.length > 0 ? course.terms : [course.term];

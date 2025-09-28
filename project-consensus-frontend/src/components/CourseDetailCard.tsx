@@ -42,9 +42,9 @@ import type {
   SemesterKey,
   OtherTeacherCourse,
   TeacherInfo,
+  CurriculumCollege,
+  CurriculumSemester,
 } from "@/types";
-import { getSampleCurriculumForSubject } from "@/data/sampleCurriculum";
-import type { CurriculumSemester } from "@/data/sampleCurriculum";
 import { useRouter } from "next/navigation";
 
 /**
@@ -126,6 +126,7 @@ export interface CourseDetailCardProps {
   courseHomepageUrl?: string;
   syllabusUrl?: string;
   className?: string;
+  curriculum?: CurriculumCollege[];
   // Filter-related props
   filterState?: FilterState;
   filterCallbacks?: FilterCallbacks;
@@ -280,6 +281,7 @@ export function CourseDetailCard({
   filterCallbacks,
   otherTeacherCourses,
   aiSummary,
+  curriculum,
 }: CourseDetailCardProps) {
   const { t, language } = useI18n();
   const router = useRouter();
@@ -456,7 +458,7 @@ export function CourseDetailCard({
    * 所属培养方案按钮（三级下拉：学院 → 专业 → 学期）
    */
   const CurriculumPlanButton = React.useCallback(() => {
-    const data = getSampleCurriculumForSubject(subjectId);
+    const data = Array.isArray(curriculum) ? curriculum : [];
 
     const goTo = (url: string) => {
       if (typeof window !== 'undefined' && /^https?:\/\//i.test(url)) {
@@ -507,7 +509,7 @@ export function CourseDetailCard({
         </DropdownMenuContent>
       </DropdownMenu>
     );
-  }, [language, router, subjectId, t]);
+  }, [language, router, subjectId, t, curriculum]);
 
   /**
    * Reviews filters inline components
@@ -846,7 +848,7 @@ export function CourseDetailCard({
             </div>
             {/* Follow Button */}
             <div className="flex gap-2">
-              <CurriculumPlanButton />
+              {Array.isArray(curriculum) && curriculum.length > 0 ? <CurriculumPlanButton /> : null}
               <Button size="sm" variant="outline" className="gap-1">
                 <Star className="w-4 h-4" /> {t("courses.detail.follow")}
               </Button>

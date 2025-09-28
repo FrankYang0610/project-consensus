@@ -7,10 +7,21 @@ import { useI18n } from "@/hooks/useI18n";
 import { CourseBackgroundCard } from "@/components/CourseBackgroundCard";
 import { CourseFilterBar } from "@/components/CourseFilterBar";
 import { CoursePreviewCard } from "@/components/CoursePreviewCard";
-import { sampleCourses } from "@/data/sampleCourses";
+import { fetchCourses } from "@/lib/api/courses";
+import type { Course } from "@/types";
 
 export default function CoursesPage() {
   const { t } = useI18n();
+  const [courses, setCourses] = React.useState<Course[]>([]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const list = await fetchCourses({ ordering: "-last_updated" });
+      if (!cancelled) setCourses(list);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <>
@@ -31,7 +42,7 @@ export default function CoursesPage() {
                 <div className="space-y-4">
                   <CourseFilterBar onApply={() => { /* TODO: wire filters to list */ }} />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {sampleCourses.map(course => (
+                    {courses.map(course => (
                       <CoursePreviewCard
                         key={course.subjectId}
                         subjectId={course.subjectId}
@@ -56,5 +67,4 @@ export default function CoursesPage() {
     </>
   );
 }
-
 

@@ -105,6 +105,7 @@ class Migration(migrations.Migration):
                 ("credits", models.CharField(blank=True, max_length=20)),
                 ("course_homepage_url", models.URLField(blank=True)),
                 ("syllabus_url", models.URLField(blank=True)),
+                ("curriculum", models.JSONField(blank=True, default=list, help_text="List of curriculum colleges with majors and semesters")),
             ],
             options={
                 "verbose_name": "课程",
