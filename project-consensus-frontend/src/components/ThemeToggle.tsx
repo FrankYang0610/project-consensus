@@ -14,8 +14,12 @@ export function ThemeToggle() {
   const currentTheme = (theme ?? "system") as "system" | "light" | "dark";
   const effectiveTheme = currentTheme === "system" ? resolvedTheme : currentTheme;
   
-  const nextTheme = (t: "system" | "light" | "dark") =>
-    t === "system" ? "light" : t === "light" ? "dark" : "system";
+  const themeCycle: Record<"system" | "light" | "dark", "system" | "light" | "dark"> = {
+    system: "light",
+    light: "dark",
+    dark: "system",
+  };
+  const nextTheme = (t: "system" | "light" | "dark") => themeCycle[t];
   
   const ariaLabel =
     currentTheme === "system"
