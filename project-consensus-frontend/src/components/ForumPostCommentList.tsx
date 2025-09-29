@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { MessageSquare, Plus, X } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
-import { apiGet, apiPostVoid, apiDeleteVoid, cn, isContentEmpty } from "@/lib/utils";
+import { apiGet, apiPost, apiDeleteVoid, cn, isContentEmpty } from "@/lib/utils";
 import { GetForumPostCommentPositionResponse, ListCommentsResponse } from "@/types/api";
 import { useApp } from "@/contexts/AppContext";
 import ForumPostCommentComposer from "@/components/ForumPostCommentComposer";
@@ -38,6 +38,7 @@ interface ForumPostCommentListProps {
   onComposerAnonymousChange?: (checked: boolean) => void;
   onSubmitComposer?: () => void;
   onCancelComposer?: () => void;
+  isComposerSubmitting?: boolean;
 }
 
 /**
@@ -62,13 +63,27 @@ export function ForumPostCommentList({
   composerIsAnonymous = false,
   onComposerAnonymousChange,
   onSubmitComposer,
-  onCancelComposer
+  onCancelComposer,
+  isComposerSubmitting = false
 }: ForumPostCommentListProps) {
   const { t } = useI18n();
   const { isLoggedIn, openLoginModal } = useApp();
   
   const loaderRef = React.useRef<HTMLDivElement | null>(null);
   const loadingRef = React.useRef(false);
+
+  // 防止 "连点点赞/取消赞" 导致 UI 和后端状态打架的轻量级锁
+  // Lightweight lock to prevent double-tap like/unlike causing UI/server mismatch
+  // 
+  // 用法：
+  // - 某条评论正在发起点赞/取消赞请求时，把这条评论的 id 放进 Set 里；
+  // - 在请求成功、失败或超时后，再把它从 Set 里移除；
+  // - 只要 id 还在 Set 里，后续对同一条评论的点击一律忽略（避免计数 "抖动"）。
+  // Meaning:
+  // - When a like/unlike request is in flight for a comment, put its id into this Set
+  // - Remove the id after success/error/timeout
+  // - While the id stays in the Set, further toggles for that comment are ignored
+  const likeInFlightRef = React.useRef<Set<string>>(new Set());
 
   // 扁平评论流：服务端分页 / Flat comments feed with server pagination
   const [comments, setComments] = React.useState<ForumPostComment[]>([]);
@@ -106,20 +121,15 @@ export function ForumPostCommentList({
 
   // 平滑滚动到指定评论位置 / Smooth scroll to a comment by id
   const scrollToComment = React.useCallback((targetId: string) => {
-    console.log('Attempting to scroll to comment:', targetId);
     const el = document.getElementById(`comment-${targetId}`);
-    console.log('Found element:', el);
     if (el) {
       const rect = el.getBoundingClientRect();
       const absoluteTop = rect.top + window.pageYOffset;
       const targetTop = Math.max(absoluteTop - (window.innerHeight / 2 - rect.height / 2), 0);
-      console.log('Scrolling to position:', targetTop);
       window.scrollTo({ top: targetTop, behavior: 'smooth' });
       // brief highlight
       el.classList.add('ring-2', 'ring-primary/40');
       setTimeout(() => el.classList.remove('ring-2', 'ring-primary/40'), 2000);
-    } else {
-      console.warn('Comment element not found:', `comment-${targetId}`);
     }
   }, []);
 
@@ -203,6 +213,9 @@ export function ForumPostCommentList({
     idToComment.current = idToCommentMap;
   }, [idToCommentMap]);
 
+  // Store per-comment rollback snapshots for delete operations
+  const deleteRollbackByIdRef = React.useRef<Map<string, Pick<ForumPostComment, 'isDeleted' | 'content'>>>(new Map());
+
   // Expose method via custom event for child cards to request a jump
   React.useEffect(() => {
     const handler = (e: Event) => {
@@ -215,53 +228,46 @@ export function ForumPostCommentList({
     return () => window.removeEventListener('pc:jump-to-comment', handler as EventListener);
   }, [loadUntilAndScroll]);
 
-  // Optimistic like toggle listener
+  // Optimistic like toggle listener (with in-flight lock and server reconciliation)
   React.useEffect(() => {
     const handler = (e: Event) => {
       const custom = e as CustomEvent<{ id: string }>;
       const id = custom.detail?.id;
       if (!id) return;
+      // Ignore if a like/unlike request is already in flight for this id
+      if (likeInFlightRef.current.has(id)) return;
+      likeInFlightRef.current.add(id);
+      // Compute the intended next like state once using the current snapshot
+      const current = idToComment.current.get(id);
+      const prevLiked = !!current?.isLiked;
+      const prevLikes = typeof current?.likes === 'number' ? current.likes : 0;
+      const willLike = !prevLiked;
       setComments(prev => {
         const next = prev.map(c => {
           if (c.id !== id) return c;
-          const wasLiked = !!c.isLiked;
-          const willLike = !wasLiked;
           return { ...c, isLiked: willLike, likes: Math.max(0, c.likes + (willLike ? 1 : -1)) };
         });
         return next;
       });
 
       // fire API request
-      const comment = idToComment.current.get(id);
-      // Note: we used updated state above; compute willLike again for request
-      const willLike = !(comment?.isLiked ?? false);
       const url = willLike ? `/api/forum/comments/${id}/like/` : `/api/forum/comments/${id}/unlike/`;
-      let reverted = false;
-      const timer = setTimeout(() => {
-        if (reverted) return;
-        // revert on timeout
-        setComments(prev => prev.map(c => {
-          if (c.id !== id) return c;
-          const revertLike = !willLike;
-          // revert to previous value
-          return { ...c, isLiked: revertLike, likes: Math.max(0, c.likes + (willLike ? -1 : 1)) };
-        }));
-        reverted = true;
-      }, 3000);
-      apiPostVoid(url)
-        .then(() => {
-          if (reverted) return;
-          clearTimeout(timer);
+      apiPost<ForumPostComment>(url, {})
+        .then((data) => {
+          // Reconcile with server truth
+          setComments(prev => prev.map(c => {
+            if (c.id !== id) return c;
+            return { ...c, isLiked: !!data.isLiked, likes: Math.max(0, data.likes) };
+          }));
+          likeInFlightRef.current.delete(id);
         })
         .catch(() => {
-          if (reverted) return;
-          clearTimeout(timer);
           // revert on error
           setComments(prev => prev.map(c => {
             if (c.id !== id) return c;
-            const revertLike = !willLike;
-            return { ...c, isLiked: revertLike, likes: Math.max(0, c.likes + (willLike ? -1 : 1)) };
+            return { ...c, isLiked: prevLiked, likes: Math.max(0, prevLikes) };
           }));
+          likeInFlightRef.current.delete(id);
         });
     };
     window.addEventListener('pc:toggle-comment-like', handler as EventListener);
@@ -275,37 +281,30 @@ export function ForumPostCommentList({
       const id = custom.detail?.id;
       if (!id) return;
 
-      // Snapshot previous for rollback
-      const prev = idToComment.current.get(id);
-      if (!prev) return;
+      // Ensure the target exists before proceeding
+      if (!idToComment.current.has(id)) return;
 
-      // Optimistically mark as deleted locally
-      setComments(prevList => prevList.map(c => c.id === id ? { ...c, isDeleted: true, content: "" } : c));
-
-      let reverted = false;
-      const timer = setTimeout(() => {
-        if (reverted) return;
-        // Rollback on timeout
-        setComments(prevList => prevList.map(c => c.id === id ? { ...c, isDeleted: prev.isDeleted ?? false, content: prev.content } : c));
-        // Inform children/previews to rollback if they had updated
-        window.dispatchEvent(new CustomEvent('pc:comment-deleted-rollback', { detail: { id } }));
-        reverted = true;
-      }, 3000);
+      // Capture rollback snapshot from the updater's prev state to avoid races
+      setComments(prevList => {
+        const target = prevList.find(c => c.id === id);
+        if (!target) return prevList;
+        deleteRollbackByIdRef.current.set(id, { isDeleted: !!target.isDeleted, content: target.content });
+        return prevList.map(c => c.id === id ? { ...c, isDeleted: true, content: "" } : c);
+      });
 
       apiDeleteVoid(`/api/forum/comments/${id}/`)
         .then(() => {
-          if (reverted) return;
-          clearTimeout(timer);
           // Inform children/previews to update their local lists
           window.dispatchEvent(new CustomEvent('pc:comment-deleted-ok', { detail: { id } }));
+          deleteRollbackByIdRef.current.delete(id);
         })
         .catch(() => {
-          if (reverted) return;
-          clearTimeout(timer);
           // Rollback on error
-          setComments(prevList => prevList.map(c => c.id === id ? { ...c, isDeleted: prev.isDeleted ?? false, content: prev.content } : c));
+          const snapshot = deleteRollbackByIdRef.current.get(id);
+          setComments(prevList => prevList.map(c => c.id === id ? { ...c, isDeleted: snapshot?.isDeleted ?? false, content: snapshot?.content ?? c.content } : c));
           // Inform children/previews to rollback if they had updated
           window.dispatchEvent(new CustomEvent('pc:comment-deleted-rollback', { detail: { id } }));
+          deleteRollbackByIdRef.current.delete(id);
         });
     };
     window.addEventListener('pc:delete-comment', handler as EventListener);
@@ -368,7 +367,7 @@ export function ForumPostCommentList({
           onAnonymousChange={(v) => onComposerAnonymousChange?.(Boolean(v))}
           onSubmit={onSubmitComposer}
           onCancel={onCancelComposer}
-          isSubmitDisabled={isComposerContentEmpty}
+          isSubmitDisabled={isComposerContentEmpty || !!isComposerSubmitting}
           closeAriaLabel={t('common.close') || 'Close'}
           anonymousLabel={t('comment.anonymous') || 'Comment anonymously'}
           postLabel={t('comment.post') || 'Post'}
@@ -413,7 +412,7 @@ export function ForumPostCommentList({
                     onAnonymousChange={(v) => onComposerAnonymousChange?.(Boolean(v))}
                     onSubmit={onSubmitComposer}
                     onCancel={onCancelComposer}
-                    isSubmitDisabled={isComposerContentEmpty}
+                    isSubmitDisabled={isComposerContentEmpty || !!isComposerSubmitting}
                     closeAriaLabel={t('common.close') || 'Close'}
                     anonymousLabel={t('comment.anonymous') || 'Comment anonymously'}
                     postLabel={t('comment.post') || 'Post'}

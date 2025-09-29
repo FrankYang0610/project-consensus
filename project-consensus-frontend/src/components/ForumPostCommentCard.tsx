@@ -102,12 +102,28 @@ export function ForumPostCommentCard({
   const handleDeleteConfirm = async () => {
     if (onDelete && !isDeleting) {
       setIsDeleting(true);
-      try {
-        onDelete(comment.id);
-        setIsDeleteDialogOpen(false);
-      } finally {
+      // Defer unlocking until we observe a global completion/rollback event to avoid duplicates
+      const done = () => {
         setIsDeleting(false);
-      }
+        setIsDeleteDialogOpen(false);
+        window.removeEventListener('pc:comment-deleted-ok', onOk as EventListener);
+        window.removeEventListener('pc:comment-deleted-rollback', onRollback as EventListener);
+      };
+      const onOk = (e: Event) => {
+        const custom = e as CustomEvent<{ id: string }>;
+        if (custom.detail?.id === comment.id) {
+          done();
+        }
+      };
+      const onRollback = (e: Event) => {
+        const custom = e as CustomEvent<{ id: string }>;
+        if (custom.detail?.id === comment.id) {
+          done();
+        }
+      };
+      window.addEventListener('pc:comment-deleted-ok', onOk as EventListener);
+      window.addEventListener('pc:comment-deleted-rollback', onRollback as EventListener);
+      onDelete(comment.id);
     }
   };
 

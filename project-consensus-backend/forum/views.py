@@ -7,7 +7,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 
 from django.db import transaction
-from django.db.models import F, Count, Q
+from django.db.models import F, Count, Q, Case, When, Value, IntegerField
 from .models import ForumPost, ForumPostComment, ForumPostLike, ForumCommentLike
 from .serializers import ForumPostSerializer, ForumPostCommentSerializer
 
@@ -78,7 +78,13 @@ class ForumPostViewSet(viewsets.ModelViewSet):
             with transaction.atomic():
                 deleted, _ = ForumPostLike.objects.filter(post=post, user=user).delete()
                 if deleted:
-                    ForumPost.objects.filter(pk=post.pk, likes_count__gt=0).update(likes_count=F("likes_count") - 1)
+                    ForumPost.objects.filter(pk=post.pk).update(
+                        likes_count=Case(
+                            When(likes_count__gt=0, then=F("likes_count") - 1),
+                            default=Value(0),
+                            output_field=IntegerField(),
+                        )
+                    )
             post.refresh_from_db(fields=["likes_count"])
             serializer = self.get_serializer(post, context={"request": request})
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -240,7 +246,13 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
             with transaction.atomic():
                 deleted, _ = ForumCommentLike.objects.filter(comment=comment, user=user).delete()
                 if deleted:
-                    ForumPostComment.objects.filter(pk=comment.pk, likes_count__gt=0).update(likes_count=F("likes_count") - 1)
+                    ForumPostComment.objects.filter(pk=comment.pk).update(
+                        likes_count=Case(
+                            When(likes_count__gt=0, then=F("likes_count") - 1),
+                            default=Value(0),
+                            output_field=IntegerField(),
+                        )
+                    )
             comment.refresh_from_db(fields=["likes_count"])
             serializer = self.get_serializer(comment, context={"request": request})
             return Response(serializer.data, status=status.HTTP_200_OK)

@@ -30,6 +30,8 @@ export default function PostPage() {
   const [commentsRefreshKey, setCommentsRefreshKey] = React.useState(0);
   const composerRef = React.useRef<HTMLDivElement | null>(null);
   const [isComposerOpen, setIsComposerOpen] = React.useState(false);
+  const [isSubmittingComment, setIsSubmittingComment] = React.useState(false);
+  const postLikeInFlightRef = React.useRef<Set<string>>(new Set());
   React.useEffect(() => {
     let mounted = true;
     apiGet<ForumPost>(`/api/forum/posts/${postId}/`)
@@ -98,7 +100,9 @@ export default function PostPage() {
     if (!post) return;
     // For rich text content, we need to check if there's actual content beyond just HTML tags
     if (isContentEmpty(commentContent)) return;
+    if (isSubmittingComment) return;
     try {
+      setIsSubmittingComment(true);
       const created = await apiPost<ForumPostComment>(`/api/forum/comments/`, {
         content: commentContent.trim(),
         postId: postId,
@@ -119,6 +123,8 @@ export default function PostPage() {
       });
     } catch (e) {
       console.error(e);
+    } finally {
+      setIsSubmittingComment(false);
     }
   };
 
@@ -153,28 +159,24 @@ export default function PostPage() {
               post={post}
               onLike={(id) => {
                 if (!post) return;
+                if (postLikeInFlightRef.current.has(id)) return;
+                postLikeInFlightRef.current.add(id);
                 const wasLiked = post.isLiked ?? false;
+                const prevLikes = post.likes ?? 0;
                 const willLike = !wasLiked;
                 // optimistic
                 setPost(prev => prev ? { ...prev, isLiked: willLike, likes: Math.max(0, prev.likes + (willLike ? 1 : -1)) } : prev);
 
-                let reverted = false;
-                const timer = setTimeout(() => {
-                  if (reverted) return;
-                  setPost(prev => prev ? { ...prev, isLiked: wasLiked, likes: Math.max(0, prev.likes + (willLike ? -1 : 1)) } : prev);
-                  reverted = true;
-                }, 3000);
-
                 const endpoint = willLike ? `/api/forum/posts/${id}/like/` : `/api/forum/posts/${id}/unlike/`;
-                apiPostVoid(endpoint)
-                  .then(() => {
-                    if (reverted) return;
-                    clearTimeout(timer);
+                apiPost<ForumPost>(endpoint, {})
+                  .then((data) => {
+                    // reconcile with server response
+                    setPost(prev => prev ? { ...prev, isLiked: !!data.isLiked, likes: Math.max(0, data.likes) } : prev);
+                    postLikeInFlightRef.current.delete(id);
                   })
                   .catch(() => {
-                    if (reverted) return;
-                    clearTimeout(timer);
-                    setPost(prev => prev ? { ...prev, isLiked: wasLiked, likes: Math.max(0, prev.likes + (willLike ? -1 : 1)) } : prev);
+                    setPost(prev => prev ? { ...prev, isLiked: wasLiked, likes: Math.max(0, prevLikes) } : prev);
+                    postLikeInFlightRef.current.delete(id);
                   });
               }}
               onDelete={handleDeletePost}
@@ -194,6 +196,7 @@ export default function PostPage() {
               composerIsAnonymous={commentIsAnonymous}
               onComposerAnonymousChange={(v) => setCommentIsAnonymous(Boolean(v))}
               onSubmitComposer={handleSubmitComment}
+              isComposerSubmitting={isSubmittingComment}
               onCancelComposer={() => { setReplyToId(undefined); setIsComposerOpen(false); }}
               key={commentsRefreshKey}
             />

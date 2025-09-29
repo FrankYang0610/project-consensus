@@ -8,7 +8,7 @@ import { useI18n } from "@/hooks/useI18n";
 import CreateForumPostButton from "@/components/CreateForumPostButton";
 import { useApp } from "@/contexts/AppContext";
 import { Button } from "@/components/ui/button";
-import { apiGet, apiPostVoid } from "@/lib/utils";
+import { apiGet, apiPost } from "@/lib/utils";
 import { ListPostsResponse } from "@/types/api";
 import { ForumPost } from "@/types";
 
@@ -20,45 +20,39 @@ export default function HomePage() {
   const loadingRef = React.useRef(false);
   const [nextUrl, setNextUrl] = React.useState<string | null>("/api/forum/posts/?page=1&page_size=12");
   const [loadError, setLoadError] = React.useState(false);
+  const postLikeInFlightRef = React.useRef<Set<string>>(new Set());
 
   const handleLike = React.useCallback((id: string) => {
-    const wasLiked = posts.find(p => p.id === id)?.isLiked ?? false;
+    const target = posts.find(p => p.id === id);
+    if (!target) return;
+    if (postLikeInFlightRef.current.has(id)) return;
+    postLikeInFlightRef.current.add(id);
+
+    const wasLiked = target.isLiked ?? false;
+    const prevLikes = target.likes ?? 0;
     const willLike = !wasLiked;
 
     // Optimistic UI update
-    setPosts(prev => prev.map(p => {
-      if (p.id !== id) return p;
-      const nextLikes = Math.max(0, p.likes + (willLike ? 1 : -1));
-      return { ...p, isLiked: willLike, likes: nextLikes };
-    }));
-
-    let reverted = false;
-    const timer = setTimeout(() => {
-      if (reverted) return;
-      // Revert after 3s timeout
-      setPosts(prev => prev.map(p => {
-        if (p.id !== id) return p;
-        const nextLikes = Math.max(0, p.likes + (willLike ? -1 : 1));
-        return { ...p, isLiked: wasLiked, likes: nextLikes };
-      }));
-      reverted = true;
-    }, 3000);
+    setPosts(prev => prev.map(p => p.id === id
+      ? { ...p, isLiked: willLike, likes: Math.max(0, p.likes + (willLike ? 1 : -1)) }
+      : p
+    ));
 
     const endpoint = willLike ? `/api/forum/posts/${id}/like/` : `/api/forum/posts/${id}/unlike/`;
-    apiPostVoid(endpoint)
-      .then(() => {
-        if (reverted) return;
-        clearTimeout(timer);
+    apiPost<ForumPost>(endpoint, {})
+      .then((data) => {
+        setPosts(prev => prev.map(p => p.id === id
+          ? { ...p, isLiked: !!data.isLiked, likes: Math.max(0, data.likes) }
+          : p
+        ));
+        postLikeInFlightRef.current.delete(id);
       })
       .catch(() => {
-        if (reverted) return;
-        clearTimeout(timer);
-        // revert on error
-        setPosts(prev => prev.map(p => {
-          if (p.id !== id) return p;
-          const nextLikes = Math.max(0, p.likes + (willLike ? -1 : 1));
-          return { ...p, isLiked: wasLiked, likes: nextLikes };
-        }));
+        setPosts(prev => prev.map(p => p.id === id
+          ? { ...p, isLiked: wasLiked, likes: Math.max(0, prevLikes) }
+          : p
+        ));
+        postLikeInFlightRef.current.delete(id);
       });
   }, [posts]);
 
