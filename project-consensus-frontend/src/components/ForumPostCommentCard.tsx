@@ -63,6 +63,25 @@ export function ForumPostCommentCard({
   const [repliesError, setRepliesError] = React.useState<string | null>(null);
   const [replies, setReplies] = React.useState<ForumPostComment[] | null>(null);
   const [repliesNextUrl, setRepliesNextUrl] = React.useState<string | null>(null);
+
+  // 复制提示的定时器引用
+  // Timeout reference for copy success
+  const copyTimeoutRef = React.useRef<number | undefined>(undefined);
+
+
+  // 在发起 "删除评论" 这次操作时，我们把两个全局事件监听器先存起来：pc:comment-deleted-ok（删除成功）和 pc:comment-deleted-rollback（删除撤回/失败回滚）。之所以存起来，是为了在流程结束（成功或回滚）后，能统一、可靠地把这些监听器移除，避免重复绑定和内存泄漏。存放位置是 deleteEventHandlersRef（一个 useRef 对象），里面会暂存 onOk 和 onRollback 这两个回调。removeDeleteListeners 就是把这次删除流程临时加的全局监听器移除，并把引用清空。这样下一次删除不会受到上一次遗留监听的影响。
+  // When starting the "delete comment" operation, we store two global event listeners: pc:comment-deleted-ok (delete successful) and pc:comment-deleted-rollback (delete rollback/failed rollback). We store them because we need to remove them reliably after the process ends (successful or rollback). The storage location is deleteEventHandlersRef (a useRef object), which temporarily stores the onOk and onRollback callbacks. removeDeleteListeners removes the global listeners added for this delete and clears the reference. This way, the next delete will not be affected by the previous leftover listeners.
+  const deleteEventHandlersRef = React.useRef<{ onOk?: EventListener; onRollback?: EventListener }>({});
+  const removeDeleteListeners = React.useCallback(() => {
+    const { onOk, onRollback } = deleteEventHandlersRef.current;
+    if (onOk) {
+      window.removeEventListener('pc:comment-deleted-ok', onOk);
+    }
+    if (onRollback) {
+      window.removeEventListener('pc:comment-deleted-rollback', onRollback);
+    }
+    deleteEventHandlersRef.current = {};
+  }, []);
   
   // 用于存储回复删除前的原始状态，支持删除操作的撤销功能
   // Stores the original state of replies before deletion to support rollback functionality for delete operations
@@ -102,27 +121,27 @@ export function ForumPostCommentCard({
   const handleDeleteConfirm = async () => {
     if (onDelete && !isDeleting) {
       setIsDeleting(true);
-      // Defer unlocking until we observe a global completion/rollback event to avoid duplicates
+      removeDeleteListeners();
       const done = () => {
+        removeDeleteListeners();
         setIsDeleting(false);
         setIsDeleteDialogOpen(false);
-        window.removeEventListener('pc:comment-deleted-ok', onOk as EventListener);
-        window.removeEventListener('pc:comment-deleted-rollback', onRollback as EventListener);
       };
-      const onOk = (e: Event) => {
-        const custom = e as CustomEvent<{ id: string }>;
+      const onOk: EventListener = (event) => {
+        const custom = event as CustomEvent<{ id: string }>;
         if (custom.detail?.id === comment.id) {
           done();
         }
       };
-      const onRollback = (e: Event) => {
-        const custom = e as CustomEvent<{ id: string }>;
+      const onRollback: EventListener = (event) => {
+        const custom = event as CustomEvent<{ id: string }>;
         if (custom.detail?.id === comment.id) {
           done();
         }
       };
-      window.addEventListener('pc:comment-deleted-ok', onOk as EventListener);
-      window.addEventListener('pc:comment-deleted-rollback', onRollback as EventListener);
+      deleteEventHandlersRef.current = { onOk, onRollback };
+      window.addEventListener('pc:comment-deleted-ok', onOk);
+      window.addEventListener('pc:comment-deleted-rollback', onRollback);
       onDelete(comment.id);
     }
   };
@@ -144,8 +163,12 @@ export function ForumPostCommentCard({
       await navigator.clipboard.writeText(textToCopy);
       setIsCopySuccess(true);
       setIsDropdownOpen(false);
-      setTimeout(() => {
+      if (copyTimeoutRef.current !== undefined) {
+        window.clearTimeout(copyTimeoutRef.current);
+      }
+      copyTimeoutRef.current = window.setTimeout(() => {
         setIsCopySuccess(false);
+        copyTimeoutRef.current = undefined;
       }, 2000);
     } catch (err) {
       console.error('Failed to copy text:', err);
@@ -203,6 +226,18 @@ export function ForumPostCommentCard({
       setIsRepliesLoading(false);
     }
   }, [repliesNextUrl, isRepliesLoading, toRelative]);
+
+  // 组件卸载时清理复制提示的定时器与删除评论相关的全局监听器，避免遗留资源
+  // Clean up copy success timeout and comment deletion listeners on unmount to prevent lingering resources
+  React.useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current !== undefined) {
+        window.clearTimeout(copyTimeoutRef.current);
+        copyTimeoutRef.current = undefined;
+      }
+      removeDeleteListeners();
+    };
+  }, [removeDeleteListeners]);
 
   // Listen for global delete events to update loaded replies optimistically
   React.useEffect(() => {
