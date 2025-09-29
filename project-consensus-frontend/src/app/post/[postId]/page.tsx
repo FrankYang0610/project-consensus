@@ -61,7 +61,9 @@ export default function PostPage() {
   };
 
   const handleCommentDelete = (commentId: string) => {
-    // TODO: call backend delete endpoint when available
+    // Dispatch event to let the list perform optimistic delete + API
+    const ev = new CustomEvent('pc:delete-comment', { detail: { id: commentId } });
+    window.dispatchEvent(ev);
   };
 
   const handleAddComment = () => {
@@ -82,10 +84,6 @@ export default function PostPage() {
     });
   };
 
-  const handleCommentShare = (commentId: string) => {
-    // TODO: Implement comment share functionality
-    console.log("Share comment:", commentId);
-  };
 
   const handleDeletePost = async (id: string) => {
     try {
@@ -113,6 +111,8 @@ export default function PostPage() {
       setCommentIsAnonymous(false);
       setReplyToId(undefined);
       setIsComposerOpen(false);
+      // Notify list that a comment is created (to bump parent replies immediately)
+      window.dispatchEvent(new CustomEvent('pc:comment-created', { detail: { comment: created } }));
       // Ask the comment list to load pages up to the new comment and scroll to it
       requestAnimationFrame(() => {
         window.dispatchEvent(new CustomEvent('pc:jump-to-comment', { detail: { id: created.id } }));
@@ -183,7 +183,6 @@ export default function PostPage() {
               onLike={handleCommentLike}
               onReply={handleReplyToComment}
               onDelete={handleCommentDelete}
-              onShare={handleCommentShare}
               onAddComment={handleAddComment}
               currentUserId={currentUserId}
               postId={postId}

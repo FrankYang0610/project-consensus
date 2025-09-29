@@ -114,12 +114,37 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
             qs = qs.filter(reply_to_id=reply_to_id)
         # Consistent ordering: oldest first (ascending)
         qs = qs.order_by("created_at", "id")
-        # Annotate direct replies count (exclude soft-deleted replies)
-        return qs.annotate(replies_count=Count("replies", filter=Q(replies__is_deleted=False)))
+        # Annotate direct replies count (include soft-deleted replies)
+        return qs.annotate(replies_count=Count("replies"))
 
     def perform_create(self, serializer):  # type: ignore[override]
         # Always set the author to current user; no main thread tracking in flat model
         serializer.save(author=self.request.user)
+
+    def destroy(self, request: Request, *args, **kwargs):  # type: ignore[override]
+        """Soft delete a comment: only the author may delete.
+
+        Behavior:
+        - Mark is_deleted=True
+        - Clear content (set to empty string)
+        - Keep the row to preserve thread structure
+        """
+        comment = self.get_object()
+        if request.user != comment.author:
+            return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+
+        # If already soft-deleted, return current state
+        if getattr(comment, "is_deleted", False):
+            serializer = self.get_serializer(comment, context={"request": request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        with transaction.atomic():
+            # Soft delete and clear content
+            ForumPostComment.objects.filter(pk=comment.pk).update(is_deleted=True, content="")
+        comment.refresh_from_db(fields=["is_deleted", "content"]) 
+        serializer = self.get_serializer(comment, context={"request": request})
+        # 200 with updated payload helps clients update state; DELETE 204 would also be acceptable
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["GET"], url_path="position", permission_classes=[permissions.AllowAny])
     def position(self, request: Request):

@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { MessageSquare, Plus, X } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
-import { apiGet, apiPostVoid, cn, isContentEmpty } from "@/lib/utils";
+import { apiGet, apiPostVoid, apiDeleteVoid, cn, isContentEmpty } from "@/lib/utils";
 import { GetForumPostCommentPositionResponse, ListCommentsResponse } from "@/types/api";
 import { useApp } from "@/contexts/AppContext";
 import ForumPostCommentComposer from "@/components/ForumPostCommentComposer";
@@ -25,7 +25,6 @@ interface ForumPostCommentListProps {
   onLike?: (commentId: string) => void;
   onReply?: (commentId: string) => void;
   onDelete?: (commentId: string) => void;
-  onShare?: (commentId: string) => void;
   onAddComment?: () => void;
   currentUserId?: string;
   postId: string;
@@ -52,7 +51,6 @@ export function ForumPostCommentList({
   onLike,
   onReply,
   onDelete,
-  onShare,
   onAddComment,
   currentUserId,
   postId,
@@ -195,11 +193,15 @@ export function ForumPostCommentList({
 
   // 用于快速查找 parent 评论 / Map for quick parent lookup
   const idToComment = React.useRef<Map<string, ForumPostComment>>(new Map());
-  React.useEffect(() => {
+  const idToCommentMap = React.useMemo(() => {
     const map = new Map<string, ForumPostComment>();
     for (const c of comments) map.set(c.id, c);
-    idToComment.current = map;
+    return map;
   }, [comments]);
+  React.useEffect(() => {
+    // keep ref in sync for event handlers
+    idToComment.current = idToCommentMap;
+  }, [idToCommentMap]);
 
   // Expose method via custom event for child cards to request a jump
   React.useEffect(() => {
@@ -266,6 +268,64 @@ export function ForumPostCommentList({
     return () => window.removeEventListener('pc:toggle-comment-like', handler as EventListener);
   }, []);
 
+  // Optimistic delete listener
+  React.useEffect(() => {
+    const handler = (e: Event) => {
+      const custom = e as CustomEvent<{ id: string }>;
+      const id = custom.detail?.id;
+      if (!id) return;
+
+      // Snapshot previous for rollback
+      const prev = idToComment.current.get(id);
+      if (!prev) return;
+
+      // Optimistically mark as deleted locally
+      setComments(prevList => prevList.map(c => c.id === id ? { ...c, isDeleted: true, content: "" } : c));
+
+      let reverted = false;
+      const timer = setTimeout(() => {
+        if (reverted) return;
+        // Rollback on timeout
+        setComments(prevList => prevList.map(c => c.id === id ? { ...c, isDeleted: prev.isDeleted ?? false, content: prev.content } : c));
+        // Inform children/previews to rollback if they had updated
+        window.dispatchEvent(new CustomEvent('pc:comment-deleted-rollback', { detail: { id } }));
+        reverted = true;
+      }, 3000);
+
+      apiDeleteVoid(`/api/forum/comments/${id}/`)
+        .then(() => {
+          if (reverted) return;
+          clearTimeout(timer);
+          // Inform children/previews to update their local lists
+          window.dispatchEvent(new CustomEvent('pc:comment-deleted-ok', { detail: { id } }));
+        })
+        .catch(() => {
+          if (reverted) return;
+          clearTimeout(timer);
+          // Rollback on error
+          setComments(prevList => prevList.map(c => c.id === id ? { ...c, isDeleted: prev.isDeleted ?? false, content: prev.content } : c));
+          // Inform children/previews to rollback if they had updated
+          window.dispatchEvent(new CustomEvent('pc:comment-deleted-rollback', { detail: { id } }));
+        });
+    };
+    window.addEventListener('pc:delete-comment', handler as EventListener);
+    return () => window.removeEventListener('pc:delete-comment', handler as EventListener);
+  }, []);
+
+  // New comment created listener (optimistically bump parent replies count)
+  React.useEffect(() => {
+    const handler = (e: Event) => {
+      const custom = e as CustomEvent<{ comment: ForumPostComment }>; // created payload
+      const created = custom.detail?.comment;
+      if (!created) return;
+      const parentId = created.replyTo;
+      if (!parentId) return; // only bump for replies to a comment
+      setComments(prev => prev.map(c => c.id === parentId ? { ...c, replies: (typeof c.replies === 'number' ? c.replies : (0)) + 1 } : c));
+    };
+    window.addEventListener('pc:comment-created', handler as EventListener);
+    return () => window.removeEventListener('pc:comment-created', handler as EventListener);
+  }, []);
+
   const isComposerContentEmpty = React.useMemo(() => {
     return isContentEmpty(composerValue);
   }, [composerValue]);
@@ -327,7 +387,7 @@ export function ForumPostCommentList({
           {/* 遍历显示扁平评论 / Iterate through and display flat comments */}
           {comments.map((comment) => {
             const isReply = Boolean(comment.replyTo);
-            const parentComment = isReply && comment.replyTo ? idToComment.current.get(comment.replyTo) : undefined;
+            const parentComment = isReply && comment.replyTo ? idToCommentMap.get(comment.replyTo) : undefined;
             return (
               <React.Fragment key={comment.id}>
                 <ForumPostCommentComponent
@@ -335,7 +395,6 @@ export function ForumPostCommentList({
                   onLike={onLike}
                   onReply={onReply}
                   onDelete={onDelete}
-                  onShare={onShare}
                   currentUserId={currentUserId}
                   isReply={isReply}
                   parentComment={parentComment}

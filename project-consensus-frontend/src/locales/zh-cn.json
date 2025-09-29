@@ -111,6 +111,12 @@
     "delete": "删除",
     "deleting": "删除中...",
     "deleted": "此评论已被删除",
+    "deleteConfirm": {
+      "title": "删除评论",
+      "message": "确定要删除这条评论吗？此操作无法撤销。",
+      "confirm": "删除",
+      "cancel": "取消"
+    },
     "showReplies": "展开 {{count}} 条回复",
     "hideReplies": "收起回复",
     "loadMore": "加载更多 ({{remaining}} 条)",
