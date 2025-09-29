@@ -31,7 +31,20 @@ export default function PostPage() {
   const composerRef = React.useRef<HTMLDivElement | null>(null);
   const [isComposerOpen, setIsComposerOpen] = React.useState(false);
   const [isSubmittingComment, setIsSubmittingComment] = React.useState(false);
+
+  // 防止 "连点点赞/取消赞" 导致 UI 和后端状态打架的轻量级锁
+  // Lightweight lock to prevent double-tap like/unlike causing UI/server mismatch
+  // 
+  // 用法：
+  // - 某条帖子正在发起点赞/取消赞请求时，把这条帖子的 id 放进 Set 里；
+  // - 在请求成功、失败或超时后，再把它从 Set 里移除；
+  // - 只要 id 还在 Set 里，后续对同一条帖子的点击一律忽略（避免计数 "抖动"）。
+  // Meaning:
+  // - When a like/unlike request is in flight for a post, put its id into this Set
+  // - Remove the id after success/error/timeout
+  // - While the id stays in the Set, further toggles for that post are ignored
   const postLikeInFlightRef = React.useRef<Set<string>>(new Set());
+
   React.useEffect(() => {
     let mounted = true;
     apiGet<ForumPost>(`/api/forum/posts/${postId}/`)

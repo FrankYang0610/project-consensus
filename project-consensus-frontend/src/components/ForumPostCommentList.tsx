@@ -234,9 +234,13 @@ export function ForumPostCommentList({
       const custom = e as CustomEvent<{ id: string }>;
       const id = custom.detail?.id;
       if (!id) return;
+      
       // Ignore if a like/unlike request is already in flight for this id
       if (likeInFlightRef.current.has(id)) return;
+
+      // Add to in-flight lock
       likeInFlightRef.current.add(id);
+
       // Compute the intended next like state once using the current snapshot
       const current = idToComment.current.get(id);
       const prevLiked = !!current?.isLiked;
@@ -259,7 +263,7 @@ export function ForumPostCommentList({
             if (c.id !== id) return c;
             return { ...c, isLiked: !!data.isLiked, likes: Math.max(0, data.likes) };
           }));
-          likeInFlightRef.current.delete(id);
+          likeInFlightRef.current.delete(id);  // Remove from in-flight lock
         })
         .catch(() => {
           // revert on error
@@ -267,7 +271,7 @@ export function ForumPostCommentList({
             if (c.id !== id) return c;
             return { ...c, isLiked: prevLiked, likes: Math.max(0, prevLikes) };
           }));
-          likeInFlightRef.current.delete(id);
+          likeInFlightRef.current.delete(id);  // Remove from in-flight lock
         });
     };
     window.addEventListener('pc:toggle-comment-like', handler as EventListener);
