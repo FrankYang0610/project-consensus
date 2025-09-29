@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Heart, Reply, MoreHorizontal, Trash2, Languages, Share2, FileText, Check } from "lucide-react";
+import { Heart, Reply, MoreHorizontal, Trash2, Languages, FileText, Check } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -10,6 +10,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import { useI18n } from "@/hooks/useI18n";
 import { sanitizeHtml } from "@/lib/html-utils";
@@ -27,7 +35,6 @@ interface ForumPostCommentCardProps {
   onLike?: (commentId: string) => void;
   onReply?: (commentId: string) => void;
   onDelete?: (commentId: string) => void;
-  onShare?: (commentId: string) => void;
   isReply?: boolean;
   currentUserId?: string;
   parentComment?: ForumPostComment;
@@ -39,7 +46,6 @@ export function ForumPostCommentCard({
   onLike,
   onReply,
   onDelete,
-  onShare,
   isReply = false,
   currentUserId,
   parentComment,
@@ -51,11 +57,35 @@ export function ForumPostCommentCard({
   const [isTranslated, setIsTranslated] = React.useState(false);
   const [isCopySuccess, setIsCopySuccess] = React.useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
   const [isRepliesOpen, setIsRepliesOpen] = React.useState(false);
   const [isRepliesLoading, setIsRepliesLoading] = React.useState(false);
   const [repliesError, setRepliesError] = React.useState<string | null>(null);
   const [replies, setReplies] = React.useState<ForumPostComment[] | null>(null);
   const [repliesNextUrl, setRepliesNextUrl] = React.useState<string | null>(null);
+
+  // 复制提示的定时器引用
+  // Timeout reference for copy success
+  const copyTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+
+  // 在发起 "删除评论" 这次操作时，我们把两个全局事件监听器先存起来：pc:comment-deleted-ok（删除成功）和 pc:comment-deleted-rollback（删除撤回/失败回滚）。之所以存起来，是为了在流程结束（成功或回滚）后，能统一、可靠地把这些监听器移除，避免重复绑定和内存泄漏。存放位置是 deleteEventHandlersRef（一个 useRef 对象），里面会暂存 onOk 和 onRollback 这两个回调。removeDeleteListeners 就是把这次删除流程临时加的全局监听器移除，并把引用清空。这样下一次删除不会受到上一次遗留监听的影响。
+  // When starting the "delete comment" operation, we store two global event listeners: pc:comment-deleted-ok (delete successful) and pc:comment-deleted-rollback (delete rollback/failed rollback). We store them because we need to remove them reliably after the process ends (successful or rollback). The storage location is deleteEventHandlersRef (a useRef object), which temporarily stores the onOk and onRollback callbacks. removeDeleteListeners removes the global listeners added for this delete and clears the reference. This way, the next delete will not be affected by the previous leftover listeners.
+  const deleteEventHandlersRef = React.useRef<{ onOk?: EventListener; onRollback?: EventListener }>({});
+  const removeDeleteListeners = React.useCallback(() => {
+    const { onOk, onRollback } = deleteEventHandlersRef.current;
+    if (onOk) {
+      window.removeEventListener('pc:comment-deleted-ok', onOk);
+    }
+    if (onRollback) {
+      window.removeEventListener('pc:comment-deleted-rollback', onRollback);
+    }
+    deleteEventHandlersRef.current = {};
+  }, []);
+  
+  // 用于存储回复删除前的原始状态，支持删除操作的撤销功能
+  // Stores the original state of replies before deletion to support rollback functionality for delete operations
+  const prevRepliesByIdRef = React.useRef<Map<string, ForumPostComment>>(new Map());
 
   const repliesCount = (typeof comment.replies === 'number' ? comment.replies : undefined) ?? (replies?.length ?? 0);
 
@@ -80,30 +110,50 @@ export function ForumPostCommentCard({
     }
   };
 
-  const handleDelete = async () => {
+  const handleDeleteClick = () => {
     if (!isLoggedIn) {
       openLoginModal();
       return;
     }
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
     if (onDelete && !isDeleting) {
       setIsDeleting(true);
-      try {
-        onDelete(comment.id);
-      } finally {
+      removeDeleteListeners();
+      const done = () => {
+        removeDeleteListeners();
         setIsDeleting(false);
-      }
+        setIsDeleteDialogOpen(false);
+      };
+      const onOk: EventListener = (event) => {
+        const custom = event as CustomEvent<{ id: string }>;
+        if (custom.detail?.id === comment.id) {
+          done();
+        }
+      };
+      const onRollback: EventListener = (event) => {
+        const custom = event as CustomEvent<{ id: string }>;
+        if (custom.detail?.id === comment.id) {
+          done();
+        }
+      };
+      deleteEventHandlersRef.current = { onOk, onRollback };
+      window.addEventListener('pc:comment-deleted-ok', onOk);
+      window.addEventListener('pc:comment-deleted-rollback', onRollback);
+      onDelete(comment.id);
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setIsDeleteDialogOpen(false);
   };
 
   const handleTranslate = async () => {
     setIsTranslated(prev => !prev);
   };
 
-  const handleShareClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    onShare?.(comment.id);
-  };
 
   const handleCopyText = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -113,8 +163,12 @@ export function ForumPostCommentCard({
       await navigator.clipboard.writeText(textToCopy);
       setIsCopySuccess(true);
       setIsDropdownOpen(false);
-      setTimeout(() => {
+      if (copyTimeoutRef.current !== undefined) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+      copyTimeoutRef.current = setTimeout(() => {
         setIsCopySuccess(false);
+        copyTimeoutRef.current = undefined;
       }, 2000);
     } catch (err) {
       console.error('Failed to copy text:', err);
@@ -173,15 +227,89 @@ export function ForumPostCommentCard({
     }
   }, [repliesNextUrl, isRepliesLoading, toRelative]);
 
-  if (comment.isDeleted) {
-    return (
-      <div className={cn(
-        "text-muted-foreground text-sm italic py-2"
-      )}>
-        {t('comment.deleted')}
-      </div>
-    );
-  }
+  // 组件卸载时清理复制提示的定时器与删除评论相关的全局监听器，避免遗留资源
+  // Clean up copy success timeout and comment deletion listeners on unmount to prevent lingering resources
+  React.useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current !== undefined) {
+        clearTimeout(copyTimeoutRef.current);
+        copyTimeoutRef.current = undefined;
+      }
+      removeDeleteListeners();
+    };
+  }, [removeDeleteListeners]);
+
+  // Listen for global delete events to update loaded replies optimistically
+  React.useEffect(() => {
+    const onOk = (e: Event) => {
+      const custom = e as CustomEvent<{ id: string }>;
+      const id = custom.detail?.id;
+      if (!id || !replies) return;
+      setReplies(prev => {
+        if (!prev) return prev;
+        let changed = false;
+        const next = prev.map(r => {
+          if (r.id !== id) return r;
+          if (!prevRepliesByIdRef.current.has(id)) {
+            prevRepliesByIdRef.current.set(id, r);
+          }
+          changed = true;
+          return { ...r, isDeleted: true, content: "" };
+        });
+        return changed ? next : prev;
+      });
+    };
+    const onRollback = (e: Event) => {
+      const custom = e as CustomEvent<{ id: string }>;
+      const id = custom.detail?.id;
+      if (!id || !replies) return;
+      const prevVersion = prevRepliesByIdRef.current.get(id);
+      if (!prevVersion) return;
+      setReplies(prev => {
+        if (!prev) return prev;
+        let changed = false;
+        const next = prev.map(r => {
+          if (r.id !== id) return r;
+          changed = true;
+          return { ...prevVersion };
+        });
+        if (changed) {
+          prevRepliesByIdRef.current.delete(id);
+        }
+        return changed ? next : prev;
+      });
+    };
+    window.addEventListener('pc:comment-deleted-ok', onOk as EventListener);
+    window.addEventListener('pc:comment-deleted-rollback', onRollback as EventListener);
+    return () => {
+      window.removeEventListener('pc:comment-deleted-ok', onOk as EventListener);
+      window.removeEventListener('pc:comment-deleted-rollback', onRollback as EventListener);
+    };
+  }, [replies]);
+
+  // Listen for new reply creation to append to loaded replies (when fully loaded)
+  React.useEffect(() => {
+    const onCreated = (e: Event) => {
+      const custom = e as CustomEvent<{ comment: ForumPostComment }>;
+      const created = custom.detail?.comment;
+      if (!created) return;
+      // Only handle replies to this comment
+      if (created.replyTo !== comment.id) return;
+      // Only append if replies have been loaded and there is no further page
+      if (replies === null) return;
+      if (repliesNextUrl) return;
+      // Dedupe and keep ascending order by createdAt
+      setReplies(prev => {
+        if (!prev) return prev;
+        if (prev.some(r => r.id === created.id)) return prev;
+        const next = [...prev, created];
+        next.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        return next;
+      });
+    };
+    window.addEventListener('pc:comment-created', onCreated as EventListener);
+    return () => window.removeEventListener('pc:comment-created', onCreated as EventListener);
+  }, [replies, repliesNextUrl, comment.id]);
 
   return (
     <div
@@ -230,7 +358,7 @@ export function ForumPostCommentCard({
               role="button"
               onClick={onClickParent}
               className="mb-2 text-xs text-muted-foreground hover:text-foreground/80 cursor-pointer flex items-center gap-1 whitespace-nowrap overflow-hidden"
-              title={stripHtmlTags(parentComment.content)}
+              title={parentComment.isDeleted ? t('comment.deleted') : stripHtmlTags(parentComment.content)}
             >
               <span className="font-medium flex-shrink-0">
                 {t('comment.repliesTo', { 
@@ -245,19 +373,27 @@ export function ForumPostCommentCard({
                 )}:
               </span>
               <span className="min-w-0 truncate">
-                {stripHtmlTags(parentComment.content)}
+                {parentComment.isDeleted ? t('comment.deleted') : stripHtmlTags(parentComment.content)}
               </span>
             </div>
           )}
 
-          <div
-            className="prose prose-zinc dark:prose-invert max-w-none text-sm leading-relaxed mb-2 break-words overflow-wrap-anywhere"
-            dangerouslySetInnerHTML={{
-              __html: isTranslated
-                ? sanitizeHtml(t('post.translateUnavailable'))
-                : sanitizeHtml(comment.content)
-            }}
-          />
+          {comment.isDeleted ? (
+            <div className={cn(
+              "text-muted-foreground text-sm italic py-2"
+            )}>
+              {t('comment.deleted')}
+            </div>
+          ) : (
+            <div
+              className="prose prose-zinc dark:prose-invert max-w-none text-sm leading-relaxed mb-2 break-words overflow-wrap-anywhere"
+              dangerouslySetInnerHTML={{
+                __html: isTranslated
+                  ? sanitizeHtml(t('post.translateUnavailable'))
+                  : sanitizeHtml(comment.content)
+              }}
+            />
+          )}
 
           {/* 操作按钮 / Actions */}
           <div className="flex items-center gap-1 flex-wrap">
@@ -268,8 +404,10 @@ export function ForumPostCommentCard({
               onClick={handleLike}
               className={cn(
                 "h-7 px-2 text-xs min-w-0",
-                comment.isLiked && "text-red-500 hover:text-red-600"
+                comment.isLiked && "text-red-500 hover:text-red-600",
+                comment.isDeleted && "text-muted-foreground hover:text-muted-foreground cursor-not-allowed opacity-60"
               )}
+              disabled={comment.isDeleted}
             >
               <Heart className={cn(
                 "w-3 h-3 mr-1 flex-shrink-0",
@@ -282,7 +420,11 @@ export function ForumPostCommentCard({
               variant="ghost"
               size="sm"
               onClick={handleReply}
-              className="h-7 px-2 text-xs min-w-0"
+              className={cn(
+                "h-7 px-2 text-xs min-w-0",
+                comment.isDeleted && "text-muted-foreground hover:text-muted-foreground cursor-not-allowed opacity-60"
+              )}
+              disabled={comment.isDeleted}
             >
               <Reply className="w-3 h-3 mr-1 flex-shrink-0" />
               <span className="hidden sm:inline">{t('comment.reply')}</span>
@@ -294,8 +436,10 @@ export function ForumPostCommentCard({
               onClick={handleTranslate}
               className={cn(
                 "h-7 px-2 text-xs min-w-0",
-                isTranslated ? "text-blue-500 hover:text-blue-600" : "text-gray-500 hover:text-gray-600"
+                isTranslated ? "text-blue-500 hover:text-blue-600" : "text-gray-500 hover:text-gray-600",
+                comment.isDeleted && "text-muted-foreground hover:text-muted-foreground cursor-not-allowed opacity-60"
               )}
+              disabled={comment.isDeleted}
             >
               <Languages className="w-3 h-3 mr-1 flex-shrink-0" />
               <span className="hidden sm:inline">{isTranslated ? t('comment.showOriginal') : t('comment.translate')}</span>
@@ -308,15 +452,17 @@ export function ForumPostCommentCard({
                   size="sm"
                   className={cn(
                     "h-7 px-2 text-xs transition-colors min-w-0",
-                    isCopySuccess && "text-green-500 hover:text-green-600"
+                    isCopySuccess && "text-green-500 hover:text-green-600",
+                    comment.isDeleted && "text-muted-foreground hover:text-muted-foreground cursor-not-allowed opacity-60"
                   )}
+                  disabled={comment.isDeleted}
                 >
                   {isCopySuccess ? (
                     <Check className="w-3 h-3 mr-1 flex-shrink-0" />
                   ) : (
-                    <Share2 className="w-3 h-3 mr-1 flex-shrink-0" />
+                    <MoreHorizontal className="w-3 h-3 mr-1 flex-shrink-0" />
                   )}
-                  <span className="hidden sm:inline">{isCopySuccess ? t('comment.copied') : t('comment.share')}</span>
+                  <span className="hidden sm:inline">{isCopySuccess ? t('comment.copied') : t('comment.more')}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-40">
@@ -327,21 +473,22 @@ export function ForumPostCommentCard({
                   <FileText className="w-3 h-3 mr-2" />
                   <span className="text-xs">{t('comment.copyText')}</span>
                 </DropdownMenuItem>
+                {canDelete && (
+                  <DropdownMenuItem
+                    onClick={handleDeleteClick}
+                    disabled={isDeleting || comment.isDeleted}
+                    className={cn(
+                      "cursor-pointer",
+                      comment.isDeleted ? "text-muted-foreground cursor-not-allowed opacity-60" : "text-destructive focus:text-destructive"
+                    )}
+                  >
+                    <Trash2 className="w-3 h-3 mr-2" />
+                    <span className="text-xs">{isDeleting ? t('comment.deleting') : t('comment.delete')}</span>
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {canDelete && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className="h-7 px-2 text-xs text-destructive hover:text-destructive min-w-0"
-              >
-                <Trash2 className="w-3 h-3 mr-1 flex-shrink-0" />
-                <span className="hidden sm:inline">{isDeleting ? t('comment.deleting') : t('comment.delete')}</span>
-              </Button>
-            )}
           </div>
 
           {/* 展开回复 & 预览回复项放在操作按钮下方 / Dropdown menu for replies & preview replies are placed below the actions */}
@@ -374,7 +521,7 @@ export function ForumPostCommentCard({
                           onClick={() => {
                             window.dispatchEvent(new CustomEvent('pc:jump-to-comment', { detail: { id: r.id } }));
                           }}
-                          title={stripHtmlTags(r.content)}
+                          title={r.isDeleted ? t('comment.deleted') : stripHtmlTags(r.content)}
                         >
                           <span className="font-medium flex-shrink-0">
                             {r.isAnonymous 
@@ -387,7 +534,7 @@ export function ForumPostCommentCard({
                             )}:
                           </span>
                           <span className="min-w-0 flex-1 truncate">
-                            {truncateHtmlContent(r.content, 80)}
+                            {r.isDeleted ? t('comment.deleted') : truncateHtmlContent(r.content, 80)}
                           </span>
                         </button>
                       ))}
@@ -420,6 +567,34 @@ export function ForumPostCommentCard({
           )}
         </div>
       </div>
+
+      {/* 删除确认弹窗 / Delete confirmation dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('comment.deleteConfirm.title')}</DialogTitle>
+            <DialogDescription>
+              {t('comment.deleteConfirm.message')}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={handleDeleteCancel}
+              disabled={isDeleting}
+            >
+              {t('comment.deleteConfirm.cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+            >
+              {isDeleting ? t('comment.deleting') : t('comment.deleteConfirm.confirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

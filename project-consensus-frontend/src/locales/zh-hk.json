@@ -60,8 +60,17 @@
     "translate": "翻譯",
     "showOriginal": "原文",
     "share": "分享",
+    "more": "更多",
     "copied": "已複製！",
     "copyText": "複製文本",
+    "delete": "刪除帖子",
+    "deleting": "刪除中...",
+    "deleteConfirm": {
+      "title": "刪除帖子",
+      "message": "確定要刪除這個帖子嗎？此操作無法撤銷。",
+      "confirm": "刪除",
+      "cancel": "取消"
+    },
     "translateUnavailable": "翻譯功能尚不可用",
     "shareUnavailable": "分享功能暫時不可用，敬請期待！",
     "copyFailed": "複製文本到剪貼板失敗",
@@ -102,6 +111,12 @@
     "delete": "刪除",
     "deleting": "刪除中...",
     "deleted": "此評論已被刪除",
+    "deleteConfirm": {
+      "title": "刪除評論",
+      "message": "確定要刪除這條評論嗎？此操作無法撤銷。",
+      "confirm": "刪除",
+      "cancel": "取消"
+    },
     "showReplies": "展開 {{count}} 條回覆",
     "hideReplies": "收起回覆",
     "loadMore": "載入更多 ({{remaining}} 條)",
@@ -111,6 +126,7 @@
     "avatar": "頭像",
     "replyTo": "回覆了",
     "share": "分享",
+    "more": "更多",
     "copied": "已複製！",
     "copyText": "複製文本",
     "repliesTo": "回覆 {{name}} 的內容",

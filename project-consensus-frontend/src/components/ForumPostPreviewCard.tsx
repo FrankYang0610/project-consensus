@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import {
   Heart,
-  Share2,
+  MoreHorizontal,
   Languages,
   FileText,
   Check,
@@ -47,7 +47,6 @@ import ClientOnlyTime from "./ClientOnlyTime";
 export interface ForumPostPreviewCardProps {
   post: ForumPost; // 帖子数据 / Post data
   onLike?: (postId: string) => void; // 点赞回调函数（可选） / Like callback function (optional)
-  onShare?: (postId: string) => void; // 分享回调函数（可选） / Share callback function (optional)
   onTranslate?: (postId: string) => void; // 翻译回调函数（可选） / Translate callback function (optional)
   onAuthorClick?: (authorId: string) => void; // 作者点击回调函数（可选） / Author click callback function (optional)
   className?: string; // 自定义CSS类名（可选） / Custom CSS class name (optional)
@@ -57,7 +56,6 @@ export interface ForumPostPreviewCardProps {
 export function ForumPostPreviewCard({
   post,
   onLike,
-  onShare,
   onTranslate,
   onAuthorClick,
   className,
@@ -85,14 +83,6 @@ export function ForumPostPreviewCard({
     onLike?.(post.id);
   };
 
-  const handleShareClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDialogTitle("Error");
-    setDialogMessage(t('post.shareUnavailable'));
-    setShowDialog(true);
-    onShare?.(post.id);
-  };
 
   const handleCopyText = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -263,9 +253,9 @@ export function ForumPostPreviewCard({
                 {isCopySuccess ? (
                   <Check className="w-3 h-3 mr-1 flex-shrink-0" />
                 ) : (
-                  <Share2 className="w-3 h-3 mr-1 flex-shrink-0" />
+                  <MoreHorizontal className="w-3 h-3 mr-1 flex-shrink-0" />
                 )}
-                <span className="hidden sm:inline">{isCopySuccess ? t('post.copied') : t('post.share')}</span>
+                <span className="hidden sm:inline">{isCopySuccess ? t('post.copied') : t('post.more')}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
