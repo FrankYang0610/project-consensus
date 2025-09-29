@@ -66,7 +66,7 @@ export function ForumPostCommentCard({
 
   // 复制提示的定时器引用
   // Timeout reference for copy success
-  const copyTimeoutRef = React.useRef<number | undefined>(undefined);
+  const copyTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
 
   // 在发起 "删除评论" 这次操作时，我们把两个全局事件监听器先存起来：pc:comment-deleted-ok（删除成功）和 pc:comment-deleted-rollback（删除撤回/失败回滚）。之所以存起来，是为了在流程结束（成功或回滚）后，能统一、可靠地把这些监听器移除，避免重复绑定和内存泄漏。存放位置是 deleteEventHandlersRef（一个 useRef 对象），里面会暂存 onOk 和 onRollback 这两个回调。removeDeleteListeners 就是把这次删除流程临时加的全局监听器移除，并把引用清空。这样下一次删除不会受到上一次遗留监听的影响。
@@ -164,9 +164,9 @@ export function ForumPostCommentCard({
       setIsCopySuccess(true);
       setIsDropdownOpen(false);
       if (copyTimeoutRef.current !== undefined) {
-        window.clearTimeout(copyTimeoutRef.current);
+        clearTimeout(copyTimeoutRef.current);
       }
-      copyTimeoutRef.current = window.setTimeout(() => {
+      copyTimeoutRef.current = setTimeout(() => {
         setIsCopySuccess(false);
         copyTimeoutRef.current = undefined;
       }, 2000);
@@ -232,7 +232,7 @@ export function ForumPostCommentCard({
   React.useEffect(() => {
     return () => {
       if (copyTimeoutRef.current !== undefined) {
-        window.clearTimeout(copyTimeoutRef.current);
+        clearTimeout(copyTimeoutRef.current);
         copyTimeoutRef.current = undefined;
       }
       removeDeleteListeners();
