@@ -96,6 +96,29 @@ export async function apiPostVoid(path: string, body?: unknown, init?: RequestIn
   }
 }
 
+export async function apiDeleteVoid(path: string, init?: RequestInit): Promise<void> {
+  const base = getAPIBaseUrl();
+  const url = `${base}${path}`;
+  let csrftoken = getCookie('csrftoken');
+  if (!csrftoken) {
+    await ensureCSRFCookie();
+    csrftoken = getCookie('csrftoken');
+  }
+  const res = await fetch(url, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: {
+      'Accept': 'application/json',
+      ...(csrftoken ? { 'X-CSRFToken': csrftoken } : {}),
+    },
+    ...init,
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`DELETE ${url} failed: ${res.status} ${text}`);
+  }
+}
+
 // CSRF-protected PATCH helper
 export async function apiPatch<T>(path: string, body: unknown, init?: RequestInit): Promise<T> {
   const base = getAPIBaseUrl();

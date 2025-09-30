@@ -37,6 +37,10 @@ class Migration(migrations.Migration):
                     models.URLField(blank=True, help_text="头像 URL，可为空"),
                 ),
                 (
+                    "pronouns",
+                    models.CharField(blank=True, help_text="用户代词，可为空", max_length=100),
+                ),
+                (
                     "user",
                     models.OneToOneField(
                         on_delete=django.db.models.deletion.CASCADE,

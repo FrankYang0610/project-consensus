@@ -24,7 +24,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ChevronDown } from 'lucide-react';
-import { Language } from '@/types';
+import { Language, User } from '@/types';
+import { apiPost } from '@/lib/utils';
+import { PronounsSelector } from '@/components/PronounsSelector';
 
 type PrivacySettings = {
   showEmail: boolean;
@@ -42,6 +44,7 @@ export default function SettingsPage() {
   // Profile form
   const [displayName, setDisplayName] = useState(user?.name || '');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar || '');
+  const [pronouns, setPronouns] = useState<string>(user?.pronouns || '');
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileMsg, setProfileMsg] = useState<string | null>(null);
   const [profileErr, setProfileErr] = useState<string | null>(null);
@@ -77,6 +80,7 @@ export default function SettingsPage() {
     // Initialize profile fields from user
     setDisplayName(user?.name || '');
     setAvatarUrl(user?.avatar || '');
+    setPronouns(user?.pronouns || '');
   }, [user]);
 
   useEffect(() => {
@@ -108,7 +112,12 @@ export default function SettingsPage() {
         <SiteNavigation />
         <div className="min-h-screen bg-background">
           <main className="max-w-3xl mx-auto px-4 py-10">
-            <h1 className="text-2xl font-semibold mb-4">{t('settings.title')}</h1>
+            <div className="flex items-start justify-between mb-4">
+              <h1 className="text-2xl font-semibold">{t('settings.title')}</h1>
+              <Button asChild variant="outline" size="sm">
+                <a href="/profile">{t('settings.actions.viewProfile')}</a>
+              </Button>
+            </div>
             <Alert>
               <AlertDescription>
                 {t('settings.requireLogin')}
@@ -125,8 +134,19 @@ export default function SettingsPage() {
     setProfileMsg(null);
     setProfileSaving(true);
     try {
-      // Placeholder: directly update frontend state/localStorage via AppContext
-      updateUser?.({ name: displayName, avatar: avatarUrl });
+      // Persist to backend
+      const resp = await apiPost<{ success: boolean; user: User }>(
+        '/api/accounts/profile/',
+        {
+          display_name: displayName,
+          avatar_url: avatarUrl,
+          pronouns: pronouns,
+        },
+        { method: 'PATCH' }
+      );
+
+      // Update local user from backend response
+      updateUser?.({ name: resp.user.name, avatar: resp.user.avatar, pronouns: resp.user.pronouns });
       setProfileMsg(t('settings.profile.saved'));
     } catch (e) {
       console.error(e);
@@ -186,7 +206,12 @@ export default function SettingsPage() {
       <SiteNavigation />
       <div className="min-h-screen bg-background">
         <main className="max-w-3xl mx-auto px-4 py-10">
-          <h1 className="text-2xl font-semibold mb-2">{t('settings.title')}</h1>
+          <div className="flex items-start justify-between mb-2">
+            <h1 className="text-2xl font-semibold">{t('settings.title')}</h1>
+            <Button asChild variant="outline" size="sm">
+              <a href="/profile">{t('settings.actions.viewProfile')}</a>
+            </Button>
+          </div>
           <p className="text-muted-foreground mb-8">{t('settings.subtitle')}</p>
 
       {/* Profile Section */}
@@ -234,6 +259,13 @@ export default function SettingsPage() {
               </div>
             )}
           </div>
+
+          <PronounsSelector
+            value={pronouns}
+            onChange={setPronouns}
+            label={t('settings.profile.pronouns')}
+            id="pronouns-selector"
+          />
 
           <div className="pt-2">
             <Button onClick={handleSaveProfile} disabled={profileSaving}>

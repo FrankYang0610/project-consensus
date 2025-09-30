@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { ForumPostDetailCard } from "@/components/ForumPostDetailCard";
 import { ForumPostCommentList } from "@/components/ForumPostCommentList";
-import { apiGet, apiPost, apiPostVoid, isContentEmpty } from "@/lib/utils";
+import { apiGet, apiPost, apiPostVoid, apiDeleteVoid, isContentEmpty } from "@/lib/utils";
 import { useApp } from "@/contexts/AppContext";
 import { ForumPost } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,21 @@ export default function PostPage() {
   const [commentsRefreshKey, setCommentsRefreshKey] = React.useState(0);
   const composerRef = React.useRef<HTMLDivElement | null>(null);
   const [isComposerOpen, setIsComposerOpen] = React.useState(false);
+  const [isSubmittingComment, setIsSubmittingComment] = React.useState(false);
+
+  // 防止 "连点点赞/取消赞" 导致 UI 和后端状态打架的轻量级锁
+  // Lightweight lock to prevent double-tap like/unlike causing UI/server mismatch
+  // 
+  // 用法：
+  // - 某条帖子正在发起点赞/取消赞请求时，把这条帖子的 id 放进 Set 里；
+  // - 在请求成功、失败或超时后，再把它从 Set 里移除；
+  // - 只要 id 还在 Set 里，后续对同一条帖子的点击一律忽略（避免计数 "抖动"）。
+  // Meaning:
+  // - When a like/unlike request is in flight for a post, put its id into this Set
+  // - Remove the id after success/error/timeout
+  // - While the id stays in the Set, further toggles for that post are ignored
+  const postLikeInFlightRef = React.useRef<Set<string>>(new Set());
+
   React.useEffect(() => {
     let mounted = true;
     apiGet<ForumPost>(`/api/forum/posts/${postId}/`)
@@ -55,11 +70,15 @@ export default function PostPage() {
   };
 
   const handleCommentLike = (commentId: string) => {
-    // TODO: call backend like endpoint when available
+    // Optimistic toggle like state for comment within the list via custom event update
+    const toggleEvent = new CustomEvent('pc:toggle-comment-like', { detail: { id: commentId } });
+    window.dispatchEvent(toggleEvent);
   };
 
   const handleCommentDelete = (commentId: string) => {
-    // TODO: call backend delete endpoint when available
+    // Dispatch event to let the list perform optimistic delete + API
+    const ev = new CustomEvent('pc:delete-comment', { detail: { id: commentId } });
+    window.dispatchEvent(ev);
   };
 
   const handleAddComment = () => {
@@ -80,16 +99,23 @@ export default function PostPage() {
     });
   };
 
-  const handleCommentShare = (commentId: string) => {
-    // TODO: Implement comment share functionality
-    console.log("Share comment:", commentId);
+
+  const handleDeletePost = async (id: string) => {
+    try {
+      await apiDeleteVoid(`/api/forum/posts/${id}/`);
+      router.push("/");
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handleSubmitComment = async () => {
     if (!post) return;
     // For rich text content, we need to check if there's actual content beyond just HTML tags
     if (isContentEmpty(commentContent)) return;
+    if (isSubmittingComment) return;
     try {
+      setIsSubmittingComment(true);
       const created = await apiPost<ForumPostComment>(`/api/forum/comments/`, {
         content: commentContent.trim(),
         postId: postId,
@@ -102,12 +128,16 @@ export default function PostPage() {
       setCommentIsAnonymous(false);
       setReplyToId(undefined);
       setIsComposerOpen(false);
+      // Notify list that a comment is created (to bump parent replies immediately)
+      window.dispatchEvent(new CustomEvent('pc:comment-created', { detail: { comment: created } }));
       // Ask the comment list to load pages up to the new comment and scroll to it
       requestAnimationFrame(() => {
         window.dispatchEvent(new CustomEvent('pc:jump-to-comment', { detail: { id: created.id } }));
       });
     } catch (e) {
       console.error(e);
+    } finally {
+      setIsSubmittingComment(false);
     }
   };
 
@@ -142,36 +172,32 @@ export default function PostPage() {
               post={post}
               onLike={(id) => {
                 if (!post) return;
+                if (postLikeInFlightRef.current.has(id)) return;
+                postLikeInFlightRef.current.add(id);
                 const wasLiked = post.isLiked ?? false;
+                const prevLikes = post.likes ?? 0;
                 const willLike = !wasLiked;
                 // optimistic
                 setPost(prev => prev ? { ...prev, isLiked: willLike, likes: Math.max(0, prev.likes + (willLike ? 1 : -1)) } : prev);
 
-                let reverted = false;
-                const timer = setTimeout(() => {
-                  if (reverted) return;
-                  setPost(prev => prev ? { ...prev, isLiked: wasLiked, likes: Math.max(0, prev.likes + (willLike ? -1 : 1)) } : prev);
-                  reverted = true;
-                }, 3000);
-
                 const endpoint = willLike ? `/api/forum/posts/${id}/like/` : `/api/forum/posts/${id}/unlike/`;
-                apiPostVoid(endpoint)
-                  .then(() => {
-                    if (reverted) return;
-                    clearTimeout(timer);
+                apiPost<ForumPost>(endpoint, {})
+                  .then((data) => {
+                    // reconcile with server response
+                    setPost(prev => prev ? { ...prev, isLiked: !!data.isLiked, likes: Math.max(0, data.likes) } : prev);
+                    postLikeInFlightRef.current.delete(id);
                   })
                   .catch(() => {
-                    if (reverted) return;
-                    clearTimeout(timer);
-                    setPost(prev => prev ? { ...prev, isLiked: wasLiked, likes: Math.max(0, prev.likes + (willLike ? -1 : 1)) } : prev);
+                    setPost(prev => prev ? { ...prev, isLiked: wasLiked, likes: Math.max(0, prevLikes) } : prev);
+                    postLikeInFlightRef.current.delete(id);
                   });
               }}
+              onDelete={handleDeletePost}
             />
             <ForumPostCommentList
               onLike={handleCommentLike}
               onReply={handleReplyToComment}
               onDelete={handleCommentDelete}
-              onShare={handleCommentShare}
               onAddComment={handleAddComment}
               currentUserId={currentUserId}
               postId={postId}
@@ -183,6 +209,7 @@ export default function PostPage() {
               composerIsAnonymous={commentIsAnonymous}
               onComposerAnonymousChange={(v) => setCommentIsAnonymous(Boolean(v))}
               onSubmitComposer={handleSubmitComment}
+              isComposerSubmitting={isSubmittingComment}
               onCancelComposer={() => { setReplyToId(undefined); setIsComposerOpen(false); }}
               key={commentsRefreshKey}
             />

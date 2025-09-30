@@ -73,11 +73,10 @@ class ForumPostSerializer(serializers.ModelSerializer):
             request = self.context.get("request")
             user = getattr(request, "user", None)
             if user is not None and getattr(user, "is_authenticated", False) and str(user.pk) == str(obj.author_id):
-                # Current user is the author of this anonymous post, show real author info with anonymous flag
+                # Current user is the author of this anonymous post, show real author info
                 real_author = _author_payload_for(obj.author)
                 return {
                     **real_author,
-                    "isAnonymous": True
                 }
             else:
                 # Mask author information when anonymous for other users
@@ -85,7 +84,6 @@ class ForumPostSerializer(serializers.ModelSerializer):
                     "id": _generate_anonymous_id(),
                     "name": "Anonymous", 
                     "avatar": None,
-                    "isAnonymous": True
                 }
         return _author_payload_for(obj.author)
 
@@ -108,6 +106,7 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
 
     author = serializers.SerializerMethodField()
     likes = serializers.IntegerField(source="likes_count", read_only=True)
+    isLiked = serializers.SerializerMethodField()
     createdAt = serializers.DateTimeField(source="created_at", read_only=True)
     replyTo = serializers.UUIDField(source="reply_to_id", allow_null=True, required=False)
     postId = serializers.UUIDField(source="post_id")
@@ -124,6 +123,7 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
             "author",
             "createdAt",
             "likes",
+            "isLiked",
             "isDeleted",
             "replyTo",
             "postId",
@@ -132,7 +132,7 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
             "canDelete",
         ]
         extra_kwargs = {}
-        read_only_fields = ["id", "createdAt", "author", "isDeleted", "likes"]
+        read_only_fields = ["id", "createdAt", "author", "isDeleted", "likes", "isLiked"]
 
     def get_author(self, obj: ForumPostComment) -> dict:
         if getattr(obj, "is_anonymous", False):
@@ -140,11 +140,10 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
             request = self.context.get("request")
             user = getattr(request, "user", None)
             if user is not None and getattr(user, "is_authenticated", False) and str(user.pk) == str(obj.author_id):
-                # Current user is the author of this anonymous comment, show real author info with anonymous flag
+                # Current user is the author of this anonymous comment, show real author info
                 real_author = _author_payload_for(obj.author)
                 return {
                     **real_author,
-                    "isAnonymous": True
                 }
             else:
                 # Mask author information when anonymous for other users
@@ -152,7 +151,6 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
                     "id": _generate_anonymous_id(),
                     "name": "Anonymous",
                     "avatar": None,
-                    "isAnonymous": True
                 }
         return _author_payload_for(obj.author)
 
@@ -161,4 +159,11 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
         user = getattr(request, "user", None)
         if user is not None and getattr(user, "is_authenticated", False):
             return str(user.pk) == str(obj.author_id)
+        return False
+
+    def get_isLiked(self, obj: ForumPostComment) -> bool:
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        if user is not None and getattr(user, "is_authenticated", False):
+            return obj.likes.filter(user=user).exists()
         return False

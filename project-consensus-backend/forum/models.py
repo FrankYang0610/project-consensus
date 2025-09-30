@@ -98,4 +98,32 @@ class ForumPostLike(models.Model):
         verbose_name_plural = "ForumPostLikes"
 
     def __str__(self) -> str:  # pragma: no cover
-        return f"{self.user_id} ❤ {self.post_id}"
+        return f"{self.user_id} liked {self.post_id}"
+
+
+class ForumCommentLike(models.Model):
+    """Forum comment like relation
+
+    - Internal relation table; its primary key is not exposed to the frontend.
+    - Uses BigAutoField as a surrogate PK; row-level uniqueness via (comment, user).
+
+    - 仅作为内部关联表使用，主键不对外暴露。
+    - 主键采用 BigAutoField（自增整型），索引更小、查询更快；
+      行唯一性通过 (comment, user) 唯一约束保证。
+    """
+
+    id = models.BigAutoField(primary_key=True)
+    comment = models.ForeignKey(ForumPostComment, on_delete=models.CASCADE, related_name="likes")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="forum_comment_likes")
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        unique_together = ("comment", "user")
+        indexes = [
+            models.Index(fields=["comment", "user"]),
+        ]
+        verbose_name = "ForumCommentLike"
+        verbose_name_plural = "ForumCommentLikes"
+
+    def __str__(self) -> str:  # pragma: no cover
+        return f"{self.user_id} liked {self.comment_id}"

@@ -10,6 +10,7 @@ export interface User {
   email: string; // 用户邮箱 / User email
   name?: string; // 用户名称（可选） / User name (optional)
   avatar?: string; // 用户头像URL（可选） / User avatar URL (optional)
+  pronouns?: string; // 用户代词（可选） / User pronouns (optional)
 }
 
 /**
@@ -19,5 +20,4 @@ export interface Author {
   id: string; // 作者唯一标识符 / Author unique identifier
   name: string; // 作者名称 / Author name
   avatar?: string; // 作者头像URL（可选） / Author avatar URL (optional)
-  isAnonymous?: boolean; // 是否为匿名作者 / Whether the author is anonymous
 }

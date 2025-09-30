@@ -60,8 +60,17 @@
     "translate": "Translate",
     "showOriginal": "Original",
     "share": "Share",
+    "more": "More",
     "copied": "Copied!",
     "copyText": "Copy text",
+    "delete": "Delete post",
+    "deleting": "Deleting...",
+    "deleteConfirm": {
+      "title": "Delete Post",
+      "message": "Are you sure you want to delete this post? This action cannot be undone.",
+      "confirm": "Delete",
+      "cancel": "Cancel"
+    },
     "translateUnavailable": "Translation feature is not available yet",
     "shareUnavailable": "Share feature is temporarily unavailable. Stay tuned!",
     "copyFailed": "Failed to copy text to clipboard",
@@ -102,6 +111,12 @@
     "delete": "Delete",
     "deleting": "Deleting...",
     "deleted": "This comment has been deleted",
+    "deleteConfirm": {
+      "title": "Delete Comment",
+      "message": "Are you sure you want to delete this comment? This action cannot be undone.",
+      "confirm": "Delete",
+      "cancel": "Cancel"
+    },
     "showReplies": "Show {{count}} replies",
     "hideReplies": "Hide replies",
     "loadMore": "Load more ({{remaining}} remaining)",
@@ -111,6 +126,7 @@
     "avatar": "Avatar",
     "replyTo": "replied to",
     "share": "Share",
+    "more": "More",
     "copied": "Copied!",
     "copyText": "Copy text",
     "repliesTo": "Replies to {{name}}",
@@ -418,6 +434,7 @@
       "desc": "Update your display name and avatar.",
       "displayName": "Display Name",
       "avatarUrl": "Avatar URL",
+      "pronouns": "Pronouns",
       "preview": "Preview",
       "saved": "Profile updated.",
       "saveFailed": "Failed to save profile."
@@ -464,7 +481,18 @@
     "actions": {
       "saveProfile": "Save Profile",
       "changePassword": "Change Password",
-      "savePrivacy": "Save Privacy"
+      "savePrivacy": "Save Privacy",
+      "viewProfile": "View Profile"
+    }
+  },
+  "pronouns": {
+    "info": "project-consensus values diversity and inclusion. We support you in expressing your identity authentically. If you don’t find suitable pronouns in the preset list, you can choose \"custom\" and set your own pronouns."
+  },
+  "profile": {
+    "title": "Profile",
+    "subtitle": "Your public profile",
+    "actions": {
+      "edit": "Edit Profile"
     }
   },
   "teachers": {

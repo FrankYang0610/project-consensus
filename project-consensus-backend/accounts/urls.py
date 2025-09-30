@@ -15,4 +15,6 @@ urlpatterns = [
     path("logout/", views.logout_view, name="logout"),
     # Current user info
     path("me/", views.me, name="me"),
+    # Update profile (PATCH)
+    path("profile/", views.update_profile, name="update_profile"),
 ]
