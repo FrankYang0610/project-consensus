@@ -418,6 +418,39 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
         return qs
 
     @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
+    def toggle_like(self, request, pk: str | None = None):
+        """Toggle like for current user (like if not liked, unlike if already liked).
+        
+        Behavior:
+        - If user has not liked: create like; increment likes_count.
+        - If user has liked: remove like; decrement likes_count.
+        
+        Returns updated review with current isLiked and likesCount.
+        """
+        assert pk is not None
+        review = self.get_object()
+        user = request.user
+        try:
+            with transaction.atomic():
+                existing = CourseReviewLike.objects.filter(review=review, user=user).first()
+                if existing:
+                    # Already liked, so unlike
+                    existing.delete()
+                    CourseReview.objects.filter(pk=review.pk, likes_count__gt=0).update(
+                        likes_count=F("likes_count") - 1
+                    )
+                else:
+                    # Not liked, so like
+                    CourseReviewLike.objects.create(review=review, user=user)
+                    CourseReview.objects.filter(pk=review.pk).update(likes_count=F("likes_count") + 1)
+            # Re-fetch the review to get fresh data and annotation
+            review = self.get_queryset().get(pk=pk)
+            data = self.get_serializer(review, context={"request": request}).data
+            return Response(data, status=status.HTTP_200_OK)
+        except Exception as e:  # pragma: no cover
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
     def like(self, request, pk: str | None = None):
         """Current user likes the review (idempotent)."""
         assert pk is not None
@@ -570,6 +603,39 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
         with transaction.atomic():
             instance.delete()
             _recompute_replies_count(review)
+
+    @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
+    def toggle_like(self, request, pk: str | None = None):
+        """Toggle like for current user (like if not liked, unlike if already liked).
+        
+        Behavior:
+        - If user has not liked: create like; increment likes_count.
+        - If user has liked: remove like; decrement likes_count.
+        
+        Returns updated reply with current isLiked and likes.
+        """
+        assert pk is not None
+        reply = self.get_object()
+        user = request.user
+        try:
+            with transaction.atomic():
+                existing = CourseReviewReplyLike.objects.filter(reply=reply, user=user).first()
+                if existing:
+                    # Already liked, so unlike
+                    existing.delete()
+                    CourseReviewReply.objects.filter(pk=reply.pk, likes_count__gt=0).update(
+                        likes_count=F("likes_count") - 1
+                    )
+                else:
+                    # Not liked, so like
+                    CourseReviewReplyLike.objects.create(reply=reply, user=user)
+                    CourseReviewReply.objects.filter(pk=reply.pk).update(likes_count=F("likes_count") + 1)
+            # Re-fetch the reply to get fresh data and annotation
+            reply = self.get_queryset().get(pk=pk)
+            data = self.get_serializer(reply, context={"request": request}).data
+            return Response(data, status=status.HTTP_200_OK)
+        except Exception as e:  # pragma: no cover
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
     def like(self, request, pk: str | None = None):

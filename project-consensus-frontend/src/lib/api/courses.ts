@@ -1,11 +1,11 @@
-import type { Course, CourseReview, CourseReviewReply } from "@/types";
+import type { Course, CourseReview, CourseReviewReply, PaginatedResponse } from "@/types";
 import { apiGet, apiPost, apiPatch, ensureCSRFCookie, getCookie, getAPIBaseUrl } from "@/lib/utils";
 
 export async function fetchCourseById(subjectId: string, init?: RequestInit): Promise<Course | null> {
   try {
     const data = await apiGet<Course>(`/api/courses/${encodeURIComponent(subjectId)}/`, init);
     return data ?? null;
-  } catch (e) {
+  } catch {
     return null;
   }
 }
@@ -13,13 +13,6 @@ export async function fetchCourseById(subjectId: string, init?: RequestInit): Pr
 // Note: legacy fetchCourses() removed. Use paginated requests via apiGet on `/api/courses/`.
 
 // ---------------- Reviews API (paginated) ----------------
-
-export interface Paginated<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-}
 
 export interface FetchCourseReviewsParams {
   subjectId: string;
@@ -33,7 +26,7 @@ export interface FetchCourseReviewsParams {
   mine?: boolean;
 }
 
-export async function fetchCourseReviews(params: FetchCourseReviewsParams, init?: RequestInit): Promise<Paginated<CourseReview>> {
+export async function fetchCourseReviews(params: FetchCourseReviewsParams, init?: RequestInit): Promise<PaginatedResponse<CourseReview>> {
   const q = new URLSearchParams();
   q.set('subjectId', params.subjectId);
   if (params.page) q.set('page', String(params.page));
@@ -45,7 +38,11 @@ export async function fetchCourseReviews(params: FetchCourseReviewsParams, init?
   if (params.termSemester) q.set('termSemester', params.termSemester);
   if (params.mine) q.set('mine', '1');
   const url = `/api/reviews/?${q.toString()}`;
-  return apiGet<Paginated<CourseReview>>(url, init);
+  return apiGet<PaginatedResponse<CourseReview>>(url, init);
+}
+
+export async function toggleLikeReview(reviewId: string): Promise<CourseReview> {
+  return apiPost<CourseReview>(`/api/reviews/${encodeURIComponent(reviewId)}/toggle_like/`, {});
 }
 
 export async function likeReview(reviewId: string): Promise<CourseReview> {
@@ -78,13 +75,17 @@ export interface FetchReviewRepliesParams {
   ordering?: string; // created_at, -likes_count
 }
 
-export async function fetchReviewReplies(params: FetchReviewRepliesParams, init?: RequestInit): Promise<Paginated<CourseReviewReply>> {
+export async function fetchReviewReplies(params: FetchReviewRepliesParams, init?: RequestInit): Promise<PaginatedResponse<CourseReviewReply>> {
   const q = new URLSearchParams();
   q.set('review', params.reviewId);
   if (params.page) q.set('page', String(params.page));
   if (params.pageSize) q.set('page_size', String(params.pageSize));
   if (params.ordering) q.set('ordering', params.ordering);
-  return apiGet<Paginated<CourseReviewReply>>(`/api/replies/?${q.toString()}`, init);
+  return apiGet<PaginatedResponse<CourseReviewReply>>(`/api/replies/?${q.toString()}`, init);
+}
+
+export async function toggleLikeReply(replyId: string): Promise<CourseReviewReply> {
+  return apiPost<CourseReviewReply>(`/api/replies/${encodeURIComponent(replyId)}/toggle_like/`, {});
 }
 
 export async function likeReply(replyId: string): Promise<CourseReviewReply> {

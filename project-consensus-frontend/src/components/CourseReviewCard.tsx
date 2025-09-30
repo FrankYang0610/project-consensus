@@ -290,7 +290,7 @@ export function CourseReviewCard({
               size="sm"
               className={cn(
                 "gap-2 h-8 px-3",
-                review.isLiked ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                review.isLiked ? "text-red-500 hover:text-red-600" : "text-muted-foreground hover:text-foreground"
               )}
               onClick={handleLike}
             >

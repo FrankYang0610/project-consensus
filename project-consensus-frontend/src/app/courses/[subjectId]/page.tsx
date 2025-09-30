@@ -10,10 +10,8 @@ import CourseReviewReplyCard from "@/components/CourseReviewReplyCard";
 import {
   fetchCourseReviews,
   fetchReviewReplies,
-  likeReview,
-  unlikeReview,
-  likeReply,
-  unlikeReply,
+  toggleLikeReview,
+  toggleLikeReply,
   createReviewReply,
   deleteReviewReply,
 } from "@/lib/api/courses";
@@ -101,18 +99,16 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
   // Track which reviews' replies are expanded (default collapsed)
   const [expandedReviews, setExpandedReviews] = React.useState<Set<string>>(new Set());
 
-  // Like/unlike a review
+  // Toggle like/unlike a review
   const handleLikeReview = React.useCallback(async (reviewId: string) => {
     if (!isLoggedIn) { openLoginModal(); return; }
-    const target = reviews.find(r => r.id === reviewId);
-    if (!target) return;
     try {
-      const updated = target.isLiked ? await unlikeReview(reviewId) : await likeReview(reviewId);
+      const updated = await toggleLikeReview(reviewId);
       setReviews(prev => prev.map(r => r.id === reviewId ? updated : r));
     } catch (e) {
-      console.error('Failed to like/unlike review', e);
+      console.error('Failed to toggle like review', e);
     }
-  }, [reviews, isLoggedIn]);
+  }, [isLoggedIn]);
 
   // Toggle replies expanded/collapsed per review (default collapsed)
   // Replies cache per review (initial page)
@@ -419,13 +415,13 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
                                 onLike={async (id) => {
                                   if (!isLoggedIn) { openLoginModal(); return; }
                                   try {
-                                    const updated = r.isLiked ? await unlikeReply(id) : await likeReply(id);
+                                    const updated = await toggleLikeReply(id);
                                     setRepliesByReview(prev => ({
                                       ...prev,
                                       [review.id]: (prev[review.id] || []).map(item => item.id === id ? updated : item)
                                     }));
                                   } catch (e) {
-                                    console.error('Failed to like/unlike reply', e);
+                                    console.error('Failed to toggle like reply', e);
                                   }
                                 }}
                                 onReply={(_id) => handleReplyToReply(review.id, r)}

@@ -7,9 +7,8 @@ import { useI18n } from "@/hooks/useI18n";
 import { CourseBackgroundCard } from "@/components/CourseBackgroundCard";
 import { CourseFilterBar } from "@/components/CourseFilterBar";
 import { CoursePreviewCard } from "@/components/CoursePreviewCard";
-import type { Paginated } from "@/lib/api/courses";
 import { apiGet } from "@/lib/utils";
-import type { Course } from "@/types";
+import type { Course, PaginatedResponse } from "@/types";
 
 export default function CoursesPage() {
   const { t } = useI18n();
@@ -23,7 +22,7 @@ export default function CoursesPage() {
     if (!nextUrl || loadingRef.current) return;
     loadingRef.current = true;
     try {
-      const data = await apiGet<Paginated<Course> | Course[]>(nextUrl);
+      const data = await apiGet<PaginatedResponse<Course> | Course[]>(nextUrl);
       const results: Course[] = Array.isArray(data) ? data : (data.results ?? []);
       setCourses(prev => {
         const existing = new Set(prev.map(c => c.subjectId));

@@ -45,4 +45,7 @@ export type {
   RegisterSuccessResponse,
   LoginSuccessResponse,
   ErrorResponse,
+  PaginatedResponse,
+  ListPostsResponse,
+  ListCommentsResponse,
 } from './api';
