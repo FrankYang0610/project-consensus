@@ -465,7 +465,15 @@
     "actions": {
       "saveProfile": "Save Profile",
       "changePassword": "Change Password",
-      "savePrivacy": "Save Privacy"
+      "savePrivacy": "Save Privacy",
+      "viewProfile": "View Profile"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "subtitle": "Your public profile",
+    "actions": {
+      "edit": "Edit Profile"
     }
   },
   "teachers": {

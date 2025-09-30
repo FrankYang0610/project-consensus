@@ -108,7 +108,12 @@ export default function SettingsPage() {
         <SiteNavigation />
         <div className="min-h-screen bg-background">
           <main className="max-w-3xl mx-auto px-4 py-10">
-            <h1 className="text-2xl font-semibold mb-4">{t('settings.title')}</h1>
+            <div className="flex items-start justify-between mb-4">
+              <h1 className="text-2xl font-semibold">{t('settings.title')}</h1>
+              <Button asChild variant="outline" size="sm">
+                <a href="/profile">{t('settings.actions.viewProfile')}</a>
+              </Button>
+            </div>
             <Alert>
               <AlertDescription>
                 {t('settings.requireLogin')}
@@ -186,7 +191,12 @@ export default function SettingsPage() {
       <SiteNavigation />
       <div className="min-h-screen bg-background">
         <main className="max-w-3xl mx-auto px-4 py-10">
-          <h1 className="text-2xl font-semibold mb-2">{t('settings.title')}</h1>
+          <div className="flex items-start justify-between mb-2">
+            <h1 className="text-2xl font-semibold">{t('settings.title')}</h1>
+            <Button asChild variant="outline" size="sm">
+              <a href="/profile">{t('settings.actions.viewProfile')}</a>
+            </Button>
+          </div>
           <p className="text-muted-foreground mb-8">{t('settings.subtitle')}</p>
 
       {/* Profile Section */}

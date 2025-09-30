@@ -142,11 +142,11 @@ export function ForumPostDetailCard({
                 <img
                   src={post.author.avatar}
                   alt={post.author.name}
-                  className="w-7 h-7 rounded-full object-cover ring-2 ring-zinc-200 dark:ring-zinc-800 shadow-sm"
+                  className="w-7 h-7 rounded-full object-cover"
                 />
               ) : (
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-sm ring-2 ring-zinc-200 dark:ring-zinc-800">
-                  <span className="text-white text-xs font-semibold">
+                <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                  <span className="text-gray-600 dark:text-gray-300 text-xs font-medium">
                     {post.author.name.charAt(0).toUpperCase()}
                   </span>
                 </div>

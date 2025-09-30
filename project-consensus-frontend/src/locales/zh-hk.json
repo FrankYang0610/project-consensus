@@ -467,7 +467,15 @@
     "actions": {
       "saveProfile": "儲存資料",
       "changePassword": "修改密碼",
-      "savePrivacy": "儲存私隱設定"
+      "savePrivacy": "儲存私隱設定",
+      "viewProfile": "查看個人資料"
+    }
+  },
+  "profile": {
+    "title": "個人資料",
+    "subtitle": "你的公開個人主頁",
+    "actions": {
+      "edit": "修改個人資料"
     }
   },
   "teachers": {
