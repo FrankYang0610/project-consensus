@@ -123,6 +123,7 @@ project-consensus-frontend/
 │   │   ├── ThemeToggle.tsx                   # Theme switcher button
 │   │   ├── Watermark.tsx                     # Watermark overlay component
 │   │   ├── ClientOnlyTime.tsx                # Client-side time display
+│   │   ├── PronounsSelector.tsx              # Pronouns selection component
 │   │   │
 │   │   ├── # Course Components
 │   │   ├── CoursePreviewCard.tsx            # Course preview cards for listings
@@ -166,7 +167,8 @@ project-consensus-frontend/
 │   │   ├── time-utils.ts                     # Time formatting utilities
 │   │   ├── html-utils.ts                     # HTML processing utilities
 │   │   ├── i18n.ts                           # Internationalization configuration
-│   │   └── locale.ts                         # Locale management utilities
+│   │   ├── locale.ts                         # Locale management utilities
+│   │   └── pronouns-utils.ts                 # Pronouns utilities and helpers
 │   │
 │   ├── types/                                # TypeScript Type Definitions
 │   │   ├── index.ts                          # Main type exports

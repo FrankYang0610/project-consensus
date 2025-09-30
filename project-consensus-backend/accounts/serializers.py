@@ -26,11 +26,14 @@ class AuthorSerializer(serializers.Serializer):
 class ProfileSerializer(serializers.ModelSerializer):
     """Serializer for the Profile model (for user profile APIs)."""
 
+    # Allow empty string for avatar_url so users can clear it
+    # and avoid validation errors when only updating pronouns.
+    avatar_url = serializers.URLField(required=False, allow_blank=True)
     user_id = serializers.IntegerField(source="user.id", read_only=True)
 
     class Meta:
         model = Profile
-        fields = ["user_id", "display_name", "avatar_url"]
+        fields = ["user_id", "display_name", "avatar_url", "pronouns"]
 
 
 class SendCodeSerializer(serializers.Serializer):

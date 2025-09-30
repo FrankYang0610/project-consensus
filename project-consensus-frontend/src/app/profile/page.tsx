@@ -8,6 +8,7 @@ import { useI18n } from '@/hooks/useI18n';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { formatPronounsForProfilePageDisplay } from '@/lib/pronouns-utils';
 
 export default function ProfilePage() {
   const { user, isLoggedIn } = useApp();
@@ -17,6 +18,8 @@ export default function ProfilePage() {
   const avatarText = user?.name
     ? user.name.charAt(0).toUpperCase()
     : (user?.email ? user.email.charAt(0).toUpperCase() : '');
+
+  const formattedPronouns = formatPronounsForProfilePageDisplay(user?.pronouns);
 
   // Mock data for demonstration
   const userStats = {
@@ -92,8 +95,8 @@ export default function ProfilePage() {
                     
                     <div>
                       <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{displayName}</h2>
-                      {user?.email && (
-                        <p className="text-gray-600 dark:text-gray-300 mt-1">{user.email}</p>
+                      {user && (
+                        <p className="text-gray-600 dark:text-gray-300 mt-1">{formattedPronouns}</p>
                       )}
                       <Badge variant="secondary" className="mt-2">
                         Member for {userStats.joinedDays} days
