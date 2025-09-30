@@ -96,6 +96,33 @@ export async function apiPostVoid(path: string, body?: unknown, init?: RequestIn
   }
 }
 
+// CSRF-protected PATCH helper
+export async function apiPatch<T>(path: string, body: unknown, init?: RequestInit): Promise<T> {
+  const base = getAPIBaseUrl();
+  const url = `${base}${path}`;
+  let csrftoken = getCookie('csrftoken');
+  if (!csrftoken) {
+    await ensureCSRFCookie();
+    csrftoken = getCookie('csrftoken');
+  }
+  const res = await fetch(url, {
+    method: 'PATCH',
+    credentials: 'include',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      ...(csrftoken ? { 'X-CSRFToken': csrftoken } : {}),
+    },
+    body: JSON.stringify(body ?? {}),
+    ...init,
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`PATCH ${url} failed: ${res.status} ${text}`);
+  }
+  return res.json();
+}
+
 // Read a cookie value by name. Used for CSRF token.
 export function getCookie(name: string): string | null {
   if (typeof document === 'undefined') return null;

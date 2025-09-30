@@ -126,7 +126,8 @@
     "developmentNotice": "本網站正在積極開發中，界面和功能可能會頻繁更改。",
     "loadFailedRetry": "載入失敗 重新載入",
     "me": "我",
-    "anonymous": "匿名"
+    "anonymous": "匿名",
+    "anonymousWithId": "匿名（{{name}}）"
   },
   "courses": {
     "topbar": {
@@ -153,6 +154,9 @@
       "selectedCount": "已選 {{count}} 項",
       "subjectLevel": "課程等級",
       "apply": "應用",
+      "actions": {
+        "clear": "清除"
+      },
       "detailedCategory": {
         "label": "詳細類別",
         "options": {
@@ -264,6 +268,7 @@
       "reviews": {
         "title": "點評",
         "writeReview": "寫點評",
+        "editReview": "編輯點評",
         "deletedNotice": "本課程有 {{count}} 位用戶曾刪除過點評。",
           "totalReviews": "一共 {{count}} 條 點評",
         "sort": {
@@ -279,7 +284,8 @@
         "term": {
           "label": "學期",
           "select": "選擇學期",
-          "selected": "已選 {{count}} 項"
+          "selected": "已選 {{count}} 項",
+          "all": "全部學期"
         },
         "rating": {
           "label": "評分",
@@ -292,12 +298,19 @@
     "review": {
       "overallRating": "綜合評分",
       "edited": "編輯於 {{date}}",
+      "edit": "編輯",
+      "delete": "刪除",
+      "deleteConfirm": "確認要刪除這條點評嗎？",
+      "save": "儲存",
+      "saving": "儲存中...",
+      "cancel": "取消",
       "reply": "回覆",
       "replies": "{{count}} 條回覆",
       "repliesSection": "回覆將顯示在此處"
     },
     "reviewForm": {
       "title": "撰寫課程點評",
+      "editTitle": "編輯課程點評",
       "rating": "星級評分",
       "term": { "label": "學期", "select": "選擇學期" },
       "onlyText": "只寫點評（不評分）",
@@ -309,6 +322,8 @@
       "contentPlaceholder": "在此輸入你的課程體驗、建議等...",
       "submit": "發佈點評",
       "submitting": "發佈中...",
+      "update": "儲存更改",
+      "updating": "儲存中...",
       "cancel": "取消",
       "validation": {
         "ratingRequired": "請給出 1-5 星評分",

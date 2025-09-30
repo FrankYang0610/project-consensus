@@ -101,7 +101,14 @@ class Migration(migrations.Migration):
                 ("teaching_type", models.CharField(blank=True, max_length=100)),
                 ("course_category", models.CharField(blank=True, max_length=100)),
                 ("offering_department", models.CharField(blank=True, max_length=200)),
-                ("level", models.CharField(blank=True, max_length=50)),
+                (
+                    "level",
+                    models.CharField(
+                        blank=True,
+                        max_length=1,
+                        choices=[("1", "1"), ("2", "2"), ("3", "3"), ("4", "4"), ("5", "5"), ("6", "6")],
+                    ),
+                ),
                 ("credits", models.CharField(blank=True, max_length=20)),
                 ("course_homepage_url", models.URLField(blank=True)),
                 ("syllabus_url", models.URLField(blank=True)),
@@ -110,6 +117,9 @@ class Migration(migrations.Migration):
             options={
                 "verbose_name": "课程",
                 "verbose_name_plural": "课程",
+                "indexes": [
+                    models.Index(fields=["subject_id"], name="courses_cou_subject_3506dc_idx"),
+                ],
             },
         ),
         migrations.AddField(
@@ -227,6 +237,9 @@ class Migration(migrations.Migration):
                 "verbose_name": "课程评价",
                 "verbose_name_plural": "课程评价",
                 "ordering": ["-created_at"],
+                "constraints": [
+                    models.UniqueConstraint(fields=("author", "course"), name="unique_course_review_per_user"),
+                ],
             },
         ),
         migrations.CreateModel(
@@ -335,6 +348,59 @@ class Migration(migrations.Migration):
                 ],
                 "constraints": [
                     models.UniqueConstraint(fields=("user", "reply"), name="unique_reply_like"),
+                ],
+            },
+        ),
+        migrations.CreateModel(
+            name="CourseVote",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "value",
+                    models.CharField(
+                        choices=[
+                            ("recommend", "recommend"),
+                            ("notRecommend", "notRecommend"),
+                        ],
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "created_at",
+                    models.DateTimeField(db_index=True, default=django.utils.timezone.now),
+                ),
+                (
+                    "course",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="votes",
+                        to="courses.course",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+            ],
+            options={
+                "verbose_name": "Course vote",
+                "verbose_name_plural": "Course votes",
+                "indexes": [
+                    models.Index(fields=["course", "user"], name="courses_cou_course_user_idx"),
+                ],
+                "constraints": [
+                    models.UniqueConstraint(fields=("user", "course"), name="unique_course_vote"),
                 ],
             },
         ),

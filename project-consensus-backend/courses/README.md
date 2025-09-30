@@ -1,6 +1,6 @@
 # 课程模块（Courses App）
 
-本模块与前端 `src/types/course.ts` 及 `CourseDetailCard` 组件的字段严格对齐，提供课程基础信息、课程评价与评价回复接口。
+本模块与前端 `src/types/course.ts` 及 `CourseDetailCard` 组件字段严格对齐，提供课程基础信息、课程评价与评价回复接口。当前已完成“只读课程、课程评价/回复的创建与更新、权限与聚合统计”的最小闭环。
 
 ## 模型（Models）
 
@@ -48,6 +48,7 @@
 
 - `CourseReview`
   - 对齐前端 `CourseReview`：总体评分、内容、点赞数、学期（year/semester）、回复数、匿名/仅文本等
+  - 文本字段：`content` 为 `TextField`，存储前端编辑器输出的 HTML 字符串（注意：当前阶段服务器端未做 HTML 清洗，前端显示侧会限制/清洗；后续会在服务器端增加白名单清洗）
 
 - `CourseReviewReply`
   - 单层回复：内容、`reply_to_user`、点赞数、是否删除
@@ -55,7 +56,7 @@
 - `CourseReviewLike` / `CourseReviewReplyLike`
   - 存储用户点赞，用于计算 `isLiked`
 
-## 序列化（Serializers，camelCase 输出）
+## 序列化（Serializers，camelCase 输出 + 写入映射）
 
 - `CourseSerializer`
   - 输出前端所需嵌套字段：`rating`、`attributes`、`teachers`
@@ -65,11 +66,22 @@
     - `college.majors[]` 必为数组；`major.semesters[]` 必为数组；`semester.semester ∈ {spring, summer, fall}`；`year` 为整数
 
 - `CourseReviewSerializer`
-  - 输出 `author`、`overallRating`、`attributes`、`likesCount`、`createdAt`、`updatedAt`、`term`、`repliesCount`、`isLiked`
-  - 支持匿名显示（除作者本人外隐藏身份）
+  - 读（输出）：`author`、`overallRating`、`attributes`、`likesCount`、`createdAt`、`updatedAt`、`term`、`repliesCount`、`isLiked`
+  - 写（输入映射）：
+    - `overallRating` → `overall_rating`
+    - `attributes.difficulty|workload|grading|gain` → `attr_difficulty|attr_workload|attr_grading|attr_gain`
+    - `term.year|term.semester` → `term_year|term_semester`
+    - `isAnonymous` → `is_anonymous`，`onlyText` → `only_text`，`content` → `content`
+  - 校验（onlyText=false 时）：
+    - `overallRating` 必填，范围 0–10（范围限制由前端/业务把控；序列化层检查存在性与类型）
+    - `attributes` 四维度（difficulty/workload/grading/gain）均为必填且为字符串
+    - `term` 可选；若提供，则 `year` 必须为整数，`semester ∈ {spring, summer, fall}`
+  - 匿名显示：除作者本人外隐藏身份（`author.name = Anonymous`）
 
 - `CourseReviewReplySerializer`
-  - 输出 `author`、`replyToUser`、`likes`、`isLiked`、`isDeleted`、`createdAt`
+  - 读（输出）：`author`、`replyToUser`、`likes`、`isLiked`、`isDeleted`、`createdAt`
+  - 写（输入）：
+    - 必须指定父评价（见接口约定）；可选 `replyToUserId` 指定“回复对象”
 
 ## 视图与路由（ViewSets & Routes）
 
@@ -78,16 +90,172 @@
 - `/api/courses/`
   - `GET /api/courses/` 列表（支持搜索：`subject_code`、`title`、`department`；支持过滤：`subjectCode`、`department`、`teacherId`）
   - `GET /api/courses/{subjectId}/` 详情（按 `subject_id` 查找）
-  - `GET|POST /api/courses/{subjectId}/reviews/` 获取/创建该课程的评价
+  - `GET|POST /api/courses/{subjectId}/reviews/` 获取/创建该课程的评价（嵌套路由：POST 时无需再传 `subjectId`）
+    - GET 为分页返回，支持 `page`、`page_size`（默认 10，上限 50）
 
 - `/api/reviews/`
-  - 通过 `?course=<pk>` 或 `?subjectId=<uuid>` 过滤
+  - `GET /api/reviews/`：通过 `?course=<pk>` 或 `?subjectId=<uuid>` 过滤
+  - `POST /api/reviews/`：全局创建入口，必须在 body 携带 `subjectId`；保存成功后会回写课程聚合（平均分、计数）
+  - `POST /api/reviews/{id}/like`：点赞该评价（幂等），计数自增；`POST /api/reviews/{id}/unlike`：取消点赞（幂等），计数自减（不低于 0）
+  - GET 为分页返回，支持 `page`、`page_size`（默认 10，上限 50）
 
 - `/api/replies/`
-  - 通过 `?review=<uuid>` 过滤
+  - `GET /api/replies/`：通过 `?review=<uuid>` 过滤
+  - `POST /api/replies/`：创建评价回复，body 必须携带 `reviewId`（可选 `replyToUserId`）；保存成功后会更新父评价 `replies_count`
+  - `POST /api/replies/{id}/like` / `POST /api/replies/{id}/unlike`：回复点赞/取消点赞（幂等）
+  - GET 为分页返回，支持 `page`、`page_size`（默认 10，上限 50）
+
+### 评价列表筛选与排序
+
+- `GET /api/reviews/` 额外支持参数：
+  - `minRating`、`maxRating`：评分区间过滤（0..10）
+  - `termYear`、`termSemester`：按学期过滤（`semester ∈ {spring, summer, fall}`）；当前仅支持单一学期过滤，前端多选时建议不下发该参数
+  - `ordering`：排序字段（`created_at`、`updated_at`、`likes_count`、`overall_rating`，前缀 `-` 表示降序）
+
+### 课程推荐/不推荐投票
+
+- `POST /api/courses/{subjectId}/vote/`
+  - Body: `{ "voteType": "recommend" | "notRecommend" }`
+  - 逻辑：
+    - 未投票 → 产生新投票，计数自增；
+    - 与现有投票相同 → 视为“取消投票”，计数自减；
+    - 与现有投票不同 → 切换投票，旧计数自减、新计数自增；
+  - 并发安全：
+    - 在事务中通过 `select_for_update()` 锁定用户-课程投票行，配合 `F()` 表达式原子更新课程计数；
+    - (user, course) 唯一约束保证一人一票；
+  - 响应：
+    ```json
+    {
+      "subjectId": "<uuid>",
+      "rating": { "recommendCount": 12, "notRecommendCount": 3 },
+      "userVote": "recommend" | "notRecommend" | null
+    }
+    ```
+
+## 权限与所有权（Permissions & Ownership）
+
+- 读（list/retrieve）：允许匿名访问
+- 写（create/update/delete）：必须登录
+- 修改/删除：仅作者本人或管理员允许
+
+## 评分聚合与计数（Aggregations）
+
+- 自动更新触发时机：在课程评价的创建、更新、删除时，均会重算所属课程的聚合字段（见 `CourseReviewViewSet.perform_create/perform_update/perform_destroy`）。
+- 重算规则：
+  - `rating_reviews_count`：仅统计 `only_text = false` 的评价数量（纯文本评价不计入评分样本）。
+  - `rating_score`：仅基于 `only_text = false` 的评价的 `overall_rating` 取平均，保留 1 位小数；若无评分型评价则为 `0.0`。
+- 回复计数：创建/删除回复后，会更新父评价的 `replies_count`。
+
+说明：聚合更新均包裹于数据库事务中，避免并发下的读写竞争；评分保留一位小数与前端展示保持一致。
+
+## 点赞与投票（并发安全）
+
+- 评价与回复的点赞（like/unlike）：
+  - 点赞/取消点赞均在数据库事务中执行，使用 `get_or_create` 与 `F()` 原子更新计数；
+  - 唯一约束保证同一用户对同一对象仅有一条点赞记录（去重），多次重复点赞/取消为幂等；
+  - 接口返回最新对象数据（包含 `likesCount` 与 `isLiked`）。
+- 课程推荐/不推荐投票（vote）：
+  - 接口：`POST /api/courses/{subjectId}/vote/`，请求体：`{ "voteType": "recommend" | "notRecommend" }`；
+  - 逻辑：
+    - 首次投票：创建 `CourseVote` 记录，并将对应课程 `rating_recommend_count` 或 `rating_not_recommend_count` 原子加一；
+    - 再次点击同一选项：视为“取消”，删掉投票记录，并将对应计数原子减一（下限为 0）；
+    - 切换到另一选项：原子地“旧选项减一 + 新选项加一”，同时更新投票记录的 `value`；
+  - 响应：
+    ```json
+    {
+      "subjectId": "<uuid>",
+      "rating": { "recommendCount": 12, "notRecommendCount": 3 },
+      "userVote": "recommend" | "notRecommend" | null
+    }
+    ```
+  - 并发安全：所有计数增减均在事务中使用 `F()` 表达式完成，避免竞态。
+
+注：投票计数与评分聚合互不影响（投票不参与 `rating_score` 计算），仅用于“推荐/不推荐”可视化。
+
+---
+
+## 课程属性与前端筛选配合（level/category/selectionCategory 等）
+
+后端 `Course` 模型与序列化器已输出课程元信息以支撑前端筛选与详情展示：
+
+- 详情展示字段（均为可选字符串）：
+  - `selectionCategory`（选课类别）、`teachingType`（授课方式）、`courseCategory`（课程类别/标签）、`offeringDepartment`（开课单位，若为空前端回退使用 `department`）、`level`（课程层级，统一为字符串 `'1'..'6'`）、`credits`（学分，字符串以兼容“3.0/待定”等）。
+### 课程列表筛选参数（GET /api/courses/）
+
+- 基本：
+  - `ordering`：`-rating_score` | `-rating_reviews_count` | `-last_updated`
+  - `subjectCode`：精确匹配课程号
+  - `department`：按院系名称（不区分大小写，支持多值：重复参数或逗号分隔，语义为 OR）
+  - `teacherId`：授课教师 UUID（可选）
+  - `search`：全文检索（`subject_code/title/department`）
+- 新增（与前端筛选器联动）：
+  - `category`：主类目（映射到 `selection_category`），忽略 `all`
+  - `selectionCategory`：可多值（重复参数或逗号分隔）
+  - `courseCategory` / `categories`：可多值（重复参数或逗号分隔）
+  - `teachingType`：可多值
+  - `level` / `levels`：可多值，统一为 `'1'..'6'`；支持重复参数或 `levels=1,2,3`
+
+注：为了兼容前端传参，服务端接受重复 key 或逗号分隔两种形式，多值条件为“任一匹配（OR in 列表）”。`department` 同样遵循该规则；若院系名称包含逗号，建议使用重复参数形式。
+
+与前端 `CourseFilterBar` 的对接（见 `project-consensus-frontend/src/components/CourseFilterBar.tsx` 与列表页 `src/app/courses/page.tsx`）：
+
+示例（多值筛选传参用法）：
+- 详细类别（使用别名 `categories` 重复参数）：
+  - `/api/courses/?categories=projectHeavy&categories=examHeavy`
+  - 或逗号分隔：`/api/courses/?categories=projectHeavy,examHeavy`
+- 课程等级（使用 `level` 重复参数；值需为 `'1'..'6'`）：
+  - `/api/courses/?level=1&level=2&level=3`
+  - 或逗号分隔（别名 `levels`）：`/api/courses/?levels=1,2,3`
+
+- 已生效参数：排序（rating/reviews/composite → `ordering`）、课程号（`subjectCode`）、院系（多选 → `department` 多值）、标题与教师名（合并为 `search`）、主类目（`category`→`selection_category`）、详细类目（`categories`→`courseCategory` 多选）、层级（`level` 多选）。
+
+关于 `level` 的说明：
+
+- 已统一为字符串 `'1'..'6'`（数据库层 `CharField(max_length=1)`，提供枚举 choices）。
+- 本地/开发环境的种子数据已直接使用 `'1'..'6'`，无需额外迁移脚本。
+- 列表筛选支持多选：`?level=1&level=2` 或 `?levels=1,2`。
 
 ## 说明
 
 - 前端需要 `teachers[]` 的每项包含 `id` 和 `name`，`avatarUrl` 可选。
 - `otherTeacherCourses` 为计算字段；推荐为同一 `subjectCode` 的不同老师创建独立 `Course` 记录。
 - `credits` 以字符串存储，方便兼容“3.0”或“待定”等展示。
+- 评价内容（`content`）当前为原样存储（HTML 字符串），前端回复渲染已做严格白名单清洗；后续将于服务器端引入清洗以加强安全。
+  - `userVote`（仅课程“详情”在登录态下返回；课程“列表”不返回）：当前用户对该课程的投票状态（`recommend` | `notRecommend` | `null`）。
+    - 为避免 N+1 查询，仅在详情检索时通过子查询注解 `_user_vote`（`CourseViewSet.get_queryset`）提供给序列化器；
+    - 详情若未注解则回退单记录查询；列表不会包含该字段以减少负载。
+
+## 辅助元数据（院系列表）
+
+- 新增接口：`GET /api/courses/departments/`
+  - 用途：返回当前数据库中存在的院系名称列表，供前端筛选器动态展示，避免“院系代码”和“院系名称”不一致导致的筛选失效。
+  - 响应示例：
+    ```json
+    { "departments": ["Computer Science", "Mathematics", "Physics"] }
+    ```
+
+## 数据造数（Seeding）
+
+提供管理命令便于本地/测试环境批量生成课程、评价与回复数据：
+
+- 管理命令：`seed_courses`
+  - 路径：`courses/management/commands/seed_courses.py`
+  - 作用：
+    - 确保至少 N 名用户、M 名老师存在（便于挂载作者与授课教师）；
+    - 生成指定数量的课程（默认 500）；
+    - 生成课程评价（默认 5000）与评价回复（默认 1000）；
+    - 自动回写课程评分聚合（平均分、评价数）与每条评价的回复数；
+  - 使用示例：
+    - `python manage.py seed_courses`（默认 500/5000/1000）
+    - `python manage.py seed_courses --courses 200 --reviews 1500 --replies 300 --seed 42`
+    - `python manage.py seed_courses --purge`（先清空现有课程/评价/回复后再造数）
+
+- 便捷脚本：`scripts/seed_courses.sh`
+  - 支持环境变量：`COURSES_COUNT`、`REVIEWS_COUNT`、`REPLIES_COUNT`、`SEED`
+  - 示例：`COURSES_COUNT=300 REVIEWS_COUNT=3000 REPLIES_COUNT=600 ./scripts/seed_courses.sh --purge`
+
+生成规则简述：
+- 课程：按院系随机生成 `subjectCode`（20% 概率复用同一课程号以模拟不同老师的不同班级），带若干历史学期、课程元数据与授课教师（1–2 名）。
+- 评价：`onlyText` 约 12%，`isAnonymous` 约 15%；其余带 0–10 分的总体评分与四个维度（难度、作业量、给分、收获），并随机生成 HTML 内容与学期信息；点赞数为 0–25 随机值。
+- 回复：随机挑选评价生成 1000 条单层回复，带可选 `replyToUser`，点赞数为 0–10 随机值。
+- 聚合：完成后按“非仅文本评价”重算课程 `rating.score`（保留 1 位小数）与 `rating.reviewsCount`；每条评价回写 `repliesCount`。

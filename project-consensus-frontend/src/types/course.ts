@@ -71,13 +71,23 @@ export interface CourseReview {
     name: string; // 作者姓名 / Author name  
     avatarUrl?: string; // 头像URL / Avatar URL
   };
-  overallRating: number; // 总体评分 0.0 - 10.0 / Overall rating
-  attributes: {
+  /**
+   * 是否匿名 / Whether this review is anonymous.
+   * If true and current viewer is not the author, backend will redact author.id to "".
+   * Frontend should display localized anonymous label accordingly.
+   */
+  isAnonymous?: boolean;
+  /**
+   * 仅文本评价（不含评分/维度） / Text-only review (no scores/dimensions)
+   */
+  onlyText?: boolean;
+  overallRating: number; // 总体评分 0.0 - 10.0 / Overall rating (0 for onlyText reviews)
+  attributes?: {
     difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard';
     workload: 'light' | 'moderate' | 'heavy' | 'veryHeavy';
     grading: 'lenient' | 'balanced' | 'strict';
     gain: 'low' | 'decent' | 'high';
-  };
+  } | null;
   content: string; // 评价正文 / Review content
   likesCount: number; // 点赞数 / Number of likes
   createdAt: string | Date; // 发布时间 / Creation time
@@ -139,6 +149,10 @@ export interface Course {
   otherTeacherCourses?: OtherTeacherCourse[];
   // Curriculum colleges/majors/semesters
   curriculum?: CurriculumCollege[];
+  // Current user's vote on this course (detail only)
+  userVote?: 'recommend' | 'notRecommend' | null;
+  // Whether current user has already posted a review for this course (detail only)
+  userHasReview?: boolean;
 }
 
 /**

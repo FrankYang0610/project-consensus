@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { fetchCourseDepartments } from "@/lib/api/courses";
 import { useI18n } from "@/hooks/useI18n";
 
 type MultiSelectOption = {
@@ -54,12 +55,24 @@ export function CourseFilterBar({ className, onApply }: CourseFilterBarProps) {
     { value: "composite", label: t("courses.topbar.sort.composite") },
   ];
 
-  const departmentOptions: MultiSelectOption[] = [
-    { value: "apss", label: "APSS" },
-    { value: "eee", label: "EEE" },
-    { value: "ise", label: "ISE" },
-    { value: "mm", label: "MM" },
-  ];
+  // Department options are dynamically loaded from backend to avoid code/name mismatch
+  const [departmentOptions, setDepartmentOptions] = React.useState<MultiSelectOption[]>([]);
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const depts = await fetchCourseDepartments();
+        if (!cancelled) {
+          setDepartmentOptions(depts.map((d) => ({ value: d, label: d })));
+        }
+      } catch (e) {
+        // Best-effort; leave empty on failure
+        // eslint-disable-next-line no-console
+        console.warn('Failed to load departments', e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   // Detailed Category options are independent from the main category select
   const detailedCategoryOptions: MultiSelectOption[] = [
@@ -200,88 +213,121 @@ export function CourseFilterBar({ className, onApply }: CourseFilterBarProps) {
             {/* Course Department */}
             <div className="space-y-1.5">
               <Label className="text-xs">{t("courses.topbar.offeringDepartment")}</Label>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="w-full h-8 text-xs justify-between">
-                    <span>
-                      {departments.length > 0
-                        ? `${t("courses.topbar.selectedCount", { count: departments.length })}`
-                        : t("courses.topbar.selectPlaceholder")}
-                    </span>
-                    <ChevronDown className="opacity-60" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56 max-h-64 overflow-auto">
-                  {departmentOptions.map(opt => (
-                    <DropdownMenuCheckboxItem
-                      key={opt.value}
-                      checked={departments.includes(opt.value)}
-                      onCheckedChange={() => toggleSelection(departments, opt.value, setDepartments)}
-                      className="text-xs"
-                    >
-                      {opt.label}
-                    </DropdownMenuCheckboxItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex items-center gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 text-xs justify-between flex-1">
+                      <span>
+                        {departments.length > 0
+                          ? `${t("courses.topbar.selectedCount", { count: departments.length })}`
+                          : t("courses.topbar.selectPlaceholder")}
+                      </span>
+                      <ChevronDown className="opacity-60" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56 max-h-64 overflow-auto">
+                    {departmentOptions.map(opt => (
+                      <DropdownMenuCheckboxItem
+                        key={opt.value}
+                        checked={departments.includes(opt.value)}
+                        onCheckedChange={() => toggleSelection(departments, opt.value, setDepartments)}
+                        className="text-xs"
+                      >
+                        {opt.label}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={() => setDepartments([])}
+                  disabled={departments.length === 0}
+                >
+                  {t("courses.topbar.actions.clear")}
+                </Button>
+              </div>
             </div>
 
             {/* Detailed Category */}
             <div className="space-y-1.5">
               <Label className="text-xs">{t("courses.topbar.detailedCategory.label")}</Label>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="w-full h-8 text-xs justify-between">
-                    <span>
-                      {filterCategories.length > 0
-                        ? `${t("courses.topbar.selectedCount", { count: filterCategories.length })}`
-                        : t("courses.topbar.selectPlaceholder")}
-                    </span>
-                    <ChevronDown className="opacity-60" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56 max-h-64 overflow-auto">
-                  {detailedCategoryOptions.map(opt => (
-                    <DropdownMenuCheckboxItem
-                      key={opt.value}
-                      checked={filterCategories.includes(opt.value)}
-                      onCheckedChange={() => toggleSelection(filterCategories, opt.value, setFilterCategories)}
-                      className="text-xs"
-                    >
-                      {opt.label}
-                    </DropdownMenuCheckboxItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex items-center gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 text-xs justify-between flex-1">
+                      <span>
+                        {filterCategories.length > 0
+                          ? `${t("courses.topbar.selectedCount", { count: filterCategories.length })}`
+                          : t("courses.topbar.selectPlaceholder")}
+                      </span>
+                      <ChevronDown className="opacity-60" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56 max-h-64 overflow-auto">
+                    {detailedCategoryOptions.map(opt => (
+                      <DropdownMenuCheckboxItem
+                        key={opt.value}
+                        checked={filterCategories.includes(opt.value)}
+                        onCheckedChange={() => toggleSelection(filterCategories, opt.value, setFilterCategories)}
+                        className="text-xs"
+                      >
+                        {opt.label}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={() => setFilterCategories([])}
+                  disabled={filterCategories.length === 0}
+                >
+                  {t("courses.topbar.actions.clear")}
+                </Button>
+              </div>
             </div>
 
             {/* Subject Level */}
             <div className="space-y-1.5">
               <Label className="text-xs">{t("courses.topbar.subjectLevel")}</Label>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="w-full h-8 text-xs justify-between">
-                    <span>
-                      {levels.length > 0
-                        ? `${t("courses.topbar.selectedCount", { count: levels.length })}`
-                        : t("courses.topbar.selectPlaceholder")}
-                    </span>
-                    <ChevronDown className="opacity-60" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56 max-h-64 overflow-auto">
-                  {levelOptions.map(opt => (
-                    <DropdownMenuCheckboxItem
-                      key={opt.value}
-                      checked={levels.includes(opt.value)}
-                      onCheckedChange={() => toggleSelection(levels, opt.value, setLevels)}
-                      className="text-xs"
-                    >
-                      {opt.label}
-                    </DropdownMenuCheckboxItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex items-center gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 text-xs justify-between flex-1">
+                      <span>
+                        {levels.length > 0
+                          ? `${t("courses.topbar.selectedCount", { count: levels.length })}`
+                          : t("courses.topbar.selectPlaceholder")}
+                      </span>
+                      <ChevronDown className="opacity-60" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56 max-h-64 overflow-auto">
+                    {levelOptions.map(opt => (
+                      <DropdownMenuCheckboxItem
+                        key={opt.value}
+                        checked={levels.includes(opt.value)}
+                        onCheckedChange={() => toggleSelection(levels, opt.value, setLevels)}
+                        className="text-xs"
+                      >
+                        {opt.label}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={() => setLevels([])}
+                  disabled={levels.length === 0}
+                >
+                  {t("courses.topbar.actions.clear")}
+                </Button>
+              </div>
             </div>
 
             {/* Teacher Name */}
@@ -301,5 +347,3 @@ export function CourseFilterBar({ className, onApply }: CourseFilterBarProps) {
     </div>
   );
 }
-
-

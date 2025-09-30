@@ -126,7 +126,8 @@
     "developmentNotice": "This site is under active development. UI and features may change frequently.",
     "loadFailedRetry": "Load failed. Retry",
     "me": "Me",
-    "anonymous": "Anonymous"
+    "anonymous": "Anonymous",
+    "anonymousWithId": "Anonymous ({{name}})"
   },
   "courses": {
     "topbar": {
@@ -153,6 +154,9 @@
       "selectedCount": "{{count}} selected",
       "subjectLevel": "Subject Level",
       "apply": "Apply",
+      "actions": {
+        "clear": "Clear"
+      },
       "detailedCategory": {
         "label": "Detailed Category",
         "options": {
@@ -262,6 +266,7 @@
       "reviews": {
         "title": "Reviews",
         "writeReview": "Write a review",
+        "editReview": "Edit your review",
         "deletedNotice": "For this course, {{count}} users have deleted their reviews.",
         "totalReviews": "Total {{count}} reviews",
         "sort": {
@@ -276,8 +281,9 @@
         },
         "term": {
           "label": "Term",
-          "select": "Select terms",
-          "selected": "{{count}} selected"
+          "select": "Select term",
+          "selected": "{{count}} selected",
+          "all": "All terms"
         },
         "rating": {
           "label": "Rating",
@@ -290,12 +296,19 @@
     "review": {
       "overallRating": "Overall Rating",
       "edited": "edited {{date}}",
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleteConfirm": "Are you sure you want to delete this review?",
+      "save": "Save",
+      "saving": "Saving...",
+      "cancel": "Cancel",
       "reply": "Reply",
       "replies": "{{count}} replies",
       "repliesSection": "Replies will appear here"
     },
     "reviewForm": {
       "title": "Write Course Review",
+      "editTitle": "Edit Course Review",
       "rating": "Star Rating",
       "term": { "label": "Term", "select": "Select term" },
       "onlyText": "Text-only review (no scores)",
@@ -307,6 +320,8 @@
       "contentPlaceholder": "Share your experience, tips, and suggestions...",
       "submit": "Post Review",
       "submitting": "Posting...",
+      "update": "Save Changes",
+      "updating": "Saving...",
       "cancel": "Cancel",
       "validation": {
         "ratingRequired": "Please provide a 1–5 star rating",
