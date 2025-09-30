@@ -328,8 +328,8 @@ export function ForumPostCommentCard({
               className="w-8 h-8 rounded-full object-cover"
             />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-sm font-medium text-primary">
+            <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
                 {comment.author.name.charAt(0)}
               </span>
             </div>

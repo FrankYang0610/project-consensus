@@ -421,6 +421,7 @@
       "desc": "更新你的昵称和头像。",
       "displayName": "昵称",
       "avatarUrl": "头像 URL",
+      "pronouns": "代词",
       "preview": "预览",
       "saved": "个人资料已更新。",
       "saveFailed": "保存个人资料失败。"
@@ -467,7 +468,18 @@
     "actions": {
       "saveProfile": "保存资料",
       "changePassword": "修改密码",
-      "savePrivacy": "保存隐私设置"
+      "savePrivacy": "保存隐私设置",
+      "viewProfile": "查看个人资料"
+    }
+  },
+  "pronouns": {
+    "info": "project-consensus是重视多样性与包容性的社区，我们支持您按照自己的真实方式表达认同。如果您在预设的代词列表中没有找到合适的代词，您可以选择“custom”并设置自己的代词。"
+  },
+  "profile": {
+    "title": "个人资料",
+    "subtitle": "你的公开个人主页",
+    "actions": {
+      "edit": "修改个人资料"
     }
   },
   "teachers": {

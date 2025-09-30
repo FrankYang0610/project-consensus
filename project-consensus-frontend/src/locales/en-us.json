@@ -419,6 +419,7 @@
       "desc": "Update your display name and avatar.",
       "displayName": "Display Name",
       "avatarUrl": "Avatar URL",
+      "pronouns": "Pronouns",
       "preview": "Preview",
       "saved": "Profile updated.",
       "saveFailed": "Failed to save profile."
@@ -465,7 +466,18 @@
     "actions": {
       "saveProfile": "Save Profile",
       "changePassword": "Change Password",
-      "savePrivacy": "Save Privacy"
+      "savePrivacy": "Save Privacy",
+      "viewProfile": "View Profile"
+    }
+  },
+  "pronouns": {
+    "info": "project-consensus values diversity and inclusion. We support you in expressing your identity authentically. If you don’t find suitable pronouns in the preset list, you can choose \"custom\" and set your own pronouns."
+  },
+  "profile": {
+    "title": "Profile",
+    "subtitle": "Your public profile",
+    "actions": {
+      "edit": "Edit Profile"
     }
   },
   "teachers": {
