@@ -48,4 +48,12 @@ export type {
   PaginatedResponse,
   ListPostsResponse,
   ListCommentsResponse,
+  // Course API types
+  FetchCourseReviewsParams,
+  CreateCourseReviewPayload,
+  UpdateCourseReviewPayload,
+  FetchReviewRepliesParams,
+  CreateReplyPayload,
+  CourseUserVote,
+  VoteCourseResponse,
 } from './api';

@@ -1,4 +1,15 @@
-import type { Course, CourseReview, CourseReviewReply, PaginatedResponse } from "@/types";
+import type {
+  Course,
+  CourseReview,
+  CourseReviewReply,
+  PaginatedResponse,
+  FetchCourseReviewsParams,
+  CreateCourseReviewPayload,
+  UpdateCourseReviewPayload,
+  FetchReviewRepliesParams,
+  CreateReplyPayload,
+  VoteCourseResponse,
+} from "@/types";
 import { apiGet, apiPost, apiPatch, ensureCSRFCookie, getCookie, getAPIBaseUrl } from "@/lib/utils";
 
 export async function fetchCourseById(subjectId: string, init?: RequestInit): Promise<Course | null> {
@@ -13,18 +24,6 @@ export async function fetchCourseById(subjectId: string, init?: RequestInit): Pr
 // Note: legacy fetchCourses() removed. Use paginated requests via apiGet on `/api/courses/`.
 
 // ---------------- Reviews API (paginated) ----------------
-
-export interface FetchCourseReviewsParams {
-  subjectId: string;
-  page?: number;
-  pageSize?: number;
-  ordering?: string; // created_at, -likes_count, overall_rating, etc.
-  minRating?: number;
-  maxRating?: number;
-  termYear?: number;
-  termSemester?: 'spring' | 'summer' | 'fall';
-  mine?: boolean;
-}
 
 export async function fetchCourseReviews(params: FetchCourseReviewsParams, init?: RequestInit): Promise<PaginatedResponse<CourseReview>> {
   const q = new URLSearchParams();
@@ -53,27 +52,11 @@ export async function unlikeReview(reviewId: string): Promise<CourseReview> {
   return apiPost<CourseReview>(`/api/reviews/${encodeURIComponent(reviewId)}/unlike/`, {});
 }
 
-export interface CreateCourseReviewPayload {
-  onlyText?: boolean;
-  overallRating?: number;
-  attributes?: { difficulty: string; workload: string; grading: string; gain: string };
-  content: string;
-  isAnonymous?: boolean;
-  term?: { year: number; semester: 'spring' | 'summer' | 'fall' };
-}
-
 export async function createCourseReview(subjectId: string, payload: CreateCourseReviewPayload): Promise<CourseReview> {
   return apiPost<CourseReview>(`/api/courses/${encodeURIComponent(subjectId)}/reviews/`, payload);
 }
 
 // ---------------- Replies API (paginated) ----------------
-
-export interface FetchReviewRepliesParams {
-  reviewId: string;
-  page?: number;
-  pageSize?: number;
-  ordering?: string; // created_at, -likes_count
-}
 
 export async function fetchReviewReplies(params: FetchReviewRepliesParams, init?: RequestInit): Promise<PaginatedResponse<CourseReviewReply>> {
   const q = new URLSearchParams();
@@ -94,11 +77,6 @@ export async function likeReply(replyId: string): Promise<CourseReviewReply> {
 
 export async function unlikeReply(replyId: string): Promise<CourseReviewReply> {
   return apiPost<CourseReviewReply>(`/api/replies/${encodeURIComponent(replyId)}/unlike/`, {});
-}
-
-export interface CreateReplyPayload {
-  content: string;
-  replyToUserId?: string;
 }
 
 export async function createReviewReply(reviewId: string, payload: CreateReplyPayload): Promise<CourseReviewReply> {
@@ -150,26 +128,11 @@ export async function deleteCourseReview(reviewId: string): Promise<void> {
 
 // ---------------- Course vote API ----------------
 
-export type CourseUserVote = 'recommend' | 'notRecommend' | null;
-export interface VoteCourseResponse {
-  subjectId: string;
-  rating: { recommendCount: number; notRecommendCount: number };
-  userVote: CourseUserVote;
-}
-
 export async function voteCourse(subjectId: string, voteType: 'recommend' | 'notRecommend'): Promise<VoteCourseResponse> {
   return apiPost<VoteCourseResponse>(`/api/courses/${encodeURIComponent(subjectId)}/vote/`, { voteType });
 }
 
 // ---------------- Review update API ----------------
-export type UpdateCourseReviewPayload = Partial<{
-  content: string;
-  isAnonymous: boolean;
-  onlyText: boolean;
-  overallRating: number;
-  attributes: { difficulty: string; workload: string; grading: string; gain: string };
-  term: { year: number; semester: 'spring' | 'summer' | 'fall' };
-}>;
 
 export async function updateCourseReview(reviewId: string, payload: UpdateCourseReviewPayload): Promise<CourseReview> {
   return apiPatch<CourseReview>(`/api/reviews/${encodeURIComponent(reviewId)}/`, payload);
