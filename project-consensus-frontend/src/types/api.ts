@@ -1,9 +1,8 @@
 import { User } from './user';
 import { ForumPost, ForumPostComment } from './forum';
 
-/**
- * API response types aligned with backend accounts endpoints.
- */
+
+// MARK: ============ Accounts API types ============
 
 // POST /api/accounts/send_verification_code/
 export interface SendVerificationCodeResponse {
@@ -32,6 +31,8 @@ export type RegisterResponse = RegisterSuccessResponse | ErrorResponse;
 export type LoginApiResponse = LoginSuccessResponse | ErrorResponse;
 
 
+// MARK: ============  Common list and pagination (including forum list) ============
+
 // DRF paginated response
 export interface PaginatedResponse<T> {
   count: number;
@@ -39,6 +40,9 @@ export interface PaginatedResponse<T> {
   previous: string | null;
   results: T[];
 }
+
+
+// MARK: ============  Forum post and forum post comment API types ============
 
 export type ListPostsResponse = PaginatedResponse<ForumPost>
 export type ListCommentsResponse = PaginatedResponse<ForumPostComment>
@@ -54,7 +58,8 @@ export interface GetForumPostCommentPositionResponse {
   pageUrls: string[]; // relative URLs for pages 1..page
 }
 
-// ============ Course API types ============
+
+// MARK: ============ Course API types ============
 
 // GET /api/reviews/ query parameters
 export interface FetchCourseReviewsParams {
