@@ -15,7 +15,6 @@ import {
   createReviewReply,
   deleteReviewReply,
 } from "@/lib/api/courses";
-import { sortTerms } from "@/lib/course-utils";
 import { useI18n } from "@/hooks/useI18n";
 import { fetchCourseById } from "@/lib/api/courses";
 import type { Course, TeacherInfo } from "@/types";
@@ -32,7 +31,6 @@ const RichTextEditor = dynamic(() => import("@/components/RichTextEditor"), { ss
 export default function CourseDetailPage({ params }: { params: Promise<{ subjectId: string }> }) {
   const { t } = useI18n();
   const { isLoggedIn, openLoginModal } = useApp();
-  const { user } = useApp();
   const router = useRouter();
   const searchParams = useSearchParams();
   const teacherQuery = searchParams.get("teacher") || undefined;
@@ -76,9 +74,12 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
   React.useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!course) return;
+      // Only fetch reviews when we have a valid subjectId (from the course)
+      const courseSubjectId = course?.subjectId;
+      if (!courseSubjectId) return;
+      
       try {
-        const page = await fetchCourseReviews({ subjectId: course.subjectId, page: 1, pageSize: 10, ordering: "-created_at" });
+        const page = await fetchCourseReviews({ subjectId: courseSubjectId, page: 1, pageSize: 10, ordering: "-created_at" });
         if (!cancelled) {
           setReviews(page.results);
           setReviewsCount(page.count);
@@ -89,7 +90,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
       }
     })();
     return () => { cancelled = true; };
-  }, [course?.subjectId]);
+  }, [course?.subjectId]); // Only re-fetch when subjectId changes, not when course object reference changes
 
   // Reset selected term filter when switching to a different course
   React.useEffect(() => {
@@ -108,7 +109,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
     } catch (e) {
       console.error('Failed to toggle like review', e);
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, openLoginModal]);
 
   // Toggle replies expanded/collapsed per review (default collapsed)
   // Replies cache per review (initial page)
@@ -150,7 +151,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
     });
     setNewReplyContentByReview(prev => ({ ...prev, [reviewId]: prev[reviewId] ?? "" }));
     setReplyToUserByReview(prev => ({ ...prev, [reviewId]: null }));
-  }, [isLoggedIn]);
+  }, [isLoggedIn, openLoginModal]);
 
   // Open composer targeting a specific reply's author (reply to reply)
   const handleReplyToReply = React.useCallback((reviewId: string, target: import("@/types").CourseReviewReply) => {
@@ -163,7 +164,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
     });
     setReplyToUserByReview(prev => ({ ...prev, [reviewId]: { id: target.author.id, name: target.author.name } }));
     setNewReplyContentByReview(prev => ({ ...prev, [reviewId]: prev[reviewId] ?? "" }));
-  }, [isLoggedIn]);
+  }, [isLoggedIn, openLoginModal]);
 
   const handleSubmitReply = React.useCallback(async (reviewId: string) => {
     if (!isLoggedIn) { openLoginModal(); return; }
@@ -188,7 +189,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
     } catch (e) {
       console.error('Failed to create reply', e);
     }
-  }, [newReplyContentByReview, replyToUserByReview, isLoggedIn]);
+  }, [newReplyContentByReview, replyToUserByReview, isLoggedIn, openLoginModal]);
 
   const handleDeleteReply = React.useCallback(async (reviewId: string, replyId: string) => {
     if (!isLoggedIn) { openLoginModal(); return; }
@@ -199,7 +200,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
     } catch (e) {
       console.error('Failed to delete reply', e);
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, openLoginModal]);
 
   // Map filter sort key to backend ordering
   const mapSortToOrdering = React.useCallback((key: string): string => {
@@ -213,16 +214,14 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
     }
   }, []);
 
-  // Compute ordered terms and provide filter callbacks to CourseDetailCard
-  const orderedTerms: Array<{ year: number; semester: import("@/types").SemesterKey }> = React.useMemo(() => {
-    if (!course) return [];
-    const source = course.terms && course.terms.length > 0 ? course.terms : [course.term];
-    return sortTerms(source);
-  }, [course]);
-
   // Helper: reload reviews with current filters from server (ensures counts are authoritative)
   const reloadReviews = React.useCallback(async (): Promise<number> => {
-    if (!course) return 0;
+    // Guard: return early if course is not yet loaded
+    if (!course) {
+      console.warn('reloadReviews called before course loaded');
+      return 0;
+    }
+    
     const selectedKeys = Object.entries(filterSelectedTerms).filter(([, v]) => v).map(([k]) => k);
     let termYear: number | undefined; let termSemester: 'spring'|'summer'|'fall' | undefined;
     if (selectedKeys.length === 1) {
@@ -232,29 +231,45 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
         termYear = yNum; termSemester = s as 'spring' | 'summer' | 'fall';
       }
     }
-    const page = await fetchCourseReviews({
-      subjectId: course.subjectId,
-      page: 1,
-      pageSize: 10,
-      ordering: mapSortToOrdering(filterSort),
-      minRating: filterRatingMin,
-      maxRating: filterRatingMax,
-      ...(termYear ? { termYear } : {}),
-      ...(termSemester ? { termSemester } : {}),
-    });
-    setReviews(page.results);
-    setReviewsCount(page.count);
-    return page.count; // Return the filtered count
-  }, [course, filterSelectedTerms, filterRatingMin, filterRatingMax, filterSort, mapSortToOrdering]);
+    
+    try {
+      const page = await fetchCourseReviews({
+        subjectId: course.subjectId,
+        page: 1,
+        pageSize: 10,
+        ordering: mapSortToOrdering(filterSort),
+        minRating: filterRatingMin,
+        maxRating: filterRatingMax,
+        ...(termYear ? { termYear } : {}),
+        ...(termSemester ? { termSemester } : {}),
+      });
+      setReviews(page.results);
+      setReviewsCount(page.count);
+      return page.count;
+    } catch (error) {
+      console.error('Failed to reload reviews:', error);
+      // Don't update state on error, keep existing data
+      return reviewsCount;
+    }
+  }, [course, filterSelectedTerms, filterRatingMin, filterRatingMax, filterSort, mapSortToOrdering, reviewsCount]);
 
   const filterCallbacks = React.useMemo(() => ({
     onSortChange: (value: string) => setFilterSort(value),
     onTermsChange: (selected: Record<string, boolean>) => setFilterSelectedTerms(selected),
     onRatingChange: (min: number, max: number) => { setFilterRatingMin(min); setFilterRatingMax(max); },
     onApplyFilters: async () => {
-      try { await reloadReviews(); } catch (e) { console.error('Failed to apply filters', e); }
+      // Guard: prevent filter application if course is not yet loaded
+      if (!course) {
+        console.warn('Cannot apply filters: course not loaded yet');
+        return;
+      }
+      try { 
+        await reloadReviews(); 
+      } catch (e) { 
+        console.error('Failed to apply filters', e); 
+      }
     },
-  }), [reloadReviews]); 
+  }), [course, reloadReviews]); 
 
   const filterState = React.useMemo(() => ({
     sort: filterSort,
@@ -424,7 +439,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
                                     console.error('Failed to toggle like reply', e);
                                   }
                                 }}
-                                onReply={(_id) => handleReplyToReply(review.id, r)}
+                                onReply={() => handleReplyToReply(review.id, r)}
                                 onDelete={(id) => handleDeleteReply(review.id, id)}
                               />
                             ))}

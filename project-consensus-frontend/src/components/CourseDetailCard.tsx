@@ -29,7 +29,6 @@ import {
   DropdownMenuItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuCheckboxItem,
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
@@ -141,13 +140,16 @@ export interface CourseDetailCardProps {
 }
 
 // Voting state reducer
+// Note: This reducer is now primarily used for optimistic updates and server sync.
+// The server is the source of truth for vote counts to prevent race conditions.
 function votingReducer(state: VotingState, action: VotingAction): VotingState {
   switch (action.type) {
     case 'TOGGLE_VOTE': {
+      // Optimistic update: predict the next state locally for immediate UI feedback
       const { voteType } = action;
 
       if (state.userVote === voteType) {
-        // Remove existing vote
+        // Remove existing vote (optimistic)
         return {
           userVote: null,
           recommendCount: voteType === 'recommend'
@@ -158,7 +160,7 @@ function votingReducer(state: VotingState, action: VotingAction): VotingState {
             : state.notRecommendCount,
         };
       } else {
-        // Change or add vote
+        // Change or add vote (optimistic)
         let newRecommendCount = state.recommendCount;
         let newNotRecommendCount = state.notRecommendCount;
 
@@ -184,6 +186,7 @@ function votingReducer(state: VotingState, action: VotingAction): VotingState {
       }
     }
     case 'RESET_VOTES': {
+      // Server sync: always use server-provided counts as source of truth
       return {
         userVote: action.userVote ?? null,
         recommendCount: action.recommendCount,
@@ -366,20 +369,42 @@ export function CourseDetailCard({
     onFilteredCountUpdate: (filteredCount: number) => {
       if (filterCallbacks?.onFilteredCountUpdate) {
         filterCallbacks.onFilteredCountUpdate(filteredCount);
+      } else {
+        // Only update internal state if parent doesn't handle it
+        setFilteredReviewsCount(filteredCount);
       }
-      setFilteredReviewsCount(filteredCount);
     },
-  }), [filterCallbacks, currentFilterState, rating.reviewsCount]);
+  }), [filterCallbacks, rating.reviewsCount]);
 
   const currentCallbacks = filterCallbacks ?? defaultCallbacks;
 
   /**
-   * Handle user voting interaction using reducer to prevent race conditions
+   * Handle user voting interaction with optimistic updates and server sync
+   * 
+   * Flow:
+   * 1. Optimistic update for immediate UI feedback
+   * 2. Send request to server
+   * 3. On success: sync with server response (source of truth)
+   * 4. On failure: rollback to previous state
    */
   const handleVote = React.useCallback(async (voteType: 'recommend' | 'notRecommend') => {
     if (!isLoggedIn) { openLoginModal(); return; }
+    
+    // Save current state for rollback on error
+    const previousState = {
+      userVote: votingState.userVote,
+      recommendCount: votingState.recommendCount,
+      notRecommendCount: votingState.notRecommendCount,
+    };
+    
+    // Optimistic update for immediate UI feedback
+    dispatchVoting({ type: 'TOGGLE_VOTE', voteType });
+    
     try {
+      // Server request - this is the source of truth
       const res = await voteCourse(subjectId, voteType);
+      
+      // Sync with server response to prevent race conditions
       dispatchVoting({
         type: 'RESET_VOTES',
         recommendCount: res.rating.recommendCount,
@@ -388,8 +413,16 @@ export function CourseDetailCard({
       });
     } catch (e) {
       console.error('Vote request failed', e);
+      
+      // Rollback to previous state on error
+      dispatchVoting({
+        type: 'RESET_VOTES',
+        recommendCount: previousState.recommendCount,
+        notRecommendCount: previousState.notRecommendCount,
+        userVote: previousState.userVote,
+      });
     }
-  }, [subjectId, isLoggedIn]);
+  }, [subjectId, isLoggedIn, votingState, openLoginModal]);
 
   // Sort terms by year and semester (most recent first)
   const orderedTerms = React.useMemo(() => {
@@ -530,7 +563,7 @@ export function CourseDetailCard({
         </DropdownMenuContent>
       </DropdownMenu>
     );
-  }, [language, router, subjectId, t, curriculum]);
+  }, [router, t, curriculum]);
 
   /**
    * Reviews filters inline components

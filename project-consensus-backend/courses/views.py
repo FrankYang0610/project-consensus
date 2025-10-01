@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from django.db.models import Avg, Count, Q
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.db.models import F
 from django.db.models import Exists
 from django.db.models import OuterRef, Subquery, CharField
@@ -24,16 +24,29 @@ from .serializers import CourseSerializer, CourseReviewSerializer, CourseReviewR
 
 
 def _recompute_course_aggregates(course: Course) -> None:
-    qs = CourseReview.objects.filter(course=course, only_text=False)
+    """Recompute course rating aggregates with row-level locking to prevent race conditions.
+    
+    Args:
+        course: The course instance to recompute aggregates for.
+    
+    Note:
+        This function should be called within a transaction context.
+        It uses select_for_update() to prevent concurrent modifications.
+    """
+    # Lock the course row to prevent race conditions during concurrent review operations
+    locked_course = Course.objects.select_for_update().get(pk=course.pk)
+    
+    qs = CourseReview.objects.filter(course=locked_course, only_text=False)
     agg = qs.aggregate(avg=Avg("overall_rating"), cnt=Count("id"))
     count = int(agg.get("cnt") or 0)
     avg = float(agg.get("avg") or 0.0)
     # Keep one decimal place as agreed
     score = round(avg, 1) if count > 0 else 0.0
-    Course.objects.filter(pk=course.pk).update(
-        rating_reviews_count=count,
-        rating_score=score,
-    )
+    
+    # Update the locked course instance
+    locked_course.rating_reviews_count = count
+    locked_course.rating_score = score
+    locked_course.save(update_fields=["rating_reviews_count", "rating_score"])
 
 
 def _recompute_replies_count(review: CourseReview) -> None:
@@ -145,10 +158,19 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
             # department IN (...), case-insensitive; supports repeated key or comma-separated
             departments = _collect_multi("department")
             if departments:
-                q = Q()
-                for d in departments:
-                    q |= Q(department__iexact=d)
-                qs = qs.filter(q)
+                # Input validation: limit count and length to prevent DoS
+                MAX_DEPARTMENTS = 20
+                MAX_DEPT_LENGTH = 200
+                departments = [
+                    d[:MAX_DEPT_LENGTH] 
+                    for d in departments[:MAX_DEPARTMENTS] 
+                    if d and len(d.strip()) > 0
+                ]
+                if departments:
+                    q = Q()
+                    for d in departments:
+                        q |= Q(department__iexact=d)
+                    qs = qs.filter(q)
 
             # level IN ('1'..'6'); accept repeated level= and comma-separated levels=, normalize to strings
             levels = _collect_multi("level")
@@ -176,15 +198,19 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
                     .values("value")[:1]
                 )
                 qs = qs.annotate(_user_vote=Subquery(vote_sq, output_field=CharField()))
+                # Annotate whether user has reviewed this course
+                has_review_exists = CourseReview.objects.filter(course=OuterRef("pk"), author=user)
+                qs = qs.annotate(_user_has_review=Exists(has_review_exists))
         # Always prefetch teachers to avoid N+1 in serializers
         return qs.prefetch_related("teachers")
 
     def get_serializer_context(self):  # type: ignore[override]
         ctx = super().get_serializer_context()
-        # Include userVote/userHasReview only for detail retrieve responses
+        # Include userVote/userHasReview/otherTeacherCourses only for detail retrieve responses
         is_detail = (self.action == "retrieve")
         ctx["include_user_vote"] = is_detail
         ctx["include_user_review"] = is_detail
+        ctx["include_other_teachers"] = is_detail
         return ctx
 
     @action(detail=False, methods=["get"], url_path="departments")
@@ -252,15 +278,23 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = CourseReviewSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
             # Persist with bound course and author
-            with transaction.atomic():
-                # Enforce single review per user per course
-                if CourseReview.objects.select_for_update().filter(course=course, author=request.user).exists():
-                    return Response({"detail": "You have already reviewed this course.", "code": "already_reviewed"}, status=status.HTTP_400_BAD_REQUEST)
-                instance = serializer.save(course=course, author=request.user)
-                _recompute_course_aggregates(course)
-                _recompute_teachers_aggregates(course)
-            out = CourseReviewSerializer(instance, context={"request": request})
-            return Response(out.data, status=status.HTTP_201_CREATED)
+            # Rely on database UniqueConstraint for concurrency safety
+            try:
+                with transaction.atomic():
+                    instance = serializer.save(course=course, author=request.user)
+                    _recompute_course_aggregates(course)
+                    _recompute_teachers_aggregates(course)
+                out = CourseReviewSerializer(instance, context={"request": request})
+                return Response(out.data, status=status.HTTP_201_CREATED)
+            except IntegrityError as e:
+                # Catch unique constraint violation (duplicate review)
+                if 'unique_course_review_per_user' in str(e):
+                    return Response(
+                        {"detail": "You have already reviewed this course.", "code": "already_reviewed"}, 
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                # Re-raise other integrity errors
+                raise
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=["POST"], url_path="vote", permission_classes=[permissions.IsAuthenticated])
@@ -276,10 +310,7 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
         All updates are done in a transaction with atomic F() updates to avoid race conditions.
         Returns minimal payload with latest counts and current userVote.
         """
-        try:
-            course = self.get_queryset().get(subject_id=subject_id)
-        except Course.DoesNotExist:
-            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        course = self.get_object()
 
         vote_type = (request.data or {}).get("voteType")
         if vote_type not in (CourseVote.Value.RECOMMEND, CourseVote.Value.NOT_RECOMMEND):
@@ -516,13 +547,22 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
                 raise ValidationError({"subjectId": "invalid course subjectId"})
         else:
             raise ValidationError({"subjectId": "required"})
-        with transaction.atomic():
-            # Enforce single review per user per course
-            if CourseReview.objects.select_for_update().filter(course=course, author=user).exists():
-                raise ValidationError({"detail": "You have already reviewed this course.", "code": "already_reviewed"})
-            instance = serializer.save(author=user, course=course)
-            _recompute_course_aggregates(course)
-            _recompute_teachers_aggregates(course)
+        
+        # Rely on database UniqueConstraint for concurrency safety
+        try:
+            with transaction.atomic():
+                instance = serializer.save(author=user, course=course)
+                _recompute_course_aggregates(course)
+                _recompute_teachers_aggregates(course)
+        except IntegrityError as e:
+            # Catch unique constraint violation (duplicate review)
+            if 'unique_course_review_per_user' in str(e):
+                raise ValidationError({
+                    "detail": "You have already reviewed this course.", 
+                    "code": "already_reviewed"
+                })
+            # Re-raise other integrity errors
+            raise
 
     def perform_update(self, serializer):  # type: ignore[override]
         instance: CourseReview = self.get_object()

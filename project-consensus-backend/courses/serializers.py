@@ -99,13 +99,16 @@ class CourseSerializer(serializers.ModelSerializer):
 
     def __init__(self, *args, **kwargs):  # type: ignore[override]
         super().__init__(*args, **kwargs)
-        # Only include userVote/userHasReview in detail responses when explicitly requested
+        # Only include userVote/userHasReview/otherTeacherCourses in detail responses when explicitly requested
         include_user_vote = bool(getattr(self, "context", {}).get("include_user_vote"))
         include_user_review = bool(getattr(self, "context", {}).get("include_user_review"))
+        include_other_teachers = bool(getattr(self, "context", {}).get("include_other_teachers"))
         if not include_user_vote:
             self.fields.pop("userVote", None)
         if not include_user_review:
             self.fields.pop("userHasReview", None)
+        if not include_other_teachers:
+            self.fields.pop("otherTeacherCourses", None)
 
     def get_term(self, obj: Course):
         return {"year": obj.term_year, "semester": obj.term_semester}
@@ -232,11 +235,20 @@ class CourseSerializer(serializers.ModelSerializer):
         user = getattr(request, "user", None)
         if not user or not getattr(user, "is_authenticated", False):
             return False
+        # Prefer annotated value to avoid extra query
+        annotated = getattr(obj, "_user_has_review", None)
+        if annotated is not None:
+            return bool(annotated)
+        # Fallback for cases where annotation is not available
         return CourseReview.objects.filter(course=obj, author=user).exists()
 
 
 class CourseReviewSerializer(serializers.ModelSerializer):
-    """Serializer aligning with the frontend CourseReview type (camelCase)."""
+    """Serializer aligning with the frontend CourseReview type (camelCase).
+    
+    Security note: HTML content is sanitized on both write (create/update) and read (to_representation)
+    to provide defense-in-depth against XSS attacks.
+    """
 
     subjectId = serializers.CharField(source="course.subject_id", read_only=True)
     author = serializers.SerializerMethodField()
@@ -272,6 +284,18 @@ class CourseReviewSerializer(serializers.ModelSerializer):
             "onlyText",
         ]
         read_only_fields = ["id", "subjectId", "likesCount", "createdAt", "updatedAt", "repliesCount"]
+    
+    def to_representation(self, instance):
+        """Override to_representation to sanitize HTML content on output.
+        
+        This provides defense-in-depth: even if unsanitized content exists in the database
+        (e.g., from data migration or manual database edits), it will be sanitized when read.
+        """
+        data = super().to_representation(instance)
+        # Sanitize content field on output for security
+        if 'content' in data and data['content']:
+            data['content'] = _sanitize_html(data['content'])
+        return data
 
     def get_author(self, obj: CourseReview) -> dict:
         # Respect anonymous reviews: hide identity from others
@@ -470,7 +494,11 @@ class CourseReviewSerializer(serializers.ModelSerializer):
 
 
 class CourseReviewReplySerializer(serializers.ModelSerializer):
-    """Serializer aligning with the frontend CourseReviewReply type (camelCase)."""
+    """Serializer aligning with the frontend CourseReviewReply type (camelCase).
+    
+    Security note: HTML content is sanitized on both write (create/update) and read (to_representation)
+    to provide defense-in-depth against XSS attacks.
+    """
 
     reviewId = serializers.CharField(source="review_id", read_only=True)
     author = serializers.SerializerMethodField()
@@ -494,6 +522,18 @@ class CourseReviewReplySerializer(serializers.ModelSerializer):
             "isDeleted",
         ]
         read_only_fields = ["id", "reviewId", "createdAt", "likes", "isDeleted"]
+    
+    def to_representation(self, instance):
+        """Override to_representation to sanitize HTML content on output.
+        
+        This provides defense-in-depth: even if unsanitized content exists in the database
+        (e.g., from data migration or manual database edits), it will be sanitized when read.
+        """
+        data = super().to_representation(instance)
+        # Sanitize content field on output for security
+        if 'content' in data and data['content']:
+            data['content'] = _sanitize_html(data['content'])
+        return data
 
     def get_author(self, obj: CourseReviewReply) -> dict:
         return _author_payload_for(obj.author)
