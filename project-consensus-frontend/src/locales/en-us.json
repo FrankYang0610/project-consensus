@@ -504,7 +504,23 @@
     "coursesTaught": "Courses",
     "viewProfile": "View Profile",
     "noBio": "No bio available",
-    "notFound": "Teacher not found"
+    "notFound": "Teacher not found",
+    "search": "Search",
+    "clear": "Clear",
+    "sort": "Sort",
+    "sortBy": {
+      "name": "Name (A-Z)",
+      "rating": "Rating (High-Low)",
+      "reviews": "Reviews (Most)",
+      "department": "Department",
+      "updated": "Recently Updated"
+    },
+    "loading": "Loading teachers...",
+    "loadingMore": "Loading more...",
+    "noResults": "No teachers found for \"{{query}}\"",
+    "noTeachers": "No teachers available",
+    "endOfResults": "End of results ({{count}} total)",
+    "retry": "Retry"
   },
   "teacher": {
     "about": "About",

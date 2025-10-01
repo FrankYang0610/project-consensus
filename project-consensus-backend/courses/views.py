@@ -41,6 +41,19 @@ def _recompute_replies_count(review: CourseReview) -> None:
     CourseReview.objects.filter(pk=review.pk).update(replies_count=cnt)
 
 
+def _recompute_teachers_aggregates(course: Course) -> None:
+    """Update rating aggregates for all teachers of the given course.
+    
+    This should be called after any course review is created, updated, or deleted
+    to keep teacher ratings in sync with their course reviews.
+    """
+    from teachers.utils import recompute_teacher_aggregates
+    
+    # Update all teachers associated with this course
+    for teacher in course.teachers.all():
+        recompute_teacher_aggregates(teacher)
+
+
 class CourseViewSet(viewsets.ReadOnlyModelViewSet):
     """Read-only endpoints for courses, aligned with frontend usage.
 
@@ -245,6 +258,7 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
                     return Response({"detail": "You have already reviewed this course.", "code": "already_reviewed"}, status=status.HTTP_400_BAD_REQUEST)
                 instance = serializer.save(course=course, author=request.user)
                 _recompute_course_aggregates(course)
+                _recompute_teachers_aggregates(course)
             out = CourseReviewSerializer(instance, context={"request": request})
             return Response(out.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -508,6 +522,7 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
                 raise ValidationError({"detail": "You have already reviewed this course.", "code": "already_reviewed"})
             instance = serializer.save(author=user, course=course)
             _recompute_course_aggregates(course)
+            _recompute_teachers_aggregates(course)
 
     def perform_update(self, serializer):  # type: ignore[override]
         instance: CourseReview = self.get_object()
@@ -515,6 +530,7 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
         with transaction.atomic():
             obj = serializer.save()
             _recompute_course_aggregates(obj.course)
+            _recompute_teachers_aggregates(obj.course)
 
     def perform_destroy(self, instance):  # type: ignore[override]
         self._ensure_owner(instance)
@@ -522,6 +538,7 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
         with transaction.atomic():
             instance.delete()
             _recompute_course_aggregates(course)
+            _recompute_teachers_aggregates(course)
 
 
 class CourseReviewReplyViewSet(viewsets.ModelViewSet):

@@ -506,7 +506,23 @@
     "coursesTaught": "课程",
     "viewProfile": "查看主页",
     "noBio": "暂无简介",
-    "notFound": "未找到该教师"
+    "notFound": "未找到该教师",
+    "search": "搜索",
+    "clear": "清除",
+    "sort": "排序",
+    "sortBy": {
+      "name": "姓名 (A-Z)",
+      "rating": "评分 (高到低)",
+      "reviews": "评价数 (最多)",
+      "department": "院系",
+      "updated": "最近更新"
+    },
+    "loading": "加载中...",
+    "loadingMore": "加载更多...",
+    "noResults": "未找到包含「{{query}}」的教师",
+    "noTeachers": "暂无教师",
+    "endOfResults": "已显示全部 (共 {{count}} 位)",
+    "retry": "重试"
   },
   "teacher": {
     "about": "简介",

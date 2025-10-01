@@ -1,22 +1,35 @@
-import React, { useState, FormEvent } from 'react';
+import React, { useState, FormEvent, useEffect } from 'react';
 import { Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface SearchBarProps {
   placeholder?: string;
   className?: string;
   onSubmit?: (query: string) => void;
   showMobileVersion?: boolean;
+  enableLiveSearch?: boolean; // Enable automatic search as user types
+  liveSearchDelay?: number; // Delay for live search (default: 500ms)
 }
 
 export function SearchBar({
   placeholder = "Search...",
   className = "",
   onSubmit,
-  showMobileVersion = false
+  showMobileVersion = false,
+  enableLiveSearch = false,
+  liveSearchDelay = 500,
 }: SearchBarProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedQuery = useDebounce(searchQuery, liveSearchDelay);
+
+  // Trigger search automatically when debounced query changes (if enabled)
+  useEffect(() => {
+    if (enableLiveSearch && debouncedQuery.trim() && onSubmit) {
+      onSubmit(debouncedQuery.trim());
+    }
+  }, [debouncedQuery, enableLiveSearch, onSubmit]);
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -32,6 +45,10 @@ export function SearchBar({
 
   const clearSearch = () => {
     setSearchQuery('');
+    // Clear search results immediately
+    if (enableLiveSearch && onSubmit) {
+      onSubmit('');
+    }
   };
 
   return (

@@ -56,4 +56,6 @@ export type {
   CreateReplyPayload,
   CourseUserVote,
   VoteCourseResponse,
+  // Teacher API types
+  FetchTeachersParams,
 } from './api';

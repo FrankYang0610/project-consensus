@@ -6,7 +6,8 @@ import { useParams, useRouter } from "next/navigation";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useI18n } from "@/hooks/useI18n";
-import { getTeacherById, getCoursesByTeacherId } from "@/data/sampleTeachers";
+import { fetchTeacherById, fetchTeacherCourses } from "@/lib/api/teachers";
+import type { Teacher, TeacherCourseRef } from "@/types";
 
 export default function TeacherDetailPage() {
   const { t } = useI18n();
@@ -14,8 +15,41 @@ export default function TeacherDetailPage() {
   const router = useRouter();
   const teacherId = params.teacherId as string;
 
-  const teacher = React.useMemo(() => getTeacherById(teacherId), [teacherId]);
-  const courses = React.useMemo(() => getCoursesByTeacherId(teacherId), [teacherId]);
+  const [teacher, setTeacher] = React.useState<Teacher | null>(null);
+  const [courses, setCourses] = React.useState<TeacherCourseRef[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  // Fetch teacher data from backend
+  React.useEffect(() => {
+    let cancelled = false;
+    
+    async function loadData() {
+      setIsLoading(true);
+      try {
+        const [teacherData, coursesData] = await Promise.all([
+          fetchTeacherById(teacherId),
+          fetchTeacherCourses(teacherId),
+        ]);
+        
+        if (!cancelled) {
+          setTeacher(teacherData);
+          setCourses(coursesData);
+        }
+      } catch (error) {
+        console.error('Failed to load teacher data:', error);
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadData();
+    
+    return () => {
+      cancelled = true;
+    };
+  }, [teacherId]);
 
   React.useEffect(() => {
     window.scrollTo(0, 0);
@@ -23,6 +57,27 @@ export default function TeacherDetailPage() {
 
   const handleBackClick = () => router.back();
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <>
+        <SiteNavigation showBackButton={true} onBackClick={handleBackClick} />
+        <div className="min-h-screen bg-background">
+          <main className="w-full py-8">
+            <div className="container mx-auto px-4 max-w-3xl">
+              <Card>
+                <CardContent className="pt-6">
+                  <p className="text-muted-foreground text-center">Loading...</p>
+                </CardContent>
+              </Card>
+            </div>
+          </main>
+        </div>
+      </>
+    );
+  }
+
+  // Not found state
   if (!teacher) {
     return (
       <>
@@ -66,8 +121,8 @@ export default function TeacherDetailPage() {
                     {/* External homepage link removed; navigate via internal UUID profile */}
                     {teacher.tags && teacher.tags.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-2">
-                        {teacher.tags.map((tag) => (
-                          <span key={tag} className="px-2 py-0.5 rounded bg-muted text-xs text-muted-foreground">
+                        {teacher.tags.map((tag, index) => (
+                          <span key={`${teacher.id}-tag-${index}`} className="px-2 py-0.5 rounded bg-muted text-xs text-muted-foreground">
                             {tag}
                           </span>
                         ))}

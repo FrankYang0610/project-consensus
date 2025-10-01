@@ -367,6 +367,29 @@ def _recompute_replies_count(apps, reviews):
         CourseReview.objects.filter(pk=r.pk).update(replies_count=mapping.get(r.pk, 0))
 
 
+def _recompute_teacher_aggregates(apps):
+    """Recompute rating for all teachers based on their course reviews."""
+    from django.db.models import Avg, Count
+    Teacher = apps.get_model("teachers", "Teacher")
+    CourseReview = apps.get_model("courses", "CourseReview")
+    
+    for teacher in Teacher.objects.all():
+        # Find all reviews for courses taught by this teacher
+        qs = CourseReview.objects.filter(
+            course__teachers=teacher,
+            only_text=False
+        )
+        agg = qs.aggregate(avg=Avg("overall_rating"), cnt=Count("id"))
+        count = int(agg.get("cnt") or 0)
+        avg = float(agg.get("avg") or 0.0)
+        score = round(avg, 1) if count > 0 else None
+        
+        Teacher.objects.filter(pk=teacher.pk).update(
+            rating_overall=score,
+            rating_reviews_count=count,
+        )
+
+
 def seed_forward(apps, schema_editor):
     random.seed(RANDOM_SEED)
     _ensure_min_users(apps, MIN_USERS)
@@ -377,6 +400,7 @@ def seed_forward(apps, schema_editor):
     _generate_replies(apps, reviews)
     _recompute_course_aggregates(apps, courses)
     _recompute_replies_count(apps, reviews)
+    _recompute_teacher_aggregates(apps)
 
 
 def seed_reverse(apps, schema_editor):

@@ -16,6 +16,7 @@ import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fetchCourseDepartments } from "@/lib/api/courses";
 import { useI18n } from "@/hooks/useI18n";
+import { useDebounce } from "@/hooks/useDebounce";
 
 type MultiSelectOption = {
   value: string;
@@ -40,6 +41,11 @@ export function CourseFilterBar({ className, onApply }: CourseFilterBarProps) {
   const [filterCategories, setFilterCategories] = React.useState<string[]>([]);
   const [levels, setLevels] = React.useState<string[]>([]);
   const [teacherName, setTeacherName] = React.useState("");
+
+  // Debounce text inputs for better performance (300ms for filter inputs)
+  const debouncedSubjectCode = useDebounce(subjectCode, 300);
+  const debouncedSubjectTitle = useDebounce(subjectTitle, 300);
+  const debouncedTeacherName = useDebounce(teacherName, 300);
 
   const categorySelectOptions: MultiSelectOption[] = [
     { value: "all", label: t("courses.topbar.category.all") },
@@ -97,7 +103,17 @@ export function CourseFilterBar({ className, onApply }: CourseFilterBarProps) {
   };
 
   const handleApply = () => {
-    onApply?.({ category, sort, subjectCode, subjectTitle, departments, categories: filterCategories, levels, teacherName });
+    // Use debounced values for text inputs
+    onApply?.({ 
+      category, 
+      sort, 
+      subjectCode: debouncedSubjectCode, 
+      subjectTitle: debouncedSubjectTitle, 
+      departments, 
+      categories: filterCategories, 
+      levels, 
+      teacherName: debouncedTeacherName 
+    });
   };
 
   return (
