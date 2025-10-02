@@ -36,6 +36,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
+import { useDebounceCallback } from "@/hooks/useDebounce";
 import { clamp, formatDateDisplay, formatTerm, sortTerms, validateRating } from "@/lib/course-utils";
 import type {
   SemesterKey,
@@ -305,13 +306,27 @@ export function CourseDetailCard({
     notRecommendCount: rating.notRecommendCount ?? 0,
   });
 
+  // Track server state to prevent flickering and handle rollbacks
+  const serverStateRef = React.useRef({
+    userVote: userVote ?? null,
+    recommendCount: rating.recommendCount ?? 0,
+    notRecommendCount: rating.notRecommendCount ?? 0,
+  });
+
+  // Request counter to ignore outdated responses
+  const requestCounterRef = React.useRef(0);
+
   // Reset voting state when rating props change
   React.useEffect(() => {
-    dispatchVoting({
-      type: 'RESET_VOTES',
+    const newState = {
+      userVote: userVote ?? null,
       recommendCount: rating.recommendCount ?? 0,
       notRecommendCount: rating.notRecommendCount ?? 0,
-      userVote: userVote ?? null,
+    };
+    serverStateRef.current = newState;
+    dispatchVoting({
+      type: 'RESET_VOTES',
+      ...newState,
     });
   }, [rating.recommendCount, rating.notRecommendCount, userVote]);
 
@@ -379,50 +394,79 @@ export function CourseDetailCard({
   const currentCallbacks = filterCallbacks ?? defaultCallbacks;
 
   /**
-   * Handle user voting interaction with optimistic updates and server sync
+   * Debounced server request for voting
+   * This prevents rapid consecutive API calls and reduces server load
+   */
+  const sendVoteToServer = useDebounceCallback(
+    async (courseId: string, voteType: 'recommend' | 'notRecommend', requestId: number) => {
+      try {
+        // Server request - this is the source of truth
+        const res = await voteCourse(courseId, voteType);
+        
+        // Only update if this is still the latest request (prevent race conditions)
+        if (requestId === requestCounterRef.current) {
+          const newServerState = {
+            recommendCount: res.rating.recommendCount,
+            notRecommendCount: res.rating.notRecommendCount,
+            userVote: res.userVote,
+          };
+          
+          // Update server state ref
+          serverStateRef.current = newServerState;
+          
+          // Sync with server response
+          dispatchVoting({
+            type: 'RESET_VOTES',
+            ...newServerState,
+          });
+        }
+      } catch (e) {
+        console.error('Vote request failed', e);
+        
+        // Only rollback if this is still the latest request
+        if (requestId === requestCounterRef.current) {
+          // Rollback to last known server state
+          dispatchVoting({
+            type: 'RESET_VOTES',
+            ...serverStateRef.current,
+          });
+        }
+      }
+    },
+    300 // 300ms debounce delay
+  );
+
+  /**
+   * Handle user voting interaction with optimistic updates and debounced server sync
    * 
    * Flow:
-   * 1. Optimistic update for immediate UI feedback
-   * 2. Send request to server
+   * 1. Immediate optimistic update for instant UI feedback
+   * 2. Debounced server request (300ms) to prevent rapid consecutive calls
    * 3. On success: sync with server response (source of truth)
-   * 4. On failure: rollback to previous state
+   * 4. On failure: rollback to last known server state
+   * 
+   * Benefits:
+   * - Instant UI feedback (no perceived delay)
+   * - Reduced server load (debounced requests)
+   * - No UI flickering (smart state management)
+   * - Race condition handling (request counter)
    */
-  const handleVote = React.useCallback(async (voteType: 'recommend' | 'notRecommend') => {
-    if (!isLoggedIn) { openLoginModal(); return; }
+  const handleVote = React.useCallback((voteType: 'recommend' | 'notRecommend') => {
+    if (!isLoggedIn) { 
+      openLoginModal(); 
+      return; 
+    }
     
-    // Save current state for rollback on error
-    const previousState = {
-      userVote: votingState.userVote,
-      recommendCount: votingState.recommendCount,
-      notRecommendCount: votingState.notRecommendCount,
-    };
+    // Increment request counter for race condition handling
+    requestCounterRef.current += 1;
+    const currentRequestId = requestCounterRef.current;
     
     // Optimistic update for immediate UI feedback
     dispatchVoting({ type: 'TOGGLE_VOTE', voteType });
     
-    try {
-      // Server request - this is the source of truth
-      const res = await voteCourse(subjectId, voteType);
-      
-      // Sync with server response to prevent race conditions
-      dispatchVoting({
-        type: 'RESET_VOTES',
-        recommendCount: res.rating.recommendCount,
-        notRecommendCount: res.rating.notRecommendCount,
-        userVote: res.userVote,
-      });
-    } catch (e) {
-      console.error('Vote request failed', e);
-      
-      // Rollback to previous state on error
-      dispatchVoting({
-        type: 'RESET_VOTES',
-        recommendCount: previousState.recommendCount,
-        notRecommendCount: previousState.notRecommendCount,
-        userVote: previousState.userVote,
-      });
-    }
-  }, [subjectId, isLoggedIn, votingState, openLoginModal]);
+    // Debounced server request
+    sendVoteToServer(subjectId, voteType, currentRequestId);
+  }, [isLoggedIn, openLoginModal, sendVoteToServer, subjectId]);
 
   // Sort terms by year and semester (most recent first)
   const orderedTerms = React.useMemo(() => {
@@ -434,7 +478,10 @@ export function CourseDetailCard({
 
   // Teacher data processing
   const primaryTeacher = React.useMemo(() => teachers?.[0] ?? null, [teachers]);
-  const hasOtherTeachers = otherTeacherCourses && otherTeacherCourses.length > 0;
+  const hasOtherTeachers = React.useMemo(() => 
+    otherTeacherCourses && otherTeacherCourses.length > 0, 
+    [otherTeacherCourses]
+  );
 
   // Adaptive layout: calculate content weight to balance columns
   const leftContentWeight = React.useMemo(() => {
