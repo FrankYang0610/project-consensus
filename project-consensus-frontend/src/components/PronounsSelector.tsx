@@ -131,7 +131,7 @@ export function PronounsSelector({
               <Checkbox
                 id={`${id}-share`}
                 checked={!!share}
-                onCheckedChange={(checked) => onShareChange?.(checked === true)}
+                onCheckedChange={(checked) => onShareChange(checked === true)}
               />
               <Label htmlFor={`${id}-share`} className="text-xs text-muted-foreground">
                 {t('pronouns.share')}
