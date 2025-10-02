@@ -12,14 +12,26 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.middleware.csrf import get_token
 
 from .models import Profile
-from .serializers import SendCodeSerializer, RegisterSerializer, LoginSerializer
+from .serializers import SendCodeSerializer, RegisterSerializer, LoginSerializer, ProfileSerializer
 
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
+
+def build_user_payload(user):
+    """Return a minimal, serializable user payload for API responses."""
+    profile = getattr(user, "profile", None)
+    return {
+        "id": str(user.pk),
+        "email": user.email,
+        "name": getattr(profile, "display_name", None) or user.get_username(),
+        "avatar": getattr(profile, "avatar_url", None) or None,
+        "pronouns": getattr(profile, "pronouns", None) or "not_specified",
+    }
 
 @api_view(["POST"])
 def send_verification_code(request):
@@ -75,20 +87,15 @@ def register(request):
         return Response({"message": "Email already registered."}, status=status.HTTP_400_BAD_REQUEST)
 
     user = User.objects.create_user(username=email, email=email, password=password)
-    Profile.objects.create(user=user, display_name=nickname)
+    # Default pronouns to 'not_specified' for new users
+    Profile.objects.create(user=user, display_name=nickname, pronouns="not_specified")
 
     # Invalidate the code to prevent reuse
     cache.delete(code_key)
 
     # Log the user in to establish a server-side session
     django_login(request, user)
-    return Response(
-        {
-            "success": True,
-            "user": {"id": str(user.pk), "email": user.email, "name": nickname},
-        },
-        status=status.HTTP_201_CREATED,
-    )
+    return Response({"success": True, "user": build_user_payload(user)}, status=status.HTTP_201_CREATED)
 
 
 @api_view(["GET"])
@@ -116,13 +123,7 @@ def login_view(request):
 
     # success; establish session and return profile payload
     django_login(request, user)
-    display_name = getattr(getattr(user, "profile", None), "display_name", None) or user.get_username()
-    return Response(
-        {
-            "success": True,
-            "user": {"id": str(user.pk), "email": user.email, "name": display_name},
-        }
-    )
+    return Response({"success": True, "user": build_user_payload(user)})
 
 
 @api_view(["POST"])
@@ -135,10 +136,17 @@ def logout_view(request):
 def me(request):
     if not request.user.is_authenticated:
         return Response({"message": "Not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
-    display_name = getattr(getattr(request.user, "profile", None), "display_name", None) or request.user.get_username()
-    return Response({
-        "id": str(request.user.pk),
-        "email": request.user.email,
-        "name": display_name,
-    })
+    return Response(build_user_payload(request.user))
+
+
+@api_view(["PATCH"])
+@transaction.atomic
+def update_profile(request):
+    if not request.user.is_authenticated:
+        return Response({"message": "Not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
+    profile, _ = Profile.objects.get_or_create(user=request.user)
+    serializer = ProfileSerializer(profile, data=request.data, partial=True)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    return Response({"success": True, "user": build_user_payload(request.user)})
 

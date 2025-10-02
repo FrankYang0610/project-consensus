@@ -60,8 +60,17 @@
     "translate": "翻譯",
     "showOriginal": "原文",
     "share": "分享",
+    "more": "更多",
     "copied": "已複製！",
     "copyText": "複製文本",
+    "delete": "刪除帖子",
+    "deleting": "刪除中...",
+    "deleteConfirm": {
+      "title": "刪除帖子",
+      "message": "確定要刪除這個帖子嗎？此操作無法撤銷。",
+      "confirm": "刪除",
+      "cancel": "取消"
+    },
     "translateUnavailable": "翻譯功能尚不可用",
     "shareUnavailable": "分享功能暫時不可用，敬請期待！",
     "copyFailed": "複製文本到剪貼板失敗",
@@ -102,6 +111,12 @@
     "delete": "刪除",
     "deleting": "刪除中...",
     "deleted": "此評論已被刪除",
+    "deleteConfirm": {
+      "title": "刪除評論",
+      "message": "確定要刪除這條評論嗎？此操作無法撤銷。",
+      "confirm": "刪除",
+      "cancel": "取消"
+    },
     "showReplies": "展開 {{count}} 條回覆",
     "hideReplies": "收起回覆",
     "loadMore": "載入更多 ({{remaining}} 條)",
@@ -111,6 +126,7 @@
     "avatar": "頭像",
     "replyTo": "回覆了",
     "share": "分享",
+    "more": "更多",
     "copied": "已複製！",
     "copyText": "複製文本",
     "repliesTo": "回覆 {{name}} 的內容",
@@ -216,6 +232,25 @@
     }
     },
     "detail": {
+      "curriculumPlan": {
+        "button": "所屬培養方案",
+        "college": "學院",
+        "major": "專業",
+        "semester": "學期",
+        "cohortDisplay": "{{year}}屆",
+        "yearLevel": {
+          "y1": "大一",
+          "y2": "大二",
+          "y3": "大三",
+          "y4": "大四",
+          "y5": "大五"
+        },
+        "semesterShort": {
+          "spring": "春",
+          "summer": "夏",
+          "fall": "秋"
+        }
+      },
       "follow": "關注",
       "recommend": "推薦",
       "notRecommend": "不推薦",
@@ -227,7 +262,7 @@
         "grading": "給分好壞"
       },
       "aiSummary": "AI 智能總結",
-      "aiSummaryComingSoon": "根據學生評價自動生成的課程概要即將推出，敬請期待。",
+      "noAiSummary": "目前暫無 AI 總結",
       "courseInfo": "課程資訊",
       "selectionCategory": "選課類別",
       "teachingType": "教學類型",
@@ -276,6 +311,27 @@
       "reply": "回覆",
       "replies": "{{count}} 條回覆",
       "repliesSection": "回覆將顯示在此處"
+    },
+    "reviewForm": {
+      "title": "撰寫課程點評",
+      "rating": "星級評分",
+      "term": { "label": "學期", "select": "選擇學期" },
+      "onlyText": "只寫點評（不評分）",
+      "onlyTextHint": "勾選後可以不選擇評分和維度",
+      "noRating": "未評分",
+      "anonymous": "匿名模式",
+      "anonymousOn": "已啟用",
+      "anonymousOff": "未啟用",
+      "contentPlaceholder": "在此輸入你的課程體驗、建議等...",
+      "submit": "發佈點評",
+      "submitting": "發佈中...",
+      "cancel": "取消",
+      "validation": {
+        "ratingRequired": "請給出 1-5 星評分",
+        "dimensionsRequired": "請選擇全部四個維度",
+        "contentRequired": "點評內容不能為空",
+        "contentTooShort": "點評內容至少需要 10 個字"
+      }
     }
   },
   "about": {
@@ -365,6 +421,7 @@
       "desc": "更新你的暱稱與頭像。",
       "displayName": "暱稱",
       "avatarUrl": "頭像 URL",
+      "pronouns": "代稱",
       "preview": "預覽",
       "saved": "個人資料已更新。",
       "saveFailed": "儲存個人資料失敗。"
@@ -411,7 +468,47 @@
     "actions": {
       "saveProfile": "儲存資料",
       "changePassword": "修改密碼",
-      "savePrivacy": "儲存私隱設定"
+      "savePrivacy": "儲存私隱設定",
+      "viewProfile": "查看個人資料"
+    }
+  },
+  "pronouns": {
+    "info": "project-consensus 是一個重視多元與共融的社群，我們支持你以真實的方式表達自我。如果你在預設代稱列表中找不到合適的選項，可以選擇 \"custom\" 並設定你的專屬代稱。"
+  },
+  "profile": {
+    "title": "個人資料",
+    "subtitle": "你的公開個人主頁",
+    "actions": {
+      "edit": "修改個人資料"
+    }
+  },
+  "teachers": {
+    "title": "老師",
+    "searchPlaceholder": "按姓名、院系或標籤搜尋老師",
+    "total": "{{count}} 位",
+    "rating": "評分",
+    "reviews": "{{count}} 則評價",
+    "coursesTaught": "課程",
+    "viewProfile": "查看主頁",
+    "noBio": "暫無簡介",
+    "notFound": "未找到該老師"
+  },
+  "teacher": {
+    "about": "簡介",
+    "contact": "聯絡",
+    "email": "電郵",
+    "office": "辦公室",
+    "officeHours": "辦公時間",
+    "homepage": "主頁",
+    "yearsExperience": "任教年資",
+    "languages": "授課語言",
+    "coursesTaught": "授課課程",
+    "noCourses": "暫無課程記錄",
+    "stats": {
+      "overall": "整體",
+      "difficulty": "難度",
+      "reviews": "評價數",
+      "courses": "課程"
     }
   }
 }

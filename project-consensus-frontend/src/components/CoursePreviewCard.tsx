@@ -14,12 +14,12 @@ import {
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
 import { clamp, formatDateDisplay, formatTerm, sortTerms, validateRating } from "@/lib/course-utils";
-import type { Course, SemesterKey } from "@/types";
+import type { SemesterKey, TeacherInfo } from "@/types";
 
 /**
- * 课程预览卡片组件属性 / Props for CoursesPreviewCard
+ * 课程预览卡片组件属性 / Props for CoursePreviewCard
  */
-export interface CoursesPreviewCardProps {
+export interface CoursePreviewCardProps {
   subjectId: string;
   subjectCode: string;
   title: string;
@@ -41,7 +41,8 @@ export interface CoursesPreviewCardProps {
     grading: 'lenient' | 'balanced' | 'strict';
     gain: 'low' | 'decent' | 'high';
   };
-  teachers?: string[];
+  // Updated to align with backend: [{ id, name, avatarUrl? }]
+  teachers?: TeacherInfo[];
   department?: string;
   lastUpdated?: string | Date;
   href?: string; // optional override; otherwise computed from subjectId
@@ -77,7 +78,7 @@ function MetaItem({ label, value, icon }: { label: string; value: string; icon?:
   );
 }
 
-export function CoursesPreviewCard({
+export function CoursePreviewCard({
   subjectId,
   subjectCode,
   title,
@@ -90,7 +91,7 @@ export function CoursesPreviewCard({
   lastUpdated,
   href,
   className,
-}: CoursesPreviewCardProps) {
+}: CoursePreviewCardProps) {
   const { t, language } = useI18n();
   const hasMultipleTerms = React.useMemo(() => Array.isArray(terms) && terms.length > 0, [terms]);
 
@@ -201,7 +202,7 @@ export function CoursesPreviewCard({
             {teachers && teachers.length > 0 && (
               <MetaItem
                 label={t("courses.card.labels.teachers")}
-                value={teachers.join(", ")}
+                value={teachers.map(t => t.name).join(", ")}
                 icon={<BookOpen className="w-3.5 h-3.5" />}
               />
             )}
@@ -246,4 +247,4 @@ export function CoursesPreviewCard({
   );
 }
 
-export default CoursesPreviewCard;
+export default CoursePreviewCard;

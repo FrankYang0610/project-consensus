@@ -23,7 +23,7 @@ The Forum app implements posts and flat comments with optional replies via `repl
 
 - `ForumPostCommentSerializer`
   - Fields: `id`, `content`, `author`, `createdAt`, `likes`, `isDeleted`, `replyTo`, `postId`, `replies`
-  - `replies` is the count of direct replies to this comment (soft-deleted replies excluded)
+  - `replies` is the count of direct replies to this comment (soft-deleted replies included)
   - Does not expose the replied-to user. Use `replyTo` on the frontend to locate parent comment
   - Common filters:
     - Comments under post: `/api/forum/comments/?postId=<postId>`

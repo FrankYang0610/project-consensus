@@ -64,7 +64,7 @@ function UserAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string }) {
 }
 
 /**
- * Attribute display component for course attributes (matching CoursesDetailedCard style)
+ * Attribute display component for course attributes (matching CourseDetailCard style)
  * Memoized for performance
  */
 const AttributeItem = React.memo(({ label, value }: { label: string; value: string }) => {

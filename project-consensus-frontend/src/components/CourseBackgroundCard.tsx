@@ -4,11 +4,11 @@ import * as React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-export interface CoursesBackgroundCardProps extends React.ComponentPropsWithoutRef<typeof Card> {
+export interface CourseBackgroundCardProps extends React.ComponentPropsWithoutRef<typeof Card> {
   contentProps?: React.ComponentPropsWithoutRef<typeof CardContent>;
 }
 
-export const CoursesBackgroundCard = React.forwardRef<HTMLDivElement, CoursesBackgroundCardProps>(
+export const CourseBackgroundCard = React.forwardRef<HTMLDivElement, CourseBackgroundCardProps>(
   ({ className, children, contentProps, ...props }, ref) => {
     const { className: contentClassName, ...restContentProps } = contentProps ?? {};
 
@@ -26,5 +26,5 @@ export const CoursesBackgroundCard = React.forwardRef<HTMLDivElement, CoursesBac
   }
 );
 
-CoursesBackgroundCard.displayName = "CoursesBackgroundCard";
+CourseBackgroundCard.displayName = "CourseBackgroundCard";
 

@@ -21,6 +21,7 @@ class Profile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile")
     display_name = models.CharField(max_length=100, blank=True, help_text="展示昵称（不唯一）")
     avatar_url = models.URLField(blank=True, help_text="头像 URL，可为空")
+    pronouns = models.CharField(max_length=100, blank=True, help_text="用户代词，可为空")
 
     class Meta:
         verbose_name = "Profile"

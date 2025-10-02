@@ -4,10 +4,11 @@ import * as React from "react";
 import {
   Calendar,
   Heart,
-  Share2,
+  MoreHorizontal,
   Languages,
   FileText,
   Check,
+  Trash2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -45,18 +46,18 @@ import ClientOnlyTime from "./ClientOnlyTime";
 export interface ForumPostDetailCardProps {
   post: ForumPost; // 帖子数据 / Post data
   onLike?: (postId: string) => void; // 点赞回调函数（可选） / Like callback function (optional)
-  onShare?: (postId: string) => void; // 分享回调函数（可选） / Share callback function (optional)
   onTranslate?: (postId: string) => void; // 翻译回调函数（可选） / Translate callback function (optional)
   onAuthorClick?: (authorId: string) => void; // 作者点击回调函数（可选） / Author click callback function (optional)
+  onDelete?: (postId: string) => void; // 删除回调（可选） / Delete callback (optional)
   className?: string; // 自定义CSS类名（可选） / Custom CSS class name (optional)
 }
 
 export function ForumPostDetailCard({
   post,
   onLike,
-  onShare,
   onTranslate,
   onAuthorClick,
+  onDelete,
   className,
 }: ForumPostDetailCardProps) {
   // i18n translation
@@ -66,6 +67,7 @@ export function ForumPostDetailCard({
   const [showDialog, setShowDialog] = React.useState(false);
   const [dialogMessage, setDialogMessage] = React.useState("");
   const [dialogTitle, setDialogTitle] = React.useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
   // Controlled: derive from props
   const isLiked = post.isLiked || false;
   const likesCount = post.likes;
@@ -81,14 +83,6 @@ export function ForumPostDetailCard({
     onLike?.(post.id);
   };
 
-  const handleShareClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDialogTitle("Error");
-    setDialogMessage(t('post.shareUnavailable'));
-    setShowDialog(true);
-    onShare?.(post.id);
-  };
 
   const handleCopyText = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -119,8 +113,23 @@ export function ForumPostDetailCard({
   const handleAuthorClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (post.isAnonymous || post.author.id === 'anonymous') return;
+    if (post.isAnonymous) return;
     onAuthorClick?.(post.author.id);
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    setShowDeleteConfirm(false);
+    onDelete?.(post.id);
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(false);
   };
 
   return (
@@ -133,11 +142,11 @@ export function ForumPostDetailCard({
                 <img
                   src={post.author.avatar}
                   alt={post.author.name}
-                  className="w-7 h-7 rounded-full object-cover ring-2 ring-zinc-200 dark:ring-zinc-800 shadow-sm"
+                  className="w-7 h-7 rounded-full object-cover"
                 />
               ) : (
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-sm ring-2 ring-zinc-200 dark:ring-zinc-800">
-                  <span className="text-white text-xs font-semibold">
+                <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                  <span className="text-gray-600 dark:text-gray-300 text-xs font-medium">
                     {post.author.name.charAt(0).toUpperCase()}
                   </span>
                 </div>
@@ -148,7 +157,7 @@ export function ForumPostDetailCard({
                 onClick={handleAuthorClick}
                 className="text-sm font-medium text-left hover:text-primary transition-colors"
               >
-                {post.author.isAnonymous 
+                {post.isAnonymous 
                   ? (user && post.author.id === user.id 
                       ? `${post.author.name} (${t('common.anonymous')})` 
                       : t('common.anonymous'))
@@ -243,10 +252,10 @@ export function ForumPostDetailCard({
                 {isCopySuccess ? (
                   <Check className="w-4 h-4" />
                 ) : (
-                  <Share2 className="w-4 h-4" />
+                  <MoreHorizontal className="w-4 h-4" />
                 )}
                 <span className="text-sm">
-                  {isCopySuccess ? t('post.copied') : t('post.share')}
+                  {isCopySuccess ? t('post.copied') : t('post.more')}
                 </span>
               </Button>
             </DropdownMenuTrigger>
@@ -258,6 +267,15 @@ export function ForumPostDetailCard({
                 <FileText className="w-4 h-4 mr-2" />
                 <span>{t('post.copyText')}</span>
               </DropdownMenuItem>
+            {user && post.author.id === user.id && (
+              <DropdownMenuItem
+                onClick={handleDeleteClick}
+                className="cursor-pointer text-red-600 focus:text-red-700"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                <span>{t('post.delete')}</span>
+              </DropdownMenuItem>
+            )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -269,6 +287,29 @@ export function ForumPostDetailCard({
             <DialogTitle>{dialogTitle}</DialogTitle>
             <DialogDescription>{dialogMessage}</DialogDescription>
           </DialogHeader>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('post.deleteConfirm.title')}</DialogTitle>
+            <DialogDescription>{t('post.deleteConfirm.message')}</DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end space-x-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={handleDeleteCancel}
+            >
+              {t('post.deleteConfirm.cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+            >
+              {t('post.deleteConfirm.confirm')}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </Card>

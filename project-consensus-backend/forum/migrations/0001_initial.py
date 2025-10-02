@@ -145,4 +145,46 @@ class Migration(migrations.Migration):
             name="forumpostlike",
             unique_together={("post", "user")},
         ),
+        migrations.CreateModel(
+            name="ForumCommentLike",
+            fields=[
+                ("id", models.BigAutoField(primary_key=True, serialize=False)),
+                (
+                    "created_at",
+                    models.DateTimeField(
+                        db_index=True, default=django.utils.timezone.now
+                    ),
+                ),
+                (
+                    "comment",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="likes",
+                        to="forum.forumpostcomment",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="forum_comment_likes",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+            ],
+            options={
+                "verbose_name": "ForumCommentLike",
+                "verbose_name_plural": "ForumCommentLikes",
+            },
+        ),
+        migrations.AddIndex(
+            model_name="forumcommentlike",
+            index=models.Index(
+                fields=["comment", "user"], name="forum_clike_comment_user_idx"
+            ),
+        ),
+        migrations.AlterUniqueTogether(
+            name="forumcommentlike",
+            unique_together={("comment", "user")},
+        ),
     ]

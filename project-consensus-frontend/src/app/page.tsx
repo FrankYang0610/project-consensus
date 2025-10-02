@@ -8,7 +8,7 @@ import { useI18n } from "@/hooks/useI18n";
 import CreateForumPostButton from "@/components/CreateForumPostButton";
 import { useApp } from "@/contexts/AppContext";
 import { Button } from "@/components/ui/button";
-import { apiGet, apiPostVoid } from "@/lib/utils";
+import { apiGet, apiPost } from "@/lib/utils";
 import { ListPostsResponse } from "@/types/api";
 import { ForumPost } from "@/types";
 
@@ -21,44 +21,50 @@ export default function HomePage() {
   const [nextUrl, setNextUrl] = React.useState<string | null>("/api/forum/posts/?page=1&page_size=12");
   const [loadError, setLoadError] = React.useState(false);
 
+  // 防止 "连点点赞/取消赞" 导致 UI 和后端状态打架的轻量级锁
+  // Lightweight lock to prevent double-tap like/unlike causing UI/server mismatch
+  // 
+  // 用法：
+  // - 某条评论正在发起点赞/取消赞请求时，把这条评论的 id 放进 Set 里；
+  // - 在请求成功、失败或超时后，再把它从 Set 里移除；
+  // - 只要 id 还在 Set 里，后续对同一条评论的点击一律忽略（避免计数 "抖动"）。
+  // Meaning:
+  // - When a like/unlike request is in flight for a comment, put its id into this Set
+  // - Remove the id after success/error/timeout
+  // - While the id stays in the Set, further toggles for that comment are ignored
+  const postLikeInFlightRef = React.useRef<Set<string>>(new Set());
+
   const handleLike = React.useCallback((id: string) => {
-    const wasLiked = posts.find(p => p.id === id)?.isLiked ?? false;
+    const target = posts.find(p => p.id === id);
+    if (!target) return;
+    if (postLikeInFlightRef.current.has(id)) return;
+    postLikeInFlightRef.current.add(id);
+
+    const wasLiked = target.isLiked ?? false;
+    const prevLikes = target.likes ?? 0;
     const willLike = !wasLiked;
 
     // Optimistic UI update
-    setPosts(prev => prev.map(p => {
-      if (p.id !== id) return p;
-      const nextLikes = Math.max(0, p.likes + (willLike ? 1 : -1));
-      return { ...p, isLiked: willLike, likes: nextLikes };
-    }));
-
-    let reverted = false;
-    const timer = setTimeout(() => {
-      if (reverted) return;
-      // Revert after 3s timeout
-      setPosts(prev => prev.map(p => {
-        if (p.id !== id) return p;
-        const nextLikes = Math.max(0, p.likes + (willLike ? -1 : 1));
-        return { ...p, isLiked: wasLiked, likes: nextLikes };
-      }));
-      reverted = true;
-    }, 3000);
+    setPosts(prev => prev.map(p => p.id === id
+      ? { ...p, isLiked: willLike, likes: Math.max(0, p.likes + (willLike ? 1 : -1)) }
+      : p
+    ));
 
     const endpoint = willLike ? `/api/forum/posts/${id}/like/` : `/api/forum/posts/${id}/unlike/`;
-    apiPostVoid(endpoint)
-      .then(() => {
-        if (reverted) return;
-        clearTimeout(timer);
+    apiPost<ForumPost>(endpoint, {})
+      .then((data) => {
+        setPosts(prev => prev.map(p => p.id === id
+          ? { ...p, isLiked: !!data.isLiked, likes: Math.max(0, data.likes) }
+          : p
+        ));
+        postLikeInFlightRef.current.delete(id);
       })
       .catch(() => {
-        if (reverted) return;
-        clearTimeout(timer);
-        // revert on error
-        setPosts(prev => prev.map(p => {
-          if (p.id !== id) return p;
-          const nextLikes = Math.max(0, p.likes + (willLike ? -1 : 1));
-          return { ...p, isLiked: wasLiked, likes: nextLikes };
-        }));
+        setPosts(prev => prev.map(p => p.id === id
+          ? { ...p, isLiked: wasLiked, likes: Math.max(0, prevLikes) }
+          : p
+        ));
+        postLikeInFlightRef.current.delete(id);
       });
   }, [posts]);
 

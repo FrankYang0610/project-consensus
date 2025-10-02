@@ -11,7 +11,6 @@ import {
   Users,
   GraduationCap,
   FileText,
-  Home,
   Sparkles
 } from "lucide-react";
 
@@ -27,9 +26,13 @@ import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuCheckboxItem,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -37,9 +40,12 @@ import { useI18n } from "@/hooks/useI18n";
 import { clamp, formatDateDisplay, formatTerm, sortTerms, validateRating } from "@/lib/course-utils";
 import type {
   SemesterKey,
-  TeacherInfo,
   OtherTeacherCourse,
+  TeacherInfo,
+  CurriculumCollege,
+  CurriculumSemester,
 } from "@/types";
+import { useRouter } from "next/navigation";
 
 /**
  * 投票状态 / Voting state
@@ -79,9 +85,9 @@ export interface FilterCallbacks {
 }
 
 /**
- * 课程详情卡片组件属性 / Props for CoursesDetailedCard
+ * 课程详情卡片组件属性 / Props for CourseDetailCard
  */
-export interface CoursesDetailedCardProps {
+export interface CourseDetailCardProps {
   subjectId: string;
   subjectCode: string;
   title: string;
@@ -108,6 +114,8 @@ export interface CoursesDetailedCardProps {
   teachers: TeacherInfo[];
   department?: string;
   lastUpdated?: string | Date;
+  // AI generated summary content (plain text)
+  aiSummary?: string;
   // Course metadata
   selectionCategory?: string;
   teachingType?: string;
@@ -118,6 +126,7 @@ export interface CoursesDetailedCardProps {
   courseHomepageUrl?: string;
   syllabusUrl?: string;
   className?: string;
+  curriculum?: CurriculumCollege[];
   // Filter-related props
   filterState?: FilterState;
   filterCallbacks?: FilterCallbacks;
@@ -185,7 +194,7 @@ function votingReducer(state: VotingState, action: VotingAction): VotingState {
 // Utility Functions moved to '@/lib/course-utils'
 
 /**
- * Star rating: maps 0–10 score to 0–5 partially-filled stars
+ * Star rating: maps 0–10 score to 0–5 stars with half-fill steps
  */
 function StarRating({ score10 }: { score10: number }) {
   const safeScore = validateRating(score10);
@@ -193,7 +202,10 @@ function StarRating({ score10 }: { score10: number }) {
   return (
     <div className="flex items-center gap-1" aria-label={`rating-${safeScore}`}>
       {Array.from({ length: 5 }).map((_, index) => {
-        const fillPercent = clamp((score5 - index) * 100, 0, 100);
+        // Quantize each star fill to 0, 50%, or 100%
+        const raw = clamp(score5 - index, 0, 1);
+        const halfStep = Math.round(raw * 2) / 2;
+        const fillPercent = halfStep * 100;
         return (
           <div key={index} className="relative w-4 h-4" aria-hidden>
             <Star className="absolute inset-0 w-4 h-4 text-muted-foreground/60" />
@@ -245,8 +257,8 @@ function TeacherAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string }
   );
 }
 
-export function CoursesDetailedCard({
-  subjectId: _subjectId, // Placeholder to avoid unused warning, will be used later
+export function CourseDetailCard({
+  subjectId,
   subjectCode,
   title,
   term,
@@ -268,10 +280,11 @@ export function CoursesDetailedCard({
   filterState,
   filterCallbacks,
   otherTeacherCourses,
-}: CoursesDetailedCardProps) {
+  aiSummary,
+  curriculum,
+}: CourseDetailCardProps) {
   const { t, language } = useI18n();
-  // Placeholder to avoid unused warning, will be used later
-  void _subjectId;
+  const router = useRouter();
 
   // Interactive voting state using useReducer to avoid race conditions
   const [votingState, dispatchVoting] = React.useReducer(votingReducer, {
@@ -366,17 +379,15 @@ export function CoursesDetailedCard({
   const safeRating = React.useMemo(() => validateRating(rating.score), [rating.score]);
 
   // Teacher data processing
-  const primaryTeacher = teachers?.[0];
+  const primaryTeacher = React.useMemo(() => teachers?.[0] ?? null, [teachers]);
   const hasOtherTeachers = otherTeacherCourses && otherTeacherCourses.length > 0;
-  const hasTeacherHomepage = !!primaryTeacher?.homepageUrl;
 
   // Adaptive layout: calculate content weight to balance columns
   const leftContentWeight = React.useMemo(() => {
     let weight = 1; // Base teacher section
     if (hasOtherTeachers) weight += (otherTeacherCourses?.length ?? 0) * 0.6; // Each additional teacher
-    if (hasTeacherHomepage) weight += 0.4; // Teacher homepage link
     return weight;
-  }, [hasOtherTeachers, otherTeacherCourses?.length, hasTeacherHomepage]);
+  }, [hasOtherTeachers, otherTeacherCourses?.length]);
 
   const rightContentWeight = React.useMemo(() => {
     return 2.3; // Course info (1.5) + AI Summary (0.8)
@@ -442,6 +453,63 @@ export function CoursesDetailedCard({
       </div>
     </div>
   ), [courseHomepageUrl, syllabusUrl, t]);
+
+  /**
+   * 所属培养方案按钮（三级下拉：学院 → 专业 → 学期）
+   */
+  const CurriculumPlanButton = React.useCallback(() => {
+    const data = Array.isArray(curriculum) ? curriculum : [];
+
+    const goTo = (url: string) => {
+      if (typeof window !== 'undefined' && /^https?:\/\//i.test(url)) {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      } else {
+        router.push(url);
+      }
+    };
+
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button size="sm" variant="outline" className="gap-1">
+            <GraduationCap className="w-4 h-4" /> {t("courses.detail.curriculumPlan.button")}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          {data.map((college) => (
+            <DropdownMenuSub key={college.id}>
+              <DropdownMenuSubTrigger>{college.name}</DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                {college.majors.map((major) => (
+                  <DropdownMenuSub key={major.id}>
+                    <DropdownMenuSubTrigger>{major.name}</DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      {major.semesters.map((sem: CurriculumSemester) => {
+                        const levelKey = sem.yearLevel ?? 'y1';
+                        const label = `${t('courses.detail.curriculumPlan.cohortDisplay', { year: sem.year })} ${t(`courses.detail.curriculumPlan.yearLevel.${levelKey}`)} ${t(`courses.detail.curriculumPlan.semesterShort.${sem.semester}`)}`;
+                        return (
+                          <DropdownMenuItem
+                            key={sem.id}
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              goTo(sem.url);
+                            }}
+                            className="text-sm"
+                          >
+                            {label}
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                ))}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }, [language, router, subjectId, t, curriculum]);
 
   /**
    * Reviews filters inline components
@@ -780,6 +848,7 @@ export function CoursesDetailedCard({
             </div>
             {/* Follow Button */}
             <div className="flex gap-2">
+              {Array.isArray(curriculum) && curriculum.length > 0 ? <CurriculumPlanButton /> : null}
               <Button size="sm" variant="outline" className="gap-1">
                 <Star className="w-4 h-4" /> {t("courses.detail.follow")}
               </Button>
@@ -866,22 +935,16 @@ export function CoursesDetailedCard({
 
               {/* Primary Teacher */}
               {primaryTeacher && (
-                <div className="flex items-start gap-4 p-4 rounded-lg border bg-background">
+                <Link
+                  href={`/teachers/${primaryTeacher.id}`}
+                  className="flex items-start gap-4 p-4 rounded-lg border bg-background hover:bg-muted/50 transition-colors"
+                >
                   <TeacherAvatar name={primaryTeacher.name} avatarUrl={primaryTeacher.avatarUrl} />
                   <div className="flex-1">
                     <div className="font-medium text-base">{primaryTeacher.name}</div>
-                    <div className="text-sm text-muted-foreground mb-2">{department}</div>
-                    {primaryTeacher.homepageUrl && (
-                      <Link
-                        href={primaryTeacher.homepageUrl}
-                        target="_blank"
-                        className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-                      >
-                        <Home className="w-4 h-4" /> {t("courses.detail.teacherHomepage")}
-                      </Link>
-                    )}
+                    <div className="text-sm text-muted-foreground">{department}</div>
                   </div>
-                </div>
+                </Link>
               )}
 
               {/* Other Teachers */}
@@ -967,7 +1030,9 @@ export function CoursesDetailedCard({
               </h3>
               <div className="p-4 rounded-lg border bg-muted/30">
                 <div className="text-sm text-muted-foreground">
-                  {t("courses.detail.aiSummaryComingSoon")}
+                  {typeof aiSummary === 'string' && aiSummary.trim().length > 0
+                    ? aiSummary
+                    : t("courses.detail.noAiSummary")}
                 </div>
               </div>
             </div>
@@ -979,7 +1044,11 @@ export function CoursesDetailedCard({
           {/* Header Row */}
           <div className="flex items-center justify-between">
             <h3 className="text-base font-semibold">{t("courses.detail.reviews.title")}</h3>
-            <Button size="sm">{t("courses.detail.reviews.writeReview")}</Button>
+            <Button size="sm" asChild>
+              <Link href={`/courses/${subjectId}/review`}>
+                {t("courses.detail.reviews.writeReview")}
+              </Link>
+            </Button>
           </div>
           {/* Alert Bar */}
           <Alert>
@@ -1040,4 +1109,4 @@ export function CoursesDetailedCard({
   );
 }
 
-export default CoursesDetailedCard;
+export default CourseDetailCard;

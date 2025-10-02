@@ -4,13 +4,24 @@ import * as React from "react";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useI18n } from "@/hooks/useI18n";
-import { CoursesBackgroundCard } from "@/components/CoursesBackgroundCard";
-import { CoursesFilterBar } from "@/components/CoursesFilterBar";
-import { CoursesPreviewCard } from "@/components/CoursesPreviewCard";
-import { sampleCourses } from "@/data/sampleCourses";
+import { CourseBackgroundCard } from "@/components/CourseBackgroundCard";
+import { CourseFilterBar } from "@/components/CourseFilterBar";
+import { CoursePreviewCard } from "@/components/CoursePreviewCard";
+import { fetchCourses } from "@/lib/api/courses";
+import type { Course } from "@/types";
 
 export default function CoursesPage() {
   const { t } = useI18n();
+  const [courses, setCourses] = React.useState<Course[]>([]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const list = await fetchCourses({ ordering: "-last_updated" });
+      if (!cancelled) setCourses(list);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <>
@@ -27,12 +38,12 @@ export default function CoursesPage() {
               </Alert>
             </div>
             <div className="max-w-7xl mx-auto grid grid-cols-1 gap-6 pt-4">
-              <CoursesBackgroundCard>
+              <CourseBackgroundCard>
                 <div className="space-y-4">
-                  <CoursesFilterBar onApply={() => { /* TODO: wire filters to list */ }} />
+                  <CourseFilterBar onApply={() => { /* TODO: wire filters to list */ }} />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {sampleCourses.map(course => (
-                      <CoursesPreviewCard
+                    {courses.map(course => (
+                      <CoursePreviewCard
                         key={course.subjectId}
                         subjectId={course.subjectId}
                         subjectCode={course.subjectCode}
@@ -48,7 +59,7 @@ export default function CoursesPage() {
                     ))}
                   </div>
                 </div>
-              </CoursesBackgroundCard>
+              </CourseBackgroundCard>
             </div>
           </div>
         </main>
@@ -56,5 +67,4 @@ export default function CoursesPage() {
     </>
   );
 }
-
 

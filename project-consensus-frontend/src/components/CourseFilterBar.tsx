@@ -21,12 +21,12 @@ type MultiSelectOption = {
   label: string;
 };
 
-interface CoursesFilterBarProps {
+interface CourseFilterBarProps {
   className?: string;
   onApply?: (filters: Record<string, unknown>) => void;
 }
 
-export function CoursesFilterBar({ className, onApply }: CoursesFilterBarProps) {
+export function CourseFilterBar({ className, onApply }: CourseFilterBarProps) {
   const { t } = useI18n();
 
   const [category, setCategory] = React.useState<string>("all");
