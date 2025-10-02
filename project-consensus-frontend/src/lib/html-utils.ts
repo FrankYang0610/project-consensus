@@ -7,6 +7,10 @@ import { decode } from "he";
  * @returns Sanitized HTML string
  */
 export function sanitizeHtml(html: string): string {
+  // Create an isolated DOMPurify instance to avoid hook conflicts in concurrent/recursive scenarios
+  // This ensures each sanitization call has its own hook context
+  const purify = DOMPurify();
+
   // Strict allowlist policy: only a small set of safe, text-formatting tags are permitted
   // - Allow minimal safe attributes for tables, code blocks, and lists
   // - Explicitly forbid rich/embedded and scriptable contexts
@@ -23,7 +27,7 @@ export function sanitizeHtml(html: string): string {
     ALLOW_UNKNOWN_PROTOCOLS: false,
   };
 
-  // Named hook function for precise removal to avoid affecting concurrent calls (e.g., in SSR)
+  // Hook function for tag-specific attribute validation
   const attributeHook = (node: Element, data: { attrName: string; attrValue: string; keepAttr?: boolean }) => {
     // Only allow 'class' attribute on code/pre elements with valid syntax highlighting patterns
     if (data.attrName === 'class') {
@@ -69,18 +73,14 @@ export function sanitizeHtml(html: string): string {
     }
   };
 
-  // Add the named hook
-  DOMPurify.addHook('uponSanitizeAttribute', attributeHook);
+  // Add hook to this isolated instance only
+  purify.addHook('uponSanitizeAttribute', attributeHook);
+
+  // Sanitize the HTML using the isolated instance
+  const sanitized = purify.sanitize(html, config);
   
-  try {
-    // Sanitize the HTML
-    const sanitized = DOMPurify.sanitize(html, config);
-    // DOMPurify.sanitize returns string | TrustedHTML depending on config
-    return String(sanitized);
-  } finally {
-    // Always remove the specific hook function to prevent side effects on concurrent calls
-    DOMPurify.removeHook('uponSanitizeAttribute', attributeHook);
-  }
+  // DOMPurify.sanitize returns string | TrustedHTML depending on config
+  return String(sanitized);
 }
 
 /**
