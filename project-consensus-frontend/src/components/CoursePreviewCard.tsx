@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { useI18n } from "@/hooks/useI18n";
+import { useI18n } from "@/hooks/use-i18n";
 import { clamp, formatDateDisplay, formatTerm, sortTerms, validateRating } from "@/lib/course-utils";
 import type { SemesterKey, TeacherInfo } from "@/types";
 

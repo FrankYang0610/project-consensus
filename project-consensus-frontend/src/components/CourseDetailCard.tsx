@@ -35,8 +35,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { useI18n } from "@/hooks/useI18n";
-import { useDebounceCallback } from "@/hooks/useDebounce";
+import { useI18n } from "@/hooks/use-i18n";
+import { useDebounceCallback } from "@/hooks/use-debounce";
 import { clamp, formatDateDisplay, formatTerm, sortTerms, validateRating } from "@/lib/course-utils";
 import type {
   SemesterKey,
@@ -402,7 +402,7 @@ export function CourseDetailCard({
       try {
         // Server request - this is the source of truth
         const res = await voteCourse(courseId, voteType);
-        
+
         // Only update if this is still the latest request (prevent race conditions)
         if (requestId === requestCounterRef.current) {
           const newServerState = {
@@ -410,10 +410,10 @@ export function CourseDetailCard({
             notRecommendCount: res.rating.notRecommendCount,
             userVote: res.userVote,
           };
-          
+
           // Update server state ref
           serverStateRef.current = newServerState;
-          
+
           // Sync with server response
           dispatchVoting({
             type: 'RESET_VOTES',
@@ -422,7 +422,7 @@ export function CourseDetailCard({
         }
       } catch (e) {
         console.error('Vote request failed', e);
-        
+
         // Only rollback if this is still the latest request
         if (requestId === requestCounterRef.current) {
           // Rollback to last known server state
@@ -438,13 +438,13 @@ export function CourseDetailCard({
 
   /**
    * Handle user voting interaction with optimistic updates and debounced server sync
-   * 
+   *
    * Flow:
    * 1. Immediate optimistic update for instant UI feedback
    * 2. Debounced server request (300ms) to prevent rapid consecutive calls
    * 3. On success: sync with server response (source of truth)
    * 4. On failure: rollback to last known server state
-   * 
+   *
    * Benefits:
    * - Instant UI feedback (no perceived delay)
    * - Reduced server load (debounced requests)
@@ -452,18 +452,18 @@ export function CourseDetailCard({
    * - Race condition handling (request counter)
    */
   const handleVote = React.useCallback((voteType: 'recommend' | 'notRecommend') => {
-    if (!isLoggedIn) { 
-      openLoginModal(); 
-      return; 
+    if (!isLoggedIn) {
+      openLoginModal();
+      return;
     }
-    
+
     // Increment request counter for race condition handling
     requestCounterRef.current += 1;
     const currentRequestId = requestCounterRef.current;
-    
+
     // Optimistic update for immediate UI feedback
     dispatchVoting({ type: 'TOGGLE_VOTE', voteType });
-    
+
     // Debounced server request
     sendVoteToServer(subjectId, voteType, currentRequestId);
   }, [isLoggedIn, openLoginModal, sendVoteToServer, subjectId]);
@@ -478,8 +478,8 @@ export function CourseDetailCard({
 
   // Teacher data processing
   const primaryTeacher = React.useMemo(() => teachers?.[0] ?? null, [teachers]);
-  const hasOtherTeachers = React.useMemo(() => 
-    otherTeacherCourses && otherTeacherCourses.length > 0, 
+  const hasOtherTeachers = React.useMemo(() =>
+    otherTeacherCourses && otherTeacherCourses.length > 0,
     [otherTeacherCourses]
   );
 

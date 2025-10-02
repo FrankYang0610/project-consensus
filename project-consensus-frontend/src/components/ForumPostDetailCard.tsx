@@ -32,7 +32,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { useI18n } from "@/hooks/useI18n";
+import { useI18n } from "@/hooks/use-i18n";
 import { sanitizeHtml } from "@/lib/html-utils";
 import { cn } from "@/lib/utils";
 import { ForumPost } from "@/types";
@@ -157,9 +157,9 @@ export function ForumPostDetailCard({
                 onClick={handleAuthorClick}
                 className="text-sm font-medium text-left hover:text-primary transition-colors"
               >
-                {post.isAnonymous 
-                  ? (user && post.author.id === user.id 
-                      ? `${post.author.name} (${t('common.anonymous')})` 
+                {post.isAnonymous
+                  ? (user && post.author.id === user.id
+                      ? `${post.author.name} (${t('common.anonymous')})`
                       : t('common.anonymous'))
                   : post.author.name}
                 {user && post.author.id === user.id && (

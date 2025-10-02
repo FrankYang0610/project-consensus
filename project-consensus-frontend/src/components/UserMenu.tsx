@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { User, Settings, LogOut, ChevronDown } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
-import { useI18n } from '@/hooks/useI18n';
+import { useI18n } from '@/hooks/use-i18n';
 import { cn } from '@/lib/utils';
 
 export interface UserMenuProps {

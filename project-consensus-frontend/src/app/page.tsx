@@ -4,7 +4,7 @@ import * as React from "react";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ForumPostPreviewCard } from "@/components/ForumPostPreviewCard";
-import { useI18n } from "@/hooks/useI18n";
+import { useI18n } from "@/hooks/use-i18n";
 import CreateForumPostButton from "@/components/CreateForumPostButton";
 import { useApp } from "@/contexts/AppContext";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,7 @@ export default function HomePage() {
 
   // 防止 "连点点赞/取消赞" 导致 UI 和后端状态打架的轻量级锁
   // Lightweight lock to prevent double-tap like/unlike causing UI/server mismatch
-  // 
+  //
   // 用法：
   // - 某条评论正在发起点赞/取消赞请求时，把这条评论的 id 放进 Set 里；
   // - 在请求成功、失败或超时后，再把它从 Set 里移除；

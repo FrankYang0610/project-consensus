@@ -13,15 +13,15 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useI18n } from "@/hooks/useI18n";
-import { useDebounce } from "@/hooks/useDebounce";
+import { useI18n } from "@/hooks/use-i18n";
+import { useDebounce } from "@/hooks/use-debounce";
 import { TeacherPreviewCard } from "@/components/TeacherPreviewCard";
 import { fetchTeachers } from "@/lib/api/teacher";
 import type { Teacher, PaginatedResponse } from "@/types";
 
 export default function TeachersPage() {
   const { t } = useI18n();
-  
+
   // State
   const [teachers, setTeachers] = React.useState<Teacher[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);

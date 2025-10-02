@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { useI18n } from '@/hooks/useI18n';
+import { useI18n } from '@/hooks/use-i18n';
 import { SiteNavigation } from '@/components/SiteNavigation';
 import Link from 'next/link';
 import { ErrorResponse, RegisterSuccessResponse, SendVerificationCodeResponse } from '@/types';

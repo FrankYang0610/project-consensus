@@ -8,14 +8,14 @@ import { ForumPostComment } from "@/types/forum";
 import { ForumPostCommentCard as ForumPostCommentComponent } from "./ForumPostCommentCard";
 import ForumPostCommentComposer from "@/components/ForumPostCommentComposer";
 import { Button } from "@/components/ui/button";
-import { useI18n } from "@/hooks/useI18n";
+import { useI18n } from "@/hooks/use-i18n";
 import { useApp } from "@/contexts/AppContext";
-import { 
-  fetchForumComments, 
-  getForumCommentPosition, 
-  likeForumComment, 
-  unlikeForumComment, 
-  deleteForumComment 
+import {
+  fetchForumComments,
+  getForumCommentPosition,
+  likeForumComment,
+  unlikeForumComment,
+  deleteForumComment
 } from "@/lib/api/forum-comment";
 import { isContentEmpty } from "@/lib/utils";
 
@@ -49,7 +49,7 @@ interface ForumPostCommentListProps {
 /**
  * 论坛帖子评论列表组件
  * 平级展示所有评论（主评/回复/子回复）并按时间从早到晚排序
- * 
+ *
  * Forum Post Comment List Component
  * Flat list of all comments (including replies) in chronological ascending order
  */
@@ -73,13 +73,13 @@ export function ForumPostCommentList({
 }: ForumPostCommentListProps) {
   const { t } = useI18n();
   const { isLoggedIn, openLoginModal } = useApp();
-  
+
   const loaderRef = React.useRef<HTMLDivElement | null>(null);
   const loadingRef = React.useRef(false);
 
   // 防止 "连点点赞/取消赞" 导致 UI 和后端状态打架的轻量级锁
   // Lightweight lock to prevent double-tap like/unlike causing UI/server mismatch
-  // 
+  //
   // 用法：
   // - 某条评论正在发起点赞/取消赞请求时，把这条评论的 id 放进 Set 里；
   // - 在请求成功、失败或超时后，再把它从 Set 里移除；
@@ -109,10 +109,10 @@ export function ForumPostCommentList({
       // Parse nextUrl to extract page number and other parameters
       const url = new URL(nextUrl, window.location.origin);
       const page = parseInt(url.searchParams.get('page') || '1');
-      const data = await fetchForumComments({ 
-        postId, 
-        page, 
-        pageSize: 20 
+      const data = await fetchForumComments({
+        postId,
+        page,
+        pageSize: 20
       });
       setComments(prev => {
         const existing = new Set(prev.map(c => c.id));
@@ -162,10 +162,10 @@ export function ForumPostCommentList({
           // Parse URL to get page number
           const urlObj = new URL(url, window.location.origin);
           const page = parseInt(urlObj.searchParams.get('page') || '1');
-          const data = await fetchForumComments({ 
-            postId, 
-            page, 
-            pageSize: 20 
+          const data = await fetchForumComments({
+            postId,
+            page,
+            pageSize: 20
           });
           setComments(prev => {
             const existing = new Set(prev.map(c => c.id));
@@ -251,7 +251,7 @@ export function ForumPostCommentList({
       const custom = e as CustomEvent<{ id: string }>;
       const id = custom.detail?.id;
       if (!id) return;
-      
+
       // Ignore if a like/unlike request is already in flight for this id
       if (likeInFlightRef.current.has(id)) return;
 

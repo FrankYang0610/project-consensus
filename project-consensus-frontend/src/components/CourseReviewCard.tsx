@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useI18n } from "@/hooks/useI18n";
+import { useI18n } from "@/hooks/use-i18n";
 import { useApp } from "@/contexts/AppContext";
 import { clamp, formatTerm, formatDateDisplay, validateRating } from "@/lib/course-utils";
 import { sanitizeHtml } from "@/lib/html-utils";

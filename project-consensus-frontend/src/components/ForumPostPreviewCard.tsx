@@ -36,7 +36,7 @@ import {
 import { cn } from "@/lib/utils";
 import { stripHtmlTags, truncateHtmlContent } from "@/lib/html-utils";
 import { ForumPost } from "@/types";
-import { useI18n } from "@/hooks/useI18n";
+import { useI18n } from "@/hooks/use-i18n";
 import { useApp } from "@/contexts/AppContext";
 
 import ClientOnlyTime from "./ClientOnlyTime";
@@ -149,9 +149,9 @@ export function ForumPostPreviewCard({
                 onClick={handleAuthorClick}
                 className="text-sm font-medium text-left hover:text-primary transition-colors"
               >
-                {post.isAnonymous 
-                  ? (currentUserId && post.author.id === currentUserId 
-                      ? `${post.author.name} (${t('common.anonymous')})` 
+                {post.isAnonymous
+                  ? (currentUserId && post.author.id === currentUserId
+                      ? `${post.author.name} (${t('common.anonymous')})`
                       : t('common.anonymous'))
                   : post.author.name}
                 {currentUserId && post.author.id === currentUserId && (

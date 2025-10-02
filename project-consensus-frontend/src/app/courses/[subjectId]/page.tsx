@@ -15,7 +15,7 @@ import {
   createReviewReply,
   deleteReviewReply,
 } from "@/lib/api/course";
-import { useI18n } from "@/hooks/useI18n";
+import { useI18n } from "@/hooks/use-i18n";
 import { fetchCourseById } from "@/lib/api/course";
 import type { Course, TeacherInfo } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -77,7 +77,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
       // Only fetch reviews when we have a valid subjectId (from the course)
       const courseSubjectId = course?.subjectId;
       if (!courseSubjectId) return;
-      
+
       try {
         const page = await fetchCourseReviews({ subjectId: courseSubjectId, page: 1, pageSize: 10, ordering: "-created_at" });
         if (!cancelled) {
@@ -221,7 +221,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
       console.warn('reloadReviews called before course loaded');
       return 0;
     }
-    
+
     const selectedKeys = Object.entries(filterSelectedTerms).filter(([, v]) => v).map(([k]) => k);
     let termYear: number | undefined; let termSemester: 'spring'|'summer'|'fall' | undefined;
     if (selectedKeys.length === 1) {
@@ -231,7 +231,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
         termYear = yNum; termSemester = s as 'spring' | 'summer' | 'fall';
       }
     }
-    
+
     try {
       const page = await fetchCourseReviews({
         subjectId: course.subjectId,
@@ -263,13 +263,13 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
         console.warn('Cannot apply filters: course not loaded yet');
         return;
       }
-      try { 
-        await reloadReviews(); 
-      } catch (e) { 
-        console.error('Failed to apply filters', e); 
+      try {
+        await reloadReviews();
+      } catch (e) {
+        console.error('Failed to apply filters', e);
       }
     },
-  }), [course, reloadReviews]); 
+  }), [course, reloadReviews]);
 
   const filterState = React.useMemo(() => ({
     sort: filterSort,

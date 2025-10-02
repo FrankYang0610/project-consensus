@@ -2,7 +2,7 @@ import * as React from "react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useI18n } from "@/hooks/useI18n";
+import { useI18n } from "@/hooks/use-i18n";
 import type { Teacher } from "@/types";
 
 export interface TeacherPreviewCardProps {
@@ -12,7 +12,7 @@ export interface TeacherPreviewCardProps {
 export function TeacherPreviewCard({ teacher }: TeacherPreviewCardProps) {
   const { t } = useI18n();
   const avatarUrl = teacher.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(teacher.name)}`;
-  
+
   return (
     <Link href={`/teachers/${teacher.id}`}>
       <Card className="h-full transition-all hover:shadow-md hover:border-primary/50 cursor-pointer">
@@ -25,7 +25,7 @@ export function TeacherPreviewCard({ teacher }: TeacherPreviewCardProps) {
               className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-muted object-cover flex-shrink-0"
               loading="lazy"
             />
-            
+
             {/* Teacher Info */}
             <div className="flex-1 min-w-0">
               {/* Name and Title */}
@@ -63,17 +63,17 @@ export function TeacherPreviewCard({ teacher }: TeacherPreviewCardProps) {
               {teacher.tags && teacher.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {teacher.tags.slice(0, 3).map((tag, index) => (
-                    <Badge 
-                      key={`${teacher.id}-tag-${index}`} 
-                      variant="secondary" 
+                    <Badge
+                      key={`${teacher.id}-tag-${index}`}
+                      variant="secondary"
                       className="text-xs px-2 py-0.5"
                     >
                       {tag}
                     </Badge>
                   ))}
                   {teacher.tags.length > 3 && (
-                    <Badge 
-                      variant="outline" 
+                    <Badge
+                      variant="outline"
                       className="text-xs px-2 py-0.5"
                     >
                       +{teacher.tags.length - 3}

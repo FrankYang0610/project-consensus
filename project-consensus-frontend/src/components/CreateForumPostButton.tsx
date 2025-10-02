@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useI18n } from "@/hooks/useI18n"
+import { useI18n } from "@/hooks/use-i18n"
 import { useApp } from "@/contexts/AppContext"
 import { useRouter } from "next/navigation"
 

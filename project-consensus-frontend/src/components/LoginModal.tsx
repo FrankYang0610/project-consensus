@@ -18,7 +18,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useApp } from '@/contexts/AppContext';
 import { LoginResponse, LoginApiResponse, ErrorResponse, LoginSuccessResponse } from '@/types';
 import { getCookie, getAPIBaseUrl } from '@/lib/api/api-utils';
-import { useI18n } from '@/hooks/useI18n';
+import { useI18n } from '@/hooks/use-i18n';
 import { cn } from '@/lib/utils';
 
 /**

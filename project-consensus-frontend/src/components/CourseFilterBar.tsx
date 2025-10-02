@@ -15,8 +15,8 @@ import {
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fetchCourseDepartments } from "@/lib/api/course";
-import { useI18n } from "@/hooks/useI18n";
-import { useDebounce } from "@/hooks/useDebounce";
+import { useI18n } from "@/hooks/use-i18n";
+import { useDebounce } from "@/hooks/use-debounce";
 
 type MultiSelectOption = {
   value: string;
@@ -104,15 +104,15 @@ export function CourseFilterBar({ className, onApply }: CourseFilterBarProps) {
 
   const handleApply = () => {
     // Use debounced values for text inputs
-    onApply?.({ 
-      category, 
-      sort, 
-      subjectCode: debouncedSubjectCode, 
-      subjectTitle: debouncedSubjectTitle, 
-      departments, 
-      categories: filterCategories, 
-      levels, 
-      teacherName: debouncedTeacherName 
+    onApply?.({
+      category,
+      sort,
+      subjectCode: debouncedSubjectCode,
+      subjectTitle: debouncedSubjectTitle,
+      departments,
+      categories: filterCategories,
+      levels,
+      teacherName: debouncedTeacherName
     });
   };
 

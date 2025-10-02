@@ -181,8 +181,8 @@ project-consensus-frontend/
 │   │   └── README-APP.md                     # Context documentation
 │   │
 │   ├── hooks/                                # Custom React Hooks
-│   │   ├── useDebounce.ts                    # Debouncing hook for search/input
-│   │   └── useI18n.ts                        # Internationalization hook
+│   │   ├── use-debounce.ts                    # Debouncing hook for search/input
+│   │   └── use-i18n.ts                        # Internationalization hook
 │   │
 │   ├── lib/                                  # Utility Libraries
 │   │   ├── api/                              # API Client Functions
@@ -216,13 +216,13 @@ project-consensus-frontend/
 │   │       └── teachers.ts                   # Teacher API types
 │   │
 │   ├── data/                                 # Sample Data
-│   │   ├── sampleCourses.ts                  # Mock course data
-│   │   ├── samplePosts.ts                    # Mock forum post data
-│   │   ├── sampleComments.ts                 # Mock comment data
-│   │   ├── sampleReviews.ts                  # Mock review data
-│   │   ├── sampleReviewReplies.ts            # Mock review reply data
-│   │   ├── sampleTeachers.ts                 # Mock teacher data
-│   │   └── sampleCurriculum.ts               # Mock curriculum data
+│   │   ├── sample-courses.ts                 # Mock course data
+│   │   ├── sample-posts.ts                   # Mock forum post data
+│   │   ├── sample-comments.ts                # Mock comment data
+│   │   ├── sample-reviews.ts                 # Mock review data
+│   │   ├── sample-review-replies.ts          # Mock review reply data
+│   │   ├── sample-teachers.ts                # Mock teacher data
+│   │   └── sample-curriculum.ts              # Mock curriculum data
 │   │
 │   └── locales/                              # Internationalization Files
 │       ├── en-us.json                        # English (US) translations

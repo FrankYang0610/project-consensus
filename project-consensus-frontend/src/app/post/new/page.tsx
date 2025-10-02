@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { useI18n } from "@/hooks/useI18n";
+import { useI18n } from "@/hooks/use-i18n";
 import { useRouter } from "next/navigation";
 import { ForumPost } from "@/types";
 import { createForumPost } from "@/lib/api/forum-post";
@@ -37,7 +37,7 @@ export default function NewForumPostPage() {
   const [content, setContent] = React.useState("");
   const [tags, setTags] = React.useState<string[]>([]);
   const [isAnonymous, setIsAnonymous] = React.useState(false);
-  
+
   // 表单状态管理 / Form state management
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [errors, setErrors] = React.useState<{
@@ -54,7 +54,7 @@ export default function NewForumPostPage() {
   // 表单验证函数 / Form validation function
   const validateForm = (): boolean => {
     const newErrors: typeof errors = {};
-    
+
     // 验证标题 / Validate title
     if (!title.trim()) {
       newErrors.title = t("post.validation.titleRequired");
@@ -63,19 +63,19 @@ export default function NewForumPostPage() {
     } else if (title.trim().length > 200) {
       newErrors.title = t("post.validation.titleTooLong");
     }
-    
+
     // 验证内容 / Validate content
     if (!content.trim()) {
       newErrors.content = t("post.validation.contentRequired");
     } else if (content.trim().length < 10) {
       newErrors.content = t("post.validation.contentTooShort");
     }
-    
+
     // 验证标签 / Validate tags
     if (tags.length > 10) {
       newErrors.tags = t("post.validation.tooManyTags");
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -90,9 +90,9 @@ export default function NewForumPostPage() {
     if (!validateForm()) {
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       const payload = {
         title: title.trim(),
@@ -139,7 +139,7 @@ export default function NewForumPostPage() {
                       <p className="text-red-500 text-sm mt-1">{errors.title}</p>
                     )}
                   </div>
-                  
+
                   <div className="mb-4">
                     <RichTextEditor
                       value={content}
@@ -157,7 +157,7 @@ export default function NewForumPostPage() {
                       <p className="text-red-500 text-sm mt-1">{errors.content}</p>
                     )}
                   </div>
-                  
+
                   <div className="mt-4">
                     <TagManager
                       tags={tags}
@@ -174,7 +174,7 @@ export default function NewForumPostPage() {
                       <p className="text-red-500 text-sm mt-1">{errors.tags}</p>
                     )}
                   </div>
-                  
+
                   { /* NOTE: Images are embedded as Base64 for now. TODO: server upload. */}
                 </CardContent>
                 <CardFooter className="gap-3">
@@ -184,7 +184,7 @@ export default function NewForumPostPage() {
                       {t("post.postAnonymously") || "Post anonymously"}
                     </Label>
                   </div>
-                  <Button 
+                  <Button
                     onClick={handleSubmit}
                     // 未登录时禁用提交按钮；登录后或加载完成才可用
                     // Disable submit when not logged in; enable only after login or when loading finished
@@ -195,8 +195,8 @@ export default function NewForumPostPage() {
                   >
                     {isSubmitting ? t("post.submitting") : t("post.create")}
                   </Button>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     onClick={() => router.back()}
                     disabled={isSubmitting}
                   >

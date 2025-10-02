@@ -17,7 +17,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
-import { useI18n } from "@/hooks/useI18n";
+import { useI18n } from "@/hooks/use-i18n";
 import { cn } from "@/lib/utils";
 import { stripHtmlTags } from "@/lib/html-utils";
 import { formatTerm, sortTerms } from "@/lib/course-utils";

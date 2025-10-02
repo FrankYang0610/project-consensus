@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useI18n } from "@/hooks/useI18n";
+import { useI18n } from "@/hooks/use-i18n";
 import { fetchTeacherById, fetchTeacherCourses } from "@/lib/api/teacher";
 import type { Teacher, TeacherCourseRef } from "@/types";
 
@@ -22,7 +22,7 @@ export default function TeacherDetailPage() {
   // Fetch teacher data from backend
   React.useEffect(() => {
     let cancelled = false;
-    
+
     async function loadData() {
       setIsLoading(true);
       try {
@@ -30,7 +30,7 @@ export default function TeacherDetailPage() {
           fetchTeacherById(teacherId),
           fetchTeacherCourses(teacherId),
         ]);
-        
+
         if (!cancelled) {
           setTeacher(teacherData);
           setCourses(coursesData);
@@ -45,7 +45,7 @@ export default function TeacherDetailPage() {
     }
 
     loadData();
-    
+
     return () => {
       cancelled = true;
     };

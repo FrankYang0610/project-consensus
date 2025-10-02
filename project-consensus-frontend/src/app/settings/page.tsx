@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { useI18n } from '@/hooks/useI18n';
+import { useI18n } from '@/hooks/use-i18n';
 import { SiteNavigation } from '@/components/SiteNavigation';
 import {
   Card,

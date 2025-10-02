@@ -6,7 +6,7 @@ import { Heart, Reply, Trash2, Languages } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useI18n } from "@/hooks/useI18n";
+import { useI18n } from "@/hooks/use-i18n";
 import { useApp } from "@/contexts/AppContext";
 import { sanitizeHtml } from "@/lib/html-utils";
 
