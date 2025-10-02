@@ -81,7 +81,7 @@ export interface CourseReview {
    * 仅文本评价（不含评分/维度） / Text-only review (no scores/dimensions)
    */
   onlyText?: boolean;
-  overallRating: number; // 总体评分 0.0 - 10.0 / Overall rating (0 for onlyText reviews)
+  overallRating?: number; // 总体评分 0.0 - 10.0 / Overall rating (undefined or 0 for onlyText reviews)
   attributes?: {
     difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard';
     workload: 'light' | 'moderate' | 'heavy' | 'veryHeavy';

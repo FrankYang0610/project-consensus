@@ -237,7 +237,7 @@ export function CourseReviewCard({
         </div>
 
         {/* Rating and Attributes in same row - only show when not onlyText */}
-        {!review.onlyText && review.attributes && (
+        {!review.onlyText && review.attributes && review.overallRating !== undefined && (
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Overall Rating */}
             <div className="flex items-center gap-3 flex-shrink-0">

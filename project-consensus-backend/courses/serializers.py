@@ -304,6 +304,9 @@ class CourseReviewSerializer(serializers.ModelSerializer):
         # Sanitize content field on output for security
         if 'content' in data and data['content']:
             data['content'] = _sanitize_html(data['content'])
+        # For text-only reviews, omit overallRating field to match frontend optional type
+        if instance.only_text and 'overallRating' in data:
+            del data['overallRating']
         return data
 
     def get_author(self, obj: CourseReview) -> dict:
