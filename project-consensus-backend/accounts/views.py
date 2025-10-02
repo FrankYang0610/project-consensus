@@ -8,6 +8,7 @@ from django.conf import settings
 import logging
 from django.db import transaction
 from django.core.cache import cache
+from django.db.models import Count
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -22,9 +23,74 @@ User = get_user_model()
 logger = logging.getLogger(__name__)
 
 
+def annotate_user_stats(queryset):
+    """Add user statistics annotations to a User queryset to avoid N+1 queries.
+    
+    使用方法 / Usage:
+        # Single user
+        user = annotate_user_stats(User.objects.filter(pk=user_id)).first()
+        
+        # Multiple users
+        users = annotate_user_stats(User.objects.all())
+    
+    此函数为用户查询集添加统计字段，避免 N+1 查询问题
+    """
+    return queryset.select_related('profile').annotate(
+        posts_count=Count('forum_posts', distinct=True),
+        comments_count=Count('forum_comments', distinct=True),
+        reviews_count=Count('course_reviews', distinct=True)
+    )
+
+
+def get_user_with_stats(user_id):
+    """Fetch a single user with optimized stats to avoid N+1 queries.
+    
+    获取单个用户及其统计数据，避免 N+1 查询
+    
+    Args:
+        user_id: The primary key of the user to fetch
+        
+    Returns:
+        User object with annotated stats, or None if not found
+    """
+    return annotate_user_stats(User.objects.filter(pk=user_id)).first()
+
+
 def build_user_payload(user):
-    """Return a minimal, serializable user payload for API responses."""
+    """Return a minimal, serializable user payload for API responses.
+    
+    Note: For optimal performance, when querying users, use annotate_user_stats() 
+    to pre-calculate statistics and avoid N+1 queries:
+    
+        user = User.objects.select_related('profile').annotate(
+            posts_count=Count('forum_posts', distinct=True),
+            comments_count=Count('forum_comments', distinct=True),
+            reviews_count=Count('course_reviews', distinct=True)
+        ).get(pk=user_id)
+    """
     profile = getattr(user, "profile", None)
+    
+    # Use pre-calculated statistics if available (from annotate), otherwise query
+    # 优先使用预先计算的统计数据（通过 annotate），否则执行查询
+    posts_count = getattr(user, 'posts_count', None)
+    if posts_count is None:
+        posts_count = user.forum_posts.count()
+    
+    comments_count = getattr(user, 'comments_count', None)
+    if comments_count is None:
+        comments_count = user.forum_comments.count()
+    
+    reviews_count = getattr(user, 'reviews_count', None)
+    if reviews_count is None:
+        reviews_count = user.course_reviews.count()
+    
+    # Calculate days since joining
+    joined_days = 0
+    if user.date_joined:
+        from django.utils import timezone
+        delta = timezone.now() - user.date_joined
+        joined_days = delta.days
+    
     return {
         "id": str(user.pk),
         "email": user.email,
@@ -32,6 +98,12 @@ def build_user_payload(user):
         "avatar": getattr(profile, "avatar_url", None) or None,
         "pronouns": getattr(profile, "pronouns", None) if getattr(profile, "pronouns_shared", False) else "",
         "pronounsShared": getattr(profile, "pronouns_shared", False),
+        "stats": {
+            "posts": posts_count,
+            "comments": comments_count,
+            "reviews": reviews_count,
+            "joinedDays": joined_days,
+        }
     }
 
 @api_view(["POST"])
@@ -127,9 +199,15 @@ def login_view(request):
     if not user:
         return Response({"message": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
 
+    # Fetch user with optimized stats to avoid N+1 queries
+    # 获取用户时同时计算统计数据，避免 N+1 查询
+    user_with_stats = get_user_with_stats(user.pk)
+    if not user_with_stats:
+        return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
     # success; establish session and return profile payload
     django_login(request, user)
-    return Response({"success": True, "user": build_user_payload(user)})
+    return Response({"success": True, "user": build_user_payload(user_with_stats)})
 
 
 @api_view(["POST"])
@@ -142,7 +220,13 @@ def logout_view(request):
 def me(request):
     if not request.user.is_authenticated:
         return Response({"message": "Not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
-    return Response(build_user_payload(request.user))
+    
+    # Fetch user with optimized stats to avoid N+1 queries
+    # 获取用户时同时计算统计数据，避免 N+1 查询
+    user_with_stats = get_user_with_stats(request.user.pk)
+    if not user_with_stats:
+        return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+    return Response(build_user_payload(user_with_stats))
 
 
 @api_view(["PATCH"])
@@ -154,5 +238,11 @@ def update_profile(request):
     serializer = ProfileSerializer(profile, data=request.data, partial=True)
     serializer.is_valid(raise_exception=True)
     serializer.save()
-    return Response({"success": True, "user": build_user_payload(request.user)})
+    
+    # Fetch user with optimized stats to avoid N+1 queries
+    # 获取用户时同时计算统计数据，避免 N+1 查询
+    user_with_stats = get_user_with_stats(request.user.pk)
+    if not user_with_stats:
+        return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+    return Response({"success": True, "user": build_user_payload(user_with_stats)})
 

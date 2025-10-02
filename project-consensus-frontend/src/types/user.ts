@@ -3,6 +3,16 @@
  */
 
 /**
+ * 用户统计信息接口 / User statistics interface
+ */
+export interface UserStats {
+  posts: number; // 发帖数量 / Number of posts
+  comments: number; // 评论数量 / Number of comments
+  reviews: number; // 评价数量 / Number of reviews
+  joinedDays: number; // 加入天数 / Days since joining
+}
+
+/**
  * 用户信息接口 / User information interface
  */
 export interface User {
@@ -12,6 +22,7 @@ export interface User {
   avatar?: string; // 用户头像URL（可选） / User avatar URL (optional)
   pronouns?: string; // 用户代词（可选） / User pronouns (optional)
   pronounsShared?: boolean; // 是否在主页展示代词（可选） / Whether pronouns are shown publicly (optional)
+  stats?: UserStats; // 用户统计信息（可选） / User statistics (optional)
 }
 
 /**
