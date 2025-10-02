@@ -19,7 +19,7 @@ export default function ProfilePage() {
     ? user.name.charAt(0).toUpperCase()
     : (user?.email ? user.email.charAt(0).toUpperCase() : '');
 
-  const formattedPronouns = formatPronounsForProfilePageDisplay(user?.pronouns);
+  const formattedPronouns = user?.pronounsShared && user?.pronouns ? formatPronounsForProfilePageDisplay(user.pronouns) : "";
 
   // Mock data for demonstration
   const userStats = {
@@ -95,7 +95,7 @@ export default function ProfilePage() {
 
                     <div>
                       <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{displayName}</h2>
-                      {user && (
+                      {user?.pronounsShared && (
                         <p className="text-gray-600 dark:text-gray-300 mt-1">{formattedPronouns}</p>
                       )}
                       <Badge variant="secondary" className="mt-2">
