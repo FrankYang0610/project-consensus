@@ -16,7 +16,7 @@ import {
 import { useI18n } from "@/hooks/useI18n";
 import { useDebounce } from "@/hooks/useDebounce";
 import { TeacherPreviewCard } from "@/components/TeacherPreviewCard";
-import { fetchTeachers } from "@/lib/api/teachers";
+import { fetchTeachers } from "@/lib/api/teacher";
 import type { Teacher, PaginatedResponse } from "@/types";
 
 export default function TeachersPage() {

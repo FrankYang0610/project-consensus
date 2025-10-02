@@ -21,8 +21,8 @@ import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import { stripHtmlTags } from "@/lib/html-utils";
 import { formatTerm, sortTerms } from "@/lib/course-utils";
-import { fetchCourseById, createCourseReview, fetchCourseReviews } from "@/lib/api/courses";
-import { updateCourseReview } from "@/lib/api/courses";
+import { fetchCourseById, createCourseReview, fetchCourseReviews } from "@/lib/api/course";
+import { updateCourseReview } from "@/lib/api/course";
 import type { SemesterKey, Course } from "@/types";
 import { useApp } from "@/contexts/AppContext";
 

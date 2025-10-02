@@ -45,7 +45,7 @@ import type {
   CurriculumSemester,
 } from "@/types";
 import { useRouter } from "next/navigation";
-import { voteCourse } from "@/lib/api/courses";
+import { voteCourse } from "@/lib/api/course";
 import { useApp } from "@/contexts/AppContext";
 
 /**

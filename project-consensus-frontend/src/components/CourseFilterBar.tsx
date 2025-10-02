@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { fetchCourseDepartments } from "@/lib/api/courses";
+import { fetchCourseDepartments } from "@/lib/api/course";
 import { useI18n } from "@/hooks/useI18n";
 import { useDebounce } from "@/hooks/useDebounce";
 
