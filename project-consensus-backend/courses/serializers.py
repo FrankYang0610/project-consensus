@@ -31,7 +31,13 @@ ALLOWED_ATTRS: dict[str, list[str]] = {
 def _sanitize_html(html: str) -> str:
     if not isinstance(html, str):
         return ""
-    return bleach.clean(html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS, strip=True)
+    return bleach.clean(
+        html,
+        tags=ALLOWED_TAGS,
+        attributes=ALLOWED_ATTRS,
+        protocols=['http', 'https'],
+        strip=True
+    )
 
 
 def _author_payload_for(user: User) -> dict:
