@@ -51,11 +51,10 @@ export function useDebounce<T>(value: T, delay: number = 500): T {
  * // Multiple rapid calls will only execute the last one after 500ms
  * debouncedSave(formData);
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function useDebounceCallback<T extends (...args: any[]) => any>(
-  callback: T,
+export function useDebounceCallback<Args extends unknown[], Return>(
+  callback: (...args: Args) => Return,
   delay: number = 300
-): (...args: Parameters<T>) => void {
+): (...args: Args) => void {
   const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const callbackRef = useRef(callback);
 
@@ -63,7 +62,7 @@ export function useDebounceCallback<T extends (...args: any[]) => any>(
   callbackRef.current = callback;
 
   return useCallback(
-    (...args: Parameters<T>) => {
+    (...args: Args) => {
       // Clear any pending timeout
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
