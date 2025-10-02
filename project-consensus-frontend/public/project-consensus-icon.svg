@@ -1,15 +1,36 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 200" role="img" aria-label="project-consensus">
-    <defs>
-        <style>
-            :root { --fg: #000; }
-            text {
-            font-family: "Lucida Grande", "Lucida Sans", "Lucida Sans Unicode", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            font-weight: 700;
-            letter-spacing: 1.5px;
-            }
-        </style>
-    </defs>
-    <text x="50%" y="50%" fill="var(--fg)" font-size="120" text-anchor="middle" dominant-baseline="middle">
-        project-consensus
-    </text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 160" width="300" role="img" aria-label="polyu.life red wordmark">
+  <title>polyu.life</title>
+  <defs>
+    <style>
+      :root { --brand-red:#B20D24; } /* 主红色，可按需调整 */
+      .word {
+        font-family: "Lucida Grande","Lucida Sans","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+        font-weight: 800;
+        letter-spacing: 1.1px;
+        text-rendering: geometricPrecision;
+        font-kerning: normal;
+      }
+    </style>
+
+    <!-- 极简切角（ink-trap），增强 “polyu” 识别性 -->
+    <mask id="inkcuts" x="0" y="0" width="600" height="160" maskUnits="userSpaceOnUse">
+      <rect width="600" height="160" fill="#fff"/>
+      <!-- 根据300px宽优化的小切角，如需更克制可整体向内收1–2px -->
+      <polygon points="205,71 214,64 214,78" fill="#000"/><!-- p -->
+      <polygon points="232,63 242,71 232,79" fill="#000"/><!-- o -->
+      <polygon points="283,60 292,72 283,84" fill="#000"/><!-- y -->
+      <polygon points="306,66 316,74 306,82" fill="#000"/><!-- u -->
+    </mask>
+  </defs>
+
+  <!-- 左侧 “polyu” 斜体 + 切角；右侧 “.life” 常规 -->
+  <text class="word" x="300" y="80" font-size="96" text-anchor="end"
+        fill="var(--brand-red)" font-style="italic" mask="url(#inkcuts)">polyu</text>
+  <text class="word" x="300" y="80" font-size="96" text-anchor="start"
+        fill="var(--brand-red)">.life</text>
+
+  <!-- 弧形下划（上移10px）：左粗≈16px，右细≈3px -->
+  <!-- 原: M130 112 … L470 121 … 139 … 128 -->
+  <path d="M130 102 Q300 120 470 108 L470 111 Q300 129 130 118 Z"
+        fill="var(--brand-red)"/>
 </svg>
