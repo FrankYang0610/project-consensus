@@ -31,8 +31,13 @@ def create_demo_user(apps, schema_editor):
     user = User.objects.filter(email=DEMO_EMAIL).first()
     if user is None:
         user = User.objects.create_user(username=DEMO_EMAIL, email=DEMO_EMAIL, password=DEMO_PASSWORD)
-        # Create a simple profile with default pronouns
-        Profile.objects.create(user=user, display_name=DEMO_NAME, pronouns="not_specified")
+        # Create a simple profile with default pronouns and do not share by default
+        Profile.objects.create(
+            user=user,
+            display_name=DEMO_NAME,
+            pronouns="not_specified",
+            pronouns_shared=False,
+        )
 
 # For Database Rollback
 def delete_demo_user(apps, schema_editor):

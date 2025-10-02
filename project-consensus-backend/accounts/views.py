@@ -88,8 +88,13 @@ def register(request):
         return Response({"message": "Email already registered."}, status=status.HTTP_400_BAD_REQUEST)
 
     user = User.objects.create_user(username=email, email=email, password=password)
-    # Default pronouns to 'not_specified' for new users
-    Profile.objects.create(user=user, display_name=nickname, pronouns="not_specified")
+    # Default pronouns to 'not_specified' and do not share by default for new users
+    Profile.objects.create(
+        user=user,
+        display_name=nickname,
+        pronouns="not_specified",
+        pronouns_shared=False,
+    )
 
     # Invalidate the code to prevent reuse
     cache.delete(code_key)
