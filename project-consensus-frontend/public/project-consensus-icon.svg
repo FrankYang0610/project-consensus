@@ -2,22 +2,24 @@
   <title>polyu.life</title>
   <defs>
     <style>
-      :root { --brand-red:#C0142A; } /* 可调主红色 */
+      :root { --brand-red:#C0142A; } /* 主红色，可按需调整 */
       text{
         font-family: "Lucida Grande","Lucida Sans","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
         font-weight: 800;
-        letter-spacing: 1.2px;              /* 小尺寸下略收紧字距 */
+        letter-spacing: 1.1px;
         font-kerning: normal;
-        font-variant-ligatures: contextual; /* 提升小尺寸排版质量 */
+        font-variant-ligatures: contextual;
       }
     </style>
   </defs>
 
-  <!-- 字标 -->
+  <!-- 文字：polyu 斜体，.life 常规 -->
   <text x="50%" y="50%" font-size="96" text-anchor="middle" dominant-baseline="middle" fill="var(--brand-red)">
-    polyu.life
+    <tspan font-style="italic">polyu</tspan><tspan>.life</tspan>
   </text>
 
-  <!-- 极简下划线：轻微弧线，呼应“life”节奏，保持克制 -->
-  <path d="M150 118 Q300 134 450 118" fill="none" stroke="var(--brand-red)" stroke-width="6" stroke-linecap="round"/>
+  <!-- 渐收下划线（左粗右细），用封闭形状实现可变“笔画”粗细 -->
+  <!-- 左端厚度约 10px，右端约 4px，可微调下面坐标差值控制 -->
+  <path d="M150 114 Q300 130 450 116 L450 120 Q300 138 150 124 Z"
+        fill="var(--brand-red)"/>
 </svg>
