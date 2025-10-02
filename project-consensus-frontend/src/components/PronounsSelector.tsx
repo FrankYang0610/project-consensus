@@ -126,7 +126,7 @@ export function PronounsSelector({
             </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          {(typeof share !== 'undefined' || typeof onShareChange !== 'undefined') && (
+          {(typeof share !== 'undefined' && typeof onShareChange !== 'undefined') && (
             <div className="inline-flex items-center gap-2">
               <Checkbox
                 id={`${id}-share`}
