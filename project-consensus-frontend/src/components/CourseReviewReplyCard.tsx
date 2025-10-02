@@ -93,7 +93,7 @@ export function CourseReviewReplyCard({
               <span className="font-medium text-sm text-foreground">{reply.author.name}</span>
               {reply.replyToUser && (
                 <span className="text-xs text-muted-foreground">
-                  {t("comment.replyTo")} @{reply.replyToUser.name}
+                  {t("comment.replyTo") + " @" + reply.replyToUser.name}
                 </span>
               )}
               <ClientOnlyTime dateString={reply.createdAt} className="text-xs text-muted-foreground" />
