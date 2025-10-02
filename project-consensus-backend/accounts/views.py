@@ -42,6 +42,20 @@ def annotate_user_stats(queryset):
     )
 
 
+def get_user_with_stats(user_id):
+    """Fetch a single user with optimized stats to avoid N+1 queries.
+    
+    获取单个用户及其统计数据，避免 N+1 查询
+    
+    Args:
+        user_id: The primary key of the user to fetch
+        
+    Returns:
+        User object with annotated stats, or None if not found
+    """
+    return annotate_user_stats(User.objects.filter(pk=user_id)).first()
+
+
 def build_user_payload(user):
     """Return a minimal, serializable user payload for API responses.
     
@@ -187,7 +201,7 @@ def login_view(request):
 
     # Fetch user with optimized stats to avoid N+1 queries
     # 获取用户时同时计算统计数据，避免 N+1 查询
-    user = annotate_user_stats(User.objects.filter(pk=user.pk)).first()
+    user = get_user_with_stats(user.pk)
 
     # success; establish session and return profile payload
     django_login(request, user)
@@ -207,7 +221,7 @@ def me(request):
     
     # Fetch user with optimized stats to avoid N+1 queries
     # 获取用户时同时计算统计数据，避免 N+1 查询
-    user = annotate_user_stats(User.objects.filter(pk=request.user.pk)).first()
+    user = get_user_with_stats(request.user.pk)
     return Response(build_user_payload(user))
 
 
@@ -223,6 +237,6 @@ def update_profile(request):
     
     # Fetch user with optimized stats to avoid N+1 queries
     # 获取用户时同时计算统计数据，避免 N+1 查询
-    user = annotate_user_stats(User.objects.filter(pk=request.user.pk)).first()
+    user = get_user_with_stats(request.user.pk)
     return Response({"success": True, "user": build_user_payload(user)})
 
