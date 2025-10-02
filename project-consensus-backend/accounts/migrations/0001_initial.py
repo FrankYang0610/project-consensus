@@ -45,6 +45,18 @@ class Migration(migrations.Migration):
                     models.BooleanField(default=False, help_text="是否在个人主页展示代词"),
                 ),
                 (
+                    "show_forum_posts_publicly",
+                    models.BooleanField(default=True, help_text="是否公开展示自己发的forum posts"),
+                ),
+                (
+                    "show_forum_post_comments_publicly",
+                    models.BooleanField(default=True, help_text="是否公开展示自己发的forum post comments"),
+                ),
+                (
+                    "show_course_reviews_publicly",
+                    models.BooleanField(default=True, help_text="是否公开展示自己发的course reviews"),
+                ),
+                (
                     "user",
                     models.OneToOneField(
                         on_delete=django.db.models.deletion.CASCADE,

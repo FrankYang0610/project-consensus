@@ -6,9 +6,9 @@ from datetime import timedelta
 from django.contrib.auth import authenticate, get_user_model, login as django_login, logout as django_logout
 from django.conf import settings
 import logging
-from django.db import transaction
+from django.db import transaction, models
 from django.core.cache import cache
-from django.db.models import Count
+from django.db.models import Count, Exists, OuterRef
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -56,8 +56,13 @@ def get_user_with_stats(user_id):
     return annotate_user_stats(User.objects.filter(pk=user_id)).first()
 
 
-def build_user_payload(user):
-    """Return a minimal, serializable user payload for API responses.
+def build_user_payload(user, include_private_info=True):
+    """Return a serializable user payload for API responses.
+    
+    Args:
+        user: User object to serialize
+        include_private_info: If True, includes private fields like email (for own profile).
+                              If False, excludes private fields (for public profiles).
     
     Note: For optimal performance, when querying users, use annotate_user_stats() 
     to pre-calculate statistics and avoid N+1 queries:
@@ -91,13 +96,15 @@ def build_user_payload(user):
         delta = timezone.now() - user.date_joined
         joined_days = delta.days
     
-    return {
+    payload = {
         "id": str(user.pk),
-        "email": user.email,
         "name": getattr(profile, "display_name", None) or user.get_username(),
         "avatar": getattr(profile, "avatar_url", None) or None,
         "pronouns": getattr(profile, "pronouns", None) if getattr(profile, "pronouns_shared", False) else "",
         "pronounsShared": getattr(profile, "pronouns_shared", False),
+        "showForumPostsPublicly": getattr(profile, "show_forum_posts_publicly", True),
+        "showForumPostCommentsPublicly": getattr(profile, "show_forum_post_comments_publicly", True),
+        "showCourseReviewsPublicly": getattr(profile, "show_course_reviews_publicly", True),
         "stats": {
             "posts": posts_count,
             "comments": comments_count,
@@ -105,6 +112,12 @@ def build_user_payload(user):
             "joinedDays": joined_days,
         }
     }
+    
+    # Include private info only if requested (for user's own profile)
+    if include_private_info:
+        payload["email"] = user.email
+    
+    return payload
 
 @api_view(["POST"])
 def send_verification_code(request):
@@ -245,4 +258,197 @@ def update_profile(request):
     if not user_with_stats:
         return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
     return Response({"success": True, "user": build_user_payload(user_with_stats)})
+
+
+@api_view(["GET"])
+def my_posts(request):
+    """Get the list of forum posts created by the current user."""
+    if not request.user.is_authenticated:
+        return Response({"message": "Not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
+    
+    from forum.models import ForumPost, ForumPostLike
+    from forum.serializers import ForumPostSerializer
+    
+    # Get user's posts with like status annotation
+    posts = (
+        ForumPost.objects
+        .filter(author=request.user)
+        .select_related("author", "author__profile")
+        .prefetch_related("comments", "likes")
+        .annotate(
+            comments_count=Count("comments", distinct=True)
+        )
+        .order_by("-created_at")
+    )
+    
+    serializer = ForumPostSerializer(posts, many=True, context={"request": request})
+    return Response(serializer.data)
+
+
+@api_view(["GET"])
+def my_comments(request):
+    """Get the list of forum comments created by the current user."""
+    if not request.user.is_authenticated:
+        return Response({"message": "Not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
+    
+    from forum.models import ForumPostComment
+    from forum.serializers import ForumPostCommentSerializer
+    
+    # Get user's comments with related data
+    comments = (
+        ForumPostComment.objects
+        .filter(author=request.user)
+        .select_related("author", "author__profile", "post")
+        .prefetch_related("likes")
+        .annotate(
+            replies_count=Count("replies", distinct=True)
+        )
+        .order_by("-created_at")
+    )
+    
+    serializer = ForumPostCommentSerializer(comments, many=True, context={"request": request})
+    return Response(serializer.data)
+
+
+@api_view(["GET"])
+def my_reviews(request):
+    """Get the list of course reviews created by the current user."""
+    if not request.user.is_authenticated:
+        return Response({"message": "Not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
+    
+    from courses.models import CourseReview, CourseReviewLike
+    from courses.serializers import CourseReviewSerializer
+    
+    # Get user's reviews with like status annotation
+    reviews = (
+        CourseReview.objects
+        .filter(author=request.user)
+        .select_related("author", "author__profile", "course")
+        .prefetch_related("likes")
+        .annotate(
+            is_liked=Exists(
+                CourseReviewLike.objects.filter(
+                    review_id=OuterRef("id"),
+                    user=request.user
+                )
+            )
+        )
+        .order_by("-created_at")
+    )
+    
+    serializer = CourseReviewSerializer(reviews, many=True, context={"request": request})
+    return Response(serializer.data)
+
+
+@api_view(["GET"])
+def public_user(request, user_id):
+    """Get public profile information for a specific user."""
+    try:
+        # Fetch user with optimized stats
+        user_with_stats = get_user_with_stats(user_id)
+        if not user_with_stats:
+            return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        return Response(build_user_payload(user_with_stats, include_private_info=False))
+    except Exception as e:
+        logger.error(f"Error fetching public user {user_id}: {e}")
+        return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["GET"])
+def public_user_posts(request, user_id):
+    """Get the list of forum posts created by a specific user (if public)."""
+    try:
+        user = User.objects.select_related('profile').get(pk=user_id)
+        profile = getattr(user, 'profile', None)
+        
+        # Check privacy settings
+        if not getattr(profile, 'show_forum_posts_publicly', True):
+            return Response({"message": "User's posts are private"}, status=status.HTTP_403_FORBIDDEN)
+        
+        from forum.models import ForumPost
+        from forum.serializers import ForumPostSerializer
+        
+        posts = (
+            ForumPost.objects
+            .filter(author=user)
+            .select_related("author", "author__profile")
+            .prefetch_related("comments", "likes")
+            .annotate(
+                comments_count=Count("comments", distinct=True)
+            )
+            .order_by("-created_at")
+        )
+        
+        serializer = ForumPostSerializer(posts, many=True, context={"request": request})
+        return Response(serializer.data)
+    except User.DoesNotExist:
+        return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["GET"])
+def public_user_comments(request, user_id):
+    """Get the list of forum comments created by a specific user (if public)."""
+    try:
+        user = User.objects.select_related('profile').get(pk=user_id)
+        profile = getattr(user, 'profile', None)
+        
+        # Check privacy settings
+        if not getattr(profile, 'show_forum_post_comments_publicly', True):
+            return Response({"message": "User's comments are private"}, status=status.HTTP_403_FORBIDDEN)
+        
+        from forum.models import ForumPostComment
+        from forum.serializers import ForumPostCommentSerializer
+        
+        comments = (
+            ForumPostComment.objects
+            .filter(author=user)
+            .select_related("author", "author__profile", "post")
+            .prefetch_related("likes")
+            .annotate(
+                replies_count=Count("replies", distinct=True)
+            )
+            .order_by("-created_at")
+        )
+        
+        serializer = ForumPostCommentSerializer(comments, many=True, context={"request": request})
+        return Response(serializer.data)
+    except User.DoesNotExist:
+        return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["GET"])
+def public_user_reviews(request, user_id):
+    """Get the list of course reviews created by a specific user (if public)."""
+    try:
+        user = User.objects.select_related('profile').get(pk=user_id)
+        profile = getattr(user, 'profile', None)
+        
+        # Check privacy settings
+        if not getattr(profile, 'show_course_reviews_publicly', True):
+            return Response({"message": "User's reviews are private"}, status=status.HTTP_403_FORBIDDEN)
+        
+        from courses.models import CourseReview, CourseReviewLike
+        from courses.serializers import CourseReviewSerializer
+        
+        reviews = (
+            CourseReview.objects
+            .filter(author=user)
+            .select_related("author", "author__profile", "course")
+            .prefetch_related("likes")
+            .annotate(
+                is_liked=Exists(
+                    CourseReviewLike.objects.filter(
+                        review_id=OuterRef("id"),
+                        user=request.user
+                    )
+                ) if request.user.is_authenticated else models.Value(False)
+            )
+            .order_by("-created_at")
+        )
+        
+        serializer = CourseReviewSerializer(reviews, many=True, context={"request": request})
+        return Response(serializer.data)
+    except User.DoesNotExist:
+        return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 

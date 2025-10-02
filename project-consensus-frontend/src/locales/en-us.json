@@ -451,23 +451,19 @@
     },
     "privacy": {
       "title": "Privacy",
-      "desc": "Control how others can see and contact you.",
+      "desc": "Control what content is publicly visible.",
       "items": {
-        "showEmail": {
-          "title": "Show email on profile",
-          "desc": "Allow others to see your email on your profile."
+        "showForumPostsPublicly": {
+          "title": "Show my forum posts publicly",
+          "desc": "Allow others to see the forum posts you've created."
         },
-        "allowDMs": {
-          "title": "Allow direct messages",
-          "desc": "Allow others to send you private messages."
+        "showForumPostCommentsPublicly": {
+          "title": "Show my forum post comments publicly",
+          "desc": "Allow others to see the comments you've made on forum posts."
         },
-        "showOnlineStatus": {
-          "title": "Show online status",
-          "desc": "Let others see when you're online."
-        },
-        "showActivity": {
-          "title": "Show activity",
-          "desc": "Display your public activity timeline."
+        "showCourseReviewsPublicly": {
+          "title": "Show my course reviews publicly",
+          "desc": "Allow others to see the course reviews you've written."
         }
       },
       "saved": "Privacy settings saved.",
@@ -493,7 +489,9 @@
     "title": "Profile",
     "subtitle": "Your public profile",
     "actions": {
-      "edit": "Edit Profile"
+      "edit": "Edit Profile",
+      "viewPublic": "View Public Profile",
+      "viewPrivate": "View Private Profile"
     },
     "stats": {
       "title": "Activity Stats",
@@ -504,7 +502,26 @@
     },
     "activity": {
       "title": "Recent Activity",
-      "subtitle": "Your latest contributions to the community"
+      "subtitle": "Your latest contributions to the community",
+      "myPosts": {
+        "title": "My Posts",
+        "subtitle": "Forum posts you've created",
+        "empty": "No posts yet",
+        "viewPost": "View Post"
+      },
+      "myComments": {
+        "title": "My Comments",
+        "subtitle": "Comments you've made on forum posts",
+        "empty": "No comments yet",
+        "inReplyTo": "In reply to",
+        "onPost": "On post:"
+      },
+      "myReviews": {
+        "title": "My Reviews",
+        "subtitle": "Course reviews you've written",
+        "empty": "No reviews yet",
+        "viewCourse": "View Course"
+      }
     },
     "memberFor": "Member for {{days}} days"
   },

@@ -453,23 +453,19 @@
     },
     "privacy": {
       "title": "隐私设置",
-      "desc": "控制他人如何查看并联系你。",
+      "desc": "控制哪些内容公开可见。",
       "items": {
-        "showEmail": {
-          "title": "在个人主页显示邮箱",
-          "desc": "允许他人查看你主页上的邮箱地址。"
+        "showForumPostsPublicly": {
+          "title": "公开展示我的论坛帖子",
+          "desc": "允许他人查看你发布的论坛帖子。"
         },
-        "allowDMs": {
-          "title": "允许私信",
-          "desc": "允许其他用户向你发送私信。"
+        "showForumPostCommentsPublicly": {
+          "title": "公开展示我的论坛评论",
+          "desc": "允许他人查看你在论坛帖子下发表的评论。"
         },
-        "showOnlineStatus": {
-          "title": "显示在线状态",
-          "desc": "允许他人看到你是否在线。"
-        },
-        "showActivity": {
-          "title": "显示活动",
-          "desc": "展示你的公开活动时间线。"
+        "showCourseReviewsPublicly": {
+          "title": "公开展示我的课程评价",
+          "desc": "允许他人查看你撰写的课程评价。"
         }
       },
       "saved": "隐私设置已保存。",
@@ -495,7 +491,9 @@
     "title": "个人资料",
     "subtitle": "你的公开个人主页",
     "actions": {
-      "edit": "修改个人资料"
+      "edit": "修改个人资料",
+      "viewPublic": "查看公开主页",
+      "viewPrivate": "查看私人主页"
     },
     "stats": {
       "title": "活动统计",
@@ -506,7 +504,26 @@
     },
     "activity": {
       "title": "最近活动",
-      "subtitle": "你对社区的最新贡献"
+      "subtitle": "你对社区的最新贡献",
+      "myPosts": {
+        "title": "发的帖子",
+        "subtitle": "你创建的论坛帖子",
+        "empty": "还没有发布帖子",
+        "viewPost": "查看帖子"
+      },
+      "myComments": {
+        "title": "发的帖子评论",
+        "subtitle": "你在论坛帖子中的评论",
+        "empty": "还没有发表评论",
+        "inReplyTo": "回复",
+        "onPost": "在帖子："
+      },
+      "myReviews": {
+        "title": "发的课程评价",
+        "subtitle": "你编写的课程评价",
+        "empty": "还没有发表评价",
+        "viewCourse": "查看课程"
+      }
     },
     "memberFor": "加入 {{days}} 天"
   },

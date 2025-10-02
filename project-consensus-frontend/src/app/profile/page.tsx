@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { SiteNavigation } from '@/components/SiteNavigation';
@@ -9,10 +10,22 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatPronounsForProfilePageDisplay } from '@/lib/pronouns-utils';
+import { getMyPosts, getMyComments, getMyReviews } from '@/lib/api/user-activity';
+import { stripHtmlTags } from '@/lib/html-utils';
+import ClientOnlyTime from '@/components/ClientOnlyTime';
+import type { ForumPost, ForumPostComment } from '@/types/forum';
+import type { CourseReview } from '@/types/course';
 
 export default function ProfilePage() {
   const { user, isLoggedIn } = useApp();
   const { t } = useI18n();
+  
+  const [posts, setPosts] = useState<ForumPost[]>([]);
+  const [comments, setComments] = useState<ForumPostComment[]>([]);
+  const [reviews, setReviews] = useState<CourseReview[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(true);
+  const [loadingComments, setLoadingComments] = useState(true);
+  const [loadingReviews, setLoadingReviews] = useState(true);
 
   const displayName = user?.name || (user?.email ? user.email.split('@')[0] : '');
   const avatarText = user?.name
@@ -29,27 +42,43 @@ export default function ProfilePage() {
     joinedDays: 0
   };
 
-  const recentActivity = [
-    { type: 'review', content: 'Reviewed CS101 - Data Structures', time: '2 hours ago' },
-    { type: 'comment', content: 'Commented on "Best professors for CS courses"', time: '1 day ago' },
-    { type: 'post', content: 'Posted "Study group for MATH201"', time: '3 days ago' },
-    { type: 'review', content: 'Reviewed MATH201 - Calculus II', time: '1 week ago' },
-    { type: 'comment', content: 'Commented on "CS102 assignment help needed"', time: '1 week ago' },
-    { type: 'review', content: 'Reviewed PHYS101 - Physics I', time: '2 weeks ago' },
-    { type: 'post', content: 'Posted "Looking for study partner for CHEM101"', time: '2 weeks ago' },
-    { type: 'comment', content: 'Commented on "Professor recommendations for MATH202"', time: '3 weeks ago' },
-    { type: 'review', content: 'Reviewed ENGL101 - Academic Writing', time: '3 weeks ago' },
-    { type: 'post', content: 'Posted "Course selection advice needed"', time: '1 month ago' }
-  ];
+  // Fetch user's posts, comments, and reviews
+  useEffect(() => {
+    if (isLoggedIn) {
+      // Fetch posts
+      getMyPosts()
+        .then(data => {
+          setPosts(data);
+          setLoadingPosts(false);
+        })
+        .catch(error => {
+          console.error('Failed to fetch posts:', error);
+          setLoadingPosts(false);
+        });
 
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'review': return '⭐';
-      case 'comment': return '💬';
-      case 'post': return '📝';
-      default: return '📄';
+      // Fetch comments
+      getMyComments()
+        .then(data => {
+          setComments(data);
+          setLoadingComments(false);
+        })
+        .catch(error => {
+          console.error('Failed to fetch comments:', error);
+          setLoadingComments(false);
+        });
+
+      // Fetch reviews
+      getMyReviews()
+        .then(data => {
+          setReviews(data);
+          setLoadingReviews(false);
+        })
+        .catch(error => {
+          console.error('Failed to fetch reviews:', error);
+          setLoadingReviews(false);
+        });
     }
-  };
+  }, [isLoggedIn]);
 
   return (
     <>
@@ -66,9 +95,14 @@ export default function ProfilePage() {
                 </h1>
                 <p className="text-lg text-muted-foreground">{t('profile.subtitle')}</p>
               </div>
-              <Button asChild variant="outline" size="sm" className="shadow-md">
-                <Link href="/settings">{t('profile.actions.edit')}</Link>
-              </Button>
+              <div className="flex gap-2">
+                <Button asChild variant="outline" size="sm" className="shadow-md">
+                  <Link href={`/user/${user?.id}`}>{t('profile.actions.viewPublic')}</Link>
+                </Button>
+                <Button asChild variant="outline" size="sm" className="shadow-md">
+                  <Link href="/settings">{t('profile.actions.edit')}</Link>
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -144,28 +178,126 @@ export default function ProfilePage() {
 
             {/* Right Column - Activity & Content */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Recent Activity */}
+              {/* My Posts */}
               <Card className="shadow-lg border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
                 <CardHeader>
-                  <CardTitle className="text-xl">{t('profile.activity.title')}</CardTitle>
-                  <CardDescription>{t('profile.activity.subtitle')}</CardDescription>
+                  <CardTitle className="text-xl">📝 {t('profile.activity.myPosts.title')}</CardTitle>
+                  <CardDescription>{t('profile.activity.myPosts.subtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {recentActivity.map((activity, index) => (
-                      <div key={index} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
-                        <div className="text-2xl">{getActivityIcon(activity.type)}</div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            {activity.content}
-                          </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            {activity.time}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  {loadingPosts ? (
+                    <div className="text-center py-8 text-muted-foreground">Loading...</div>
+                  ) : posts.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">{t('profile.activity.myPosts.empty')}</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {posts.slice(0, 5).map((post) => (
+                        <Link 
+                          key={post.id} 
+                          href={`/post/${post.id}`}
+                          className="block p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors border border-gray-100 dark:border-slate-700"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-medium text-gray-900 dark:text-white mb-1 line-clamp-1">
+                                {post.title}
+                              </h3>
+                              <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mb-2">
+                                {stripHtmlTags(post.content)}
+                              </p>
+                              <div className="flex items-center gap-3 text-xs">
+                                <ClientOnlyTime dateString={post.createdAt} className="text-gray-500 dark:text-gray-400" />
+                                <span className="text-gray-500 dark:text-gray-400">💬 {post.comments}</span>
+                                <span className="text-gray-500 dark:text-gray-400">❤️ {post.likes}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* My Comments */}
+              <Card className="shadow-lg border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="text-xl">💬 {t('profile.activity.myComments.title')}</CardTitle>
+                  <CardDescription>{t('profile.activity.myComments.subtitle')}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {loadingComments ? (
+                    <div className="text-center py-8 text-muted-foreground">Loading...</div>
+                  ) : comments.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">{t('profile.activity.myComments.empty')}</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {comments.slice(0, 5).map((comment) => (
+                        <Link 
+                          key={comment.id} 
+                          href={`/post/${comment.postId}#comment-${comment.id}`}
+                          className="block p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors border border-gray-100 dark:border-slate-700"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-gray-900 dark:text-white line-clamp-2 mb-2">
+                              {stripHtmlTags(comment.content)}
+                            </p>
+                            <div className="flex items-center gap-3 text-xs">
+                              <ClientOnlyTime dateString={comment.createdAt} className="text-gray-500 dark:text-gray-400" />
+                              <span className="text-gray-500 dark:text-gray-400">❤️ {comment.likes}</span>
+                              {comment.replyTo && <span className="text-gray-500 dark:text-gray-400">{t('profile.activity.myComments.inReplyTo')}</span>}
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* My Reviews */}
+              <Card className="shadow-lg border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="text-xl">⭐ {t('profile.activity.myReviews.title')}</CardTitle>
+                  <CardDescription>{t('profile.activity.myReviews.subtitle')}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {loadingReviews ? (
+                    <div className="text-center py-8 text-muted-foreground">Loading...</div>
+                  ) : reviews.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">{t('profile.activity.myReviews.empty')}</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {reviews.slice(0, 5).map((review) => (
+                        <Link 
+                          key={review.id} 
+                          href={`/courses/${review.subjectId}/review`}
+                          className="block p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors border border-gray-100 dark:border-slate-700"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              {!review.onlyText && review.overallRating !== undefined && (
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                                    {review.overallRating.toFixed(1)}
+                                  </span>
+                                  <span className="text-sm text-gray-500 dark:text-gray-400">/ 10</span>
+                                </div>
+                              )}
+                              <p className="text-sm text-gray-900 dark:text-white line-clamp-3 mb-2">
+                                {stripHtmlTags(review.content)}
+                              </p>
+                              <div className="flex items-center gap-3 text-xs">
+                                <ClientOnlyTime dateString={typeof review.createdAt === 'string' ? review.createdAt : review.createdAt.toISOString()} className="text-gray-500 dark:text-gray-400" />
+                                <span className="text-gray-500 dark:text-gray-400">❤️ {review.likesCount}</span>
+                                {(review.repliesCount ?? 0) > 0 && <span className="text-gray-500 dark:text-gray-400">💬 {review.repliesCount}</span>}
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 

@@ -453,23 +453,19 @@
     },
     "privacy": {
       "title": "私隱設定",
-      "desc": "控制他人如何查看並聯絡你。",
+      "desc": "控制哪些內容公開可見。",
       "items": {
-        "showEmail": {
-          "title": "在個人主頁顯示電郵",
-          "desc": "允許他人查看你主頁上的電郵地址。"
+        "showForumPostsPublicly": {
+          "title": "公開展示我的論壇帖子",
+          "desc": "允許他人查看你發佈的論壇帖子。"
         },
-        "allowDMs": {
-          "title": "允許私訊",
-          "desc": "允許其他用戶向你發送私訊。"
+        "showForumPostCommentsPublicly": {
+          "title": "公開展示我的論壇評論",
+          "desc": "允許他人查看你在論壇帖子下發表的評論。"
         },
-        "showOnlineStatus": {
-          "title": "顯示在線狀態",
-          "desc": "允許他人看到你是否在線。"
-        },
-        "showActivity": {
-          "title": "顯示活動",
-          "desc": "展示你的公開活動時間線。"
+        "showCourseReviewsPublicly": {
+          "title": "公開展示我的課程評價",
+          "desc": "允許他人查看你撰寫的課程評價。"
         }
       },
       "saved": "私隱設定已儲存。",
@@ -495,7 +491,9 @@
     "title": "個人資料",
     "subtitle": "你的公開個人主頁",
     "actions": {
-      "edit": "修改個人資料"
+      "edit": "修改個人資料",
+      "viewPublic": "查看公開主頁",
+      "viewPrivate": "查看私人主頁"
     },
     "stats": {
       "title": "活動統計",
@@ -506,7 +504,26 @@
     },
     "activity": {
       "title": "最近活動",
-      "subtitle": "你對社區的最新貢獻"
+      "subtitle": "你對社區的最新貢獻",
+      "myPosts": {
+        "title": "發的帖子",
+        "subtitle": "你創建的論壇帖子",
+        "empty": "還沒有發布帖子",
+        "viewPost": "查看帖子"
+      },
+      "myComments": {
+        "title": "發的帖子評論",
+        "subtitle": "你在論壇帖子中的評論",
+        "empty": "還沒有發表評論",
+        "inReplyTo": "回覆",
+        "onPost": "在帖子："
+      },
+      "myReviews": {
+        "title": "發的課程評價",
+        "subtitle": "你編寫的課程評價",
+        "empty": "還沒有發表評價",
+        "viewCourse": "查看課程"
+      }
     },
     "memberFor": "加入 {{days}} 天"
   },
