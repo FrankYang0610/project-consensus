@@ -23,6 +23,35 @@ from .models import (
 from .serializers import CourseSerializer, CourseReviewSerializer, CourseReviewReplySerializer
 
 
+def _is_constraint_violation(e: IntegrityError, constraint_name: str) -> bool:
+    """Check if an IntegrityError is caused by a specific constraint violation.
+    
+    This function attempts to extract the constraint name from the exception in a 
+    database-agnostic way, falling back to string matching if needed.
+    
+    Args:
+        e: The IntegrityError exception.
+        constraint_name: The expected constraint name to check.
+    
+    Returns:
+        True if the error is caused by the specified constraint, False otherwise.
+    """
+    # Try PostgreSQL psycopg2/psycopg3 exception structure
+    if hasattr(e, '__cause__') and e.__cause__ is not None:
+        # psycopg2 uses 'diag' attribute
+        if hasattr(e.__cause__, 'diag'):
+            actual_constraint = getattr(e.__cause__.diag, 'constraint_name', None)
+            if actual_constraint == constraint_name:
+                return True
+        # psycopg3 and some other adapters may store it differently
+        if hasattr(e.__cause__, 'constraint_name'):
+            if e.__cause__.constraint_name == constraint_name:
+                return True
+    
+    # Fallback: check string representation (works across databases but less reliable)
+    return constraint_name in str(e)
+
+
 def _recompute_course_aggregates(course: Course) -> None:
     """Recompute course rating aggregates with row-level locking to prevent race conditions.
     
@@ -288,7 +317,7 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
                 return Response(out.data, status=status.HTTP_201_CREATED)
             except IntegrityError as e:
                 # Catch unique constraint violation (duplicate review)
-                if 'unique_course_review_per_user' in str(e):
+                if _is_constraint_violation(e, 'unique_course_review_per_user'):
                     return Response(
                         {"detail": "You have already reviewed this course.", "code": "already_reviewed"}, 
                         status=status.HTTP_400_BAD_REQUEST
@@ -556,7 +585,7 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
                 _recompute_teachers_aggregates(course)
         except IntegrityError as e:
             # Catch unique constraint violation (duplicate review)
-            if 'unique_course_review_per_user' in str(e):
+            if _is_constraint_violation(e, 'unique_course_review_per_user'):
                 raise ValidationError({
                     "detail": "You have already reviewed this course.", 
                     "code": "already_reviewed"

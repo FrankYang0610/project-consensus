@@ -10,25 +10,77 @@ export function sanitizeHtml(html: string): string {
   // Strict allowlist policy: only a small set of safe, text-formatting tags are permitted
   // - Allow minimal safe attributes for tables, code blocks, and lists
   // - Explicitly forbid rich/embedded and scriptable contexts
-  return DOMPurify.sanitize(html, {
+  const config = {
     ALLOWED_TAGS: [
       'p', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'br',
       'strong', 'em', 'code', 'pre', 'blockquote',
       'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th'
     ],
-    ALLOWED_ATTR: {
-      // Table attributes for cell merging and alignment
-      'td': ['colspan', 'rowspan', 'align'],
-      'th': ['colspan', 'rowspan', 'align'],
-      // Code syntax highlighting
-      'code': ['class'],
-      'pre': ['class'],
-      // Ordered list starting number
-      'ol': ['start'],
-    },
+    // ALLOWED_ATTR expects a string array of globally allowed attributes
+    // Tag-specific attribute control is done via hooks below
+    ALLOWED_ATTR: ['colspan', 'rowspan', 'align', 'start', 'class'],
     SAFE_FOR_TEMPLATES: true,
     ALLOW_UNKNOWN_PROTOCOLS: false,
-  });
+  };
+
+  // Named hook function for precise removal to avoid affecting concurrent calls (e.g., in SSR)
+  const attributeHook = (node: Element, data: { attrName: string; attrValue: string; keepAttr?: boolean }) => {
+    // Only allow 'class' attribute on code/pre elements with valid syntax highlighting patterns
+    if (data.attrName === 'class') {
+      if (node.nodeName === 'CODE' || node.nodeName === 'PRE') {
+        const attrValue = data.attrValue;
+        // Only allow syntax highlighting class patterns:
+        // - language-* (common standard for syntax highlighters like Prism.js, highlight.js)
+        // - hljs-* (highlight.js specific classes)
+        // - hljs (base highlight.js class)
+        const allowedPatterns = [
+          /^language-[\w-]+$/,  // e.g., language-javascript, language-python
+          /^hljs-[\w-]+$/,       // e.g., hljs-keyword, hljs-string
+          /^hljs$/,              // base hljs class
+        ];
+
+        const classes = attrValue.split(/\s+/).filter(Boolean);
+        const validClasses = classes.filter(cls =>
+          allowedPatterns.some(pattern => pattern.test(cls))
+        );
+
+        if (validClasses.length > 0) {
+          data.attrValue = validClasses.join(' ');
+        } else {
+          // If no valid classes, remove the attribute
+          data.keepAttr = false;
+        }
+      } else {
+        // Remove 'class' attribute from all other elements
+        data.keepAttr = false;
+      }
+    }
+
+    // Only allow 'colspan', 'rowspan', 'align' on table cells
+    if (['colspan', 'rowspan', 'align'].includes(data.attrName)) {
+      if (node.nodeName !== 'TD' && node.nodeName !== 'TH') {
+        data.keepAttr = false;
+      }
+    }
+
+    // Only allow 'start' on ordered lists
+    if (data.attrName === 'start' && node.nodeName !== 'OL') {
+      data.keepAttr = false;
+    }
+  };
+
+  // Add the named hook
+  DOMPurify.addHook('uponSanitizeAttribute', attributeHook);
+  
+  try {
+    // Sanitize the HTML
+    const sanitized = DOMPurify.sanitize(html, config);
+    // DOMPurify.sanitize returns string | TrustedHTML depending on config
+    return String(sanitized);
+  } finally {
+    // Always remove the specific hook function to prevent side effects on concurrent calls
+    DOMPurify.removeHook('uponSanitizeAttribute', attributeHook);
+  }
 }
 
 /**
