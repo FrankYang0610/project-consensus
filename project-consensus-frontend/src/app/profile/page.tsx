@@ -19,7 +19,7 @@ export default function ProfilePage() {
     ? user.name.charAt(0).toUpperCase()
     : (user?.email ? user.email.charAt(0).toUpperCase() : '');
 
-  const formattedPronouns = user?.pronounsShared ? formatPronounsForProfilePageDisplay(user.pronouns) : "";
+  const formattedPronouns = user?.pronounsShared && user?.pronouns ? formatPronounsForProfilePageDisplay(user.pronouns) : "";
 
   // Mock data for demonstration
   const userStats = {
