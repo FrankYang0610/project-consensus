@@ -16,7 +16,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { useI18n } from "@/hooks/useI18n";
 import { useRouter } from "next/navigation";
 import { ForumPost } from "@/types";
-import { apiPost } from "@/lib/utils";
+import { apiPost } from "@/lib/api/api-utils";
 import { useApp } from "@/contexts/AppContext";
 
 export default function NewForumPostPage() {

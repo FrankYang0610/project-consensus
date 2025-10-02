@@ -4,7 +4,7 @@ import type {
   PaginatedResponse,
   FetchTeachersParams,
 } from "@/types";
-import { apiGet } from "@/lib/utils";
+import { apiGet } from "./api-utils";
 
 /**
  * Fetch a single teacher by ID

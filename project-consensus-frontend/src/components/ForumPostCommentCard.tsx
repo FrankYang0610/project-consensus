@@ -24,7 +24,7 @@ import { sanitizeHtml } from "@/lib/html-utils";
 import { cn } from "@/lib/utils";
 import type { ForumPostComment } from "@/types/forum";
 import { stripHtmlTags, truncateHtmlContent } from "@/lib/html-utils";
-import { apiGet } from "@/lib/utils";
+import { apiGet } from "@/lib/api/api-utils";
 import type { ListCommentsResponse } from "@/types/api";
 
 import ClientOnlyTime from "./ClientOnlyTime";
