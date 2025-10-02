@@ -293,7 +293,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
   if (!course) {
     return (
       <div className="min-h-screen bg-background">
-        <SiteNavigation />
+        <SiteNavigation showBackButton onBackClick={() => router.back()} />
         <main className="w-full py-10">
           <div className="max-w-5xl mx-auto p-6">
             <div className="text-center text-muted-foreground">{t("courses.detail.courseNotFound")}</div>
@@ -307,7 +307,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
 
   return (
     <div className="min-h-screen bg-background">
-      <SiteNavigation />
+      <SiteNavigation showBackButton onBackClick={() => router.back()} />
       <main className="w-full py-8">
         <div className="w-full p-6">
           <div className="max-w-6xl mx-auto grid grid-cols-1 gap-6 pt-2">

@@ -52,7 +52,7 @@
     "codeInputDisabledHint": "Click Send Code first to enable",
     "errorPasswordMismatch": "Passwords do not match",
     "errorPolyuEmail": "Please use a valid PolyU email (@connect.polyu.hk)",
-    "emailPrivacyNotice": "Your email is only used to link your project-consensus account and verify that you are a PolyU student. Your personal information will not be shared.",
+    "emailPrivacyNotice": "Your email is only used to link your polyu.life account and verify that you are a PolyU student. Your personal information will not be shared.",
     "registerConsent": "By clicking Register you agree to our",
     "termsOfService": "Terms of Service"
   },
@@ -350,9 +350,9 @@
   "about": {
     "title": "About",
     "subtitle": "Learn more about the project, its purpose, and the team behind it.",
-    "whatIsTitle": "What is project-consensus?",
+    "whatIsTitle": "What is polyu.life?",
     "whatIsDescription": "Campus forum and course review community",
-    "whatIsContent": "project-consensus is a campus forum and course review community designed by Frank Yang and Jim Yang. It aims to help students share insights, discuss courses, and build a collaborative community.",
+    "whatIsContent": "polyu.life is a campus forum and course review community designed by Frank Yang and Jim Yang. It aims to help students share insights, discuss courses, and build a collaborative community.",
     "goToHome": "Go to Home",
     "repositoryTitle": "Open-Source Repository",
     "repositoryDescription": "Explore the source code and contribute",
@@ -360,7 +360,7 @@
     "githubRepository": "GitHub Repository",
     "viewIssues": "View Issues",
     "teamTitle": "Team",
-    "teamDescription": "Meet the people behind project-consensus",
+    "teamDescription": "Meet the people behind polyu.life",
     "coCreator": "Co-creator"
   },
   "notFound": {
@@ -379,7 +379,7 @@
     "sections": {
       "acceptance": {
         "title": "1. Acceptance of Terms",
-        "content": "By creating an account or using project-consensus, you agree to these Terms and all applicable policies referenced here."
+        "content": "By creating an account or using polyu.life, you agree to these Terms and all applicable policies referenced here."
       },
       "accounts": {
         "title": "2. Accounts and Eligibility",
@@ -401,7 +401,7 @@
       },
       "intellectualProperty": {
         "title": "5. Intellectual Property",
-        "content": "All trademarks, logos, and software of project-consensus are protected. Do not use them without prior permission."
+        "content": "All trademarks, logos, and software of polyu.life are protected. Do not use them without prior permission."
       },
       "disclaimer": {
         "title": "6. Disclaimer",
@@ -409,7 +409,7 @@
       },
       "limitation": {
         "title": "7. Limitation of Liability",
-        "content": "To the maximum extent permitted by law, project-consensus will not be liable for any indirect, incidental, or consequential damages."
+        "content": "To the maximum extent permitted by law, polyu.life will not be liable for any indirect, incidental, or consequential damages."
       },
       "privacy": {
         "title": "8. Privacy Policy",
@@ -421,7 +421,7 @@
       },
       "contact": {
         "title": "10. Contact",
-        "content": "Questions? Contact us at support@project-consensus.app."
+        "content": "Questions? Contact us at support@polyu.life."
       }
     }
   },
@@ -486,7 +486,7 @@
     }
   },
   "pronouns": {
-    "info": "project-consensus values diversity and inclusion. We support you in expressing your identity authentically. If you don’t find suitable pronouns in the preset list, you can choose \"custom\" and set your own pronouns.",
+    "info": "polyu.life values diversity and inclusion. We support you in expressing your identity authentically. If you don't find suitable pronouns in the preset list, you can choose \\\"custom\\\" and set your own pronouns.",
     "share": "Share pronouns on profile"
   },
   "profile": {

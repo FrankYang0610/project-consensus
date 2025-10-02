@@ -52,7 +52,7 @@
     "codeInputDisabledHint": "请先点击发送验证码以启用",
     "errorPasswordMismatch": "两次输入的密码不一致",
     "errorPolyuEmail": "请使用有效的理大邮箱（@connect.polyu.hk）",
-    "emailPrivacyNotice": "您的电子邮件只用于关联您的 project-consensus 账户并确定您是PolyU学生。您的学校相关内容、邮箱相关内容均不会被读取。您的个人隐私信息不会被分享。",
+    "emailPrivacyNotice": "您的电子邮件只用于关联您的 polyu.life 账户并确定您是PolyU学生。您的学校相关内容、邮箱相关内容均不会被读取。您的个人隐私信息不会被分享。",
     "registerConsent": "点击注册即代表您同意我们的",
     "termsOfService": "服务条款"
   },
@@ -352,9 +352,9 @@
   "about": {
     "title": "关于",
     "subtitle": "了解更多关于项目的信息、其目的以及背后的团队。",
-    "whatIsTitle": "什么是 project-consensus？",
+    "whatIsTitle": "什么是 polyu.life？",
     "whatIsDescription": "校园论坛和课程评价社区",
-    "whatIsContent": "project-consensus 是由 Frank Yang 和 Jim Yang 设计的校园论坛和课程评价社区。它旨在帮助学生分享见解、讨论课程并建立协作社区。",
+    "whatIsContent": "polyu.life 是由 Frank Yang 和 Jim Yang 设计的校园论坛和课程评价社区。它旨在帮助学生分享见解、讨论课程并建立协作社区。",
     "goToHome": "返回首页",
     "repositoryTitle": "开源仓库",
     "repositoryDescription": "探索源代码并参与贡献",
@@ -362,7 +362,7 @@
     "githubRepository": "GitHub 仓库",
     "viewIssues": "查看问题",
     "teamTitle": "团队",
-    "teamDescription": "认识 project-consensus 背后的团队",
+    "teamDescription": "认识 polyu.life 背后的团队",
     "coCreator": "联合创始人"
   },
   "notFound": {
@@ -381,7 +381,7 @@
     "sections": {
       "acceptance": {
         "title": "1. 接受条款",
-        "content": "创建账户或使用 project-consensus 即表示你同意本服务条款及本文引用的所有适用政策。"
+        "content": "创建账户或使用 polyu.life 即表示你同意本服务条款及本文引用的所有适用政策。"
       },
       "accounts": {
         "title": "2. 账户与资格",
@@ -403,7 +403,7 @@
       },
       "intellectualProperty": {
         "title": "5. 知识产权",
-        "content": "project-consensus 的商标、标识与软件受保护。未经事先许可不得使用。"
+        "content": "polyu.life 的商标、标识与软件受保护。未经事先许可不得使用。"
       },
       "disclaimer": {
         "title": "6. 免责声明",
@@ -411,7 +411,7 @@
       },
       "limitation": {
         "title": "7. 责任限制",
-        "content": "在法律允许的最大范围内，project-consensus 不对任何间接、附带或后果性损害承担责任。"
+        "content": "在法律允许的最大范围内，polyu.life 不对任何间接、附带或后果性损害承担责任。"
       },
       "privacy": {
         "title": "8. 隐私政策",
@@ -423,7 +423,7 @@
       },
       "contact": {
         "title": "10. 联系方式",
-        "content": "如有问题，请联系：support@project-consensus.app。"
+        "content": "如有问题，请联系：support@polyu.life。"
       }
     }
   },
@@ -488,7 +488,7 @@
     }
   },
   "pronouns": {
-    "info": "project-consensus是重视多样性与包容性的社区，我们支持您按照自己的真实方式表达认同。如果您在预设的代词列表中没有找到合适的代词，您可以选择“custom”并设置自己的代词。",
+    "info": "polyu.life是重视多样性与包容性的社区，我们支持您按照自己的真实方式表达认同。如果您在预设的代词列表中没有找到合适的代词，您可以选择\"custom\"并设置自己的代词。",
     "share": "在个人主页展示代词"
   },
   "profile": {

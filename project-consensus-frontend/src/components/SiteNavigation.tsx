@@ -236,7 +236,7 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
             <Image
               className="dark:invert"
               src="/project-consensus-icon.svg"
-              alt="project-consensus-icon"
+              alt="polyu.life-icon"
               width={225}
               height={60}
               priority

@@ -1,15 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 200" role="img" aria-label="project-consensus">
-    <defs>
-        <style>
-            :root { --fg: #000; }
-            text {
-            font-family: "Lucida Grande", "Lucida Sans", "Lucida Sans Unicode", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            font-weight: 700;
-            letter-spacing: 1.5px;
-            }
-        </style>
-    </defs>
-    <text x="50%" y="50%" fill="var(--fg)" font-size="120" text-anchor="middle" dominant-baseline="middle">
-        project-consensus
-    </text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 160" width="300" role="img" aria-label="polyu.life red wordmark">
+  <title>polyu.life</title>
+  <defs>
+    <style>
+      :root { --brand-red:#C0142A; } /* 可调主红色 */
+      text{
+        font-family: "Lucida Grande","Lucida Sans","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+        font-weight: 800;
+        letter-spacing: 1.2px;              /* 小尺寸下略收紧字距 */
+        font-kerning: normal;
+        font-variant-ligatures: contextual; /* 提升小尺寸排版质量 */
+      }
+    </style>
+  </defs>
+
+  <!-- 字标 -->
+  <text x="50%" y="50%" font-size="96" text-anchor="middle" dominant-baseline="middle" fill="var(--brand-red)">
+    polyu.life
+  </text>
+
+  <!-- 极简下划线：轻微弧线，呼应“life”节奏，保持克制 -->
+  <path d="M150 118 Q300 134 450 118" fill="none" stroke="var(--brand-red)" stroke-width="6" stroke-linecap="round"/>
 </svg>
