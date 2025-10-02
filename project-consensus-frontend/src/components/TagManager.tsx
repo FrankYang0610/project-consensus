@@ -4,7 +4,7 @@ import * as React from "react";
 import { X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useI18n } from "@/hooks/useI18n";
+import { useI18n } from "@/hooks/use-i18n";
 
 interface TagManagerProps {
   tags: string[];
@@ -13,11 +13,11 @@ interface TagManagerProps {
   className?: string;
 }
 
-export function TagManager({ 
-  tags, 
-  onTagsChange, 
-  maxTags = 10, 
-  className = "" 
+export function TagManager({
+  tags,
+  onTagsChange,
+  maxTags = 10,
+  className = ""
 }: TagManagerProps) {
   const { t } = useI18n();
   const [inputValue, setInputValue] = React.useState("");
@@ -25,18 +25,18 @@ export function TagManager({
   const handleAddTag = () => {
     const trimmedValue = inputValue.trim();
     if (!trimmedValue) return;
-    
+
     // Check if tag already exists
     if (tags.includes(trimmedValue)) {
       setInputValue("");
       return;
     }
-    
+
     // Check max tags limit
     if (tags.length >= maxTags) {
       return;
     }
-    
+
     onTagsChange([...tags, trimmedValue]);
     setInputValue("");
   };
@@ -66,7 +66,7 @@ export function TagManager({
           ({tags.length}/{maxTags})
         </span>
       </div>
-      
+
       {/* Tags Display */}
       {tags.length > 0 && (
         <div className="flex flex-wrap gap-2">
@@ -88,7 +88,7 @@ export function TagManager({
           ))}
         </div>
       )}
-      
+
       {/* Add Tag Input */}
       {tags.length < maxTags && (
         <div className="flex gap-2">
@@ -111,7 +111,7 @@ export function TagManager({
           </Button>
         </div>
       )}
-      
+
       {tags.length >= maxTags && (
         <p className="text-xs text-muted-foreground">
           {t("post.maxTagsReached", { max: maxTags })}

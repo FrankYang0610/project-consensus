@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Star, ChevronDown, EyeOff } from "lucide-react";
 
 import { SiteNavigation } from "@/components/SiteNavigation";
@@ -17,12 +17,14 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
-import { useI18n } from "@/hooks/useI18n";
+import { useI18n } from "@/hooks/use-i18n";
 import { cn } from "@/lib/utils";
 import { stripHtmlTags } from "@/lib/html-utils";
 import { formatTerm, sortTerms } from "@/lib/course-utils";
-import { fetchCourseById } from "@/lib/api/courses";
+import { fetchCourseById, createCourseReview, fetchCourseReviews } from "@/lib/api/course";
+import { updateCourseReview } from "@/lib/api/course";
 import type { SemesterKey, Course } from "@/types";
+import { useApp } from "@/contexts/AppContext";
 
 // Rich text editor (CKEditor 5) is client-only
 const RichTextEditor = dynamic(() => import("@/components/RichTextEditor"), { ssr: false });
@@ -35,6 +37,8 @@ type Gain = 'low' | 'decent' | 'high';
 export default function CourseReviewCreatePage({ params }: { params: Promise<{ subjectId: string }> }) {
   const { t, language } = useI18n();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { isLoggedIn, isLoading, openLoginModal } = useApp();
 
   // Unwrap params for Next.js 15
   const resolvedParams = React.use(params);
@@ -54,6 +58,10 @@ export default function CourseReviewCreatePage({ params }: { params: Promise<{ s
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [anonymous, setAnonymous] = React.useState(false);
   const [selectedTerm, setSelectedTerm] = React.useState<{ year: number; semester: SemesterKey } | undefined>(undefined);
+
+  // Edit mode detection and existing review state
+  const isEditMode = (searchParams?.get('edit') === '1' || searchParams?.get('edit') === 'true');
+  const [editingReviewId, setEditingReviewId] = React.useState<string | null>(null);
 
   // Load course to get available terms
   const [course, setCourse] = React.useState<Course | null>(null);
@@ -76,6 +84,35 @@ export default function CourseReviewCreatePage({ params }: { params: Promise<{ s
       setSelectedTerm(availableTerms[0]);
     }
   }, [availableTerms, selectedTerm]);
+
+  // If edit mode, fetch current user's review and prefill
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!isEditMode) return;
+      try {
+        const page = await fetchCourseReviews({ subjectId, page: 1, pageSize: 1, mine: true, ordering: '-created_at' });
+        const my = page.results?.[0];
+        if (my && !cancelled) {
+          setEditingReviewId(my.id);
+          // Prefill flags if available
+          setOnlyText(Boolean(my.onlyText));
+          setAnonymous(Boolean(my.isAnonymous));
+          // Prefill fields from my review
+          setRating(typeof my.overallRating === 'number' ? my.overallRating : 0);
+          setDifficulty(my.attributes?.difficulty as Difficulty);
+          setWorkload(my.attributes?.workload as Workload);
+          setGrading(my.attributes?.grading as Grading);
+          setGain(my.attributes?.gain as Gain);
+          setContent(my.content || '');
+          if (my.term) setSelectedTerm({ year: my.term.year, semester: my.term.semester as SemesterKey });
+        }
+      } catch (e) {
+        console.error('Failed to load my review for edit', e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isEditMode, subjectId]);
   const [errors, setErrors] = React.useState<{
     stars?: string;
     dimensions?: string;
@@ -83,6 +120,13 @@ export default function CourseReviewCreatePage({ params }: { params: Promise<{ s
   }>({});
 
   const selectPlaceholder = t("courses.topbar.selectPlaceholder");
+
+  // Require login: open login modal if not authenticated
+  React.useEffect(() => {
+    if (!isLoading && !isLoggedIn) {
+      openLoginModal();
+    }
+  }, [isLoggedIn, isLoading, openLoginModal]);
 
   const validate = React.useCallback(() => {
     const nextErrors: typeof errors = {};
@@ -105,20 +149,34 @@ export default function CourseReviewCreatePage({ params }: { params: Promise<{ s
   }, [onlyText, rating, difficulty, workload, grading, gain, content, t]);
 
   const handleSubmit = async () => {
+    if (!isLoggedIn) { openLoginModal(); return; }
     if (!validate()) return;
     setIsSubmitting(true);
     try {
-      // TODO: Replace with backend API call to submit review
-      console.log("Submit course review", {
-        subjectId,
-        term: selectedTerm,
+      const payload: Parameters<typeof createCourseReview>[1] = {
         onlyText,
-        rating10: rating,
-        overallRating10Scale: rating || undefined,
-        attributes: { difficulty, workload, grading, gain },
         content,
-        anonymous,
-      });
+        isAnonymous: anonymous,
+      };
+      // Only include rating and attributes when onlyText is false
+      if (!onlyText) {
+        payload.overallRating = rating;
+        payload.attributes = {
+          difficulty: difficulty!,
+          workload: workload!,
+          grading: grading!,
+          gain: gain!,
+        };
+      }
+      // Only include term if selected
+      if (selectedTerm) {
+        payload.term = { year: selectedTerm.year, semester: selectedTerm.semester };
+      }
+      if (isEditMode && editingReviewId) {
+        await updateCourseReview(editingReviewId, payload);
+      } else {
+        await createCourseReview(subjectId, payload);
+      }
       router.push(`/courses/${subjectId}`);
     } catch (e) {
       console.error("Failed to submit review", e);
@@ -251,7 +309,7 @@ export default function CourseReviewCreatePage({ params }: { params: Promise<{ s
         <main className="w-full py-8">
           <div className="w-full p-6">
             <div className="max-w-3xl mx-auto">
-              <h1 className="text-2xl font-semibold mb-4">{t('courses.reviewForm.title')}</h1>
+                  <h1 className="text-2xl font-semibold mb-4">{isEditMode ? t('courses.reviewForm.editTitle') : t('courses.reviewForm.title')}</h1>
               <Card>
                 <CardHeader className="pb-0">
                   <CardTitle className="text-base">
@@ -379,8 +437,8 @@ export default function CourseReviewCreatePage({ params }: { params: Promise<{ s
                   )}
                 </CardContent>
                 <CardFooter className="gap-3">
-                  <Button onClick={handleSubmit} disabled={isSubmitting} className="min-w-[120px]">
-                    {isSubmitting ? t('courses.reviewForm.submitting') : t('courses.reviewForm.submit')}
+                  <Button onClick={handleSubmit} disabled={isSubmitting || !isLoggedIn} className="min-w-[120px]">
+                    {isSubmitting ? (isEditMode ? t('courses.reviewForm.updating') : t('courses.reviewForm.submitting')) : (isEditMode ? t('courses.reviewForm.update') : t('courses.reviewForm.submit'))}
                   </Button>
                   <Button variant="ghost" onClick={() => router.back()} disabled={isSubmitting}>
                     {t('courses.reviewForm.cancel')}

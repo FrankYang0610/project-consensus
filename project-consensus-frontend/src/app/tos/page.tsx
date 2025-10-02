@@ -3,7 +3,7 @@
 import * as React from "react";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useI18n } from "@/hooks/useI18n";
+import { useI18n } from "@/hooks/use-i18n";
 
 export default function TosPage() {
   const { t } = useI18n();

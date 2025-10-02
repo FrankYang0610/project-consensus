@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { User, AppContextType, ThemeMode } from '@/types';
-import { getCookie, getAPIBaseUrl } from '@/lib/utils';
+import { getCookie, getAPIBaseUrl } from '@/lib/api/api-utils';
 import { normalizeLanguage, defaultLanguage } from '@/lib/locale';
 import { useTranslation } from 'react-i18next';
 

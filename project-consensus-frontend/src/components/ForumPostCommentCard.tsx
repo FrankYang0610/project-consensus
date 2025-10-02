@@ -19,13 +19,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-import { useI18n } from "@/hooks/useI18n";
+import { useI18n } from "@/hooks/use-i18n";
 import { sanitizeHtml } from "@/lib/html-utils";
 import { cn } from "@/lib/utils";
 import type { ForumPostComment } from "@/types/forum";
 import { stripHtmlTags, truncateHtmlContent } from "@/lib/html-utils";
-import { apiGet } from "@/lib/utils";
-import type { ListCommentsResponse } from "@/types/api";
+import { fetchForumComments } from "@/lib/api/forum-comment";
 
 import ClientOnlyTime from "./ClientOnlyTime";
 import { useApp } from "@/contexts/AppContext";
@@ -82,7 +81,7 @@ export function ForumPostCommentCard({
     }
     deleteEventHandlersRef.current = {};
   }, []);
-  
+
   // 用于存储回复删除前的原始状态，支持删除操作的撤销功能
   // Stores the original state of replies before deletion to support rollback functionality for delete operations
   const prevRepliesByIdRef = React.useRef<Map<string, ForumPostComment>>(new Map());
@@ -192,7 +191,12 @@ export function ForumPostCommentCard({
     setIsRepliesLoading(true);
     setRepliesError(null);
     try {
-      const data = await apiGet<ListCommentsResponse>(`/api/forum/comments/?replyTo=${comment.id}&page=1&page_size=5`);
+      const data = await fetchForumComments({
+        postId: comment.postId,
+        replyTo: comment.id,
+        page: 1,
+        pageSize: 5
+      });
       setReplies(data.results);
       setRepliesNextUrl(toRelative(data.next));
     } catch (e) {
@@ -208,15 +212,26 @@ export function ForumPostCommentCard({
     setIsRepliesLoading(true);
     setRepliesError(null);
     try {
-      let url: string | null = repliesNextUrl;
-      while (url) {
-        const data = await apiGet<ListCommentsResponse>(url);
+      // For loading remaining replies, we need to parse the nextUrl to get page number
+      // This is a simplified approach - in a real app you might want to store page numbers
+      let currentPage = 2; // Start from page 2 since we already loaded page 1
+      while (repliesNextUrl) {
+        const data = await fetchForumComments({
+          postId: comment.postId,
+          replyTo: comment.id,
+          page: currentPage,
+          pageSize: 5
+        });
         setReplies(prev => {
           const existing = new Set((prev ?? []).map(c => c.id));
           const deduped = data.results.filter(c => !existing.has(c.id));
           return [ ...(prev ?? []), ...deduped ];
         });
-        url = toRelative(data.next);
+        if (!data.next) {
+          setRepliesNextUrl(null);
+          break;
+        }
+        currentPage++;
       }
       setRepliesNextUrl(null);
     } catch (e) {
@@ -340,9 +355,9 @@ export function ForumPostCommentCard({
         <div className="flex-1 min-w-0 overflow-hidden">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span className="font-medium text-sm text-foreground">
-              {comment.isAnonymous 
-                ? (currentUserId && comment.author.id === currentUserId 
-                    ? `${comment.author.name} (${t('common.anonymous')})` 
+              {comment.isAnonymous
+                ? (currentUserId && comment.author.id === currentUserId
+                    ? `${comment.author.name} (${t('common.anonymous')})`
                     : t('common.anonymous'))
                 : comment.author.name}
               {currentUserId && comment.author.id === currentUserId && (
@@ -361,12 +376,12 @@ export function ForumPostCommentCard({
               title={parentComment.isDeleted ? t('comment.deleted') : stripHtmlTags(parentComment.content)}
             >
               <span className="font-medium flex-shrink-0">
-                {t('comment.repliesTo', { 
-                  name: parentComment.isAnonymous 
-                    ? (currentUserId && parentComment.author.id === currentUserId 
-                        ? `${parentComment.author.name} (${t('common.anonymous')})` 
+                {t('comment.repliesTo', {
+                  name: parentComment.isAnonymous
+                    ? (currentUserId && parentComment.author.id === currentUserId
+                        ? `${parentComment.author.name} (${t('common.anonymous')})`
                         : t('common.anonymous'))
-                    : parentComment.author.name 
+                    : parentComment.author.name
                 })}
                 {currentUserId && parentComment.author.id === currentUserId && (
                   <span className="text-muted-foreground"> ({t('common.me')})</span>
@@ -524,9 +539,9 @@ export function ForumPostCommentCard({
                           title={r.isDeleted ? t('comment.deleted') : stripHtmlTags(r.content)}
                         >
                           <span className="font-medium flex-shrink-0">
-                            {r.isAnonymous 
-                              ? (currentUserId && r.author.id === currentUserId 
-                                  ? `${r.author.name} (${t('common.anonymous')})` 
+                            {r.isAnonymous
+                              ? (currentUserId && r.author.id === currentUserId
+                                  ? `${r.author.name} (${t('common.anonymous')})`
                                   : t('common.anonymous'))
                               : r.author.name}
                             {currentUserId && r.author.id === currentUserId && (

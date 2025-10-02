@@ -77,7 +77,16 @@ class Course(models.Model):
     teaching_type = models.CharField(max_length=100, blank=True)
     course_category = models.CharField(max_length=100, blank=True)
     offering_department = models.CharField(max_length=200, blank=True)
-    level = models.CharField(max_length=50, blank=True)
+    # Unified subject level: values '1'..'6'
+    class Level(models.TextChoices):
+        L1 = "1", "1"
+        L2 = "2", "2"
+        L3 = "3", "3"
+        L4 = "4", "4"
+        L5 = "5", "5"
+        L6 = "6", "6"
+
+    level = models.CharField(max_length=1, choices=Level.choices, blank=True)
     # credits can be number or string on the frontend, store as string for flexibility
     credits = models.CharField(max_length=20, blank=True)
     course_homepage_url = models.URLField(blank=True)
@@ -127,6 +136,9 @@ class CourseReview(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["author", "course"], name="unique_course_review_per_user"),
+        ]
         verbose_name = "Course review"
         verbose_name_plural = "Course reviews"
 
@@ -183,3 +195,29 @@ class CourseReviewReplyLike(models.Model):
         ]
         verbose_name = "Course review reply like"
         verbose_name_plural = "Course review reply likes"
+
+
+class CourseVote(models.Model):
+    """Per-user vote for a course: recommend or notRecommend.
+
+    Enforces one active vote per (user, course). Used to update Course.rating_* counters.
+    """
+
+    class Value(models.TextChoices):
+        RECOMMEND = "recommend", "recommend"
+        NOT_RECOMMEND = "notRecommend", "notRecommend"
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="votes")
+    value = models.CharField(max_length=20, choices=Value.choices)
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user", "course"], name="unique_course_vote"),
+        ]
+        indexes = [
+            models.Index(fields=["course", "user"]),
+        ]
+        verbose_name = "Course vote"
+        verbose_name_plural = "Course votes"

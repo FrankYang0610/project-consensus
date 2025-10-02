@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { useI18n } from "@/hooks/useI18n";
+import { useI18n } from "@/hooks/use-i18n";
 
 export default function NotFound() {
   const { t } = useI18n();

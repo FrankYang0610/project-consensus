@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { forwardRef, useState } from 'react';
-import { useI18n } from '@/hooks/useI18n';
+import { useI18n } from '@/hooks/use-i18n';
 import { Menu, X, ChevronDown, ArrowLeft } from 'lucide-react';
 import Image from "next/image";
 //Local Components
