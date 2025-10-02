@@ -8,7 +8,7 @@ import { useI18n } from "@/hooks/useI18n";
 import CreateForumPostButton from "@/components/CreateForumPostButton";
 import { useApp } from "@/contexts/AppContext";
 import { Button } from "@/components/ui/button";
-import { apiGet, apiPost } from "@/lib/utils";
+import { apiGet, apiPost } from "@/lib/api/api-utils";
 import { ListPostsResponse } from "@/types/api";
 import { ForumPost } from "@/types";
 

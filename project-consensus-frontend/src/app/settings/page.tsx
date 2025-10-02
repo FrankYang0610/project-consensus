@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ChevronDown } from 'lucide-react';
 import { Language, User } from '@/types';
-import { apiPost } from '@/lib/utils';
+import { apiPost } from '@/lib/api/api-utils';
 import { PronounsSelector } from '@/components/PronounsSelector';
 
 type PrivacySettings = {

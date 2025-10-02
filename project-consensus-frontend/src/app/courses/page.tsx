@@ -7,7 +7,7 @@ import { useI18n } from "@/hooks/useI18n";
 import { CourseBackgroundCard } from "@/components/CourseBackgroundCard";
 import { CourseFilterBar } from "@/components/CourseFilterBar";
 import { CoursePreviewCard } from "@/components/CoursePreviewCard";
-import { apiGet } from "@/lib/utils";
+import { apiGet } from "@/lib/api/api-utils";
 import type { Course, PaginatedResponse } from "@/types";
 
 export default function CoursesPage() {

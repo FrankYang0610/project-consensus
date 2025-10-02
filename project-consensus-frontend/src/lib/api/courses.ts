@@ -10,7 +10,7 @@ import type {
   CreateReplyPayload,
   VoteCourseResponse,
 } from "@/types";
-import { apiGet, apiPost, apiPatch, ensureCSRFCookie, getCookie, getAPIBaseUrl } from "@/lib/utils";
+import { apiGet, apiPost, apiPatch, ensureCSRFCookie, getCookie, getAPIBaseUrl } from "./api-utils";
 
 export async function fetchCourseById(subjectId: string, init?: RequestInit): Promise<Course | null> {
   try {
