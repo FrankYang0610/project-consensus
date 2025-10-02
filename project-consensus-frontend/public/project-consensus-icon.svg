@@ -23,11 +23,11 @@
     </mask>
   </defs>
 
-  <!-- 左侧 “polyu” 斜体 + 切角；右侧 “.life” 常规 -->
+  <!-- 左侧 "polyu" 斜体 + 切角；右侧 ".life" 常规 -->
   <text class="word" x="300" y="80" font-size="96" text-anchor="end"
-        fill="var(--brand-red)" font-style="italic" mask="url(#inkcuts)">polyu</text>
+        fill="var(--brand-red)" font-style="italic" mask="url(#inkcuts)" dominant-baseline="middle">polyu</text>
   <text class="word" x="300" y="80" font-size="96" text-anchor="start"
-        fill="var(--brand-red)">.life</text>
+        fill="var(--brand-red)" dominant-baseline="middle">.life</text>
 
   <!-- 弧形下划（上移10px）：左粗≈16px，右细≈3px -->
   <!-- 原: M130 112 … L470 121 … 139 … 128 -->
