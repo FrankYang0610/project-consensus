@@ -21,12 +21,12 @@ export default function ProfilePage() {
 
   const formattedPronouns = user?.pronounsShared && user?.pronouns ? formatPronounsForProfilePageDisplay(user.pronouns) : "";
 
-  // Mock data for demonstration
-  const userStats = {
-    posts: 12,
-    comments: 45,
-    reviews: 8,
-    joinedDays: 156
+  // Get user statistics from API
+  const userStats = user?.stats || {
+    posts: 0,
+    comments: 0,
+    reviews: 0,
+    joinedDays: 0
   };
 
   const recentActivity = [

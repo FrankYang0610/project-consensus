@@ -25,6 +25,19 @@ logger = logging.getLogger(__name__)
 def build_user_payload(user):
     """Return a minimal, serializable user payload for API responses."""
     profile = getattr(user, "profile", None)
+    
+    # Calculate user statistics
+    posts_count = user.forum_posts.count()
+    comments_count = user.forum_comments.count()
+    reviews_count = user.course_reviews.count()
+    
+    # Calculate days since joining
+    joined_days = 0
+    if user.date_joined:
+        from django.utils import timezone
+        delta = timezone.now() - user.date_joined
+        joined_days = delta.days
+    
     return {
         "id": str(user.pk),
         "email": user.email,
@@ -32,6 +45,12 @@ def build_user_payload(user):
         "avatar": getattr(profile, "avatar_url", None) or None,
         "pronouns": getattr(profile, "pronouns", None) if getattr(profile, "pronouns_shared", False) else "",
         "pronounsShared": getattr(profile, "pronouns_shared", False),
+        "stats": {
+            "posts": posts_count,
+            "comments": comments_count,
+            "reviews": reviews_count,
+            "joinedDays": joined_days,
+        }
     }
 
 @api_view(["POST"])
