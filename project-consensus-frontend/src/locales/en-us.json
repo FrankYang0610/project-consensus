@@ -523,7 +523,8 @@
         "viewCourse": "View Course"
       }
     },
-    "memberFor": "Member for {{days}} days"
+    "memberFor": "Member for {{days}} days",
+    "privacyNotice": "This user has chosen to keep some activities private."
   },
   "teachers": {
     "title": "Teachers",

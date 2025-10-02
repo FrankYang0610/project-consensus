@@ -362,7 +362,7 @@ export default function PublicUserPage() {
                 <Card className="shadow-lg border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
                   <CardContent className="p-6">
                     <p className="text-sm text-muted-foreground text-center">
-                      This user has chosen to keep some activities private.
+                      {t('profile.privacyNotice')}
                     </p>
                   </CardContent>
                 </Card>

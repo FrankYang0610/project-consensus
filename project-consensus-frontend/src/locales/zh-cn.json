@@ -525,7 +525,8 @@
         "viewCourse": "查看课程"
       }
     },
-    "memberFor": "加入 {{days}} 天"
+    "memberFor": "加入 {{days}} 天",
+    "privacyNotice": "该用户选择将某些活动设为私密。"
   },
   "teachers": {
     "title": "教师",
