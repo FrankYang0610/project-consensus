@@ -15,12 +15,14 @@ Before you begin, ensure you have the following installed on your system:
 #### Installation
 
 1. **Clone the repository** (if you haven't already):
+
    ```bash
    git clone https://github.com/FrankYang0610/project-consensus/
    cd project-consensus-frontend
    ```
 
 2. **Install dependencies**:
+
    ```bash
    npm install
    # or
@@ -32,6 +34,7 @@ Before you begin, ensure you have the following installed on your system:
    ```
 
 3. **Set up shadcn/ui components** (if not already configured):
+
    ```bash
    npx shadcn@latest init
    ```
@@ -81,6 +84,7 @@ The application will be available at [http://localhost:3000](http://localhost:30
 This is a Next.js 14+ frontend application built with TypeScript, featuring a modern course review and forum platform. The project follows Next.js App Router architecture with a component-based design.
 
 #### Core Technologies
+
 - **Next.js 14+** with App Router
 - **TypeScript** for type safety
 - **Tailwind CSS** for styling
@@ -242,6 +246,7 @@ project-consensus-frontend/
 ```
 
 #### Key Features
+
 1. **Multi-language Support** - Full internationalization with English and Chinese variants
 2. **Course Management** - Browse, filter, and review courses with detailed course pages
 3. **Forum System** - Create posts, comments, and discussions with rich text editing
@@ -255,10 +260,99 @@ project-consensus-frontend/
 11. **Tag Management** - Tag-based content organization
 12. **API Integration** - Modular API client with TypeScript type safety
 
+#### Course Module Features
+
+The course module (`src/app/courses/` and related components) provides a comprehensive course evaluation system:
+
+**Core Functionality:**
+
+- **Course Listing** (`/courses`) - Infinite scroll course list with real-time filtering
+- **Course Details** (`/courses/[subjectId]`) - Comprehensive course information including:
+  - Basic info: code, title, terms, teachers, department
+  - Rating aggregates: overall score (0-10), review count, recommend/not recommend votes
+  - Four dimensions: difficulty, workload, grading, gain
+  - AI-generated course summary
+  - Course metadata: selection category, teaching type, level, credits, homepage, syllabus
+  - Other teacher courses (same subject, different instructors)
+  - Curriculum information (colleges → majors → semesters)
+- **Review System** (`/courses/[subjectId]/review`) - Full-featured review creation/editing:
+  - Star rating (0-10 with half-star precision)
+  - Four-dimension evaluation (difficulty/workload/grading/gain)
+  - Rich text content with HTML sanitization
+  - Term selection (which semester the user took the course)
+  - Anonymous posting option
+  - Text-only review mode (skip ratings, share experiences only)
+  - One review per user per course constraint
+- **Reply System** - Single-level replies to reviews:
+  - Reply to review authors
+  - @-mention specific users in replies
+  - Rich text content support
+  - Like/unlike functionality
+- **Voting System** - Recommend/not recommend course voting:
+  - Toggle behavior (click same option to cancel)
+  - Real-time count updates
+  - Per-user vote state tracking
+- **Advanced Filtering** (via `CourseFilterBar`):
+  - Sort: by rating, review count, or last updated
+  - Subject code exact match
+  - Department multi-select
+  - Course category (selection category, course category tags)
+  - Teaching type filter
+  - Course level (1-6) multi-select
+  - Title/teacher name full-text search
+  - Rating range filter (for reviews)
+  - Term filter (for reviews)
+
+**Components:**
+
+- `CoursePreviewCard` - Course listing card with key info and rating
+- `CourseDetailCard` - Full course detail display with tabs (Info/Reviews/Curriculum)
+- `CourseFilterBar` - Advanced filtering interface for course list
+- `CourseBackgroundCard` - Decorative background wrapper
+- `CourseReviewCard` - Individual review display with like/reply actions
+- `CourseReviewReplyCard` - Reply display with like action
+
+**API Integration:**
+
+- `lib/api/course.ts` - Comprehensive API client:
+  - `fetchCourseById()` - Get course details
+  - `fetchCourseReviews()` - Paginated review list with filters
+  - `createCourseReview()` - Create new review
+  - `updateCourseReview()` - Edit existing review
+  - `deleteCourseReview()` - Delete review
+  - `fetchReviewReplies()` - Get replies for a review
+  - `createReviewReply()` - Post a reply
+  - `deleteReviewReply()` - Remove a reply
+  - `toggleLikeReview()` / `toggleLikeReply()` - Like/unlike with toggle behavior
+  - `voteCourse()` - Submit recommend/not recommend vote
+  - `fetchCourseDepartments()` - Get available departments for filtering
+
+**Type Definitions:**
+
+- `types/course.ts` - Complete TypeScript types for courses, reviews, and replies
+- `types/api/course.ts` - API-specific types for requests and responses
+- Backend-aligned camelCase naming convention for seamless integration
+
+**Data Flow:**
+
+- Server-side data fetching for initial page load (SSR optimization)
+- Client-side mutations with optimistic UI updates
+- Real-time aggregation updates (review counts, like counts, vote counts)
+- Filtered review counts displayed in course detail header
+
+**Security Features:**
+
+- HTML content sanitization using DOMPurify on frontend
+- Backend double-layer sanitization (write + read)
+- Anonymous review protection (author identity hidden from non-authors)
+- Login-gated actions (review, reply, like, vote)
+
 #### Development Workflow
+
 The project uses modern React patterns with hooks, context for state management, and TypeScript for type safety. Components are organized by feature and reusability, with clear separation between UI components, business logic, and data management.
 
 **Architecture Highlights:**
+
 - **Modular API Layer**: Separate API client functions for each domain (courses, forum, teachers)
 - **Type-Safe API**: Comprehensive TypeScript types for all API responses and requests
 - **Component Organization**: Components grouped by feature (Course, Forum, Teacher, UI)
@@ -273,12 +367,12 @@ The project uses modern React patterns with hooks, context for state management,
 - Typical gating usage:
 
 ```tsx
-import { useApp } from '@/contexts/AppContext'
+import { useApp } from "@/contexts/AppContext";
 
-const { isLoggedIn, openLoginModal } = useApp()
+const { isLoggedIn, openLoginModal } = useApp();
 
 function onAction() {
-  if (!isLoggedIn) return openLoginModal()
+  if (!isLoggedIn) return openLoginModal();
   // proceed
 }
 ```
@@ -288,18 +382,19 @@ function onAction() {
 The project uses a modular API client architecture with separate modules for each domain:
 
 **API Client Modules:**
+
 - `lib/api/courses.ts` - Course-related API functions
-- `lib/api/forum-post.ts` - Forum post API functions  
+- `lib/api/forum-post.ts` - Forum post API functions
 - `lib/api/forum-comment.ts` - Forum comment API functions
 - `lib/api/teachers.ts` - Teacher-related API functions
 - `lib/api/api-utils.ts` - Common API utilities and base functions
 
 **Type Safety:**
+
 - All API functions are fully typed with TypeScript
 - API types are organized in `types/api/` directory
 - Separate type files for each domain (accounts, courses, forum-comment, forum-post, teachers)
 - Common types shared across modules in `types/api/common.ts`
-
 
 ### Appendix: Node.js Documentations
 
