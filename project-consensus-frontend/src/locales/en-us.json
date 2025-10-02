@@ -494,7 +494,19 @@
     "subtitle": "Your public profile",
     "actions": {
       "edit": "Edit Profile"
-    }
+    },
+    "stats": {
+      "title": "Activity Stats",
+      "posts": "Posts",
+      "comments": "Comments",
+      "reviews": "Reviews",
+      "days": "Days"
+    },
+    "activity": {
+      "title": "Recent Activity",
+      "subtitle": "Your latest contributions to the community"
+    },
+    "memberFor": "Member for {{days}} days"
   },
   "teachers": {
     "title": "Teachers",

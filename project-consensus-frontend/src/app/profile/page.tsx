@@ -99,7 +99,7 @@ export default function ProfilePage() {
                         <p className="text-gray-600 dark:text-gray-300 mt-1">{formattedPronouns}</p>
                       )}
                       <Badge variant="secondary" className="mt-2">
-                        Member for {userStats.joinedDays} days
+                        {t('profile.memberFor', { days: userStats.joinedDays })}
                       </Badge>
                     </div>
 
@@ -117,25 +117,25 @@ export default function ProfilePage() {
               {/* Stats Card */}
               <Card className="shadow-lg border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
                 <CardHeader>
-                  <CardTitle className="text-lg">Activity Stats</CardTitle>
+                  <CardTitle className="text-lg">{t('profile.stats.title')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                       <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{userStats.posts}</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-300">Posts</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-300">{t('profile.stats.posts')}</div>
                     </div>
                     <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                       <div className="text-2xl font-bold text-green-600 dark:text-green-400">{userStats.comments}</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-300">Comments</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-300">{t('profile.stats.comments')}</div>
                     </div>
                     <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                       <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{userStats.reviews}</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-300">Reviews</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-300">{t('profile.stats.reviews')}</div>
                     </div>
                     <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
                       <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{userStats.joinedDays}</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-300">Days</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-300">{t('profile.stats.days')}</div>
                     </div>
                   </div>
                 </CardContent>
@@ -147,8 +147,8 @@ export default function ProfilePage() {
               {/* Recent Activity */}
               <Card className="shadow-lg border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
                 <CardHeader>
-                  <CardTitle className="text-xl">Recent Activity</CardTitle>
-                  <CardDescription>Your latest contributions to the community</CardDescription>
+                  <CardTitle className="text-xl">{t('profile.activity.title')}</CardTitle>
+                  <CardDescription>{t('profile.activity.subtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">

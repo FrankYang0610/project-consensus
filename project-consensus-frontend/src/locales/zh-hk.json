@@ -496,7 +496,19 @@
     "subtitle": "你的公開個人主頁",
     "actions": {
       "edit": "修改個人資料"
-    }
+    },
+    "stats": {
+      "title": "活動統計",
+      "posts": "發帖",
+      "comments": "評論",
+      "reviews": "點評",
+      "days": "天數"
+    },
+    "activity": {
+      "title": "最近活動",
+      "subtitle": "你對社區的最新貢獻"
+    },
+    "memberFor": "加入 {{days}} 天"
   },
   "teachers": {
     "title": "老師",
