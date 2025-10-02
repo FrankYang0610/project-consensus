@@ -324,7 +324,7 @@ export function CourseReviewCard({
             </Button>
 
             {/* Owner actions: Edit / Delete */}
-            {user?.id && String(user.id) === String(review.author.id) && (
+            {isOwner && (
               <>
                 <Button
                   variant="ghost"
