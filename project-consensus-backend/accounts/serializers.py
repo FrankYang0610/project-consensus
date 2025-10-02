@@ -33,7 +33,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Profile
-        fields = ["user_id", "display_name", "avatar_url", "pronouns"]
+        fields = ["user_id", "display_name", "avatar_url", "pronouns", "pronouns_shared"]
 
 
 class SendCodeSerializer(serializers.Serializer):

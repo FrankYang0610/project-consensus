@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
@@ -36,6 +37,14 @@ export interface PronounsSelectorProps {
    * Optional ID for the label/input
    */
   id?: string;
+  /**
+   * Whether pronouns are shared publicly (optional; when provided, a checkbox will be shown)
+   */
+  share?: boolean;
+  /**
+   * Callback when share flag changes
+   */
+  onShareChange?: (share: boolean) => void;
 }
 
 /**
@@ -46,6 +55,8 @@ export function PronounsSelector({
   onChange,
   label = 'Pronouns',
   id = 'pronouns-selector',
+  share,
+  onShareChange,
 }: PronounsSelectorProps) {
   const { t } = useI18n();
   const [choice, setChoice] = useState<string>(() => getPronounsChoiceFromValue(value));
@@ -93,9 +104,10 @@ export function PronounsSelector({
   return (
     <div className="grid gap-2">
       {label && (
-        <div className="inline-flex items-center gap-2">
-          <Label htmlFor={id}>{label}</Label>
-          <DropdownMenu>
+        <div className="flex items-center justify-between gap-2">
+          <div className="inline-flex items-center gap-2">
+            <Label htmlFor={id}>{label}</Label>
+            <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 type="button"
@@ -112,7 +124,20 @@ export function PronounsSelector({
                 {t('pronouns.info')}
               </div>
             </DropdownMenuContent>
-          </DropdownMenu>
+            </DropdownMenu>
+          </div>
+          {(typeof share !== 'undefined' || typeof onShareChange !== 'undefined') && (
+            <div className="inline-flex items-center gap-2">
+              <Checkbox
+                id={`${id}-share`}
+                checked={!!share}
+                onCheckedChange={(checked) => onShareChange?.(checked === true)}
+              />
+              <Label htmlFor={`${id}-share`} className="text-xs text-muted-foreground">
+                {t('pronouns.share')}
+              </Label>
+            </div>
+          )}
         </div>
       )}
       <div className="flex gap-2">

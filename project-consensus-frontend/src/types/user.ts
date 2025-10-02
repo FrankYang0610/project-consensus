@@ -11,6 +11,7 @@ export interface User {
   name?: string; // 用户名称（可选） / User name (optional)
   avatar?: string; // 用户头像URL（可选） / User avatar URL (optional)
   pronouns?: string; // 用户代词（可选） / User pronouns (optional)
+  pronounsShared?: boolean; // 是否在主页展示代词（可选） / Whether pronouns are shown publicly (optional)
 }
 
 /**

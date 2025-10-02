@@ -30,7 +30,8 @@ def build_user_payload(user):
         "email": user.email,
         "name": getattr(profile, "display_name", None) or user.get_username(),
         "avatar": getattr(profile, "avatar_url", None) or None,
-        "pronouns": getattr(profile, "pronouns", None) or "not_specified",
+        "pronouns": getattr(profile, "pronouns", None) if getattr(profile, "pronouns_shared", False) else "",
+        "pronounsShared": getattr(profile, "pronouns_shared", False),
     }
 
 @api_view(["POST"])
