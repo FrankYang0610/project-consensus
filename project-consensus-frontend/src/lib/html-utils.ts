@@ -8,7 +8,7 @@ import { decode } from "he";
  */
 export function sanitizeHtml(html: string): string {
   // Strict allowlist policy: only a small set of safe, text-formatting tags are permitted
-  // - No attributes are allowed (blocks href/src/event handlers entirely)
+  // - Allow minimal safe attributes for tables, code blocks, and lists
   // - Explicitly forbid rich/embedded and scriptable contexts
   return DOMPurify.sanitize(html, {
     ALLOWED_TAGS: [
@@ -16,7 +16,16 @@ export function sanitizeHtml(html: string): string {
       'strong', 'em', 'code', 'pre', 'blockquote',
       'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th'
     ],
-    ALLOWED_ATTR: [],
+    ALLOWED_ATTR: {
+      // Table attributes for cell merging and alignment
+      'td': ['colspan', 'rowspan', 'align'],
+      'th': ['colspan', 'rowspan', 'align'],
+      // Code syntax highlighting
+      'code': ['class'],
+      'pre': ['class'],
+      // Ordered list starting number
+      'ol': ['start'],
+    },
     SAFE_FOR_TEMPLATES: true,
     ALLOW_UNKNOWN_PROTOCOLS: false,
   });

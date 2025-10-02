@@ -17,7 +17,16 @@ ALLOWED_TAGS = [
     'strong', 'em', 'code', 'pre', 'blockquote',
     'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th',
 ]
-ALLOWED_ATTRS: dict[str, list[str]] = {}
+ALLOWED_ATTRS: dict[str, list[str]] = {
+    # Table attributes for cell merging and alignment
+    'td': ['colspan', 'rowspan', 'align'],
+    'th': ['colspan', 'rowspan', 'align'],
+    # Code syntax highlighting
+    'code': ['class'],
+    'pre': ['class'],
+    # Ordered list starting number
+    'ol': ['start'],
+}
 
 def _sanitize_html(html: str) -> str:
     if not isinstance(html, str):
