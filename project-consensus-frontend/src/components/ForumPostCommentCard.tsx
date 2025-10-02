@@ -24,8 +24,7 @@ import { sanitizeHtml } from "@/lib/html-utils";
 import { cn } from "@/lib/utils";
 import type { ForumPostComment } from "@/types/forum";
 import { stripHtmlTags, truncateHtmlContent } from "@/lib/html-utils";
-import { apiGet } from "@/lib/api/api-utils";
-import type { ListCommentsResponse } from "@/types/api";
+import { fetchForumComments } from "@/lib/api/forum-comment";
 
 import ClientOnlyTime from "./ClientOnlyTime";
 import { useApp } from "@/contexts/AppContext";
@@ -192,7 +191,12 @@ export function ForumPostCommentCard({
     setIsRepliesLoading(true);
     setRepliesError(null);
     try {
-      const data = await apiGet<ListCommentsResponse>(`/api/forum/comments/?replyTo=${comment.id}&page=1&page_size=5`);
+      const data = await fetchForumComments({ 
+        postId: comment.postId, 
+        replyTo: comment.id, 
+        page: 1, 
+        pageSize: 5 
+      });
       setReplies(data.results);
       setRepliesNextUrl(toRelative(data.next));
     } catch (e) {
@@ -208,15 +212,26 @@ export function ForumPostCommentCard({
     setIsRepliesLoading(true);
     setRepliesError(null);
     try {
-      let url: string | null = repliesNextUrl;
-      while (url) {
-        const data = await apiGet<ListCommentsResponse>(url);
+      // For loading remaining replies, we need to parse the nextUrl to get page number
+      // This is a simplified approach - in a real app you might want to store page numbers
+      let currentPage = 2; // Start from page 2 since we already loaded page 1
+      while (repliesNextUrl) {
+        const data = await fetchForumComments({ 
+          postId: comment.postId, 
+          replyTo: comment.id, 
+          page: currentPage, 
+          pageSize: 5 
+        });
         setReplies(prev => {
           const existing = new Set((prev ?? []).map(c => c.id));
           const deduped = data.results.filter(c => !existing.has(c.id));
           return [ ...(prev ?? []), ...deduped ];
         });
-        url = toRelative(data.next);
+        if (!data.next) {
+          setRepliesNextUrl(null);
+          break;
+        }
+        currentPage++;
       }
       setRepliesNextUrl(null);
     } catch (e) {

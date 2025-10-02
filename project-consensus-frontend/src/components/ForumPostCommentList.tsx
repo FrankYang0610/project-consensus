@@ -2,18 +2,22 @@
 
 import * as React from "react";
 import dynamic from "next/dynamic";
+import { MessageSquare, Plus } from "lucide-react";
+
 import { ForumPostComment } from "@/types/forum";
 import { ForumPostCommentCard as ForumPostCommentComponent } from "./ForumPostCommentCard";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { MessageSquare, Plus, X } from "lucide-react";
-import { useI18n } from "@/hooks/useI18n";
-import { apiGet, apiPost, apiDeleteVoid } from "@/lib/api/api-utils";
-import { cn, isContentEmpty } from "@/lib/utils";
-import { GetForumPostCommentPositionResponse, ListCommentsResponse } from "@/types/api";
-import { useApp } from "@/contexts/AppContext";
 import ForumPostCommentComposer from "@/components/ForumPostCommentComposer";
+import { Button } from "@/components/ui/button";
+import { useI18n } from "@/hooks/useI18n";
+import { useApp } from "@/contexts/AppContext";
+import { 
+  fetchForumComments, 
+  getForumCommentPosition, 
+  likeForumComment, 
+  unlikeForumComment, 
+  deleteForumComment 
+} from "@/lib/api/forum-comment";
+import { isContentEmpty } from "@/lib/utils";
 
 // Use a stable component identity for the editor to avoid remounts on each render
 const RichTextEditor = dynamic(() => import("@/components/RichTextEditor"), { ssr: false });
@@ -102,7 +106,14 @@ export function ForumPostCommentList({
     if (!nextUrl || loadingRef.current) return;
     loadingRef.current = true;
     try {
-      const data = await apiGet<ListCommentsResponse>(nextUrl);
+      // Parse nextUrl to extract page number and other parameters
+      const url = new URL(nextUrl, window.location.origin);
+      const page = parseInt(url.searchParams.get('page') || '1');
+      const data = await fetchForumComments({ 
+        postId, 
+        page, 
+        pageSize: 20 
+      });
       setComments(prev => {
         const existing = new Set(prev.map(c => c.id));
         const deduped = data.results.filter(c => !existing.has(c.id));
@@ -143,14 +154,19 @@ export function ForumPostCommentList({
       setIsJumpLoading(true);
       try {
         // Ask backend for anchor page and URLs
-        const position = await apiGet<GetForumPostCommentPositionResponse>(
-          `/api/forum/comments/position/?postId=${postId}&commentId=${targetCommentId}&page_size=20`
-        );
+        const position = await getForumCommentPosition(postId, targetCommentId, 20);
         // Load all pages up to the anchor page sequentially (each page depends on the previous nextUrl state)
         for (const url of position.pageUrls) {
           // If we already have moved past or have the comment, break early
           if (idToComment.current?.has(targetCommentId)) break;
-          const data = await apiGet<ListCommentsResponse>(url);
+          // Parse URL to get page number
+          const urlObj = new URL(url, window.location.origin);
+          const page = parseInt(urlObj.searchParams.get('page') || '1');
+          const data = await fetchForumComments({ 
+            postId, 
+            page, 
+            pageSize: 20 
+          });
           setComments(prev => {
             const existing = new Set(prev.map(c => c.id));
             const deduped = data.results.filter(c => !existing.has(c.id));
@@ -256,8 +272,8 @@ export function ForumPostCommentList({
       });
 
       // fire API request
-      const url = willLike ? `/api/forum/comments/${id}/like/` : `/api/forum/comments/${id}/unlike/`;
-      apiPost<ForumPostComment>(url, {})
+      const likeAction = willLike ? likeForumComment(id) : unlikeForumComment(id);
+      likeAction
         .then((data) => {
           // Reconcile with server truth
           setComments(prev => prev.map(c => {
@@ -297,7 +313,7 @@ export function ForumPostCommentList({
         return prevList.map(c => c.id === id ? { ...c, isDeleted: true, content: "" } : c);
       });
 
-      apiDeleteVoid(`/api/forum/comments/${id}/`)
+      deleteForumComment(id)
         .then(() => {
           // Inform children/previews to update their local lists
           window.dispatchEvent(new CustomEvent('pc:comment-deleted-ok', { detail: { id } }));
