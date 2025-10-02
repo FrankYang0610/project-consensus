@@ -17,7 +17,7 @@ import {
   getSpecialPronounOptions,
   getPronounsChoiceFromValue,
 } from '@/lib/pronouns-utils';
-import useI18n from '@/hooks/useI18n';
+import useI18n from '@/hooks/use-i18n';
 
 export interface PronounsSelectorProps {
   /**

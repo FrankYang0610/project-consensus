@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { SiteNavigation } from '@/components/SiteNavigation';
 import { useApp } from '@/contexts/AppContext';
-import { useI18n } from '@/hooks/useI18n';
+import { useI18n } from '@/hooks/use-i18n';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -92,7 +92,7 @@ export default function ProfilePage() {
                         {avatarText}
                       </div>
                     )}
-                    
+
                     <div>
                       <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{displayName}</h2>
                       {user && (

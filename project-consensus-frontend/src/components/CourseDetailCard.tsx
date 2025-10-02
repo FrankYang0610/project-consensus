@@ -29,14 +29,14 @@ import {
   DropdownMenuItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuCheckboxItem,
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { useI18n } from "@/hooks/useI18n";
+import { useI18n } from "@/hooks/use-i18n";
+import { useDebounceCallback } from "@/hooks/use-debounce";
 import { clamp, formatDateDisplay, formatTerm, sortTerms, validateRating } from "@/lib/course-utils";
 import type {
   SemesterKey,
@@ -46,6 +46,8 @@ import type {
   CurriculumSemester,
 } from "@/types";
 import { useRouter } from "next/navigation";
+import { voteCourse } from "@/lib/api/course";
+import { useApp } from "@/contexts/AppContext";
 
 /**
  * 投票状态 / Voting state
@@ -61,7 +63,7 @@ export interface VotingState {
  */
 export type VotingAction =
   | { type: 'TOGGLE_VOTE'; voteType: 'recommend' | 'notRecommend' }
-  | { type: 'RESET_VOTES'; recommendCount: number; notRecommendCount: number };
+  | { type: 'RESET_VOTES'; recommendCount: number; notRecommendCount: number; userVote?: 'recommend' | 'notRecommend' | null };
 
 /**
  * 课程详情卡片过滤器状态 / Filter state for course detail reviews
@@ -132,16 +134,23 @@ export interface CourseDetailCardProps {
   filterCallbacks?: FilterCallbacks;
   // Other teachers teaching the same course
   otherTeacherCourses?: OtherTeacherCourse[];
+  // Current user's vote (detail only)
+  userVote?: 'recommend' | 'notRecommend' | null;
+  // Whether current user has reviewed this course (detail only)
+  userHasReview?: boolean | null;
 }
 
 // Voting state reducer
+// Note: This reducer is now primarily used for optimistic updates and server sync.
+// The server is the source of truth for vote counts to prevent race conditions.
 function votingReducer(state: VotingState, action: VotingAction): VotingState {
   switch (action.type) {
     case 'TOGGLE_VOTE': {
+      // Optimistic update: predict the next state locally for immediate UI feedback
       const { voteType } = action;
 
       if (state.userVote === voteType) {
-        // Remove existing vote
+        // Remove existing vote (optimistic)
         return {
           userVote: null,
           recommendCount: voteType === 'recommend'
@@ -152,7 +161,7 @@ function votingReducer(state: VotingState, action: VotingAction): VotingState {
             : state.notRecommendCount,
         };
       } else {
-        // Change or add vote
+        // Change or add vote (optimistic)
         let newRecommendCount = state.recommendCount;
         let newNotRecommendCount = state.notRecommendCount;
 
@@ -178,8 +187,9 @@ function votingReducer(state: VotingState, action: VotingAction): VotingState {
       }
     }
     case 'RESET_VOTES': {
+      // Server sync: always use server-provided counts as source of truth
       return {
-        userVote: null,
+        userVote: action.userVote ?? null,
         recommendCount: action.recommendCount,
         notRecommendCount: action.notRecommendCount,
       };
@@ -282,25 +292,43 @@ export function CourseDetailCard({
   otherTeacherCourses,
   aiSummary,
   curriculum,
+  userVote,
+  userHasReview,
 }: CourseDetailCardProps) {
   const { t, language } = useI18n();
   const router = useRouter();
+  const { isLoggedIn, openLoginModal } = useApp();
 
   // Interactive voting state using useReducer to avoid race conditions
   const [votingState, dispatchVoting] = React.useReducer(votingReducer, {
-    userVote: null,
+    userVote: userVote ?? null,
     recommendCount: rating.recommendCount ?? 0,
     notRecommendCount: rating.notRecommendCount ?? 0,
   });
 
+  // Track server state to prevent flickering and handle rollbacks
+  const serverStateRef = React.useRef({
+    userVote: userVote ?? null,
+    recommendCount: rating.recommendCount ?? 0,
+    notRecommendCount: rating.notRecommendCount ?? 0,
+  });
+
+  // Request counter to ignore outdated responses
+  const requestCounterRef = React.useRef(0);
+
   // Reset voting state when rating props change
   React.useEffect(() => {
-    dispatchVoting({
-      type: 'RESET_VOTES',
+    const newState = {
+      userVote: userVote ?? null,
       recommendCount: rating.recommendCount ?? 0,
       notRecommendCount: rating.notRecommendCount ?? 0,
+    };
+    serverStateRef.current = newState;
+    dispatchVoting({
+      type: 'RESET_VOTES',
+      ...newState,
     });
-  }, [rating.recommendCount, rating.notRecommendCount]);
+  }, [rating.recommendCount, rating.notRecommendCount, userVote]);
 
   // State for filtered review count
   const [filteredReviewsCount, setFilteredReviewsCount] = React.useState(rating.reviewsCount);
@@ -356,19 +384,89 @@ export function CourseDetailCard({
     onFilteredCountUpdate: (filteredCount: number) => {
       if (filterCallbacks?.onFilteredCountUpdate) {
         filterCallbacks.onFilteredCountUpdate(filteredCount);
+      } else {
+        // Only update internal state if parent doesn't handle it
+        setFilteredReviewsCount(filteredCount);
       }
-      setFilteredReviewsCount(filteredCount);
     },
-  }), [filterCallbacks, currentFilterState, rating.reviewsCount]);
+  }), [filterCallbacks, rating.reviewsCount]);
 
   const currentCallbacks = filterCallbacks ?? defaultCallbacks;
 
   /**
-   * Handle user voting interaction using reducer to prevent race conditions
+   * Debounced server request for voting
+   * This prevents rapid consecutive API calls and reduces server load
+   */
+  const sendVoteToServer = useDebounceCallback(
+    async (courseId: string, voteType: 'recommend' | 'notRecommend', requestId: number) => {
+      try {
+        // Server request - this is the source of truth
+        const res = await voteCourse(courseId, voteType);
+
+        // Only update if this is still the latest request (prevent race conditions)
+        if (requestId === requestCounterRef.current) {
+          const newServerState = {
+            recommendCount: res.rating.recommendCount,
+            notRecommendCount: res.rating.notRecommendCount,
+            userVote: res.userVote,
+          };
+
+          // Update server state ref
+          serverStateRef.current = newServerState;
+
+          // Sync with server response
+          dispatchVoting({
+            type: 'RESET_VOTES',
+            ...newServerState,
+          });
+        }
+      } catch (e) {
+        console.error('Vote request failed', e);
+
+        // Only rollback if this is still the latest request
+        if (requestId === requestCounterRef.current) {
+          // Rollback to last known server state
+          dispatchVoting({
+            type: 'RESET_VOTES',
+            ...serverStateRef.current,
+          });
+        }
+      }
+    },
+    300 // 300ms debounce delay
+  );
+
+  /**
+   * Handle user voting interaction with optimistic updates and debounced server sync
+   *
+   * Flow:
+   * 1. Immediate optimistic update for instant UI feedback
+   * 2. Debounced server request (300ms) to prevent rapid consecutive calls
+   * 3. On success: sync with server response (source of truth)
+   * 4. On failure: rollback to last known server state
+   *
+   * Benefits:
+   * - Instant UI feedback (no perceived delay)
+   * - Reduced server load (debounced requests)
+   * - No UI flickering (smart state management)
+   * - Race condition handling (request counter)
    */
   const handleVote = React.useCallback((voteType: 'recommend' | 'notRecommend') => {
+    if (!isLoggedIn) {
+      openLoginModal();
+      return;
+    }
+
+    // Increment request counter for race condition handling
+    requestCounterRef.current += 1;
+    const currentRequestId = requestCounterRef.current;
+
+    // Optimistic update for immediate UI feedback
     dispatchVoting({ type: 'TOGGLE_VOTE', voteType });
-  }, []);
+
+    // Debounced server request
+    sendVoteToServer(subjectId, voteType, currentRequestId);
+  }, [isLoggedIn, openLoginModal, sendVoteToServer, subjectId]);
 
   // Sort terms by year and semester (most recent first)
   const orderedTerms = React.useMemo(() => {
@@ -380,7 +478,10 @@ export function CourseDetailCard({
 
   // Teacher data processing
   const primaryTeacher = React.useMemo(() => teachers?.[0] ?? null, [teachers]);
-  const hasOtherTeachers = otherTeacherCourses && otherTeacherCourses.length > 0;
+  const hasOtherTeachers = React.useMemo(() =>
+    otherTeacherCourses && otherTeacherCourses.length > 0,
+    [otherTeacherCourses]
+  );
 
   // Adaptive layout: calculate content weight to balance columns
   const leftContentWeight = React.useMemo(() => {
@@ -509,7 +610,7 @@ export function CourseDetailCard({
         </DropdownMenuContent>
       </DropdownMenu>
     );
-  }, [language, router, subjectId, t, curriculum]);
+  }, [router, t, curriculum]);
 
   /**
    * Reviews filters inline components
@@ -554,43 +655,43 @@ export function CourseDetailCard({
   }) {
     const [open, setOpen] = React.useState<boolean>(false);
 
-    const toggle = React.useCallback((key: string, checked: boolean) => {
-      const newSelected = { ...selected, [key]: checked };
-      onSelectionChange(newSelected);
-    }, [selected, onSelectionChange]);
-
-    const selectedCount = React.useMemo(() => {
-      return Object.values(selected).filter(Boolean).length;
+    const selectedKey = React.useMemo(() => {
+      const entry = Object.entries(selected).find(([, v]) => v);
+      return entry ? entry[0] : undefined;
     }, [selected]);
 
     return (
       <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="h-8 text-xs">
-            {selectedCount > 0 ? t("courses.detail.reviews.term.selected", { count: selectedCount }) : t("courses.detail.reviews.term.select")}
+            {selectedKey ? format({ year: Number(selectedKey.split('-')[0]), semester: selectedKey.split('-')[1] as SemesterKey }) : t("courses.detail.reviews.term.select")}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="max-h-64 overflow-auto">
-          {terms.map((tm, idx) => {
-            const key = `${tm.year}-${tm.semester}-${idx}`;
-            return (
-              <DropdownMenuCheckboxItem
-                key={key}
-                checked={!!selected[key]}
-                onCheckedChange={(checked) => {
-                  toggle(key, Boolean(checked));
-                  // Prevent menu from closing
-                }}
-                onSelect={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-                className="text-xs focus:bg-accent"
-              >
-                {format(tm)}
-              </DropdownMenuCheckboxItem>
-            );
-          })}
+          <DropdownMenuRadioGroup
+            value={selectedKey ?? ""}
+            onValueChange={(value) => {
+              if (!value) {
+                // Clear selection (no term filter)
+                onSelectionChange({});
+              } else {
+                onSelectionChange({ [value]: true });
+              }
+            }}
+          >
+            {/* Clear selection / All terms */}
+            <DropdownMenuRadioItem key="__all__" value="" className="text-xs">
+              {t("courses.detail.reviews.term.all")}
+            </DropdownMenuRadioItem>
+            {terms.map((tm) => {
+              const value = `${tm.year}-${tm.semester}`;
+              return (
+                <DropdownMenuRadioItem key={value} value={value} className="text-xs">
+                  {format(tm)}
+                </DropdownMenuRadioItem>
+              );
+            })}
+          </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
     );
@@ -849,7 +950,14 @@ export function CourseDetailCard({
             {/* Follow Button */}
             <div className="flex gap-2">
               {Array.isArray(curriculum) && curriculum.length > 0 ? <CurriculumPlanButton /> : null}
-              <Button size="sm" variant="outline" className="gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1"
+                onClick={(e) => {
+                  if (!isLoggedIn) { e.preventDefault(); openLoginModal(); }
+                }}
+              >
                 <Star className="w-4 h-4" /> {t("courses.detail.follow")}
               </Button>
             </div>
@@ -1045,8 +1153,11 @@ export function CourseDetailCard({
           <div className="flex items-center justify-between">
             <h3 className="text-base font-semibold">{t("courses.detail.reviews.title")}</h3>
             <Button size="sm" asChild>
-              <Link href={`/courses/${subjectId}/review`}>
-                {t("courses.detail.reviews.writeReview")}
+              <Link
+                href={`/courses/${subjectId}/review${(userHasReview ? '?edit=1' : '')}`}
+                onClick={(e) => { if (!isLoggedIn) { e.preventDefault(); openLoginModal(); } }}
+              >
+                {userHasReview ? t("courses.detail.reviews.editReview") : t("courses.detail.reviews.writeReview")}
               </Link>
             </Button>
           </div>

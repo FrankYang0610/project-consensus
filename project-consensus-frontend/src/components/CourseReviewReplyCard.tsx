@@ -6,7 +6,7 @@ import { Heart, Reply, Trash2, Languages } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useI18n } from "@/hooks/useI18n";
+import { useI18n } from "@/hooks/use-i18n";
 import { useApp } from "@/contexts/AppContext";
 import { sanitizeHtml } from "@/lib/html-utils";
 
@@ -93,7 +93,7 @@ export function CourseReviewReplyCard({
               <span className="font-medium text-sm text-foreground">{reply.author.name}</span>
               {reply.replyToUser && (
                 <span className="text-xs text-muted-foreground">
-                  {t("comment.replyTo")} {reply.replyToUser.name}
+                  {t("comment.replyTo") + " @" + reply.replyToUser.name}
                 </span>
               )}
               <ClientOnlyTime dateString={reply.createdAt} className="text-xs text-muted-foreground" />

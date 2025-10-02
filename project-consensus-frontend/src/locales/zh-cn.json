@@ -142,7 +142,8 @@
     "developmentNotice": "本网站正在积极开发中，界面和功能可能会频繁更改。",
     "loadFailedRetry": "加载失败 重新加载",
     "me": "我",
-    "anonymous": "匿名"
+    "anonymous": "匿名",
+    "anonymousWithId": "匿名（{{name}}）"
   },
   "courses": {
     "topbar": {
@@ -169,6 +170,9 @@
       "selectedCount": "已选 {{count}} 项",
       "subjectLevel": "课程等级",
       "apply": "应用",
+      "actions": {
+        "clear": "清空"
+      },
       "detailedCategory": {
         "label": "详细类别",
         "options": {
@@ -280,6 +284,7 @@
       "reviews": {
         "title": "点评",
         "writeReview": "写点评",
+        "editReview": "编辑点评",
         "deletedNotice": "本课程有 {{count}} 位用户曾删除过点评。",
           "totalReviews": "一共 {{count}} 条 点评",
         "sort": {
@@ -295,7 +300,8 @@
         "term": {
           "label": "学期",
           "select": "选择学期",
-          "selected": "已选 {{count}} 项"
+          "selected": "已选 {{count}} 项",
+          "all": "全部学期"
         },
         "rating": {
           "label": "评分",
@@ -308,12 +314,19 @@
     "review": {
       "overallRating": "综合评分",
       "edited": "编辑于 {{date}}",
+      "edit": "编辑",
+      "delete": "删除",
+      "deleteConfirm": "确认要删除这条点评吗？",
+      "save": "保存",
+      "saving": "保存中...",
+      "cancel": "取消",
       "reply": "回复",
       "replies": "{{count}} 条回复",
       "repliesSection": "回复将显示在此处"
     },
     "reviewForm": {
       "title": "撰写课程点评",
+      "editTitle": "编辑课程点评",
       "rating": "星级评分",
       "term": { "label": "学期", "select": "选择学期" },
       "onlyText": "只写点评（不打分）",
@@ -325,6 +338,8 @@
       "contentPlaceholder": "在此输入你的课程体验、建议等...",
       "submit": "发布点评",
       "submitting": "发布中...",
+      "update": "保存修改",
+      "updating": "保存中...",
       "cancel": "取消",
       "validation": {
         "ratingRequired": "请给出 1-5 星评分",
@@ -491,7 +506,23 @@
     "coursesTaught": "课程",
     "viewProfile": "查看主页",
     "noBio": "暂无简介",
-    "notFound": "未找到该教师"
+    "notFound": "未找到该教师",
+    "search": "搜索",
+    "clear": "清除",
+    "sort": "排序",
+    "sortBy": {
+      "name": "姓名 (A-Z)",
+      "rating": "评分 (高到低)",
+      "reviews": "评价数 (最多)",
+      "department": "院系",
+      "updated": "最近更新"
+    },
+    "loading": "加载中...",
+    "loadingMore": "加载更多...",
+    "noResults": "未找到包含「{{query}}」的教师",
+    "noTeachers": "暂无教师",
+    "endOfResults": "已显示全部 (共 {{count}} 位)",
+    "retry": "重试"
   },
   "teacher": {
     "about": "简介",

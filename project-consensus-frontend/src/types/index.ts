@@ -45,4 +45,23 @@ export type {
   RegisterSuccessResponse,
   LoginSuccessResponse,
   ErrorResponse,
+  PaginatedResponse,
+  // Course API types
+  FetchCourseReviewsParams,
+  CreateCourseReviewPayload,
+  UpdateCourseReviewPayload,
+  FetchReviewRepliesParams,
+  CreateReplyPayload,
+  CourseUserVote,
+  VoteCourseResponse,
+  // Teacher API types
+  FetchTeachersParams,
+  // Forum API types
+  GetForumPostCommentPositionResponse,
+  FetchForumPostsParams,
+  CreateForumPostPayload,
+  UpdateForumPostPayload,
+  FetchForumCommentsParams,
+  CreateForumCommentPayload,
+  UpdateForumCommentPayload,
 } from './api';

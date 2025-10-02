@@ -15,12 +15,14 @@ Before you begin, ensure you have the following installed on your system:
 #### Installation
 
 1. **Clone the repository** (if you haven't already):
+
    ```bash
    git clone https://github.com/FrankYang0610/project-consensus/
    cd project-consensus-frontend
    ```
 
 2. **Install dependencies**:
+
    ```bash
    npm install
    # or
@@ -32,6 +34,7 @@ Before you begin, ensure you have the following installed on your system:
    ```
 
 3. **Set up shadcn/ui components** (if not already configured):
+
    ```bash
    npx shadcn@latest init
    ```
@@ -81,6 +84,7 @@ The application will be available at [http://localhost:3000](http://localhost:30
 This is a Next.js 14+ frontend application built with TypeScript, featuring a modern course review and forum platform. The project follows Next.js App Router architecture with a component-based design.
 
 #### Core Technologies
+
 - **Next.js 14+** with App Router
 - **TypeScript** for type safety
 - **Tailwind CSS** for styling
@@ -103,14 +107,24 @@ project-consensus-frontend/
 │   │   ├── courses/
 │   │   │   ├── page.tsx                      # Course listing page
 │   │   │   └── [subjectId]/
-│   │   │       └── page.tsx                  # Dynamic course detail pages
+│   │   │       ├── page.tsx                  # Dynamic course detail pages
+│   │   │       └── review/
+│   │   │           └── page.tsx              # Course review page
 │   │   ├── post/
 │   │   │   ├── [postId]/
 │   │   │   │   └── page.tsx                  # Dynamic forum post detail pages
 │   │   │   └── new/
 │   │   │       └── page.tsx                  # Create new forum post page
+│   │   ├── profile/
+│   │   │   └── page.tsx                      # User profile page
 │   │   ├── register/
 │   │   │   └── page.tsx                      # User registration page
+│   │   ├── settings/
+│   │   │   └── page.tsx                      # User settings page
+│   │   ├── teachers/
+│   │   │   ├── page.tsx                      # Teachers listing page
+│   │   │   └── [teacherId]/
+│   │   │       └── page.tsx                  # Dynamic teacher detail pages
 │   │   └── tos/
 │   │       └── page.tsx                      # Terms of Service page
 │   │
@@ -124,20 +138,26 @@ project-consensus-frontend/
 │   │   ├── Watermark.tsx                     # Watermark overlay component
 │   │   ├── ClientOnlyTime.tsx                # Client-side time display
 │   │   ├── PronounsSelector.tsx              # Pronouns selection component
+│   │   ├── TagManager.tsx                    # Tag management component
 │   │   │
 │   │   ├── # Course Components
-│   │   ├── CoursePreviewCard.tsx            # Course preview cards for listings
-│   │   ├── CourseDetailCard.tsx           # Detailed course information cards
-│   │   ├── CourseBackgroundCard.tsx         # Background cards for course sections
-│   │   ├── CourseFilterBar.tsx              # Course filtering and sorting controls
-│   │   └── CourseReviewCard.tsx              # Individual course review cards
+│   │   ├── CoursePreviewCard.tsx             # Course preview cards for listings
+│   │   ├── CourseDetailCard.tsx              # Detailed course information cards
+│   │   ├── CourseBackgroundCard.tsx          # Background cards for course sections
+│   │   ├── CourseFilterBar.tsx               # Course filtering and sorting controls
+│   │   ├── CourseReviewCard.tsx              # Individual course review cards
+│   │   └── CourseReviewReplyCard.tsx         # Course review reply cards
 │   │   │
 │   │   ├── # Forum Components
 │   │   ├── ForumPostPreviewCard.tsx          # Forum post preview cards
 │   │   ├── ForumPostDetailCard.tsx           # Detailed forum post view
-│   │   ├── ForumPostComment.tsx              # Individual comment component
+│   │   ├── ForumPostCommentCard.tsx          # Individual comment component
+│   │   ├── ForumPostCommentComposer.tsx      # Comment composition component
 │   │   ├── ForumPostCommentList.tsx          # Comment list container
 │   │   └── CreateForumPostButton.tsx         # New post creation button
+│   │   │
+│   │   ├── # Teacher Components
+│   │   └── TeacherPreviewCard.tsx            # Teacher preview cards
 │   │   │
 │   │   ├── RichTextEditor/                   # Custom rich text editor
 │   │   │   ├── RichTextEditor.tsx            # Main editor component
@@ -145,13 +165,15 @@ project-consensus-frontend/
 │   │   │   └── index.ts                      # Export file
 │   │   │
 │   │   └── ui/                               # shadcn/ui Components
+│   │       ├── alert.tsx                     # Alert notification components
+│   │       ├── badge.tsx                     # Badge components
 │   │       ├── button.tsx                    # Button component variants
 │   │       ├── card.tsx                      # Card layout components
+│   │       ├── checkbox.tsx                  # Checkbox components
+│   │       ├── dialog.tsx                    # Modal dialog components
+│   │       ├── dropdown-menu.tsx             # Dropdown menu components
 │   │       ├── input.tsx                     # Form input components
 │   │       ├── label.tsx                     # Form label components
-│   │       ├── dialog.tsx                    # Modal dialog components
-│   │       ├── alert.tsx                     # Alert notification components
-│   │       ├── dropdown-menu.tsx             # Dropdown menu components
 │   │       └── navigation-menu.tsx           # Navigation menu components
 │   │
 │   ├── contexts/                             # React Context Providers
@@ -159,9 +181,16 @@ project-consensus-frontend/
 │   │   └── README-APP.md                     # Context documentation
 │   │
 │   ├── hooks/                                # Custom React Hooks
-│   │   └── useI18n.ts                        # Internationalization hook
+│   │   ├── use-debounce.ts                    # Debouncing hook for search/input
+│   │   └── use-i18n.ts                        # Internationalization hook
 │   │
 │   ├── lib/                                  # Utility Libraries
+│   │   ├── api/                              # API Client Functions
+│   │   │   ├── api-utils.ts                  # Common API utilities
+│   │   │   ├── courses.ts                    # Course API functions
+│   │   │   ├── forum-comment.ts              # Forum comment API functions
+│   │   │   ├── forum-post.ts                 # Forum post API functions
+│   │   │   └── teachers.ts                   # Teacher API functions
 │   │   ├── utils.ts                          # General utility functions
 │   │   ├── course-utils.ts                   # Course-specific utility functions
 │   │   ├── time-utils.ts                     # Time formatting utilities
@@ -175,13 +204,25 @@ project-consensus-frontend/
 │   │   ├── app-types.ts                      # Application-wide type definitions
 │   │   ├── course.ts                         # Course-related type definitions
 │   │   ├── forum.ts                          # Forum and post type definitions
-│   │   └── user.ts                           # User-related type definitions
+│   │   ├── teacher.ts                        # Teacher-related type definitions
+│   │   ├── user.ts                           # User-related type definitions
+│   │   └── api/                              # API Type Definitions
+│   │       ├── index.ts                      # API types export
+│   │       ├── accounts.ts                   # Account API types
+│   │       ├── common.ts                     # Common API types
+│   │       ├── courses.ts                    # Course API types
+│   │       ├── forum-comment.ts              # Forum comment API types
+│   │       ├── forum-post.ts                 # Forum post API types
+│   │       └── teachers.ts                   # Teacher API types
 │   │
 │   ├── data/                                 # Sample Data
-│   │   ├── sampleCourses.ts                  # Mock course data
-│   │   ├── samplePosts.ts                    # Mock forum post data
-│   │   ├── sampleComments.ts                 # Mock comment data
-│   │   └── sampleReviews.ts                  # Mock review data
+│   │   ├── sample-courses.ts                 # Mock course data
+│   │   ├── sample-posts.ts                   # Mock forum post data
+│   │   ├── sample-comments.ts                # Mock comment data
+│   │   ├── sample-reviews.ts                 # Mock review data
+│   │   ├── sample-review-replies.ts          # Mock review reply data
+│   │   ├── sample-teachers.ts                # Mock teacher data
+│   │   └── sample-curriculum.ts              # Mock curriculum data
 │   │
 │   └── locales/                              # Internationalization Files
 │       ├── en-us.json                        # English (US) translations
@@ -205,16 +246,120 @@ project-consensus-frontend/
 ```
 
 #### Key Features
+
 1. **Multi-language Support** - Full internationalization with English and Chinese variants
-2. **Course Management** - Browse, filter, and review courses
-3. **Forum System** - Create posts, comments, and discussions
-4. **User Authentication** - Registration and login system
-5. **Responsive Design** - Mobile-first responsive layout
-6. **Dark/Light Theme** - Theme switching capability
-7. **Rich Text Editing** - Custom rich text editor for content creation
+2. **Course Management** - Browse, filter, and review courses with detailed course pages
+3. **Forum System** - Create posts, comments, and discussions with rich text editing
+4. **Teacher Directory** - Browse and review teachers with detailed profiles
+5. **User Authentication** - Registration and login system with profile management
+6. **Responsive Design** - Mobile-first responsive layout
+7. **Dark/Light Theme** - Theme switching capability
+8. **Rich Text Editing** - Custom CKEditor5-based rich text editor for content creation
+9. **Search & Filtering** - Advanced search and filtering capabilities
+10. **Comment System** - Nested comment system with reply functionality
+11. **Tag Management** - Tag-based content organization
+12. **API Integration** - Modular API client with TypeScript type safety
+
+#### Course Module Features
+
+The course module (`src/app/courses/` and related components) provides a comprehensive course evaluation system:
+
+**Core Functionality:**
+
+- **Course Listing** (`/courses`) - Infinite scroll course list with real-time filtering
+- **Course Details** (`/courses/[subjectId]`) - Comprehensive course information including:
+  - Basic info: code, title, terms, teachers, department
+  - Rating aggregates: overall score (0-10), review count, recommend/not recommend votes
+  - Four dimensions: difficulty, workload, grading, gain
+  - AI-generated course summary
+  - Course metadata: selection category, teaching type, level, credits, homepage, syllabus
+  - Other teacher courses (same subject, different instructors)
+  - Curriculum information (colleges → majors → semesters)
+- **Review System** (`/courses/[subjectId]/review`) - Full-featured review creation/editing:
+  - Star rating (0-10 with half-star precision)
+  - Four-dimension evaluation (difficulty/workload/grading/gain)
+  - Rich text content with HTML sanitization
+  - Term selection (which semester the user took the course)
+  - Anonymous posting option
+  - Text-only review mode (skip ratings, share experiences only)
+  - One review per user per course constraint
+- **Reply System** - Single-level replies to reviews:
+  - Reply to review authors
+  - @-mention specific users in replies
+  - Rich text content support
+  - Like/unlike functionality
+- **Voting System** - Recommend/not recommend course voting:
+  - Toggle behavior (click same option to cancel)
+  - Real-time count updates
+  - Per-user vote state tracking
+- **Advanced Filtering** (via `CourseFilterBar`):
+  - Sort: by rating, review count, or last updated
+  - Subject code exact match
+  - Department multi-select
+  - Course category (selection category, course category tags)
+  - Teaching type filter
+  - Course level (1-6) multi-select
+  - Title/teacher name full-text search
+  - Rating range filter (for reviews)
+  - Term filter (for reviews)
+
+**Components:**
+
+- `CoursePreviewCard` - Course listing card with key info and rating
+- `CourseDetailCard` - Full course detail display with tabs (Info/Reviews/Curriculum)
+- `CourseFilterBar` - Advanced filtering interface for course list
+- `CourseBackgroundCard` - Decorative background wrapper
+- `CourseReviewCard` - Individual review display with like/reply actions
+- `CourseReviewReplyCard` - Reply display with like action
+
+**API Integration:**
+
+- `lib/api/course.ts` - Comprehensive API client:
+  - `fetchCourseById()` - Get course details
+  - `fetchCourseReviews()` - Paginated review list with filters
+  - `createCourseReview()` - Create new review
+  - `updateCourseReview()` - Edit existing review
+  - `deleteCourseReview()` - Delete review
+  - `fetchReviewReplies()` - Get replies for a review
+  - `createReviewReply()` - Post a reply
+  - `deleteReviewReply()` - Remove a reply
+  - `toggleLikeReview()` / `toggleLikeReply()` - Like/unlike with toggle behavior
+  - `voteCourse()` - Submit recommend/not recommend vote
+  - `fetchCourseDepartments()` - Get available departments for filtering
+
+**Type Definitions:**
+
+- `types/course.ts` - Complete TypeScript types for courses, reviews, and replies
+- `types/api/course.ts` - API-specific types for requests and responses
+- Backend-aligned camelCase naming convention for seamless integration
+
+**Data Flow:**
+
+- Server-side data fetching for initial page load (SSR optimization)
+- Client-side mutations with optimistic UI updates
+- Real-time aggregation updates (review counts, like counts, vote counts)
+- Filtered review counts displayed in course detail header
+
+**Security Features:**
+
+- HTML content sanitization using DOMPurify on frontend
+- Backend double-layer sanitization (write + read)
+- Anonymous review protection (author identity hidden from non-authors)
+- Login-gated actions (review, reply, like, vote)
 
 #### Development Workflow
+
 The project uses modern React patterns with hooks, context for state management, and TypeScript for type safety. Components are organized by feature and reusability, with clear separation between UI components, business logic, and data management.
+
+**Architecture Highlights:**
+
+- **Modular API Layer**: Separate API client functions for each domain (courses, forum, teachers)
+- **Type-Safe API**: Comprehensive TypeScript types for all API responses and requests
+- **Component Organization**: Components grouped by feature (Course, Forum, Teacher, UI)
+- **Custom Hooks**: Reusable hooks for common functionality (debouncing, i18n)
+- **Context Management**: Global state management through React Context
+- **Rich Text Editing**: CKEditor5 integration for content creation
+- **Internationalization**: Multi-language support with i18next
 
 #### Authentication Modal Design
 
@@ -222,15 +367,34 @@ The project uses modern React patterns with hooks, context for state management,
 - Typical gating usage:
 
 ```tsx
-import { useApp } from '@/contexts/AppContext'
+import { useApp } from "@/contexts/AppContext";
 
-const { isLoggedIn, openLoginModal } = useApp()
+const { isLoggedIn, openLoginModal } = useApp();
 
 function onAction() {
-  if (!isLoggedIn) return openLoginModal()
+  if (!isLoggedIn) return openLoginModal();
   // proceed
 }
 ```
+
+#### API Structure
+
+The project uses a modular API client architecture with separate modules for each domain:
+
+**API Client Modules:**
+
+- `lib/api/courses.ts` - Course-related API functions
+- `lib/api/forum-post.ts` - Forum post API functions
+- `lib/api/forum-comment.ts` - Forum comment API functions
+- `lib/api/teachers.ts` - Teacher-related API functions
+- `lib/api/api-utils.ts` - Common API utilities and base functions
+
+**Type Safety:**
+
+- All API functions are fully typed with TypeScript
+- API types are organized in `types/api/` directory
+- Separate type files for each domain (accounts, courses, forum-comment, forum-post, teachers)
+- Common types shared across modules in `types/api/common.ts`
 
 ### Appendix: Node.js Documentations
 

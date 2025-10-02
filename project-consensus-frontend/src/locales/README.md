@@ -12,16 +12,16 @@
 
 ```
 src/
-├── locales/           # 翻译文件目录
-│   ├── zh-cn.json    # 简体中文翻译
-│   ├── zh-hk.json    # 繁体中文翻译
-│   └── en-us.json    # 英文翻译
+├── locales/            # 翻译文件目录
+│   ├── zh-cn.json      # 简体中文翻译
+│   ├── zh-hk.json      # 繁体中文翻译
+│   └── en-us.json      # 英文翻译
 ├── lib/
-│   └── i18n.ts       # i18next 配置
+│   └── i18n.ts         # i18next 配置
 ├── hooks/
-│   └── useI18n.ts    # 自定义国际化 hook
+│   └── use-i18n.ts     # 自定义国际化 hook
 └── contexts/
-    └── AppContext.tsx # 应用全局状态（包含语言管理）
+    └── AppContext.tsx  # 应用全局状态（包含语言管理）
 ```
 
 ## 使用方法

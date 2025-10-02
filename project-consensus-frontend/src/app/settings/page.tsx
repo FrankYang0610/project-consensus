@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { useI18n } from '@/hooks/useI18n';
+import { useI18n } from '@/hooks/use-i18n';
 import { SiteNavigation } from '@/components/SiteNavigation';
 import {
   Card,
@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ChevronDown } from 'lucide-react';
 import { Language, User } from '@/types';
-import { apiPost } from '@/lib/utils';
+import { apiPost } from '@/lib/api/api-utils';
 import { PronounsSelector } from '@/components/PronounsSelector';
 
 type PrivacySettings = {

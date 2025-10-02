@@ -14,11 +14,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { useI18n } from '@/hooks/useI18n';
+import { useI18n } from '@/hooks/use-i18n';
 import { SiteNavigation } from '@/components/SiteNavigation';
 import Link from 'next/link';
 import { ErrorResponse, RegisterSuccessResponse, SendVerificationCodeResponse } from '@/types';
-import { getCookie, getAPIBaseUrl } from '@/lib/utils';
+import { getCookie, getAPIBaseUrl } from '@/lib/api/api-utils';
 import { useApp } from '@/contexts/AppContext';
 
 const POLYU_EMAIL_REGEX = /@connect\.polyu\.hk$/i;

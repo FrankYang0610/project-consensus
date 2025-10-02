@@ -1,5 +1,5 @@
 import type { Teacher, TeacherCourseRef } from '@/types';
-import { sampleCourses } from '@/data/sampleCourses';
+import { sampleCourses } from '@/data/sample-courses';
 
 /**
  * Sample teacher data with UUID identifiers

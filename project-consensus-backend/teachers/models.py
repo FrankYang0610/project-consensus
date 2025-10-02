@@ -33,10 +33,10 @@ class Teacher(models.Model):
     years_experience = models.PositiveIntegerField(null=True, blank=True)
 
     # Rating metrics
-    rating_overall = models.FloatField(default=0)
-    rating_difficulty = models.FloatField(null=True, blank=True)
-    rating_friendliness = models.FloatField(null=True, blank=True)
-    rating_clarity = models.FloatField(null=True, blank=True)
+    rating_overall = models.FloatField(null=True, blank=True, help_text="Overall rating 0.0-10.0, null if no reviews")
+    rating_difficulty = models.FloatField(null=True, blank=True, help_text="Difficulty rating 0.0-10.0")
+    rating_friendliness = models.FloatField(null=True, blank=True, help_text="Friendliness rating 0.0-10.0")
+    rating_clarity = models.FloatField(null=True, blank=True, help_text="Clarity rating 0.0-10.0")
     rating_grading = models.CharField(max_length=10, choices=Grading.choices, blank=True)
     rating_reviews_count = models.PositiveIntegerField(default=0)
 

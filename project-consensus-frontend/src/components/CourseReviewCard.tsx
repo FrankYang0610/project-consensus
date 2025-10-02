@@ -8,7 +8,8 @@ import {
   MessageSquare,
   Edit3,
   Calendar,
-  Plus
+  Plus,
+  Trash2
 } from "lucide-react";
 
 import {
@@ -17,8 +18,10 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useI18n } from "@/hooks/useI18n";
+import { useI18n } from "@/hooks/use-i18n";
+import { useApp } from "@/contexts/AppContext";
 import { clamp, formatTerm, formatDateDisplay, validateRating } from "@/lib/course-utils";
+import { sanitizeHtml } from "@/lib/html-utils";
 import type {
   CourseReview,
 } from "@/types";
@@ -33,6 +36,8 @@ export interface CourseReviewCardProps {
   onToggleReplies?: (reviewId: string, nextExpanded: boolean) => void; // 切换展开/折叠回复 / Toggle replies expand/collapse
   repliesExpanded?: boolean; // 当前是否展开回复（仅用于显示逻辑，可选） / Whether replies are expanded (optional, for display logic)
   onCreateReply?: (reviewId: string) => void; // 发表回复回调 / Post reply callback
+  onEdit?: (reviewId: string) => void; // 编辑点评回调 / Edit review callback
+  onDelete?: (reviewId: string) => void; // 删除点评回调 / Delete review callback
   className?: string;
   showRepliesSection?: boolean; // 是否显示回复区域 / Whether to show replies section
 }
@@ -117,10 +122,13 @@ export function CourseReviewCard({
   onToggleReplies,
   repliesExpanded,
   onCreateReply,
+  onEdit,
+  onDelete,
   className,
   showRepliesSection = true,
 }: CourseReviewCardProps) {
   const { t, language } = useI18n();
+  const { user } = useApp();
 
   // Handle like button click
   const handleLike = React.useCallback(() => {
@@ -129,13 +137,17 @@ export function CourseReviewCard({
 
   // Handle reply button click
   const handleReply = React.useCallback(() => {
+    // Don't toggle if there are no replies to show
+    if ((review.repliesCount ?? 0) === 0) {
+      return;
+    }
     if (onToggleReplies) {
       const next = !repliesExpanded;
       onToggleReplies(review.id, next);
     } else {
       onReply?.(review.id);
     }
-  }, [onReply, onToggleReplies, repliesExpanded, review.id]);
+  }, [onReply, onToggleReplies, repliesExpanded, review.id, review.repliesCount]);
 
   // Format dates with memoization for performance
   const createdAtFormatted = React.useMemo(() =>
@@ -176,6 +188,23 @@ export function CourseReviewCard({
     [review.term, t, language]
   );
 
+  // Derive display author name considering anonymity rules
+  const isOwner = user?.id && review?.author?.id && String(user.id) === String(review.author.id);
+  const displayName = React.useMemo(() => {
+    if (!review?.author?.name) return 'Unknown';
+    if (review.isAnonymous) {
+      if (!review.author.id) {
+        // Anonymous to others
+        return t('common.anonymous') || 'Anonymous';
+      }
+      if (isOwner) {
+        // Anonymous for self: show Anonymous plus (author name)
+        return t('common.anonymousWithId', { name: String(review.author.name || '') }) || `Anonymous (${String(review.author.name || '')})`;
+      }
+    }
+    return review.author.name;
+  }, [review.isAnonymous, review.author?.id, review.author?.name, isOwner, t]);
+
   // Post-hooks validation to avoid breaking React hooks rules
   if (!review?.id || !review?.author?.name) {
     console.warn('Invalid review data provided:', review);
@@ -188,9 +217,9 @@ export function CourseReviewCard({
         {/* Header: Author Info and Rating in one row */}
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3 flex-1 min-w-0">
-            <UserAvatar name={review.author.name} avatarUrl={review.author.avatarUrl} />
+            <UserAvatar name={displayName} avatarUrl={review.author.avatarUrl} />
             <div className="flex flex-col gap-1 min-w-0 flex-1">
-              <div className="font-medium text-base">{review.author.name}</div>
+              <div className="font-medium text-base">{displayName}</div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
                 <Calendar className="w-4 h-4 shrink-0" />
                 <span className="shrink-0">{createdAtFormatted}</span>
@@ -207,46 +236,49 @@ export function CourseReviewCard({
           )}
         </div>
 
-        {/* Rating and Attributes in same row */}
-        <div className="flex flex-col lg:flex-row gap-4">
-          {/* Overall Rating */}
-          <div className="flex items-center gap-3 flex-shrink-0">
-            <StarRating score10={review.overallRating} />
-            <span className="text-xl font-bold">{validateRating(review.overallRating).toFixed(1)}</span>
-            <span className="text-sm text-muted-foreground">/ 10</span>
-            <span className="text-sm text-muted-foreground">
-              {t("courses.review.overallRating")}
-            </span>
-          </div>
+        {/* Rating and Attributes in same row - only show when not onlyText */}
+        {!review.onlyText && review.attributes && review.overallRating !== undefined && (
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Overall Rating */}
+            <div className="flex items-center gap-3 flex-shrink-0">
+              <StarRating score10={review.overallRating} />
+              <span className="text-xl font-bold">{validateRating(review.overallRating).toFixed(1)}</span>
+              <span className="text-sm text-muted-foreground">/ 10</span>
+              <span className="text-sm text-muted-foreground">
+                {t("courses.review.overallRating")}
+              </span>
+            </div>
 
-          {/* Four Dimensions Rating - flex to take remaining space */}
-          <div className="flex-1">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <AttributeItem
-                label={t("courses.card.attributes.difficulty")}
-                value={t(`courses.card.adjectives.${review.attributes.difficulty}`)}
-              />
-              <AttributeItem
-                label={t("courses.card.attributes.workload")}
-                value={t(`courses.card.adjectives.${review.attributes.workload}`)}
-              />
-              <AttributeItem
-                label={t("courses.card.attributes.grading")}
-                value={t(`courses.card.adjectives.${review.attributes.grading}`)}
-              />
-              <AttributeItem
-                label={t("courses.card.attributes.gain")}
-                value={t(`courses.card.adjectives.${review.attributes.gain}`)}
-              />
+            {/* Four Dimensions Rating - flex to take remaining space */}
+            <div className="flex-1">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <AttributeItem
+                  label={t("courses.card.attributes.difficulty")}
+                  value={t(`courses.card.adjectives.${review.attributes.difficulty}`)}
+                />
+                <AttributeItem
+                  label={t("courses.card.attributes.workload")}
+                  value={t(`courses.card.adjectives.${review.attributes.workload}`)}
+                />
+                <AttributeItem
+                  label={t("courses.card.attributes.grading")}
+                  value={t(`courses.card.adjectives.${review.attributes.grading}`)}
+                />
+                <AttributeItem
+                  label={t("courses.card.attributes.gain")}
+                  value={t(`courses.card.adjectives.${review.attributes.gain}`)}
+                />
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Review Content */}
+        {/* Review Content (rich text, sanitized) */}
         <div className="px-4 py-3 rounded-lg bg-muted/30 border">
-          <div className="text-sm leading-relaxed whitespace-pre-wrap">
-            {review.content}
-          </div>
+          <div
+            className="prose prose-zinc dark:prose-invert max-w-none text-sm leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(review.content) }}
+          />
         </div>
 
         {/* Actions and Stats */}
@@ -258,7 +290,7 @@ export function CourseReviewCard({
               size="sm"
               className={cn(
                 "gap-2 h-8 px-3",
-                review.isLiked ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                review.isLiked ? "text-red-500 hover:text-red-600" : "text-muted-foreground hover:text-foreground"
               )}
               onClick={handleLike}
             >
@@ -270,7 +302,10 @@ export function CourseReviewCard({
             <Button
               variant="ghost"
               size="sm"
-              className="gap-2 h-8 px-3 text-muted-foreground hover:text-foreground"
+              className={cn(
+                "gap-2 h-8 px-3 text-muted-foreground",
+                (review.repliesCount ?? 0) > 0 ? "hover:text-foreground cursor-pointer" : "cursor-default opacity-60"
+              )}
               onClick={handleReply}
             >
               <MessageSquare className="w-4 h-4" />
@@ -287,6 +322,30 @@ export function CourseReviewCard({
               <Plus className="w-4 h-4" />
               <span className="text-sm">{t("comment.addComment")}</span>
             </Button>
+
+            {/* Owner actions: Edit / Delete */}
+            {isOwner && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-2 h-8 px-3 text-muted-foreground hover:text-foreground"
+                  onClick={() => onEdit?.(review.id)}
+                >
+                  <Edit3 className="w-4 h-4" />
+                  <span className="text-sm">{t("courses.review.edit")}</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-2 h-8 px-3 text-destructive hover:text-destructive/90"
+                  onClick={() => onDelete?.(review.id)}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span className="text-sm">{t("courses.review.delete")}</span>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Time info */}
