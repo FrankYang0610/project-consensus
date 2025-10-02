@@ -202,6 +202,8 @@ def login_view(request):
     # Fetch user with optimized stats to avoid N+1 queries
     # 获取用户时同时计算统计数据，避免 N+1 查询
     user = get_user_with_stats(user.pk)
+    if not user:
+        return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
     # success; establish session and return profile payload
     django_login(request, user)
@@ -222,6 +224,8 @@ def me(request):
     # Fetch user with optimized stats to avoid N+1 queries
     # 获取用户时同时计算统计数据，避免 N+1 查询
     user = get_user_with_stats(request.user.pk)
+    if not user:
+        return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
     return Response(build_user_payload(user))
 
 
@@ -238,5 +242,7 @@ def update_profile(request):
     # Fetch user with optimized stats to avoid N+1 queries
     # 获取用户时同时计算统计数据，避免 N+1 查询
     user = get_user_with_stats(request.user.pk)
+    if not user:
+        return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
     return Response({"success": True, "user": build_user_payload(user)})
 
