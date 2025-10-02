@@ -7,7 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { ForumPostDetailCard } from "@/components/ForumPostDetailCard";
 import { ForumPostCommentList } from "@/components/ForumPostCommentList";
-import { apiGet, apiPost, apiDeleteVoid } from "@/lib/api/api-utils";
+import { fetchForumPostById, likeForumPost, unlikeForumPost, deleteForumPost } from "@/lib/api/forum-post";
+import { createForumComment } from "@/lib/api/forum-comment";
 import { isContentEmpty } from "@/lib/utils";
 import { useApp } from "@/contexts/AppContext";
 import { ForumPost } from "@/types";
@@ -48,9 +49,9 @@ export default function PostPage() {
 
   React.useEffect(() => {
     let mounted = true;
-    apiGet<ForumPost>(`/api/forum/posts/${postId}/`)
+    fetchForumPostById(postId)
       .then((data) => {
-        if (mounted) setPost(data);
+        if (mounted && data) setPost(data);
       })
       .catch((e) => console.error(e));
     return () => {
@@ -103,7 +104,7 @@ export default function PostPage() {
 
   const handleDeletePost = async (id: string) => {
     try {
-      await apiDeleteVoid(`/api/forum/posts/${id}/`);
+      await deleteForumPost(id);
       router.push("/");
     } catch (e) {
       console.error(e);
@@ -117,7 +118,7 @@ export default function PostPage() {
     if (isSubmittingComment) return;
     try {
       setIsSubmittingComment(true);
-      const created = await apiPost<ForumPostComment>(`/api/forum/comments/`, {
+      const created = await createForumComment({
         content: commentContent.trim(),
         postId: postId,
         replyTo: replyToId,
@@ -181,8 +182,8 @@ export default function PostPage() {
                 // optimistic
                 setPost(prev => prev ? { ...prev, isLiked: willLike, likes: Math.max(0, prev.likes + (willLike ? 1 : -1)) } : prev);
 
-                const endpoint = willLike ? `/api/forum/posts/${id}/like/` : `/api/forum/posts/${id}/unlike/`;
-                apiPost<ForumPost>(endpoint, {})
+                const likeAction = willLike ? likeForumPost(id) : unlikeForumPost(id);
+                likeAction
                   .then((data) => {
                     // reconcile with server response
                     setPost(prev => prev ? { ...prev, isLiked: !!data.isLiked, likes: Math.max(0, data.likes) } : prev);

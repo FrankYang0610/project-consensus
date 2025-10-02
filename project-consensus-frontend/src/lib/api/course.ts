@@ -10,7 +10,7 @@ import type {
   CreateReplyPayload,
   VoteCourseResponse,
 } from "@/types";
-import { apiGet, apiPost, apiPatch, ensureCSRFCookie, getCookie, getAPIBaseUrl } from "./api-utils";
+import { apiGet, apiPost, apiPatch, apiDeleteVoid } from "./api-utils";
 
 export async function fetchCourseById(subjectId: string, init?: RequestInit): Promise<Course | null> {
   try {
@@ -84,46 +84,11 @@ export async function createReviewReply(reviewId: string, payload: CreateReplyPa
 }
 
 export async function deleteReviewReply(replyId: string): Promise<void> {
-  // Local helper to send CSRF-protected DELETE
-  const base = getAPIBaseUrl();
-  let csrftoken = getCookie('csrftoken');
-  if (!csrftoken) {
-    await ensureCSRFCookie();
-    csrftoken = getCookie('csrftoken');
-  }
-  const res = await fetch(`${base}/api/replies/${encodeURIComponent(replyId)}/`, {
-    method: 'DELETE',
-    credentials: 'include',
-    headers: {
-      'Accept': 'application/json',
-      ...(csrftoken ? { 'X-CSRFToken': csrftoken } : {}),
-    },
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`DELETE replies failed: ${res.status} ${text}`);
-  }
+  return apiDeleteVoid(`/api/replies/${encodeURIComponent(replyId)}/`);
 }
 
 export async function deleteCourseReview(reviewId: string): Promise<void> {
-  const base = getAPIBaseUrl();
-  let csrftoken = getCookie('csrftoken');
-  if (!csrftoken) {
-    await ensureCSRFCookie();
-    csrftoken = getCookie('csrftoken');
-  }
-  const res = await fetch(`${base}/api/reviews/${encodeURIComponent(reviewId)}/`, {
-    method: 'DELETE',
-    credentials: 'include',
-    headers: {
-      'Accept': 'application/json',
-      ...(csrftoken ? { 'X-CSRFToken': csrftoken } : {}),
-    },
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`DELETE review failed: ${res.status} ${text}`);
-  }
+  return apiDeleteVoid(`/api/reviews/${encodeURIComponent(reviewId)}/`);
 }
 
 // ---------------- Course vote API ----------------

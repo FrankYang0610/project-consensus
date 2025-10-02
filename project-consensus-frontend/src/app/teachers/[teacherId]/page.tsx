@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useI18n } from "@/hooks/useI18n";
-import { fetchTeacherById, fetchTeacherCourses } from "@/lib/api/teachers";
+import { fetchTeacherById, fetchTeacherCourses } from "@/lib/api/teacher";
 import type { Teacher, TeacherCourseRef } from "@/types";
 
 export default function TeacherDetailPage() {

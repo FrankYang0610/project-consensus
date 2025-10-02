@@ -14,14 +14,14 @@ import {
   toggleLikeReply,
   createReviewReply,
   deleteReviewReply,
-} from "@/lib/api/courses";
+} from "@/lib/api/course";
 import { useI18n } from "@/hooks/useI18n";
-import { fetchCourseById } from "@/lib/api/courses";
+import { fetchCourseById } from "@/lib/api/course";
 import type { Course, TeacherInfo } from "@/types";
 import { Button } from "@/components/ui/button";
 import { isContentEmpty } from "@/lib/utils";
 import { useApp } from "@/contexts/AppContext";
-import { deleteCourseReview } from "@/lib/api/courses";
+import { deleteCourseReview } from "@/lib/api/course";
 import { useRouter } from "next/navigation";
 // No longer needed to map names -> ids; sample courses already carry {id,name}
 

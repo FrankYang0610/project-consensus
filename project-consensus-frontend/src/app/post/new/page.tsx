@@ -16,7 +16,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { useI18n } from "@/hooks/useI18n";
 import { useRouter } from "next/navigation";
 import { ForumPost } from "@/types";
-import { apiPost } from "@/lib/api/api-utils";
+import { createForumPost } from "@/lib/api/forum-post";
 import { useApp } from "@/contexts/AppContext";
 
 export default function NewForumPostPage() {
@@ -101,7 +101,7 @@ export default function NewForumPostPage() {
         language: "zh-hans",
         isAnonymous,
       };
-      const created = await apiPost<ForumPost>(`/api/forum/posts/`, payload);
+      const created = await createForumPost(payload);
       router.push(`/post/${created.id}`);
     } catch (error) {
       console.error("提交帖子时出错 / Error submitting post:", error);

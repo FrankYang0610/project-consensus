@@ -46,8 +46,6 @@ export type {
   LoginSuccessResponse,
   ErrorResponse,
   PaginatedResponse,
-  ListPostsResponse,
-  ListCommentsResponse,
   // Course API types
   FetchCourseReviewsParams,
   CreateCourseReviewPayload,
@@ -58,4 +56,12 @@ export type {
   VoteCourseResponse,
   // Teacher API types
   FetchTeachersParams,
+  // Forum API types
+  GetForumPostCommentPositionResponse,
+  FetchForumPostsParams,
+  CreateForumPostPayload,
+  UpdateForumPostPayload,
+  FetchForumCommentsParams,
+  CreateForumCommentPayload,
+  UpdateForumCommentPayload,
 } from './api';

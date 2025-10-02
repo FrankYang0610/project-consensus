@@ -8,8 +8,7 @@ import { useI18n } from "@/hooks/useI18n";
 import CreateForumPostButton from "@/components/CreateForumPostButton";
 import { useApp } from "@/contexts/AppContext";
 import { Button } from "@/components/ui/button";
-import { apiGet, apiPost } from "@/lib/api/api-utils";
-import { ListPostsResponse } from "@/types/api";
+import { fetchForumPosts, likeForumPost, unlikeForumPost } from "@/lib/api/forum-post";
 import { ForumPost } from "@/types";
 
 export default function HomePage() {
@@ -18,7 +17,8 @@ export default function HomePage() {
   const [posts, setPosts] = React.useState<ForumPost[]>([]);
   const loaderRef = React.useRef<HTMLDivElement | null>(null);
   const loadingRef = React.useRef(false);
-  const [nextUrl, setNextUrl] = React.useState<string | null>("/api/forum/posts/?page=1&page_size=12");
+  const [nextPage, setNextPage] = React.useState<number>(1);
+  const [hasNextPage, setHasNextPage] = React.useState<boolean>(true);
   const [loadError, setLoadError] = React.useState(false);
 
   // 防止 "连点点赞/取消赞" 导致 UI 和后端状态打架的轻量级锁
@@ -50,8 +50,8 @@ export default function HomePage() {
       : p
     ));
 
-    const endpoint = willLike ? `/api/forum/posts/${id}/like/` : `/api/forum/posts/${id}/unlike/`;
-    apiPost<ForumPost>(endpoint, {})
+    const likeAction = willLike ? likeForumPost(id) : unlikeForumPost(id);
+    likeAction
       .then((data) => {
         setPosts(prev => prev.map(p => p.id === id
           ? { ...p, isLiked: !!data.isLiked, likes: Math.max(0, data.likes) }
@@ -69,19 +69,20 @@ export default function HomePage() {
   }, [posts]);
 
   const visiblePosts = posts; // We append pages from server; all posts are visible
-  const remaining = nextUrl ? 1 : 0; // sentinel uses presence of next page
+  const remaining = hasNextPage ? 1 : 0; // sentinel uses presence of next page
 
   const fetchMore = React.useCallback(async () => {
-    if (!nextUrl || loadingRef.current) return;
+    if (!hasNextPage || loadingRef.current) return;
     loadingRef.current = true;
     try {
-      const data = await apiGet<ListPostsResponse>(nextUrl);
+      const data = await fetchForumPosts({ page: nextPage, pageSize: 12 });
       setPosts(prev => {
         const existing = new Set(prev.map(p => p.id));
         const deduped = data.results.filter(p => !existing.has(p.id));
         return [...prev, ...deduped];
       });
-      setNextUrl(data.next ? new URL(data.next).pathname + new URL(data.next).search : null);
+      setNextPage(prev => prev + 1);
+      setHasNextPage(!!data.next);
       setLoadError(false);
     } catch (err) {
       console.error(err);
@@ -89,11 +90,11 @@ export default function HomePage() {
     } finally {
       loadingRef.current = false;
     }
-  }, [nextUrl]);
+  }, [hasNextPage, nextPage]);
 
   React.useEffect(() => {
     // initial fetch
-    if (posts.length === 0 && nextUrl) {
+    if (posts.length === 0 && hasNextPage) {
       fetchMore();
     }
   }, []);
@@ -146,7 +147,7 @@ export default function HomePage() {
           </div>
         </main>
       </div>
-      {loadError && nextUrl && (
+      {loadError && hasNextPage && (
         <Button
           className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-red-600 hover:bg-red-700 text-white"
           onClick={() => {
