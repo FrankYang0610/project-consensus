@@ -14,7 +14,7 @@ import { formatPronounsForProfilePageDisplay } from '@/lib/pronouns-utils';
 import { getPublicUser, getPublicUserPosts, getPublicUserComments, getPublicUserReviews } from '@/lib/api/public-user';
 import { stripHtmlTags } from '@/lib/html-utils';
 import ClientOnlyTime from '@/components/ClientOnlyTime';
-import type { User } from '@/types/user';
+import type { PublicUser } from '@/types/user';
 import type { ForumPost, ForumPostComment } from '@/types/forum';
 import type { CourseReview } from '@/types/course';
 
@@ -24,7 +24,7 @@ export default function PublicUserPage() {
   const { user: currentUser } = useApp();
   const { t } = useI18n();
   
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<PublicUser | null>(null);
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [comments, setComments] = useState<ForumPostComment[]>([]);
   const [reviews, setReviews] = useState<CourseReview[]>([]);

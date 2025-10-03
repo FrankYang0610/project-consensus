@@ -127,10 +127,13 @@ export default function ProfilePage() {
                       </div>
                     )}
 
-                    <div>
+                    <div className="w-full">
                       <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{displayName}</h2>
                       {user?.pronounsShared && (
                         <p className="text-gray-600 dark:text-gray-300 mt-1">{formattedPronouns}</p>
+                      )}
+                      {user?.email && (
+                        <p className="text-sm text-muted-foreground mt-2 break-all">{user.email}</p>
                       )}
                       <Badge variant="secondary" className="mt-2">
                         {t('profile.memberFor', { days: userStats.joinedDays })}

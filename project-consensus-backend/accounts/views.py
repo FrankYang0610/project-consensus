@@ -56,13 +56,11 @@ def get_user_with_stats(user_id):
     return annotate_user_stats(User.objects.filter(pk=user_id)).first()
 
 
-def build_user_payload(user, include_private_info=True):
-    """Return a serializable user payload for API responses.
+def _build_base_user_payload(user):
+    """Build the base user payload with common fields (internal helper).
     
     Args:
         user: User object to serialize
-        include_private_info: If True, includes private fields like email (for own profile).
-                              If False, excludes private fields (for public profiles).
     
     Note: For optimal performance, when querying users, use annotate_user_stats() 
     to pre-calculate statistics and avoid N+1 queries:
@@ -96,7 +94,7 @@ def build_user_payload(user, include_private_info=True):
         delta = timezone.now() - user.date_joined
         joined_days = delta.days
     
-    payload = {
+    return {
         "id": str(user.pk),
         "name": getattr(profile, "display_name", None) or user.get_username(),
         "avatar": getattr(profile, "avatar_url", None) or None,
@@ -112,12 +110,38 @@ def build_user_payload(user, include_private_info=True):
             "joinedDays": joined_days,
         }
     }
+
+
+def build_user_payload(user):
+    """Return a serializable user payload for API responses with private information.
     
-    # Include private info only if requested (for user's own profile)
-    if include_private_info:
-        payload["email"] = user.email
+    This function includes private fields like email and is intended for returning
+    the user's own profile data.
     
+    Args:
+        user: User object to serialize
+        
+    Returns:
+        Dictionary with user data including email
+    """
+    payload = _build_base_user_payload(user)
+    payload["email"] = user.email
     return payload
+
+
+def build_public_user_payload(user):
+    """Return a serializable public user payload for API responses.
+    
+    This function excludes private fields like email and is intended for returning
+    public profile data to other users.
+    
+    Args:
+        user: User object to serialize
+        
+    Returns:
+        Dictionary with public user data (no email)
+    """
+    return _build_base_user_payload(user)
 
 @api_view(["POST"])
 def send_verification_code(request):
@@ -349,7 +373,7 @@ def public_user(request, user_id):
         if not user_with_stats:
             return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
         
-        return Response(build_user_payload(user_with_stats, include_private_info=False))
+        return Response(build_public_user_payload(user_with_stats))
     except Exception as e:
         logger.error(f"Error fetching public user {user_id}: {e}")
         return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)

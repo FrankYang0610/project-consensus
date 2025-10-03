@@ -1,13 +1,13 @@
 import { apiGet } from './api-utils';
-import type { User } from '@/types/user';
+import type { PublicUser } from '@/types/user';
 import type { ForumPost, ForumPostComment } from '@/types/forum';
 import type { CourseReview } from '@/types/course';
 
 /**
  * Get public profile information for a specific user
  */
-export async function getPublicUser(userId: string): Promise<User> {
-  return await apiGet<User>(`/api/accounts/users/${userId}/`);
+export async function getPublicUser(userId: string): Promise<PublicUser> {
+  return await apiGet<PublicUser>(`/api/accounts/users/${userId}/`);
 }
 
 /**
