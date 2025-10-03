@@ -56,27 +56,47 @@ if [ -n "${PIDS}" ]; then
   kill -9 ${PIDS} || true
 fi
 
-# 5) Rebuild migrations
-echo "[dev-reset] Rebuilding migrations from scratch"
+# 5) Rebuild migrations (backup seeds, regenerate 0001, restore seeds)
+# SKIPPED: Migration files are now preserved and not regenerated
+echo "[dev-reset] Skipping migration rebuild (migrations are preserved)"
 
-# Delete old migration files (keep __init__.py and seed data migrations)
-for app in accounts courses forum teachers core; do
-  if [ -d "${app}/migrations" ]; then
-    echo "[dev-reset] Cleaning migrations in ${app}"
-    # Delete migration files except __init__.py and seed files
-    find "${app}/migrations" -type f -name "*.py" \
-      ! -name "__init__.py" \
-      ! -name "0002_seed.py" \
-      ! -name "0002_create_demo_user.py" \
-      ! -name "0002_seed_demo_forum_data.py" \
-      -delete
-    find "${app}/migrations" -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-  fi
-done
-
-# Regenerate migrations
-echo "[dev-reset] Generating new migrations"
-python manage.py makemigrations
+# # Step 5a: Backup seed migration files
+# TEMP_SEED_DIR="/tmp/project-consensus-seeds-$$"
+# mkdir -p "${TEMP_SEED_DIR}"
+# echo "[dev-reset] Backing up seed migrations to ${TEMP_SEED_DIR}"
+# 
+# [ -f "accounts/migrations/0002_create_demo_user.py" ] && \
+#   cp "accounts/migrations/0002_create_demo_user.py" "${TEMP_SEED_DIR}/"
+# [ -f "courses/migrations/0002_seed.py" ] && \
+#   cp "courses/migrations/0002_seed.py" "${TEMP_SEED_DIR}/"
+# [ -f "forum/migrations/0002_seed_demo_forum_data.py" ] && \
+#   cp "forum/migrations/0002_seed_demo_forum_data.py" "${TEMP_SEED_DIR}/"
+# 
+# # Step 5b: Delete ALL migration files (except __init__.py)
+# for app in accounts courses forum teachers core; do
+#   if [ -d "${app}/migrations" ]; then
+#     echo "[dev-reset] Deleting all migrations in ${app}"
+#     find "${app}/migrations" -type f -name "*.py" ! -name "__init__.py" -delete
+#     find "${app}/migrations" -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+#   fi
+# done
+# 
+# # Step 5c: Generate fresh 0001_initial.py migrations
+# echo "[dev-reset] Generating new 0001_initial.py migrations"
+# python manage.py makemigrations
+# 
+# # Step 5d: Restore seed migrations
+# echo "[dev-reset] Restoring seed migrations"
+# [ -f "${TEMP_SEED_DIR}/0002_create_demo_user.py" ] && \
+#   cp "${TEMP_SEED_DIR}/0002_create_demo_user.py" "accounts/migrations/"
+# [ -f "${TEMP_SEED_DIR}/0002_seed.py" ] && \
+#   cp "${TEMP_SEED_DIR}/0002_seed.py" "courses/migrations/"
+# [ -f "${TEMP_SEED_DIR}/0002_seed_demo_forum_data.py" ] && \
+#   cp "${TEMP_SEED_DIR}/0002_seed_demo_forum_data.py" "forum/migrations/"
+# 
+# # Cleanup temp directory
+# rm -rf "${TEMP_SEED_DIR}"
+# echo "[dev-reset] Seed migrations restored"
 
 # 6) Migrate
 echo "[dev-reset] Running database migrations"
