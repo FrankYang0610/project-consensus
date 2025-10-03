@@ -106,7 +106,7 @@ project-consensus-frontend/
 │   │   │   └── page.tsx                      # About page
 │   │   ├── courses/
 │   │   │   ├── page.tsx                      # Course listing page
-│   │   │   └── [subjectId]/
+│   │   │   └── [courseId]/
 │   │   │       ├── page.tsx                  # Dynamic course detail pages
 │   │   │       └── review/
 │   │   │           └── page.tsx              # Course review page
@@ -267,7 +267,7 @@ The course module (`src/app/courses/` and related components) provides a compreh
 **Core Functionality:**
 
 - **Course Listing** (`/courses`) - Infinite scroll course list with real-time filtering
-- **Course Details** (`/courses/[subjectId]`) - Comprehensive course information including:
+- **Course Details** (`/courses/[courseId]`) - Comprehensive course information including:
   - Basic info: code, title, terms, teachers, department
   - Rating aggregates: overall score (0-10), review count, recommend/not recommend votes
   - Four dimensions: difficulty, workload, grading, gain
@@ -275,7 +275,7 @@ The course module (`src/app/courses/` and related components) provides a compreh
   - Course metadata: selection category, teaching type, level, credits, homepage, syllabus
   - Other teacher courses (same subject, different instructors)
   - Curriculum information (colleges → majors → semesters)
-- **Review System** (`/courses/[subjectId]/review`) - Full-featured review creation/editing:
+- **Review System** (`/courses/[courseId]/review`) - Full-featured review creation/editing:
   - Star rating (0-10 with half-star precision)
   - Four-dimension evaluation (difficulty/workload/grading/gain)
   - Rich text content with HTML sanitization

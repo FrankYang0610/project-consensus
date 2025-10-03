@@ -25,8 +25,8 @@ export default function CoursesPage() {
       const data = await apiGet<PaginatedResponse<Course> | Course[]>(nextUrl);
       const results: Course[] = Array.isArray(data) ? data : (data.results ?? []);
       setCourses(prev => {
-        const existing = new Set(prev.map(c => c.subjectId));
-        const deduped = results.filter(c => !existing.has(c.subjectId));
+        const existing = new Set(prev.map(c => c.courseId));
+        const deduped = results.filter(c => !existing.has(c.courseId));
         return [...prev, ...deduped];
       });
       const next = Array.isArray(data) ? null : data.next;
@@ -129,8 +129,8 @@ export default function CoursesPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {courses.map(course => (
                       <CoursePreviewCard
-                        key={course.subjectId}
-                        subjectId={course.subjectId}
+                        key={course.courseId}
+                        courseId={course.courseId}
                         subjectCode={course.subjectCode}
                         title={course.title}
                         term={course.term}

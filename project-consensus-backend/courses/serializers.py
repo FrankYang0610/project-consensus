@@ -59,7 +59,7 @@ def _author_payload_for(user: User) -> dict:
 class CourseSerializer(serializers.ModelSerializer):
     """Serializer aligning with the frontend Course type (camelCase output)."""
 
-    subjectId = serializers.CharField(source="subject_id")
+    courseId = serializers.CharField(source="course_id")
     subjectCode = serializers.CharField(source="subject_code")
     term = serializers.SerializerMethodField()
     terms = serializers.SerializerMethodField()
@@ -86,7 +86,7 @@ class CourseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = [
-            "subjectId",
+            "courseId",
             "subjectCode",
             "title",
             "term",
@@ -158,18 +158,18 @@ class CourseSerializer(serializers.ModelSerializer):
         ]
 
     def get_otherTeacherCourses(self, obj: Course):
-        # Other courses with the same subject_code but different subject_id
+        # Other courses with the same subject_code but different course_id
         qs = (
             Course.objects
             .filter(subject_code=obj.subject_code)
-            .exclude(subject_id=obj.subject_id)
+            .exclude(course_id=obj.course_id)
             .prefetch_related("teachers")
         )
         result = []
         for c in qs:
             teacher = next(iter(c.teachers.all()), None)
             payload = {
-                "subjectId": str(c.subject_id),
+                "courseId": str(c.course_id),
                 "teacherName": getattr(teacher, "name", "Unknown"),
                 "teacherAvatarUrl": getattr(teacher, "avatar_url", None) if teacher else None,
                 "rating": {
@@ -265,7 +265,7 @@ class CourseReviewSerializer(serializers.ModelSerializer):
     to provide defense-in-depth against XSS attacks.
     """
 
-    subjectId = serializers.CharField(source="course.subject_id", read_only=True)
+    courseId = serializers.CharField(source="course.course_id", read_only=True)
     author = serializers.SerializerMethodField()
     attributes = serializers.SerializerMethodField()
     # Not required when onlyText=true; range validated in validate()
@@ -284,7 +284,7 @@ class CourseReviewSerializer(serializers.ModelSerializer):
         model = CourseReview
         fields = [
             "id",
-            "subjectId",
+            "courseId",
             "author",
             "overallRating",
             "attributes",
@@ -298,7 +298,7 @@ class CourseReviewSerializer(serializers.ModelSerializer):
             "isAnonymous",
             "onlyText",
         ]
-        read_only_fields = ["id", "subjectId", "likesCount", "createdAt", "updatedAt", "repliesCount"]
+        read_only_fields = ["id", "courseId", "likesCount", "createdAt", "updatedAt", "repliesCount"]
     
     def to_representation(self, instance):
         """Override to_representation to sanitize HTML content on output.

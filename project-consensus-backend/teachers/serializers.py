@@ -53,7 +53,7 @@ class TeacherSerializer(serializers.ModelSerializer):
 class TeacherCourseRefSerializer(serializers.Serializer):
     """Lightweight course reference taught by a teacher, for /teachers/{id}/courses/ endpoint."""
 
-    subjectId = serializers.CharField()
+    courseId = serializers.CharField()
     subjectCode = serializers.CharField(required=False, allow_blank=True)
     title = serializers.CharField(required=False, allow_blank=True)
 

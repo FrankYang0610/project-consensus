@@ -217,7 +217,7 @@ export default function TeacherDetailPage() {
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {courses.map(course => (
-                      <Link key={course.subjectId} href={`/courses/${course.subjectId}?teacher=${encodeURIComponent(teacher.name)}`}>
+                      <Link key={course.courseId} href={`/courses/${course.courseId}?teacher=${encodeURIComponent(teacher.name)}`}>
                         <div className="border rounded p-3 hover:border-primary transition-colors">
                           <div className="text-sm text-muted-foreground">{course.subjectCode}</div>
                           <div className="font-medium truncate">{course.title}</div>

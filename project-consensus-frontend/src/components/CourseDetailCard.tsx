@@ -90,7 +90,7 @@ export interface FilterCallbacks {
  * 课程详情卡片组件属性 / Props for CourseDetailCard
  */
 export interface CourseDetailCardProps {
-  subjectId: string;
+  courseId: string;
   subjectCode: string;
   title: string;
   term: {
@@ -268,7 +268,7 @@ function TeacherAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string }
 }
 
 export function CourseDetailCard({
-  subjectId,
+  courseId,
   subjectCode,
   title,
   term,
@@ -465,8 +465,8 @@ export function CourseDetailCard({
     dispatchVoting({ type: 'TOGGLE_VOTE', voteType });
 
     // Debounced server request
-    sendVoteToServer(subjectId, voteType, currentRequestId);
-  }, [isLoggedIn, openLoginModal, sendVoteToServer, subjectId]);
+    sendVoteToServer(courseId, voteType, currentRequestId);
+  }, [isLoggedIn, openLoginModal, sendVoteToServer, courseId]);
 
   // Sort terms by year and semester (most recent first)
   const orderedTerms = React.useMemo(() => {
@@ -1064,8 +1064,8 @@ export function CourseDetailCard({
                   <div className="space-y-2">
                     {otherTeacherCourses!.map((course) => (
                       <Link
-                        key={course.subjectId}
-                        href={`/courses/${course.subjectId}`}
+                        key={course.courseId}
+                        href={`/courses/${course.courseId}`}
                         className="flex items-center gap-3 p-3 rounded-lg border bg-background hover:bg-muted/50 transition-colors group"
                       >
                         <TeacherAvatar name={course.teacherName} avatarUrl={course.teacherAvatarUrl} />
@@ -1154,7 +1154,7 @@ export function CourseDetailCard({
             <h3 className="text-base font-semibold">{t("courses.detail.reviews.title")}</h3>
             <Button size="sm" asChild>
               <Link
-                href={`/courses/${subjectId}/review${(userHasReview ? '?edit=1' : '')}`}
+                href={`/courses/${courseId}/review${(userHasReview ? '?edit=1' : '')}`}
                 onClick={(e) => { if (!isLoggedIn) { e.preventDefault(); openLoginModal(); } }}
               >
                 {userHasReview ? t("courses.detail.reviews.editReview") : t("courses.detail.reviews.writeReview")}

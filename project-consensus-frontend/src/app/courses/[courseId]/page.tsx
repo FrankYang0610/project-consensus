@@ -28,7 +28,7 @@ import { useRouter } from "next/navigation";
 // Client-only CKEditor wrapper for inline reply composer
 const RichTextEditor = dynamic(() => import("@/components/RichTextEditor"), { ssr: false });
 
-export default function CourseDetailPage({ params }: { params: Promise<{ subjectId: string }> }) {
+export default function CourseDetailPage({ params }: { params: Promise<{ courseId: string }> }) {
   const { t } = useI18n();
   const { isLoggedIn, openLoginModal } = useApp();
   const router = useRouter();
@@ -37,19 +37,19 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
 
   // Unwrap params Promise for Next.js 15
   const resolvedParams = React.use(params);
-  const { subjectId } = resolvedParams;
+  const { courseId } = resolvedParams;
 
   const [course, setCourse] = React.useState<Course | null>(null);
 
-  // Fetch from backend when subjectId changes
+  // Fetch from backend when courseId changes
   React.useEffect(() => {
     let cancelled = false;
     (async () => {
-      const data = await fetchCourseById(subjectId);
+      const data = await fetchCourseById(courseId);
       if (!cancelled) setCourse(data);
     })();
     return () => { cancelled = true; };
-  }, [subjectId]);
+  }, [courseId]);
 
   // Use teachers from data (already {id,name}); if ?teacher=name 提供，则将该老师置顶显示
   const teachers: TeacherInfo[] = React.useMemo(() => {
@@ -74,12 +74,13 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
   React.useEffect(() => {
     let cancelled = false;
     (async () => {
-      // Only fetch reviews when we have a valid subjectId (from the course)
-      const courseSubjectId = course?.subjectId;
+      // Only fetch reviews when we have a valid courseId (from the course)
+      // SubjectId now changed to courseId
+      const courseSubjectId = course?.courseId;
       if (!courseSubjectId) return;
 
       try {
-        const page = await fetchCourseReviews({ subjectId: courseSubjectId, page: 1, pageSize: 10, ordering: "-created_at" });
+        const page = await fetchCourseReviews({ courseId: courseSubjectId, page: 1, pageSize: 10, ordering: "-created_at" });
         if (!cancelled) {
           setReviews(page.results);
           setReviewsCount(page.count);
@@ -90,12 +91,12 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
       }
     })();
     return () => { cancelled = true; };
-  }, [course?.subjectId]); // Only re-fetch when subjectId changes, not when course object reference changes
+  }, [course?.courseId]); // Only re-fetch when courseId changes, not when course object reference changes
 
   // Reset selected term filter when switching to a different course
   React.useEffect(() => {
     setFilterSelectedTerms({});
-  }, [course?.subjectId]);
+  }, [course?.courseId]);
 
   // Track which reviews' replies are expanded (default collapsed)
   const [expandedReviews, setExpandedReviews] = React.useState<Set<string>>(new Set());
@@ -234,7 +235,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
 
     try {
       const page = await fetchCourseReviews({
-        subjectId: course.subjectId,
+        courseId: course.courseId,
         page: 1,
         pageSize: 10,
         ordering: mapSortToOrdering(filterSort),
@@ -313,7 +314,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
           <div className="max-w-6xl mx-auto grid grid-cols-1 gap-6 pt-2">
             <div className="px-4">
               <CourseDetailCard
-                subjectId={course.subjectId}
+                courseId={course.courseId}
                 subjectCode={course.subjectCode}
                 title={course.title}
                 term={course.term}
@@ -359,7 +360,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
                           onCreateReply={handleCreateReply}
                           onEdit={() => {
                             // Navigate to edit page with full form
-                            router.push(`/courses/${course.subjectId}/review?edit=1`);
+                            router.push(`/courses/${course.courseId}/review?edit=1`);
                           }}
                           onDelete={async (id) => {
                             if (!isLoggedIn) { openLoginModal(); return; }
@@ -370,7 +371,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ subject
                               // Remove locally for perceived responsiveness
                               setReviews(prev => prev.filter(r => r.id !== id));
                               // Refresh course detail and current filtered reviews to sync counts accurately
-                              const fresh = await fetchCourseById(subjectId);
+                              const fresh = await fetchCourseById(courseId);
                               if (fresh) setCourse(fresh);
                               await reloadReviews();
                             } catch (e) {

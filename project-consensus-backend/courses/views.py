@@ -100,7 +100,7 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
     """Read-only endpoints for courses, aligned with frontend usage.
 
     Best practices applied:
-    - Lookup by `subject_id` to match frontend routing (`/courses/[subjectId]`).
+    - Lookup by `course_id` to match frontend routing (`/courses/[courseId]`).
     - Allow basic search and ordering.
     - Provide a nested `reviews` endpoint for convenience.
     """
@@ -110,8 +110,8 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
     # Read: allow anyone; Write (e.g., nested POST actions): require authentication
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    # Use subject_id as the resource identifier (e.g., /api/courses/{uuid}/)
-    lookup_field = "subject_id"
+    # Use course_id as the resource identifier (e.g., /api/courses/{uuid}/)
+    lookup_field = "course_id"
     # UUID pattern (8-4-4-4-12 hex), be lenient to lowercase/uppercase
     lookup_value_regex = "[0-9a-fA-F\-]{32,36}"
 
@@ -269,8 +269,8 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
         return Response({"departments": departments}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["get", "post"], url_path="reviews")
-    def reviews(self, request, subject_id=None):
-        """Nested reviews for a course identified by subject_id.
+    def reviews(self, request, course_id=None):
+        """Nested reviews for a course identified by course_id.
 
         - GET: list reviews for the course (supports basic pagination)
         - POST: create a review for the course (requires authentication)
@@ -327,7 +327,7 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=["POST"], url_path="vote", permission_classes=[permissions.IsAuthenticated])
-    def vote(self, request, subject_id=None):
+    def vote(self, request, course_id=None):
         """Toggle/switch course vote for current user.
 
         Body: { "voteType": "recommend" | "notRecommend" }
@@ -406,7 +406,7 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
         course.refresh_from_db(fields=["rating_recommend_count", "rating_not_recommend_count"])
         return Response(
             {
-                "subjectId": str(course.subject_id),
+                "courseId": str(course.course_id),
                 "rating": {
                     "recommendCount": course.rating_recommend_count,
                     "notRecommendCount": course.rating_not_recommend_count,
@@ -452,10 +452,10 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
         if course_id:
             qs = qs.filter(course_id=course_id)
 
-        # Also support subjectId (align with frontend Course.subjectId)
-        subject_id = self.request.query_params.get("subjectId") or self.request.query_params.get("subject_id")
-        if subject_id:
-            qs = qs.filter(course__subject_id=subject_id)
+        # Also support courseId (align with frontend Course.courseId)
+        course_id = self.request.query_params.get("courseId") or self.request.query_params.get("course_id")
+        if course_id:
+            qs = qs.filter(course__course_id=course_id)
 
         # Filter to current user's review when requested
         mine = self.request.query_params.get("mine")
@@ -567,15 +567,15 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if not user or not user.is_authenticated:  # pragma: no cover - guarded by permission
             raise PermissionDenied()
-        subject_id = self.request.data.get("subjectId") or self.request.data.get("subject_id")
+        course_id = self.request.data.get("courseId") or self.request.data.get("course_id")
         course = None
-        if subject_id:
+        if course_id:
             try:
-                course = Course.objects.get(subject_id=subject_id)
+                course = Course.objects.get(course_id=course_id)
             except Course.DoesNotExist:
-                raise ValidationError({"subjectId": "invalid course subjectId"})
+                raise ValidationError({"courseId": "invalid course courseId"})
         else:
-            raise ValidationError({"subjectId": "required"})
+            raise ValidationError({"courseId": "required"})
         
         # Rely on database UniqueConstraint for concurrency safety
         try:

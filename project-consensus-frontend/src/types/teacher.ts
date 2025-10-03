@@ -18,7 +18,7 @@ export interface TeacherRating {
  * Lightweight course reference taught by a teacher
  */
 export interface TeacherCourseRef {
-  subjectId: string;
+  courseId: string;
   subjectCode?: string;
   title?: string;
 }

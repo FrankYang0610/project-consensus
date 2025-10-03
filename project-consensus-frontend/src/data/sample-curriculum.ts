@@ -94,6 +94,6 @@ export const curriculumSampleData: CurriculumCollege[] = [
 ];
 
 // 根据课程或其他条件筛选（当前直接返回全量示例）/ Filter by subject (currently returns all)
-export function getSampleCurriculumForSubject(_subjectId?: string) {
+export function getSampleCurriculumForSubject(_courseId?: string) {
   return curriculumSampleData;
 }

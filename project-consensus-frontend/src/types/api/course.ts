@@ -2,7 +2,7 @@
 
 // GET /api/reviews/ query parameters
 export interface FetchCourseReviewsParams {
-  subjectId: string;
+  courseId: string;
   page?: number;
   pageSize?: number;
   ordering?: string; // created_at, -likes_count, overall_rating, etc.
@@ -52,7 +52,7 @@ export type CourseUserVote = 'recommend' | 'notRecommend' | null;
 
 // POST /api/courses/:id/vote/ response
 export interface VoteCourseResponse {
-  subjectId: string;
+  courseId: string;
   rating: { recommendCount: number; notRecommendCount: number };
   userVote: CourseUserVote;
 }

@@ -45,7 +45,7 @@ export interface CurriculumCollege {
  * 其他教师的同课程信息 / Other teacher's course info
  */
 export interface OtherTeacherCourse {
-  subjectId: string;
+  courseId: string;
   teacherName: string;
   teacherAvatarUrl?: string;
   rating: {
@@ -65,7 +65,7 @@ export interface OtherTeacherCourse {
  */
 export interface CourseReview {
   id: string; // 评价唯一标识符（UUID） / Review unique identifier (UUID)
-  subjectId: string; // 课程ID（后端为 UUID 字符串） / Course ID (UUID string)
+  courseId: string; // 课程ID（后端为 UUID 字符串） / Course ID (UUID string)
   author: {
     id: string; // 作者ID / Author ID
     name: string; // 作者姓名 / Author name  
@@ -104,7 +104,7 @@ export interface CourseReview {
  * 课程基础信息 / Course basic information
  */
 export interface Course {
-  subjectId: string; // 后端为 UUID 字符串 / Backend UUID string
+  courseId: string; // 后端为 UUID 字符串 / Backend UUID string
   subjectCode: string;
   title: string;
   term: {
