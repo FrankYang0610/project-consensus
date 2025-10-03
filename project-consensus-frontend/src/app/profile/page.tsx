@@ -288,7 +288,7 @@ export default function ProfilePage() {
                                 {stripHtmlTags(review.content)}
                               </p>
                               <div className="flex items-center gap-3 text-xs">
-                                <ClientOnlyTime dateString={typeof review.createdAt === 'string' ? review.createdAt : review.createdAt.toISOString()} className="text-gray-500 dark:text-gray-400" />
+                                <ClientOnlyTime dateString={review.createdAt} className="text-gray-500 dark:text-gray-400" />
                                 <span className="text-gray-500 dark:text-gray-400">❤️ {review.likesCount}</span>
                                 {(review.repliesCount ?? 0) > 0 && <span className="text-gray-500 dark:text-gray-400">💬 {review.repliesCount}</span>}
                               </div>
