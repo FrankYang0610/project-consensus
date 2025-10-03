@@ -7,7 +7,7 @@ import type { CourseReview } from '@/types';
 export const sampleReviews: CourseReview[] = [
   {
     id: "review-1",
-    subjectId: "crs_0003", // COMP1A12 - Programming Fundamentals (Dr. Kim)
+    courseId: "crs_0003", // COMP1A12 - Programming Fundamentals (Dr. Kim)
     author: {
       id: "user-001",
       name: "Alice Wong",
@@ -33,7 +33,7 @@ export const sampleReviews: CourseReview[] = [
   },
   {
     id: "review-2",
-    subjectId: "crs_0003", // COMP1A12 - Programming Fundamentals (Dr. Kim)
+    courseId: "crs_0003", // COMP1A12 - Programming Fundamentals (Dr. Kim)
     author: {
       id: "user-002",
       name: "Bob Chen",
@@ -58,7 +58,7 @@ export const sampleReviews: CourseReview[] = [
   },
   {
     id: "review-3",
-    subjectId: "crs_0003_ma", // COMP1A12 - Programming Fundamentals (Dr. Ma)
+    courseId: "crs_0003_ma", // COMP1A12 - Programming Fundamentals (Dr. Ma)
     author: {
       id: "user-003",
       name: "Catherine Liu",
@@ -83,7 +83,7 @@ export const sampleReviews: CourseReview[] = [
   },
   {
     id: "review-4",
-    subjectId: "crs_0001", // APSS1A01 - Introduction to Social Sciences (Prof. Wang Yao Wu)
+    courseId: "crs_0001", // APSS1A01 - Introduction to Social Sciences (Prof. Wang Yao Wu)
     author: {
       id: "user-004",
       name: "David Zhang",
@@ -108,7 +108,7 @@ export const sampleReviews: CourseReview[] = [
   },
   {
     id: "review-5",
-    subjectId: "crs_0002", // APSS2B10 - Social Research Methods (Dr. Lee)
+    courseId: "crs_0002", // APSS2B10 - Social Research Methods (Dr. Lee)
     author: {
       id: "user-005",
       name: "Emma Johnson",
@@ -133,7 +133,7 @@ export const sampleReviews: CourseReview[] = [
   },
   {
     id: "review-6",
-    subjectId: "crs_0009", // ISE3C20 - Human-Computer Interaction (Prof. Ng)
+    courseId: "crs_0009", // ISE3C20 - Human-Computer Interaction (Prof. Ng)
     author: {
       id: "user-006",
       name: "Frank Li",
@@ -161,8 +161,8 @@ export const sampleReviews: CourseReview[] = [
 /**
  * 根据课程ID获取评价 / Get reviews by course ID
  */
-export function getReviewsBySubjectId(subjectId: string): CourseReview[] {
-  return sampleReviews.filter(review => review.subjectId === subjectId);
+export function getReviewsBySubjectId(courseId: string): CourseReview[] {
+  return sampleReviews.filter(review => review.courseId === courseId);
 }
 
 /**

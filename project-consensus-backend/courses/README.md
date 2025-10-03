@@ -18,8 +18,8 @@ This module provides a complete course evaluation system, including:
 
 - **Frontend Route Mapping**:
   - Course List: `/courses` → `GET /api/courses/`
-  - Course Detail: `/courses/[subjectId]` → `GET /api/courses/{subjectId}/`
-  - Write Review: `/courses/[subjectId]/review` → `POST /api/courses/{subjectId}/reviews/`
+  - Course Detail: `/courses/[courseId]` → `GET /api/courses/{courseId}/`
+  - Write Review: `/courses/[courseId]/review` → `POST /api/courses/{courseId}/reviews/`
 - **Data Format Alignment**: All API responses use camelCase naming, strictly consistent with frontend TypeScript types (`src/types/course.ts`)
 - **Real-time Aggregation**: Automatically recalculates course rating, review count, reply count and other statistics after review creation/update/deletion
 - **User State Injection**: Course detail automatically injects current user's vote state (`userVote`) and whether already reviewed (`userHasReview`)
@@ -28,7 +28,7 @@ This module provides a complete course evaluation system, including:
 
 - `Course`
 
-  - `subject_id` (UUID, primary key) → frontend `subjectId`
+  - `course_id` (UUID, primary key) → frontend `courseId`
   - `subject_code` (string) → frontend `subjectCode`
   - `title` (string)
   - `term_year` (integer) + `term_semester` (`spring|summer|fall`) → frontend `term`
@@ -93,7 +93,7 @@ This module provides a complete course evaluation system, including:
 
   - Outputs nested fields required by frontend: `rating`, `attributes`, `teachers`
   - Outputs `terms` list (falls back to single-element array composed of current `term` when empty)
-  - Outputs `otherTeacherCourses`: Other courses with same `subjectCode` but different `subjectId`, with teacher, rating, and attribute summary
+  - Outputs `otherTeacherCourses`: Other courses with same `subjectCode` but different `courseId`, with teacher, rating, and attribute summary
   - Passes through `curriculum` field (with light structure validation):
     - `college.majors[]` must be array; `major.semesters[]` must be array; `semester.semester ∈ {spring, summer, fall}`; `year` is integer
 
@@ -123,14 +123,14 @@ Base path: `/api/` (DRF Router)
 - `/api/courses/`
 
   - `GET /api/courses/` list (supports search: `subject_code`, `title`, `department`; supports filters: `subjectCode`, `department`, `teacherId`)
-  - `GET /api/courses/{subjectId}/` detail (lookup by `subject_id`)
-  - `GET|POST /api/courses/{subjectId}/reviews/` get/create reviews for this course (nested route: POST doesn't need to pass `subjectId` again)
+  - `GET /api/courses/{courseId}/` detail (lookup by `course_id`)
+  - `GET|POST /api/courses/{courseId}/reviews/` get/create reviews for this course (nested route: POST doesn't need to pass `courseId` again)
     - GET returns paginated response, supports `page`, `page_size` (default 10, max 50)
 
 - `/api/reviews/`
 
-  - `GET /api/reviews/`: filter by `?course=<pk>` or `?subjectId=<uuid>`
-  - `POST /api/reviews/`: global creation endpoint, must include `subjectId` in body; after successful save, writes back course aggregates (average score, count)
+  - `GET /api/reviews/`: filter by `?course=<pk>` or `?courseId=<uuid>`
+  - `POST /api/reviews/`: global creation endpoint, must include `courseId` in body; after successful save, writes back course aggregates (average score, count)
   - `POST /api/reviews/{id}/like`: like this review (idempotent), count increments; `POST /api/reviews/{id}/unlike`: unlike review (idempotent), count decrements (not below 0)
   - GET returns paginated response, supports `page`, `page_size` (default 10, max 50)
 
@@ -149,7 +149,7 @@ Base path: `/api/` (DRF Router)
 
 ### Course Recommend/Not Recommend Voting
 
-- `POST /api/courses/{subjectId}/vote/`
+- `POST /api/courses/{courseId}/vote/`
   - Body: `{ "voteType": "recommend" | "notRecommend" }`
   - Logic:
     - No existing vote → create new vote, count increments
@@ -161,7 +161,7 @@ Base path: `/api/` (DRF Router)
   - Response:
     ```json
     {
-      "subjectId": "<uuid>",
+      "courseId": "<uuid>",
       "rating": { "recommendCount": 12, "notRecommendCount": 3 },
       "userVote": "recommend" | "notRecommend" | null
     }
@@ -190,7 +190,7 @@ Note: Aggregate updates are wrapped in database transactions to avoid read-write
   - Unique constraint ensures only one like record per user per object (deduplication), repeated like/unlike is idempotent
   - API returns latest object data (including `likesCount` and `isLiked`)
 - Course recommend/not-recommend voting (vote):
-  - API: `POST /api/courses/{subjectId}/vote/`, request body: `{ "voteType": "recommend" | "notRecommend" }`
+  - API: `POST /api/courses/{courseId}/vote/`, request body: `{ "voteType": "recommend" | "notRecommend" }`
   - Logic:
     - First vote: creates `CourseVote` record, atomically increments corresponding course `rating_recommend_count` or `rating_not_recommend_count`
     - Click same option again: considered "cancel", deletes vote record, atomically decrements corresponding count (min 0)
@@ -198,7 +198,7 @@ Note: Aggregate updates are wrapped in database transactions to avoid read-write
   - Response:
     ```json
     {
-      "subjectId": "<uuid>",
+      "courseId": "<uuid>",
       "rating": { "recommendCount": 12, "notRecommendCount": 3 },
       "userVote": "recommend" | "notRecommend" | null
     }
@@ -423,15 +423,15 @@ const payload = {
   isAnonymous: false,
   term: { year: 2024, semester: "fall" },
 };
-const review = await createCourseReview(subjectId, payload);
+const review = await createCourseReview(courseId, payload);
 ```
 
 ### Course Voting (Recommend/Not Recommend)
 
 ```typescript
 // Frontend code example: User clicks "Recommend" button
-const result = await voteCourse(subjectId, "recommend");
-// result: { subjectId, rating: { recommendCount, notRecommendCount }, userVote }
+const result = await voteCourse(courseId, "recommend");
+// result: { courseId, rating: { recommendCount, notRecommendCount }, userVote }
 ```
 
 ### Like Review (Idempotent Operation)
@@ -482,10 +482,10 @@ Test API endpoints using curl or httpie:
 curl http://localhost:8000/api/courses/?page=1&page_size=10
 
 # Get course detail (requires course UUID)
-curl http://localhost:8000/api/courses/{subjectId}/
+curl http://localhost:8000/api/courses/{courseId}/
 
 # Create review (requires login token)
-curl -X POST http://localhost:8000/api/courses/{subjectId}/reviews/ \
+curl -X POST http://localhost:8000/api/courses/{courseId}/reviews/ \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -505,7 +505,7 @@ curl -X POST http://localhost:8000/api/reviews/{reviewId}/like/ \
   -H "Authorization: Bearer YOUR_TOKEN"
 
 # Course vote
-curl -X POST http://localhost:8000/api/courses/{subjectId}/vote/ \
+curl -X POST http://localhost:8000/api/courses/{courseId}/vote/ \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"voteType": "recommend"}'
@@ -536,8 +536,8 @@ curl -X POST http://localhost:8000/api/courses/{subjectId}/vote/ \
 - **Frontend Type Definitions**: `project-consensus-frontend/src/types/course.ts`
 - **Frontend API Wrapper**: `project-consensus-frontend/src/lib/api/course.ts`
 - **Course List Page**: `project-consensus-frontend/src/app/courses/page.tsx`
-- **Course Detail Page**: `project-consensus-frontend/src/app/courses/[subjectId]/page.tsx`
-- **Review Write Page**: `project-consensus-frontend/src/app/courses/[subjectId]/review/page.tsx`
+- **Course Detail Page**: `project-consensus-frontend/src/app/courses/[courseId]/page.tsx`
+- **Review Write Page**: `project-consensus-frontend/src/app/courses/[courseId]/review/page.tsx`
 - **Teacher Module**: `../teachers/README.md` (course-teacher association)
 - **Forum Module**: `../forum/README.md` (reference similar comment-reply structure)
 - **User Authentication**: `../accounts/README.md` (login state and permission control)

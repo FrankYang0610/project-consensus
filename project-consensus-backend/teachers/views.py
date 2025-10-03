@@ -64,11 +64,11 @@ class TeacherViewSet(viewsets.ReadOnlyModelViewSet):
         qs = (
             Course.objects
             .filter(teachers=teacher)
-            .only('subject_id', 'subject_code', 'title')
+            .only('course_id', 'subject_code', 'title')
         )
         data = [
             {
-                "subjectId": str(c.subject_id),
+                "courseId": str(c.course_id),
                 "subjectCode": c.subject_code,
                 "title": c.title,
             }

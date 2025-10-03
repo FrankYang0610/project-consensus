@@ -12,9 +12,9 @@ import type {
 } from "@/types";
 import { apiGet, apiPost, apiPatch, apiDeleteVoid } from "./api-utils";
 
-export async function fetchCourseById(subjectId: string, init?: RequestInit): Promise<Course | null> {
+export async function fetchCourseById(courseId: string, init?: RequestInit): Promise<Course | null> {
   try {
-    const data = await apiGet<Course>(`/api/courses/${encodeURIComponent(subjectId)}/`, init);
+    const data = await apiGet<Course>(`/api/courses/${encodeURIComponent(courseId)}/`, init);
     return data ?? null;
   } catch {
     return null;
@@ -27,7 +27,7 @@ export async function fetchCourseById(subjectId: string, init?: RequestInit): Pr
 
 export async function fetchCourseReviews(params: FetchCourseReviewsParams, init?: RequestInit): Promise<PaginatedResponse<CourseReview>> {
   const q = new URLSearchParams();
-  q.set('subjectId', params.subjectId);
+  q.set('courseId', params.courseId);
   if (params.page) q.set('page', String(params.page));
   if (params.pageSize) q.set('page_size', String(params.pageSize));
   if (params.ordering) q.set('ordering', params.ordering);
@@ -52,8 +52,8 @@ export async function unlikeReview(reviewId: string): Promise<CourseReview> {
   return apiPost<CourseReview>(`/api/reviews/${encodeURIComponent(reviewId)}/unlike/`, {});
 }
 
-export async function createCourseReview(subjectId: string, payload: CreateCourseReviewPayload): Promise<CourseReview> {
-  return apiPost<CourseReview>(`/api/courses/${encodeURIComponent(subjectId)}/reviews/`, payload);
+export async function createCourseReview(courseId: string, payload: CreateCourseReviewPayload): Promise<CourseReview> {
+  return apiPost<CourseReview>(`/api/courses/${encodeURIComponent(courseId)}/reviews/`, payload);
 }
 
 // ---------------- Replies API (paginated) ----------------
@@ -93,8 +93,8 @@ export async function deleteCourseReview(reviewId: string): Promise<void> {
 
 // ---------------- Course vote API ----------------
 
-export async function voteCourse(subjectId: string, voteType: 'recommend' | 'notRecommend'): Promise<VoteCourseResponse> {
-  return apiPost<VoteCourseResponse>(`/api/courses/${encodeURIComponent(subjectId)}/vote/`, { voteType });
+export async function voteCourse(courseId: string, voteType: 'recommend' | 'notRecommend'): Promise<VoteCourseResponse> {
+  return apiPost<VoteCourseResponse>(`/api/courses/${encodeURIComponent(courseId)}/vote/`, { voteType });
 }
 
 // ---------------- Review update API ----------------

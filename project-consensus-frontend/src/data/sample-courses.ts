@@ -24,7 +24,7 @@ const T = {
 } as const;
 
 export interface SampleCoursePreview {
-  subjectId: string; // unique stable course id
+  courseId: string; // unique stable course id
   subjectCode: string;
   title: string;
   term: {
@@ -48,12 +48,12 @@ export interface SampleCoursePreview {
   teachers?: TeacherInfo[];
   department?: string;
   lastUpdated?: string;
-  href?: string; // optional override; otherwise computed from subjectId
+  href?: string; // optional override; otherwise computed from courseId
 }
 
 export const sampleCourses: SampleCoursePreview[] = [
   {
-    subjectId: "crs_0001",
+    courseId: "crs_0001",
     subjectCode: "APSS1A01",
     title: "Introduction to Social Sciences",
     term: { year: 2025, semester: "fall" },
@@ -74,7 +74,7 @@ export const sampleCourses: SampleCoursePreview[] = [
     lastUpdated: "2025-08-15T12:00:00Z",
   },
   {
-    subjectId: "crs_0002",
+    courseId: "crs_0002",
     subjectCode: "APSS2B10",
     title: "Social Research Methods",
     term: { year: 2025, semester: "spring" },
@@ -94,7 +94,7 @@ export const sampleCourses: SampleCoursePreview[] = [
     lastUpdated: "2025-03-20T08:00:00Z",
   },
   {
-    subjectId: "crs_0002_chan", // 不同老师的同一门课
+    courseId: "crs_0002_chan", // 不同老师的同一门课
     subjectCode: "APSS2B10",
     title: "Social Research Methods",
     term: { year: 2025, semester: "spring" },
@@ -114,7 +114,7 @@ export const sampleCourses: SampleCoursePreview[] = [
     lastUpdated: "2025-03-18T14:30:00Z",
   },
   {
-    subjectId: "crs_0002_cheung", // 不同老师的同一门课
+    courseId: "crs_0002_cheung", // 不同老师的同一门课
     subjectCode: "APSS2B10",
     title: "Social Research Methods",
     term: { year: 2025, semester: "spring" },
@@ -134,7 +134,7 @@ export const sampleCourses: SampleCoursePreview[] = [
     lastUpdated: "2025-03-25T11:00:00Z",
   },
   {
-    subjectId: "crs_0003",
+    courseId: "crs_0003",
     subjectCode: "COMP1011",
     title: "Programming Fundamentals",
     term: { year: 2025, semester: "fall" },
@@ -155,7 +155,7 @@ export const sampleCourses: SampleCoursePreview[] = [
     lastUpdated: "2025-09-01T10:00:00Z",
   },
   {
-    subjectId: "crs_0003_ma", // Dr. Ma's Programming Fundamentals
+    courseId: "crs_0003_ma", // Dr. Ma's Programming Fundamentals
     subjectCode: "COMP1011",
     title: "Programming Fundamentals",
     term: { year: 2025, semester: "fall" },
@@ -176,7 +176,7 @@ export const sampleCourses: SampleCoursePreview[] = [
     lastUpdated: "2025-08-28T15:20:00Z",
   },
   {
-    subjectId: "crs_0003_tam", // Dr. Tam's Programming Fundamentals
+    courseId: "crs_0003_tam", // Dr. Tam's Programming Fundamentals
     subjectCode: "COMP1011",
     title: "Programming Fundamentals",
     term: { year: 2025, semester: "fall" },
@@ -197,7 +197,7 @@ export const sampleCourses: SampleCoursePreview[] = [
     lastUpdated: "2025-08-30T09:45:00Z",
   },
   {
-    subjectId: "crs_0003_yu", // Dr. Yu's Programming Fundamentals
+    courseId: "crs_0003_yu", // Dr. Yu's Programming Fundamentals
     subjectCode: "COMP1011",
     title: "Programming Fundamentals",
     term: { year: 2025, semester: "fall" },
@@ -218,7 +218,7 @@ export const sampleCourses: SampleCoursePreview[] = [
     lastUpdated: "2025-09-02T13:10:00Z",
   },
   {
-    subjectId: "crs_0004",
+    courseId: "crs_0004",
     subjectCode: "MATH2001",
     title: "Calculus II",
     term: { year: 2024, semester: "spring" },
@@ -238,7 +238,7 @@ export const sampleCourses: SampleCoursePreview[] = [
     lastUpdated: "2024-04-10T12:40:00Z",
   },
   {
-    subjectId: "crs_0004_cheng", // Dr. Cheng's Calculus II
+    courseId: "crs_0004_cheng", // Dr. Cheng's Calculus II
     subjectCode: "MATH2001",
     title: "Calculus II",
     term: { year: 2024, semester: "spring" },
@@ -258,7 +258,7 @@ export const sampleCourses: SampleCoursePreview[] = [
     lastUpdated: "2024-04-12T16:20:00Z",
   },
   {
-    subjectId: "crs_0005",
+    courseId: "crs_0005",
     subjectCode: "ENG3003",
     title: "Technical Writing",
     term: { year: 2025, semester: "summer" },
@@ -278,7 +278,7 @@ export const sampleCourses: SampleCoursePreview[] = [
     lastUpdated: "2025-06-18T09:30:00Z",
   },
   {
-    subjectId: "crs_0005_lee", // Mr. Lee's Technical Writing
+    courseId: "crs_0005_lee", // Mr. Lee's Technical Writing
     subjectCode: "ENG3003",
     title: "Technical Writing",
     term: { year: 2025, semester: "summer" },
@@ -298,7 +298,7 @@ export const sampleCourses: SampleCoursePreview[] = [
     lastUpdated: "2025-06-20T14:45:00Z",
   },
   {
-    subjectId: "crs_0006",
+    courseId: "crs_0006",
     subjectCode: "MM3005",
     title: "Manufacturing Processes",
     term: { year: 2025, semester: "spring" },
@@ -318,7 +318,7 @@ export const sampleCourses: SampleCoursePreview[] = [
     lastUpdated: "2025-03-02T10:15:00Z",
   },
   {
-    subjectId: "crs_0006_lam", // Dr. Lam's Manufacturing Processes
+    courseId: "crs_0006_lam", // Dr. Lam's Manufacturing Processes
     subjectCode: "MM3005",
     title: "Manufacturing Processes",
     term: { year: 2025, semester: "spring" },
@@ -338,7 +338,7 @@ export const sampleCourses: SampleCoursePreview[] = [
     lastUpdated: "2025-03-05T08:30:00Z",
   },
   {
-    subjectId: "crs_0007",
+    courseId: "crs_0007",
     subjectCode: "APSS3C22",
     title: "Community Engagement Project",
     term: { year: 2024, semester: "fall" },
@@ -358,7 +358,7 @@ export const sampleCourses: SampleCoursePreview[] = [
     lastUpdated: "2024-10-08T16:00:00Z",
   },
   {
-    subjectId: "crs_0007_yip", // Dr. Yip's Community Engagement Project
+    courseId: "crs_0007_yip", // Dr. Yip's Community Engagement Project
     subjectCode: "APSS3C22",
     title: "Community Engagement Project",
     term: { year: 2024, semester: "fall" },
@@ -378,7 +378,7 @@ export const sampleCourses: SampleCoursePreview[] = [
     lastUpdated: "2024-10-10T11:30:00Z",
   },
   {
-    subjectId: "crs_0007_poon", // Dr. Poon's Community Engagement Project
+    courseId: "crs_0007_poon", // Dr. Poon's Community Engagement Project
     subjectCode: "APSS3C22",
     title: "Community Engagement Project",
     term: { year: 2024, semester: "fall" },
@@ -398,7 +398,7 @@ export const sampleCourses: SampleCoursePreview[] = [
     lastUpdated: "2024-10-12T14:15:00Z",
   },
   {
-    subjectId: "crs_0007_hui", // Dr. Hui's Community Engagement Project
+    courseId: "crs_0007_hui", // Dr. Hui's Community Engagement Project
     subjectCode: "APSS3C22",
     title: "Community Engagement Project",
     term: { year: 2024, semester: "fall" },
@@ -418,7 +418,7 @@ export const sampleCourses: SampleCoursePreview[] = [
     lastUpdated: "2024-10-05T09:20:00Z",
   },
   {
-    subjectId: "crs_0007_ko", // Dr. Ko's Community Engagement Project
+    courseId: "crs_0007_ko", // Dr. Ko's Community Engagement Project
     subjectCode: "APSS3C22",
     title: "Community Engagement Project",
     term: { year: 2024, semester: "fall" },
@@ -438,7 +438,7 @@ export const sampleCourses: SampleCoursePreview[] = [
     lastUpdated: "2024-10-07T12:45:00Z",
   },
   {
-    subjectId: "crs_0008",
+    courseId: "crs_0008",
     subjectCode: "EEE2B11",
     title: "Circuits and Systems",
     term: { year: 2025, semester: "spring" },
@@ -458,7 +458,7 @@ export const sampleCourses: SampleCoursePreview[] = [
     lastUpdated: "2025-02-22T09:00:00Z",
   },
   {
-    subjectId: "crs_0009",
+    courseId: "crs_0009",
     subjectCode: "ISE3C20",
     title: "Human-Computer Interaction",
     term: { year: 2024, semester: "summer" },
@@ -478,7 +478,7 @@ export const sampleCourses: SampleCoursePreview[] = [
     lastUpdated: "2024-07-05T14:30:00Z",
   },
   {
-    subjectId: "crs_0010",
+    courseId: "crs_0010",
     subjectCode: "MM4D32",
     title: "Materials Science Fundamentals",
     term: { year: 2025, semester: "fall" },
@@ -505,10 +505,10 @@ export function getOtherTeacherCourses(currentSubjectId: string, subjectCode: st
   return sampleCourses
     .filter(course =>
       course.subjectCode === subjectCode &&
-      course.subjectId !== currentSubjectId
+      course.courseId !== currentSubjectId
     )
     .map(course => ({
-      subjectId: course.subjectId,
+      courseId: course.courseId,
       teacherName: course.teachers?.[0]?.name || "Unknown",
       teacherAvatarUrl: undefined, // Resolve via teachers directory if needed
       rating: {
@@ -521,9 +521,9 @@ export function getOtherTeacherCourses(currentSubjectId: string, subjectCode: st
 
 /**
  * Get a course by subject ID
- * @param subjectId The subject ID to find
+ * @param courseId The subject ID to find
  * @returns The course or undefined if not found
  */
-export function getCourseById(subjectId: string) {
-  return sampleCourses.find(course => course.subjectId === subjectId);
+export function getCourseById(courseId: string) {
+  return sampleCourses.find(course => course.courseId === courseId);
 }

@@ -10,7 +10,7 @@ class Course(models.Model):
     """Course basic info + aggregated rating.
 
     Aligns with the frontend Course type:
-    - subject_id, subject_code, title
+    - course_id, subject_code, title
     - term: year + semester (choices)
     - rating: score (0–10) and reviews_count
     - attributes: difficulty/workload/grading/gain (choices)
@@ -46,7 +46,7 @@ class Course(models.Model):
         DECENT = "decent", "decent"
         HIGH = "high", "high"
 
-    subject_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    course_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     subject_code = models.CharField(max_length=64)
     title = models.CharField(max_length=200)
 
@@ -100,7 +100,7 @@ class Course(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=["subject_id"]),
+            models.Index(fields=["course_id"]),
         ]
         verbose_name = "Course"
         verbose_name_plural = "Courses"

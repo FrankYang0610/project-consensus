@@ -20,7 +20,7 @@ import type { SemesterKey, TeacherInfo } from "@/types";
  * 课程预览卡片组件属性 / Props for CoursePreviewCard
  */
 export interface CoursePreviewCardProps {
-  subjectId: string;
+  courseId: string;
   subjectCode: string;
   title: string;
   term: {
@@ -45,7 +45,7 @@ export interface CoursePreviewCardProps {
   teachers?: TeacherInfo[];
   department?: string;
   lastUpdated?: string | Date;
-  href?: string; // optional override; otherwise computed from subjectId
+  href?: string; // optional override; otherwise computed from courseId
   className?: string;
 }
 
@@ -79,7 +79,7 @@ function MetaItem({ label, value, icon }: { label: string; value: string; icon?:
 }
 
 export function CoursePreviewCard({
-  subjectId,
+  courseId,
   subjectCode,
   title,
   term,
@@ -227,8 +227,8 @@ export function CoursePreviewCard({
       </div>
     </CardFooter>
   ) : null;
-  // optional override using href; otherwise computed from subjectId
-  const computedHref = href ?? (subjectId ? `/courses/${subjectId}` : undefined);
+  // optional override using href; otherwise computed from courseId
+  const computedHref = href ?? (courseId ? `/courses/${courseId}` : undefined);
 
   const CardInner = (
     <Card className={cn("hover:shadow-md transition-shadow duration-200 gap-1 py-4", computedHref && "cursor-pointer", className)}>

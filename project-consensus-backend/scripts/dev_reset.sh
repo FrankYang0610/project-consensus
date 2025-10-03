@@ -56,11 +56,33 @@ if [ -n "${PIDS}" ]; then
   kill -9 ${PIDS} || true
 fi
 
-# 5) Migrate
+# 5) Rebuild migrations
+echo "[dev-reset] Rebuilding migrations from scratch"
+
+# Delete old migration files (keep __init__.py and seed data migrations)
+for app in accounts courses forum teachers core; do
+  if [ -d "${app}/migrations" ]; then
+    echo "[dev-reset] Cleaning migrations in ${app}"
+    # Delete migration files except __init__.py and seed files
+    find "${app}/migrations" -type f -name "*.py" \
+      ! -name "__init__.py" \
+      ! -name "0002_seed.py" \
+      ! -name "0002_create_demo_user.py" \
+      ! -name "0002_seed_demo_forum_data.py" \
+      -delete
+    find "${app}/migrations" -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+  fi
+done
+
+# Regenerate migrations
+echo "[dev-reset] Generating new migrations"
+python manage.py makemigrations
+
+# 6) Migrate
 echo "[dev-reset] Running database migrations"
 python manage.py migrate
 
-# 6) Run server (skip if NO_RUN=1)
+# 7) Run server (skip if NO_RUN=1)
 if [ "${NO_RUN:-0}" = "1" ]; then
   echo "[dev-reset] NO_RUN=1 set; skipping runserver."
 else
