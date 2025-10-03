@@ -26,6 +26,11 @@ export default function PublicUserPage() {
   const { user: currentUser } = useApp();
   const { t } = useI18n();
   
+  // Scroll to top when page loads
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+  
   const [user, setUser] = useState<PublicUser | null>(null);
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [comments, setComments] = useState<ForumPostComment[]>([]);

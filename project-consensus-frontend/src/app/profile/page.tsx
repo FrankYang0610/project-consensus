@@ -22,6 +22,11 @@ export default function ProfilePage() {
   const { user, isLoggedIn } = useApp();
   const { t } = useI18n();
   
+  // Scroll to top when page loads
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+  
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [comments, setComments] = useState<ForumPostComment[]>([]);
   const [reviews, setReviews] = useState<CourseReview[]>([]);
