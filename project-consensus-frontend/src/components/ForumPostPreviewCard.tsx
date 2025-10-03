@@ -128,36 +128,57 @@ export function ForumPostPreviewCard({
     >
       <CardHeader className="pb-0 pt-0 px-4">
         <div className="flex items-start justify-between">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 group">
             <div className="relative">
-              {post.author.avatar ? (
-                <img
-                  src={post.author.avatar}
-                  alt={post.author.name}
-                  className="w-8 h-8 rounded-full object-cover"
-                />
-              ) : (
+              {post.isAnonymous ? (
                 <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                   <span className="text-gray-600 dark:text-gray-300 text-xs font-medium">
                     {post.author.name.charAt(0).toUpperCase()}
                   </span>
                 </div>
+              ) : (
+                <Link
+                  href={`/user/${post.author.id}`}
+                  className="block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                >
+                  {post.author.avatar ? (
+                    <img
+                      src={post.author.avatar}
+                      alt={post.author.name}
+                      className="w-8 h-8 rounded-full object-cover transition-transform duration-200 group-hover:scale-105 group-hover:ring-2 group-hover:ring-primary/30"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center transition-transform duration-200 group-hover:scale-105 ring-0 group-hover:ring-2 group-hover:ring-primary/30">
+                      <span className="text-gray-600 dark:text-gray-300 text-xs font-medium">
+                        {post.author.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                </Link>
               )}
             </div>
             <div className="flex flex-col">
-              <button
-                onClick={handleAuthorClick}
-                className="text-sm font-medium text-left hover:text-primary transition-colors"
-              >
-                {post.isAnonymous
-                  ? (currentUserId && post.author.id === currentUserId
-                      ? `${post.author.name} (${t('common.anonymous')})`
-                      : t('common.anonymous'))
-                  : post.author.name}
-                {currentUserId && post.author.id === currentUserId && (
-                  <span className="text-muted-foreground"> ({t('common.me')})</span>
-                )}
-              </button>
+              {post.isAnonymous ? (
+                <span className="text-sm font-medium text-foreground">
+                  {currentUserId && post.author.id === currentUserId
+                    ? `${post.author.name} (${t('common.anonymous')})`
+                    : t('common.anonymous')}
+                  {currentUserId && post.author.id === currentUserId && (
+                    <span className="text-muted-foreground"> ({t('common.me')})</span>
+                  )}
+                </span>
+              ) : (
+                <Link
+                  href={`/user/${post.author.id}`}
+                  onClick={() => onAuthorClick?.(post.author.id)}
+                  className="text-sm font-medium text-left group-hover:text-primary group-hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                >
+                  {post.author.name}
+                  {currentUserId && post.author.id === currentUserId && (
+                    <span className="text-muted-foreground"> ({t('common.me')})</span>
+                  )}
+                </Link>
+              )}
               <ClientOnlyTime dateString={post.createdAt} className="text-xs text-muted-foreground" />
             </div>
           </div>
