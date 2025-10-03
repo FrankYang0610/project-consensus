@@ -90,8 +90,8 @@ export interface CourseReview {
   } | null;
   content: string; // 评价正文 / Review content
   likesCount: number; // 点赞数 / Number of likes
-  createdAt: string | Date; // 发布时间 / Creation time
-  updatedAt?: string | Date; // 编辑时间 / Last updated time
+  createdAt: string; // 发布时间 / Creation time
+  updatedAt?: string; // 编辑时间 / Last updated time
   isLiked?: boolean; // 当前用户是否点赞 / Whether current user liked
   term?: {
     year: number;
