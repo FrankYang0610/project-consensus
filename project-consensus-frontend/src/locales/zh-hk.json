@@ -489,7 +489,6 @@
   },
   "profile": {
     "title": "個人資料",
-    "subtitle": "你的公開個人主頁",
     "actions": {
       "edit": "修改個人資料",
       "viewPublic": "查看公開主頁",

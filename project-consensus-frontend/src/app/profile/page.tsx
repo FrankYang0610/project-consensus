@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Heart, MessageSquare } from 'lucide-react';
 import { SiteNavigation } from '@/components/SiteNavigation';
 import { useApp } from '@/contexts/AppContext';
 import { useI18n } from '@/hooks/use-i18n';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import { formatPronounsForProfilePageDisplay } from '@/lib/pronouns-utils';
 import { getMyPosts, getMyComments, getMyReviews } from '@/lib/api/user-activity';
 import { stripHtmlTags } from '@/lib/html-utils';
@@ -210,8 +212,17 @@ export default function ProfilePage() {
                               </p>
                               <div className="flex items-center gap-3 text-xs">
                                 <ClientOnlyTime dateString={post.createdAt} className="text-gray-500 dark:text-gray-400" />
-                                <span className="text-gray-500 dark:text-gray-400">💬 {post.comments}</span>
-                                <span className="text-gray-500 dark:text-gray-400">❤️ {post.likes}</span>
+                                <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                  <MessageSquare className="w-3 h-3" />
+                                  {post.comments}
+                                </span>
+                                <span className={cn(
+                                  "flex items-center gap-1",
+                                  post.isLiked ? "text-red-500 font-medium" : "text-gray-500 dark:text-gray-400"
+                                )}>
+                                  <Heart className={cn("w-3 h-3", post.isLiked && "fill-current")} />
+                                  {post.likes}
+                                </span>
                                 {post.isAnonymous && (
                                   <Badge variant="secondary" className="text-xs">
                                     {t('profile.activity.anonymousBadge')}
@@ -252,7 +263,13 @@ export default function ProfilePage() {
                             </p>
                             <div className="flex items-center gap-3 text-xs">
                               <ClientOnlyTime dateString={comment.createdAt} className="text-gray-500 dark:text-gray-400" />
-                              <span className="text-gray-500 dark:text-gray-400">❤️ {comment.likes}</span>
+                              <span className={cn(
+                                "flex items-center gap-1",
+                                comment.isLiked ? "text-red-500 font-medium" : "text-gray-500 dark:text-gray-400"
+                              )}>
+                                <Heart className={cn("w-3 h-3", comment.isLiked && "fill-current")} />
+                                {comment.likes}
+                              </span>
                               {comment.replyTo && <span className="text-gray-500 dark:text-gray-400">{t('profile.activity.myComments.inReplyTo')}</span>}
                               {comment.isAnonymous && (
                                 <Badge variant="secondary" className="text-xs">
@@ -302,8 +319,19 @@ export default function ProfilePage() {
                               </p>
                               <div className="flex items-center gap-3 text-xs">
                                 <ClientOnlyTime dateString={review.createdAt} className="text-gray-500 dark:text-gray-400" />
-                                <span className="text-gray-500 dark:text-gray-400">❤️ {review.likesCount}</span>
-                                {(review.repliesCount ?? 0) > 0 && <span className="text-gray-500 dark:text-gray-400">💬 {review.repliesCount}</span>}
+                                <span className={cn(
+                                  "flex items-center gap-1",
+                                  review.isLiked ? "text-red-500 font-medium" : "text-gray-500 dark:text-gray-400"
+                                )}>
+                                  <Heart className={cn("w-3 h-3", review.isLiked && "fill-current")} />
+                                  {review.likesCount}
+                                </span>
+                                {(review.repliesCount ?? 0) > 0 && (
+                                  <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                    <MessageSquare className="w-3 h-3" />
+                                    {review.repliesCount}
+                                  </span>
+                                )}
                                 {review.isAnonymous && (
                                   <Badge variant="secondary" className="text-xs">
                                     {t('profile.activity.anonymousBadge')}

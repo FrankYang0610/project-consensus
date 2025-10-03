@@ -487,7 +487,6 @@
   },
   "profile": {
     "title": "Profile",
-    "subtitle": "Your public profile",
     "actions": {
       "edit": "Edit Profile",
       "viewPublic": "View Public Profile",
