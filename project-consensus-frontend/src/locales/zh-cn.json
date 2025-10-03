@@ -78,6 +78,7 @@
     "titlePlaceholder": "输入标题",
     "contentPlaceholder": "输入帖子内容...",
     "create": "创建帖子",
+    "postAnonymously": "匿名发布",
     "submitting": "创建中...",
     "cancel": "取消",
     "tags": "标签",

@@ -78,6 +78,7 @@
     "titlePlaceholder": "輸入標題",
     "contentPlaceholder": "輸入帖子內容...",
     "create": "建立帖子",
+    "postAnonymously": "匿名發佈",
     "submitting": "建立中...",
     "cancel": "取消",
     "tags": "標籤",

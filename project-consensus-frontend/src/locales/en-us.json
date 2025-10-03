@@ -78,6 +78,7 @@
     "titlePlaceholder": "Enter a title",
     "contentPlaceholder": "Enter post content...",
     "create": "Create Post",
+    "postAnonymously": "Post anonymously",
     "submitting": "Creating...",
     "cancel": "Cancel",
     "tags": "Tags",
