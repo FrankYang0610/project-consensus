@@ -300,7 +300,13 @@ def my_posts(request):
         .select_related("author", "author__profile")
         .prefetch_related("comments", "likes")
         .annotate(
-            comments_count=Count("comments", distinct=True)
+            comments_count=Count("comments", distinct=True),
+            is_liked=Exists(
+                ForumPostLike.objects.filter(
+                    post_id=OuterRef("id"),
+                    user=request.user
+                )
+            )
         )
         .order_by("-created_at")
     )
@@ -315,7 +321,7 @@ def my_comments(request):
     if not request.user.is_authenticated:
         return Response({"message": "Not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
     
-    from forum.models import ForumPostComment
+    from forum.models import ForumPostComment, ForumCommentLike
     from forum.serializers import ForumPostCommentSerializer
     
     # Get user's comments with related data
@@ -325,7 +331,13 @@ def my_comments(request):
         .select_related("author", "author__profile", "post")
         .prefetch_related("likes")
         .annotate(
-            replies_count=Count("replies", distinct=True)
+            replies_count=Count("replies", distinct=True),
+            is_liked=Exists(
+                ForumCommentLike.objects.filter(
+                    comment_id=OuterRef("id"),
+                    user=request.user
+                )
+            )
         )
         .order_by("-created_at")
     )
@@ -390,7 +402,7 @@ def public_user_posts(request, user_id):
         if not getattr(profile, 'show_forum_posts_publicly', True):
             return Response({"message": "User's posts are private"}, status=status.HTTP_403_FORBIDDEN)
         
-        from forum.models import ForumPost
+        from forum.models import ForumPost, ForumPostLike
         from forum.serializers import ForumPostSerializer
         
         posts = (
@@ -398,11 +410,23 @@ def public_user_posts(request, user_id):
             .filter(author=user, is_anonymous=False)
             .select_related("author", "author__profile")
             .prefetch_related("comments", "likes")
-            .annotate(
-                comments_count=Count("comments", distinct=True)
-            )
-            .order_by("-created_at")
+            .annotate(comments_count=Count("comments", distinct=True))
         )
+        
+        # Annotate is_liked only for authenticated users
+        if request.user.is_authenticated:
+            posts = posts.annotate(
+                is_liked=Exists(
+                    ForumPostLike.objects.filter(
+                        post_id=OuterRef("id"),
+                        user=request.user
+                    )
+                )
+            )
+        else:
+            posts = posts.annotate(is_liked=models.Value(False))
+        
+        posts = posts.order_by("-created_at")
         
         serializer = ForumPostSerializer(posts, many=True, context={"request": request})
         return Response(serializer.data)
@@ -421,7 +445,7 @@ def public_user_comments(request, user_id):
         if not getattr(profile, 'show_forum_post_comments_publicly', True):
             return Response({"message": "User's comments are private"}, status=status.HTTP_403_FORBIDDEN)
         
-        from forum.models import ForumPostComment
+        from forum.models import ForumPostComment, ForumCommentLike
         from forum.serializers import ForumPostCommentSerializer
         
         comments = (
@@ -429,11 +453,23 @@ def public_user_comments(request, user_id):
             .filter(author=user, is_anonymous=False)
             .select_related("author", "author__profile", "post")
             .prefetch_related("likes")
-            .annotate(
-                replies_count=Count("replies", distinct=True)
-            )
-            .order_by("-created_at")
+            .annotate(replies_count=Count("replies", distinct=True))
         )
+        
+        # Annotate is_liked only for authenticated users
+        if request.user.is_authenticated:
+            comments = comments.annotate(
+                is_liked=Exists(
+                    ForumCommentLike.objects.filter(
+                        comment_id=OuterRef("id"),
+                        user=request.user
+                    )
+                )
+            )
+        else:
+            comments = comments.annotate(is_liked=models.Value(False))
+        
+        comments = comments.order_by("-created_at")
         
         serializer = ForumPostCommentSerializer(comments, many=True, context={"request": request})
         return Response(serializer.data)
@@ -460,16 +496,22 @@ def public_user_reviews(request, user_id):
             .filter(author=user, is_anonymous=False)
             .select_related("author", "author__profile", "course")
             .prefetch_related("likes")
-            .annotate(
+        )
+        
+        # Annotate is_liked only for authenticated users
+        if request.user.is_authenticated:
+            reviews = reviews.annotate(
                 is_liked=Exists(
                     CourseReviewLike.objects.filter(
                         review_id=OuterRef("id"),
                         user=request.user
                     )
-                ) if request.user.is_authenticated else models.Value(False)
+                )
             )
-            .order_by("-created_at")
-        )
+        else:
+            reviews = reviews.annotate(is_liked=models.Value(False))
+        
+        reviews = reviews.order_by("-created_at")
         
         serializer = CourseReviewSerializer(reviews, many=True, context={"request": request})
         return Response(serializer.data)
