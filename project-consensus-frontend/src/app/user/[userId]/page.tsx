@@ -156,7 +156,6 @@ export default function PublicUserPage() {
                 <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
                   {displayName}
                 </h1>
-                <p className="text-lg text-muted-foreground">{t('profile.subtitle')}</p>
               </div>
               {currentUser?.id === userId && (
                 <Button asChild variant="outline" size="sm" className="shadow-md">

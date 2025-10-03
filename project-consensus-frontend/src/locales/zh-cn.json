@@ -489,7 +489,6 @@
   },
   "profile": {
     "title": "个人资料",
-    "subtitle": "你的公开个人主页",
     "actions": {
       "edit": "修改个人资料",
       "viewPublic": "查看公开主页",
