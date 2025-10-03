@@ -42,7 +42,6 @@ export default function SettingsPage() {
   const [displayName, setDisplayName] = useState(user?.name || '');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar || '');
   const [pronouns, setPronouns] = useState<string>(user?.pronouns || '');
-  const [pronounsShared, setPronounsShared] = useState<boolean>(user?.pronounsShared || false);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileMsg, setProfileMsg] = useState<string | null>(null);
   const [profileErr, setProfileErr] = useState<string | null>(null);
@@ -77,7 +76,6 @@ export default function SettingsPage() {
     setDisplayName(user?.name || '');
     setAvatarUrl(user?.avatar || '');
     setPronouns(user?.pronouns || '');
-    setPronounsShared(user?.pronounsShared || false);
     
     // Update privacy settings from user
     setPrivacy((p) => ({
@@ -134,11 +132,10 @@ export default function SettingsPage() {
         display_name: displayName,
         avatar_url: avatarUrl,
         pronouns: pronouns,
-        pronouns_shared: pronounsShared,
       });
 
       // Update local user from backend response
-      updateUser?.({ name: resp.user.name, avatar: resp.user.avatar, pronouns: resp.user.pronouns, pronounsShared: resp.user.pronounsShared });
+      updateUser?.({ name: resp.user.name, avatar: resp.user.avatar, pronouns: resp.user.pronouns });
       setProfileMsg(t('settings.profile.saved'));
     } catch (e) {
       console.error(e);
@@ -270,8 +267,6 @@ export default function SettingsPage() {
             onChange={setPronouns}
             label={t('settings.profile.pronouns')}
             id="pronouns-selector"
-            share={pronounsShared}
-            onShareChange={setPronounsShared}
           />
 
           <div className="pt-2">
