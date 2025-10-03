@@ -395,7 +395,7 @@ def public_user_posts(request, user_id):
         
         posts = (
             ForumPost.objects
-            .filter(author=user)
+            .filter(author=user, is_anonymous=False)
             .select_related("author", "author__profile")
             .prefetch_related("comments", "likes")
             .annotate(
@@ -426,7 +426,7 @@ def public_user_comments(request, user_id):
         
         comments = (
             ForumPostComment.objects
-            .filter(author=user)
+            .filter(author=user, is_anonymous=False)
             .select_related("author", "author__profile", "post")
             .prefetch_related("likes")
             .annotate(
@@ -457,7 +457,7 @@ def public_user_reviews(request, user_id):
         
         reviews = (
             CourseReview.objects
-            .filter(author=user)
+            .filter(author=user, is_anonymous=False)
             .select_related("author", "author__profile", "course")
             .prefetch_related("likes")
             .annotate(

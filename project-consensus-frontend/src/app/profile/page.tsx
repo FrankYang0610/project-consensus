@@ -212,6 +212,11 @@ export default function ProfilePage() {
                                 <ClientOnlyTime dateString={post.createdAt} className="text-gray-500 dark:text-gray-400" />
                                 <span className="text-gray-500 dark:text-gray-400">💬 {post.comments}</span>
                                 <span className="text-gray-500 dark:text-gray-400">❤️ {post.likes}</span>
+                                {post.isAnonymous && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    {t('profile.activity.anonymousBadge')}
+                                  </Badge>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -249,6 +254,11 @@ export default function ProfilePage() {
                               <ClientOnlyTime dateString={comment.createdAt} className="text-gray-500 dark:text-gray-400" />
                               <span className="text-gray-500 dark:text-gray-400">❤️ {comment.likes}</span>
                               {comment.replyTo && <span className="text-gray-500 dark:text-gray-400">{t('profile.activity.myComments.inReplyTo')}</span>}
+                              {comment.isAnonymous && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {t('profile.activity.anonymousBadge')}
+                                </Badge>
+                              )}
                             </div>
                           </div>
                         </Link>
@@ -294,6 +304,11 @@ export default function ProfilePage() {
                                 <ClientOnlyTime dateString={review.createdAt} className="text-gray-500 dark:text-gray-400" />
                                 <span className="text-gray-500 dark:text-gray-400">❤️ {review.likesCount}</span>
                                 {(review.repliesCount ?? 0) > 0 && <span className="text-gray-500 dark:text-gray-400">💬 {review.repliesCount}</span>}
+                                {review.isAnonymous && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    {t('profile.activity.anonymousBadge')}
+                                  </Badge>
+                                )}
                               </div>
                             </div>
                           </div>

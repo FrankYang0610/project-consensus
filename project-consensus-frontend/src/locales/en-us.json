@@ -521,7 +521,8 @@
         "subtitle": "Course reviews you've written",
         "empty": "No reviews yet",
         "viewCourse": "View Course"
-      }
+      },
+      "anonymousBadge": "Anonymous"
     },
     "memberFor": "Member for {{days}} days",
     "privacyNotice": "This user has chosen to keep some activities private."

@@ -523,7 +523,8 @@
         "subtitle": "你编写的课程评价",
         "empty": "还没有发表评价",
         "viewCourse": "查看课程"
-      }
+      },
+      "anonymousBadge": "匿名"
     },
     "memberFor": "加入 {{days}} 天",
     "privacyNotice": "该用户选择将某些活动设为私密。"

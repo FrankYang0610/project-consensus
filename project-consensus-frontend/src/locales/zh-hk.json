@@ -523,7 +523,8 @@
         "subtitle": "你編寫的課程評價",
         "empty": "還沒有發表評價",
         "viewCourse": "查看課程"
-      }
+      },
+      "anonymousBadge": "匿名"
     },
     "memberFor": "加入 {{days}} 天",
     "privacyNotice": "該用戶選擇將部分活動設為私密。"
