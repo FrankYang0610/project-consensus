@@ -44,6 +44,8 @@ interface ForumPostCommentListProps {
   onSubmitComposer?: () => void;
   onCancelComposer?: () => void;
   isComposerSubmitting?: boolean;
+  // Target comment to jump to
+  targetCommentId?: string;
 }
 
 /**
@@ -69,7 +71,8 @@ export function ForumPostCommentList({
   onComposerAnonymousChange,
   onSubmitComposer,
   onCancelComposer,
-  isComposerSubmitting = false
+  isComposerSubmitting = false,
+  targetCommentId
 }: ForumPostCommentListProps) {
   const { t } = useI18n();
   const { isLoggedIn, openLoginModal } = useApp();
@@ -233,7 +236,14 @@ export function ForumPostCommentList({
   // Store per-comment rollback snapshots for delete operations
   const deleteRollbackByIdRef = React.useRef<Map<string, Pick<ForumPostComment, 'isDeleted' | 'content'>>>(new Map());
 
-  // Expose method via custom event for child cards to request a jump
+  // Auto-load and scroll to target comment when `targetCommentId` changes
+  React.useEffect(() => {
+    if (targetCommentId) {
+      loadUntilAndScroll(targetCommentId);
+    }
+  }, [targetCommentId, loadUntilAndScroll]);
+
+  // Global jump-to-comment listener for backward compatibility (e.g., after creating a new comment)
   React.useEffect(() => {
     const handler = (e: Event) => {
       const custom = e as CustomEvent<{ id: string }>;

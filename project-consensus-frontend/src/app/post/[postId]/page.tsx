@@ -33,6 +33,7 @@ export default function PostPage() {
   const composerRef = React.useRef<HTMLDivElement | null>(null);
   const [isComposerOpen, setIsComposerOpen] = React.useState(false);
   const [isSubmittingComment, setIsSubmittingComment] = React.useState(false);
+  const [targetCommentId, setTargetCommentId] = React.useState<string | undefined>(undefined);
 
   // 防止 "连点点赞/取消赞" 导致 UI 和后端状态打架的轻量级锁
   // Lightweight lock to prevent double-tap like/unlike causing UI/server mismatch
@@ -62,9 +63,27 @@ export default function PostPage() {
   const { user } = useApp();
   const currentUserId = user?.id;
 
-  // Scroll to top when component mounts
+  // Parse URL hash on mount and when URL changes
   React.useEffect(() => {
-    window.scrollTo(0, 0);
+    const parseHash = () => {
+      const hash = window.location.hash;
+      if (hash && hash.startsWith('#comment-')) {
+        const commentId = hash.replace('#comment-', '');
+        if (commentId) {
+          setTargetCommentId(commentId);
+          return; // Don't scroll to top if we have a target comment
+        }
+      }
+      setTargetCommentId(undefined);
+      window.scrollTo(0, 0);
+    };
+
+    // Parse on mount
+    parseHash();
+
+    // Listen for hash changes (browser back/forward, manual hash changes)
+    window.addEventListener('hashchange', parseHash);
+    return () => window.removeEventListener('hashchange', parseHash);
   }, [postId]);
 
   const handleBackClick = () => {
@@ -213,6 +232,7 @@ export default function PostPage() {
               onSubmitComposer={handleSubmitComment}
               isComposerSubmitting={isSubmittingComment}
               onCancelComposer={() => { setReplyToId(undefined); setIsComposerOpen(false); }}
+              targetCommentId={targetCommentId}
               key={commentsRefreshKey}
             />
           </div>
