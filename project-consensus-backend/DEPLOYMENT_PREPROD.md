@@ -156,17 +156,44 @@ sudo systemctl status project-consensus-backend
 
 ## 8. 前端构建与运行（Next.js + systemd）
 
-1. 设置前端环境变量文件 `/etc/project-consensus-frontend.env`：
+### 1. 配置前端环境变量
 
-```
-NEXT_PUBLIC_API_BASE_URL=https://preprod-api.polyu.life
-```
+Next.js 会在 **构建时** 和 **运行时** 解析 `NEXT_PUBLIC_*` 变量，请确保二者都能读取到。推荐两种做法（二选一）：
 
-2. 构建与启动：
+- **方案 A（推荐）**：在项目根创建 `.env.production`
+
+  ```bash
+  cd /opt/project/project-consensus-frontend
+  cat > .env.production <<'EOF'
+  NEXT_PUBLIC_API_BASE_URL=https://preprod-api.polyu.life
+  # NEXT_PUBLIC_CKEDITOR_LICENSE_KEY=GPL     # 如有需要
+  EOF
+  ```
+  之后直接执行 `npm run build` 即可，Next.js 会自动加载此文件。
+
+- **方案 B**：继续使用系统级文件 `/etc/project-consensus-frontend.env`
+
+  ```
+  NEXT_PUBLIC_API_BASE_URL=https://preprod-api.polyu.life
+  ```
+
+  在构建前让当前 shell 继承该文件，再执行构建命令，例如：
+
+  ```bash
+  set -a
+  . /etc/project-consensus-frontend.env
+  set +a
+  npm run build
+  ```
+
+  systemd 服务依然通过 `EnvironmentFile=` 引用该文件，保证运行时变量一致。
+
+### 2. 构建项目
 
 ```bash
 cd /opt/project/project-consensus-frontend
-npm run build
+npm run build        # 采用方案 A 时可直接执行
+# 采用方案 B 时请确保已按上方方式导入变量后再执行
 ```
 
 创建 `/etc/systemd/system/project-consensus-frontend.service`：
