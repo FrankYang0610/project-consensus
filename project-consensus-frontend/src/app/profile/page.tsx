@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Heart, MessageSquare } from 'lucide-react';
+import { Heart, MessageSquare, FileText, Star } from 'lucide-react';
 import { SiteNavigation } from '@/components/SiteNavigation';
 import { useApp } from '@/contexts/AppContext';
 import { useI18n } from '@/hooks/use-i18n';
@@ -186,7 +186,7 @@ export default function ProfilePage() {
               {/* My Posts */}
               <Card className="shadow-lg border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
                 <CardHeader>
-                  <CardTitle className="text-xl">📝 {t('profile.activity.myPosts.title')}</CardTitle>
+                  <CardTitle className="text-xl flex items-center gap-2"><FileText className="w-5 h-5" /> {t('profile.activity.myPosts.title')}</CardTitle>
                   <CardDescription>{t('profile.activity.myPosts.subtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -241,7 +241,7 @@ export default function ProfilePage() {
               {/* My Comments */}
               <Card className="shadow-lg border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
                 <CardHeader>
-                  <CardTitle className="text-xl">💬 {t('profile.activity.myComments.title')}</CardTitle>
+                  <CardTitle className="text-xl flex items-center gap-2"><MessageSquare className="w-5 h-5" /> {t('profile.activity.myComments.title')}</CardTitle>
                   <CardDescription>{t('profile.activity.myComments.subtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -288,7 +288,7 @@ export default function ProfilePage() {
               {/* My Reviews */}
               <Card className="shadow-lg border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
                 <CardHeader>
-                  <CardTitle className="text-xl">⭐ {t('profile.activity.myReviews.title')}</CardTitle>
+                  <CardTitle className="text-xl flex items-center gap-2"><Star className="w-5 h-5" /> {t('profile.activity.myReviews.title')}</CardTitle>
                   <CardDescription>{t('profile.activity.myReviews.subtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent>
