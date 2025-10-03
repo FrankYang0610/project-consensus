@@ -48,7 +48,6 @@ export interface ForumPostDetailCardProps {
   post: ForumPost; // 帖子数据 / Post data
   onLike?: (postId: string) => void; // 点赞回调函数（可选） / Like callback function (optional)
   onTranslate?: (postId: string) => void; // 翻译回调函数（可选） / Translate callback function (optional)
-  onAuthorClick?: (authorId: string) => void; // 作者点击回调函数（可选） / Author click callback function (optional)
   onDelete?: (postId: string) => void; // 删除回调（可选） / Delete callback (optional)
   className?: string; // 自定义CSS类名（可选） / Custom CSS class name (optional)
 }
@@ -57,7 +56,6 @@ export function ForumPostDetailCard({
   post,
   onLike,
   onTranslate,
-  onAuthorClick,
   onDelete,
   className,
 }: ForumPostDetailCardProps) {
@@ -111,12 +109,6 @@ export function ForumPostDetailCard({
     onTranslate?.(post.id);
   };
 
-  const handleAuthorClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (post.isAnonymous) return;
-    onAuthorClick?.(post.author.id);
-  };
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.preventDefault();
