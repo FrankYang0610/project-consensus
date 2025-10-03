@@ -98,8 +98,7 @@ def _build_base_user_payload(user):
         "id": str(user.pk),
         "name": getattr(profile, "display_name", None) or user.get_username(),
         "avatar": getattr(profile, "avatar_url", None) or None,
-        "pronouns": getattr(profile, "pronouns", None) if getattr(profile, "pronouns_shared", False) else "",
-        "pronounsShared": getattr(profile, "pronouns_shared", False),
+        "pronouns": getattr(profile, "pronouns", None) or "prefer_not_to_say",
         "showForumPostsPublicly": getattr(profile, "show_forum_posts_publicly", True),
         "showForumPostCommentsPublicly": getattr(profile, "show_forum_post_comments_publicly", True),
         "showCourseReviewsPublicly": getattr(profile, "show_course_reviews_publicly", True),
@@ -197,12 +196,11 @@ def register(request):
         return Response({"message": "Email already registered."}, status=status.HTTP_400_BAD_REQUEST)
 
     user = User.objects.create_user(username=email, email=email, password=password)
-    # Default pronouns to 'not_specified' and do not share by default for new users
+    # Default pronouns to 'not_specified' for new users
     Profile.objects.create(
         user=user,
         display_name=nickname,
         pronouns="not_specified",
-        pronouns_shared=False,
     )
 
     # Invalidate the code to prevent reuse

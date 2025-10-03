@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Heart, MessageSquare } from 'lucide-react';
+import { Heart, MessageSquare, FileText, Star } from 'lucide-react';
 import { SiteNavigation } from '@/components/SiteNavigation';
 import { useApp } from '@/contexts/AppContext';
 import { useI18n } from '@/hooks/use-i18n';
@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { formatPronounsForProfilePageDisplay } from '@/lib/pronouns-utils';
+import { formatPronounsForProfilePageDisplay, shouldDisplayPronouns } from '@/lib/pronouns-utils';
 import { getPublicUser, getPublicUserPosts, getPublicUserComments, getPublicUserReviews } from '@/lib/api/public-user';
 import { stripHtmlTags } from '@/lib/html-utils';
 import ClientOnlyTime from '@/components/ClientOnlyTime';
@@ -38,7 +38,7 @@ export default function PublicUserPage() {
 
   const displayName = user?.name || '';
   const avatarText = user?.name ? user.name.charAt(0).toUpperCase() : '';
-  const formattedPronouns = user?.pronounsShared && user?.pronouns ? formatPronounsForProfilePageDisplay(user.pronouns) : "";
+  const formattedPronouns = shouldDisplayPronouns(user?.pronouns) ? formatPronounsForProfilePageDisplay(user?.pronouns) : "";
 
   const userStats = user?.stats || {
     posts: 0,
@@ -188,7 +188,7 @@ export default function PublicUserPage() {
 
                     <div>
                       <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{displayName}</h2>
-                      {user.pronounsShared && (
+                      {formattedPronouns && (
                         <p className="text-gray-600 dark:text-gray-300 mt-1">{formattedPronouns}</p>
                       )}
                       <Badge variant="secondary" className="mt-2">
@@ -233,7 +233,7 @@ export default function PublicUserPage() {
               {user.showForumPostsPublicly && (
                 <Card className="shadow-lg border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
                   <CardHeader>
-                    <CardTitle className="text-xl">📝 {t('profile.activity.myPosts.title')}</CardTitle>
+                    <CardTitle className="text-xl flex items-center gap-2"><FileText className="w-5 h-5" /> {t('profile.activity.myPosts.title')}</CardTitle>
                     <CardDescription>{t('profile.activity.myPosts.subtitle')}</CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -285,7 +285,7 @@ export default function PublicUserPage() {
               {user.showForumPostCommentsPublicly && (
                 <Card className="shadow-lg border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
                   <CardHeader>
-                    <CardTitle className="text-xl">💬 {t('profile.activity.myComments.title')}</CardTitle>
+                    <CardTitle className="text-xl flex items-center gap-2"><MessageSquare className="w-5 h-5" /> {t('profile.activity.myComments.title')}</CardTitle>
                     <CardDescription>{t('profile.activity.myComments.subtitle')}</CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -329,7 +329,7 @@ export default function PublicUserPage() {
               {user.showCourseReviewsPublicly && (
                 <Card className="shadow-lg border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
                   <CardHeader>
-                    <CardTitle className="text-xl">⭐ {t('profile.activity.myReviews.title')}</CardTitle>
+                    <CardTitle className="text-xl flex items-center gap-2"><Star className="w-5 h-5" /> {t('profile.activity.myReviews.title')}</CardTitle>
                     <CardDescription>{t('profile.activity.myReviews.subtitle')}</CardDescription>
                   </CardHeader>
                   <CardContent>

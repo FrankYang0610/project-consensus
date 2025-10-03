@@ -78,6 +78,7 @@
     "titlePlaceholder": "輸入標題",
     "contentPlaceholder": "輸入帖子內容...",
     "create": "建立帖子",
+    "postAnonymously": "匿名發佈",
     "submitting": "建立中...",
     "cancel": "取消",
     "tags": "標籤",
@@ -489,6 +490,7 @@
   },
   "profile": {
     "title": "個人資料",
+    "subtitle": "資料總覽與最近活動",
     "actions": {
       "edit": "修改個人資料",
       "viewPublic": "查看公開主頁",
@@ -503,23 +505,23 @@
     },
     "activity": {
       "title": "最近活動",
-      "subtitle": "你對社區的最新貢獻",
+      "subtitle": "最新的社區貢獻",
       "myPosts": {
-        "title": "發的帖子",
-        "subtitle": "你創建的論壇帖子",
+        "title": "帖子",
+        "subtitle": "建立的論壇帖子",
         "empty": "還沒有發布帖子",
         "viewPost": "查看帖子"
       },
       "myComments": {
-        "title": "發的帖子評論",
-        "subtitle": "你在論壇帖子中的評論",
+        "title": "帖子評論",
+        "subtitle": "在論壇帖子中的評論",
         "empty": "還沒有發表評論",
         "inReplyTo": "回覆",
         "onPost": "在帖子："
       },
       "myReviews": {
-        "title": "發的課程評價",
-        "subtitle": "你編寫的課程評價",
+        "title": "課程評價",
+        "subtitle": "撰寫的課程評價",
         "empty": "還沒有發表評價",
         "viewCourse": "查看課程"
       },
