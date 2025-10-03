@@ -63,11 +63,10 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    # Place CORS middleware near the top, before CommonMiddleware,
-    # so CORS headers are added to all relevant responses.
-    'corsheaders.middleware.CorsMiddleware',
-
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    # Place CORS middleware before CommonMiddleware so headers are added early
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -135,7 +134,15 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'  # Static URL prefix; set STATIC_ROOT in production and run collectstatic
+STATIC_URL = '/static/'  # Use absolute path for robust referencing
+STATIC_ROOT = BASE_DIR / "staticfiles"  # Where collectstatic will gather files in production
+
+# Use WhiteNoise for serving static files in production with compression and cache busting
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # CORS and CSRF configuration
 # CORS_ALLOWED_ORIGINS controls which browser origins may access this API.
@@ -188,3 +195,7 @@ CSRF_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SAMESITE = 'Lax'
 # CSRF token must be readable by JS to set X-CSRFToken header
 CSRF_COOKIE_HTTPONLY = False
+
+# Behind Cloudflare Tunnel/Reverse Proxy: trust X-Forwarded headers
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True

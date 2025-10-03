@@ -27,3 +27,7 @@ psycopg-binary==3.2.10
     # via psycopg
 sqlparse==0.5.3
     # via django
+gunicorn==21.2.0
+    # via -r requirements.in
+whitenoise==6.8.2
+    # via -r requirements.in
