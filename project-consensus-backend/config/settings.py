@@ -132,6 +132,10 @@ TIME_ZONE = env("TIME_ZONE", default="Asia/Shanghai")    # Configurable via env;
 USE_I18N = True
 USE_TZ = True
 
+# Default content language for translatable content (e.g., Wiki)
+# Frontend may request a specific language via query; when absent, use this.
+DEFAULT_CONTENT_LANGUAGE = env("DEFAULT_CONTENT_LANGUAGE", default="zh-CN")
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/

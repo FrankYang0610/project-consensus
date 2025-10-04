@@ -41,11 +41,11 @@ The Wiki application provides a Markdown-based knowledge base/documentation syst
 ### 管理端点（仅管理员）
 
 - `POST /api/wiki/pages/` - 创建新 Wiki 页面
-- `PUT /api/wiki/pages/:id/` - 更新 Wiki 页面
-- `DELETE /api/wiki/pages/:id/` - 删除 Wiki 页面
+- `PUT /api/wiki/pages/:slug/` - 更新 Wiki 页面
+- `DELETE /api/wiki/pages/:slug/` - 删除 Wiki 页面
 - `POST /api/wiki/categories/` - 创建分类
-- `PUT /api/wiki/categories/:id/` - 更新分类
-- `DELETE /api/wiki/categories/:id/` - 删除分类
+- `PUT /api/wiki/categories/:slug/` - 更新分类
+- `DELETE /api/wiki/categories/:slug/` - 删除分类
 
 ## 权限控制 / Permissions
 

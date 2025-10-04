@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(help_text='Category name', max_length=100, verbose_name='分类名称')),
-                ('language', models.CharField(choices=[('zh-Hans', '简体中文'), ('en', 'English')], default='zh-Hans', help_text='Content language', max_length=35, verbose_name='语言')),
+                ('language', models.CharField(choices=[('zh-CN', '简体中文'), ('zh-HK', '繁體中文（香港）'), ('en', 'English')], default='zh-CN', help_text='Content language', max_length=35, verbose_name='语言')),
                 ('translation_group', models.UUIDField(default=uuid.uuid4, editable=False, help_text='UUID linking translations of the same category', verbose_name='翻译组')),
                 ('slug', models.SlugField(help_text='URL-friendly identifier (auto-generated from name if empty)', max_length=100, verbose_name='URL Slug')),
                 ('description', models.TextField(blank=True, help_text='Category description', verbose_name='描述')),
@@ -44,7 +44,7 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('title', models.CharField(help_text='Page title', max_length=200, verbose_name='标题')),
                 ('slug', models.SlugField(help_text='URL-friendly identifier (auto-generated from title if empty)', max_length=200, verbose_name='URL Slug')),
-                ('language', models.CharField(choices=[('zh-Hans', '简体中文'), ('en', 'English')], default='zh-Hans', help_text='Content language', max_length=35, verbose_name='语言')),
+                ('language', models.CharField(choices=[('zh-CN', '简体中文'), ('zh-HK', '繁體中文（香港）'), ('en', 'English')], default='zh-CN', help_text='Content language', max_length=35, verbose_name='语言')),
                 ('translation_group', models.UUIDField(default=uuid.uuid4, editable=False, help_text='UUID linking translations of the same page', verbose_name='翻译组')),
                 ('content', models.TextField(help_text='Page content in Markdown format', verbose_name='内容')),
                 ('summary', models.TextField(blank=True, help_text='Brief summary for listings (max 500 characters)', max_length=500, verbose_name='摘要')),
@@ -83,5 +83,17 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name='wikipage',
             index=models.Index(fields=['translation_group'], name='wiki_page_trans_grp_idx'),
+        ),
+        migrations.AddConstraint(
+            model_name='wikicategory',
+            constraint=models.UniqueConstraint(
+                fields=['translation_group', 'language'], name='wiki_cat_trans_lang_unique'
+            ),
+        ),
+        migrations.AddConstraint(
+            model_name='wikipage',
+            constraint=models.UniqueConstraint(
+                fields=['translation_group', 'language'], name='wiki_page_trans_lang_unique'
+            ),
         ),
     ]

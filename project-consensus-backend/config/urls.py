@@ -24,7 +24,6 @@ urlpatterns = [
     # API routers
     path("api/", include("courses.urls")),
     path("api/", include("teachers.urls")),
-    path("api/", include("forum.urls")),
     path("api/accounts/", include("accounts.urls")),
     path("api/forum/", include("forum.urls")),
     path("api/", include("wiki.urls")),

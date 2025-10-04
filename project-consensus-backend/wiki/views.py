@@ -9,6 +9,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Q, Count
 from django.shortcuts import get_object_or_404
+from django.conf import settings
+import logging
 from .models import WikiPage, WikiCategory
 from .serializers import (
     WikiPageListSerializer,
@@ -17,6 +19,8 @@ from .serializers import (
     WikiCategorySerializer,
 )
 from .permissions import IsAdminOrReadOnly, IsStaffUser
+
+logger = logging.getLogger(__name__)
 
 
 class WikiCategoryViewSet(viewsets.ModelViewSet):
@@ -56,8 +60,8 @@ class WikiCategoryViewSet(viewsets.ModelViewSet):
                 mapping.setdefault(tg, []).append({'id': row['id'], 'language': row['language'], 'slug': row['slug']})
             ctx['translations_by_group'] = mapping
         except Exception:
-            # Fallback: no mapping
-            pass
+            # Fallback: no mapping, but log for observability
+            logger.exception("Failed to build translations_by_group in WikiCategoryViewSet")
         return ctx
 
     def get_queryset(self):
@@ -93,7 +97,7 @@ class WikiCategoryViewSet(viewsets.ModelViewSet):
         根据 slug 和 language 获取分类对象；若未提供 language，则默认 zh-CN
         """
         slug = self.kwargs.get(self.lookup_field)
-        language = self.request.query_params.get('language') or 'zh-CN'
+        language = self.request.query_params.get('language') or settings.DEFAULT_CONTENT_LANGUAGE
         queryset = self.filter_queryset(self.get_queryset())
         return get_object_or_404(queryset, slug=slug, language=language)
     
@@ -198,7 +202,7 @@ class WikiPageViewSet(viewsets.ModelViewSet):
         根据 slug 和 language 精确获取页面；默认 language=zh-CN
         """
         slug = self.kwargs.get(self.lookup_field)
-        language = self.request.query_params.get('language') or 'zh-CN'
+        language = self.request.query_params.get('language') or settings.DEFAULT_CONTENT_LANGUAGE
         queryset = self.filter_queryset(self.get_queryset())
         return get_object_or_404(queryset, slug=slug, language=language)
     

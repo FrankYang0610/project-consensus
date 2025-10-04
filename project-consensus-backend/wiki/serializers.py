@@ -5,6 +5,7 @@ Provides serializers for WikiCategory and WikiPage models.
 """
 
 from rest_framework import serializers
+from django.conf import settings
 from .models import WikiPage, WikiCategory
 
 
@@ -62,6 +63,9 @@ class WikiPageListSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True, allow_null=True)
     tags_list = serializers.SerializerMethodField()
     
+    # Enforce API-level length constraint for summary
+    summary = serializers.CharField(max_length=500, allow_blank=True, required=False)
+
     class Meta:
         model = WikiPage
         fields = [
@@ -164,18 +168,17 @@ class WikiPageDetailSerializer(serializers.ModelSerializer):
         
         # Get the instance being updated (if any)
         instance = self.instance
-        language = self.initial_data.get('language', 'zh-CN')
+        language = self.initial_data.get('language') or settings.DEFAULT_CONTENT_LANGUAGE
         
         # Check if slug already exists for this language (excluding current instance)
         queryset = WikiPage.objects.filter(slug=value, language=language)
         if instance:
             queryset = queryset.exclude(pk=instance.pk)
-        
         if queryset.exists():
             raise serializers.ValidationError(
                 f"A page with this slug already exists for language '{language}'"
             )
-        
+
         return value
 
 
@@ -187,6 +190,9 @@ class WikiPageCreateUpdateSerializer(serializers.ModelSerializer):
     Supports language and translation group management.
     """
     
+    # Enforce API-level length constraint for summary
+    summary = serializers.CharField(max_length=500, allow_blank=True, required=False)
+
     class Meta:
         model = WikiPage
         fields = [
@@ -226,7 +232,7 @@ class WikiPageCreateUpdateSerializer(serializers.ModelSerializer):
         
         # Get the instance being updated (if any)
         instance = self.instance
-        language = self.initial_data.get('language', 'zh-CN')
+        language = self.initial_data.get('language') or settings.DEFAULT_CONTENT_LANGUAGE
         
         # Check if slug already exists for this language (excluding current instance)
         queryset = WikiPage.objects.filter(slug=value, language=language)
