@@ -132,6 +132,7 @@ export function ForumPostPreviewCard({
                 <Link
                   href={`/user/${post.author.id}`}
                   className="block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   {post.author.avatar ? (
                     <img
@@ -163,6 +164,7 @@ export function ForumPostPreviewCard({
                 <Link
                   href={`/user/${post.author.id}`}
                   className="text-sm font-medium text-left group-hover:text-primary group-hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   {post.author.name}
                   {currentUserId && post.author.id === currentUserId && (
