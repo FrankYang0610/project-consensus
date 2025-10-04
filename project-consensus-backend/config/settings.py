@@ -182,19 +182,17 @@ CORS_ALLOW_CREDENTIALS = True
 
 # Session & CSRF cookie configuration for secure, rolling sessions.
 # Requirement: persist login across refresh/close, expire after 10 days of inactivity.
-SESSION_COOKIE_AGE = 60 * 60 * 24 * 10  # 10 days (in seconds)
 SESSION_SAVE_EVERY_REQUEST = True       # rolling expiry: extend on each request
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 10  # 10 days (in seconds)
 
-# Use secure cookies in non-debug environments; Lax is fine for same-site SPA API.
 SESSION_COOKIE_SECURE = not DEBUG
-# Use Lax for same-site (e.g., localhost:3000 -> localhost:8000) and better CSRF posture.
-# If deploying frontend on a different site, switch to 'None' and ensure HTTPS.
 SESSION_COOKIE_SAMESITE = 'Lax'
 
 CSRF_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SAMESITE = 'Lax'
-# CSRF token must be readable by JS to set X-CSRFToken header
 CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_DOMAIN = env("CSRF_COOKIE_DOMAIN", default=None)
+SESSION_COOKIE_DOMAIN = env("SESSION_COOKIE_DOMAIN", default=None)
 
 # Behind Cloudflare Tunnel/Reverse Proxy: trust X-Forwarded headers
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
