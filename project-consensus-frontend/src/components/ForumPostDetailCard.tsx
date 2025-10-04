@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import {
   Calendar,
   Heart,
@@ -47,7 +48,6 @@ export interface ForumPostDetailCardProps {
   post: ForumPost; // 帖子数据 / Post data
   onLike?: (postId: string) => void; // 点赞回调函数（可选） / Like callback function (optional)
   onTranslate?: (postId: string) => void; // 翻译回调函数（可选） / Translate callback function (optional)
-  onAuthorClick?: (authorId: string) => void; // 作者点击回调函数（可选） / Author click callback function (optional)
   onDelete?: (postId: string) => void; // 删除回调（可选） / Delete callback (optional)
   className?: string; // 自定义CSS类名（可选） / Custom CSS class name (optional)
 }
@@ -56,7 +56,6 @@ export function ForumPostDetailCard({
   post,
   onLike,
   onTranslate,
-  onAuthorClick,
   onDelete,
   className,
 }: ForumPostDetailCardProps) {
@@ -110,12 +109,6 @@ export function ForumPostDetailCard({
     onTranslate?.(post.id);
   };
 
-  const handleAuthorClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (post.isAnonymous) return;
-    onAuthorClick?.(post.author.id);
-  };
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -136,36 +129,56 @@ export function ForumPostDetailCard({
     <Card className={cn("w-full !gap-4 pb-5", className)}>
       <CardHeader className="pb-0">
         <div className="flex items-start justify-between">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 group">
             <div className="relative">
-              {post.author.avatar ? (
-                <img
-                  src={post.author.avatar}
-                  alt={post.author.name}
-                  className="w-7 h-7 rounded-full object-cover"
-                />
-              ) : (
+              {post.isAnonymous ? (
                 <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                   <span className="text-gray-600 dark:text-gray-300 text-xs font-medium">
-                    {post.author.name.charAt(0).toUpperCase()}
+                    {'?'}
                   </span>
                 </div>
+              ) : (
+                <Link
+                  href={`/user/${post.author.id}`}
+                  className="block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                >
+                  {post.author.avatar ? (
+                    <img
+                      src={post.author.avatar}
+                      alt={post.author.name}
+                      className="w-7 h-7 rounded-full object-cover transition-transform duration-200 group-hover:scale-105 group-hover:ring-2 group-hover:ring-primary/30"
+                    />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center transition-transform duration-200 group-hover:scale-105 ring-0 group-hover:ring-2 group-hover:ring-primary/30">
+                      <span className="text-gray-600 dark:text-gray-300 text-xs font-medium">
+                        {post.author.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                </Link>
               )}
             </div>
             <div className="flex flex-col">
-              <button
-                onClick={handleAuthorClick}
-                className="text-sm font-medium text-left hover:text-primary transition-colors"
-              >
-                {post.isAnonymous
-                  ? (user && post.author.id === user.id
-                      ? `${post.author.name} (${t('common.anonymous')})`
-                      : t('common.anonymous'))
-                  : post.author.name}
-                {user && post.author.id === user.id && (
-                  <span className="text-muted-foreground"> ({t('common.me')})</span>
-                )}
-              </button>
+              {post.isAnonymous ? (
+                <span className="text-sm font-medium text-foreground">
+                  {user && post.author.id === user.id
+                    ? `${post.author.name} (${t('common.anonymous')})`
+                    : t('common.anonymous')}
+                  {user && post.author.id === user.id && (
+                    <span className="text-muted-foreground"> ({t('common.me')})</span>
+                  )}
+                </span>
+              ) : (
+                <Link
+                  href={`/user/${post.author.id}`}
+                  className="text-sm font-medium text-left group-hover:text-primary group-hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                >
+                  {post.author.name}
+                  {user && post.author.id === user.id && (
+                    <span className="text-muted-foreground"> ({t('common.me')})</span>
+                  )}
+                </Link>
+              )}
               <ClientOnlyTime dateString={post.createdAt} />
             </div>
           </div>
