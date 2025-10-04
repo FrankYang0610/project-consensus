@@ -6,8 +6,8 @@ from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 
-from django.db import transaction
-from django.db.models import F, Count, Q, Case, When, Value, IntegerField
+from django.db import transaction, models
+from django.db.models import F, Count, Q, Case, When, Value, IntegerField, Exists, OuterRef
 from .models import ForumPost, ForumPostComment, ForumPostLike, ForumCommentLike
 from .serializers import ForumPostSerializer, ForumPostCommentSerializer
 
@@ -35,6 +35,23 @@ class ForumPostViewSet(viewsets.ModelViewSet):
         if self.action in ["list", "retrieve"]:
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated()]
+    
+    def get_queryset(self):  # type: ignore[override]
+        qs = super().get_queryset()
+        # Annotate is_liked for authenticated users to avoid N+1 queries
+        if self.request.user.is_authenticated:
+            qs = qs.annotate(
+                is_liked=Exists(
+                    ForumPostLike.objects.filter(
+                        post_id=OuterRef("id"),
+                        user=self.request.user
+                    )
+                )
+            )
+        else:
+            qs = qs.annotate(is_liked=Value(False))
+        return qs
+
     def perform_create(self, serializer):  # type: ignore[override]
         # Force the author to the current user
         serializer.save(author=self.request.user)
@@ -62,7 +79,8 @@ class ForumPostViewSet(viewsets.ModelViewSet):
                 like, created = ForumPostLike.objects.get_or_create(post=post, user=user)
                 if created:
                     ForumPost.objects.filter(pk=post.pk).update(likes_count=F("likes_count") + 1)
-            post.refresh_from_db(fields=["likes_count"])
+            # Re-fetch to get fresh data and annotations (is_liked)
+            post = self.get_queryset().get(pk=pk)
             serializer = self.get_serializer(post, context={"request": request})
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:  # pragma: no cover
@@ -85,7 +103,8 @@ class ForumPostViewSet(viewsets.ModelViewSet):
                             output_field=IntegerField(),
                         )
                     )
-            post.refresh_from_db(fields=["likes_count"])
+            # Re-fetch to get fresh data and annotations (is_liked)
+            post = self.get_queryset().get(pk=pk)
             serializer = self.get_serializer(post, context={"request": request})
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:  # pragma: no cover
@@ -121,7 +140,20 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
         # Consistent ordering: oldest first (ascending)
         qs = qs.order_by("created_at", "id")
         # Annotate direct replies count (include soft-deleted replies)
-        return qs.annotate(replies_count=Count("replies"))
+        qs = qs.annotate(replies_count=Count("replies"))
+        # Annotate is_liked for authenticated users to avoid N+1 queries
+        if self.request.user.is_authenticated:
+            qs = qs.annotate(
+                is_liked=Exists(
+                    ForumCommentLike.objects.filter(
+                        comment_id=OuterRef("id"),
+                        user=self.request.user
+                    )
+                )
+            )
+        else:
+            qs = qs.annotate(is_liked=Value(False))
+        return qs
 
     def perform_create(self, serializer):  # type: ignore[override]
         # Always set the author to current user; no main thread tracking in flat model
@@ -230,7 +262,8 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
                 _, created = ForumCommentLike.objects.get_or_create(comment=comment, user=user)
                 if created:
                     ForumPostComment.objects.filter(pk=comment.pk).update(likes_count=F("likes_count") + 1)
-            comment.refresh_from_db(fields=["likes_count"])
+            # Re-fetch to get fresh data and annotations (is_liked, replies_count)
+            comment = self.get_queryset().get(pk=pk)
             serializer = self.get_serializer(comment, context={"request": request})
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:  # pragma: no cover
@@ -253,7 +286,8 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
                             output_field=IntegerField(),
                         )
                     )
-            comment.refresh_from_db(fields=["likes_count"])
+            # Re-fetch to get fresh data and annotations (is_liked, replies_count)
+            comment = self.get_queryset().get(pk=pk)
             serializer = self.get_serializer(comment, context={"request": request})
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:  # pragma: no cover

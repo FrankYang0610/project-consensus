@@ -4,13 +4,15 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Heart, MessageSquare, FileText, Star } from 'lucide-react';
 import { SiteNavigation } from '@/components/SiteNavigation';
 import { useApp } from '@/contexts/AppContext';
 import { useI18n } from '@/hooks/use-i18n';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatPronounsForProfilePageDisplay } from '@/lib/pronouns-utils';
+import { cn } from '@/lib/utils';
+import { formatPronounsForProfilePageDisplay, shouldDisplayPronouns } from '@/lib/pronouns-utils';
 import { getPublicUser, getPublicUserPosts, getPublicUserComments, getPublicUserReviews } from '@/lib/api/public-user';
 import { stripHtmlTags } from '@/lib/html-utils';
 import ClientOnlyTime from '@/components/ClientOnlyTime';
@@ -36,7 +38,7 @@ export default function PublicUserPage() {
 
   const displayName = user?.name || '';
   const avatarText = user?.name ? user.name.charAt(0).toUpperCase() : '';
-  const formattedPronouns = user?.pronounsShared && user?.pronouns ? formatPronounsForProfilePageDisplay(user.pronouns) : "";
+  const formattedPronouns = shouldDisplayPronouns(user?.pronouns) ? formatPronounsForProfilePageDisplay(user?.pronouns) : "";
 
   const userStats = user?.stats || {
     posts: 0,
@@ -154,7 +156,6 @@ export default function PublicUserPage() {
                 <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
                   {displayName}
                 </h1>
-                <p className="text-lg text-muted-foreground">{t('profile.subtitle')}</p>
               </div>
               {currentUser?.id === userId && (
                 <Button asChild variant="outline" size="sm" className="shadow-md">
@@ -187,7 +188,7 @@ export default function PublicUserPage() {
 
                     <div>
                       <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{displayName}</h2>
-                      {user.pronounsShared && (
+                      {formattedPronouns && (
                         <p className="text-gray-600 dark:text-gray-300 mt-1">{formattedPronouns}</p>
                       )}
                       <Badge variant="secondary" className="mt-2">
@@ -232,7 +233,7 @@ export default function PublicUserPage() {
               {user.showForumPostsPublicly && (
                 <Card className="shadow-lg border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
                   <CardHeader>
-                    <CardTitle className="text-xl">📝 {t('profile.activity.myPosts.title')}</CardTitle>
+                    <CardTitle className="text-xl flex items-center gap-2"><FileText className="w-5 h-5" /> {t('profile.activity.myPosts.title')}</CardTitle>
                     <CardDescription>{t('profile.activity.myPosts.subtitle')}</CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -258,8 +259,17 @@ export default function PublicUserPage() {
                                 </p>
                                 <div className="flex items-center gap-3 text-xs">
                                   <ClientOnlyTime dateString={post.createdAt} className="text-gray-500 dark:text-gray-400" />
-                                  <span className="text-gray-500 dark:text-gray-400">💬 {post.comments}</span>
-                                  <span className="text-gray-500 dark:text-gray-400">❤️ {post.likes}</span>
+                                  <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                    <MessageSquare className="w-3 h-3" />
+                                    {post.comments}
+                                  </span>
+                                  <span className={cn(
+                                    "flex items-center gap-1",
+                                    post.isLiked ? "text-red-500 font-medium" : "text-gray-500 dark:text-gray-400"
+                                  )}>
+                                    <Heart className={cn("w-3 h-3", post.isLiked && "fill-current")} />
+                                    {post.likes}
+                                  </span>
                                 </div>
                               </div>
                             </div>
@@ -275,7 +285,7 @@ export default function PublicUserPage() {
               {user.showForumPostCommentsPublicly && (
                 <Card className="shadow-lg border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
                   <CardHeader>
-                    <CardTitle className="text-xl">💬 {t('profile.activity.myComments.title')}</CardTitle>
+                    <CardTitle className="text-xl flex items-center gap-2"><MessageSquare className="w-5 h-5" /> {t('profile.activity.myComments.title')}</CardTitle>
                     <CardDescription>{t('profile.activity.myComments.subtitle')}</CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -297,7 +307,13 @@ export default function PublicUserPage() {
                               </p>
                               <div className="flex items-center gap-3 text-xs">
                                 <ClientOnlyTime dateString={comment.createdAt} className="text-gray-500 dark:text-gray-400" />
-                                <span className="text-gray-500 dark:text-gray-400">❤️ {comment.likes}</span>
+                                <span className={cn(
+                                  "flex items-center gap-1",
+                                  comment.isLiked ? "text-red-500 font-medium" : "text-gray-500 dark:text-gray-400"
+                                )}>
+                                  <Heart className={cn("w-3 h-3", comment.isLiked && "fill-current")} />
+                                  {comment.likes}
+                                </span>
                                 {comment.replyTo && <span className="text-gray-500 dark:text-gray-400">{t('profile.activity.myComments.inReplyTo')}</span>}
                               </div>
                             </div>
@@ -313,7 +329,7 @@ export default function PublicUserPage() {
               {user.showCourseReviewsPublicly && (
                 <Card className="shadow-lg border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
                   <CardHeader>
-                    <CardTitle className="text-xl">⭐ {t('profile.activity.myReviews.title')}</CardTitle>
+                    <CardTitle className="text-xl flex items-center gap-2"><Star className="w-5 h-5" /> {t('profile.activity.myReviews.title')}</CardTitle>
                     <CardDescription>{t('profile.activity.myReviews.subtitle')}</CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -344,8 +360,19 @@ export default function PublicUserPage() {
                                 </p>
                                 <div className="flex items-center gap-3 text-xs">
                                   <ClientOnlyTime dateString={review.createdAt} className="text-gray-500 dark:text-gray-400" />
-                                  <span className="text-gray-500 dark:text-gray-400">❤️ {review.likesCount}</span>
-                                  {(review.repliesCount ?? 0) > 0 && <span className="text-gray-500 dark:text-gray-400">💬 {review.repliesCount}</span>}
+                                  <span className={cn(
+                                    "flex items-center gap-1",
+                                    review.isLiked ? "text-red-500 font-medium" : "text-gray-500 dark:text-gray-400"
+                                  )}>
+                                    <Heart className={cn("w-3 h-3", review.isLiked && "fill-current")} />
+                                    {review.likesCount}
+                                  </span>
+                                  {(review.repliesCount ?? 0) > 0 && (
+                                    <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                      <MessageSquare className="w-3 h-3" />
+                                      {review.repliesCount}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                             </div>

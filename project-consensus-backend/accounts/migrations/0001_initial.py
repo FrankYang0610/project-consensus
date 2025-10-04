@@ -41,10 +41,6 @@ class Migration(migrations.Migration):
                     models.CharField(blank=True, help_text="用户代词，可为空", max_length=100),
                 ),
                 (
-                    "pronouns_shared",
-                    models.BooleanField(default=False, help_text="是否在个人主页展示代词"),
-                ),
-                (
                     "show_forum_posts_publicly",
                     models.BooleanField(default=True, help_text="是否公开展示自己发的forum posts"),
                 ),

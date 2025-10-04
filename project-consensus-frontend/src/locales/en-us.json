@@ -78,6 +78,7 @@
     "titlePlaceholder": "Enter a title",
     "contentPlaceholder": "Enter post content...",
     "create": "Create Post",
+    "postAnonymously": "Post anonymously",
     "submitting": "Creating...",
     "cancel": "Cancel",
     "tags": "Tags",
@@ -487,7 +488,7 @@
   },
   "profile": {
     "title": "Profile",
-    "subtitle": "Your public profile",
+    "subtitle": "Profile overview and recent activity",
     "actions": {
       "edit": "Edit Profile",
       "viewPublic": "View Public Profile",
@@ -502,23 +503,23 @@
     },
     "activity": {
       "title": "Recent Activity",
-      "subtitle": "Your latest contributions to the community",
+      "subtitle": "Latest contributions to the community",
       "myPosts": {
-        "title": "My Posts",
-        "subtitle": "Forum posts you've created",
+        "title": "Posts",
+        "subtitle": "Forum posts created",
         "empty": "No posts yet",
         "viewPost": "View Post"
       },
       "myComments": {
-        "title": "My Comments",
-        "subtitle": "Comments you've made on forum posts",
+        "title": "Comments",
+        "subtitle": "Comments on forum posts",
         "empty": "No comments yet",
         "inReplyTo": "In reply to",
         "onPost": "On post:"
       },
       "myReviews": {
-        "title": "My Reviews",
-        "subtitle": "Course reviews you've written",
+        "title": "Reviews",
+        "subtitle": "Course reviews written",
         "empty": "No reviews yet",
         "viewCourse": "View Course"
       },

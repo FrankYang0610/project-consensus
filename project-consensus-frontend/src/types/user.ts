@@ -23,7 +23,6 @@ export interface PublicUser {
   name?: string; // 用户名称（可选） / User name (optional)
   avatar?: string; // 用户头像URL（可选） / User avatar URL (optional)
   pronouns?: string; // 用户代词（可选） / User pronouns (optional)
-  pronounsShared?: boolean; // 是否在主页展示代词（可选） / Whether pronouns are shown publicly (optional)
   showForumPostsPublicly?: boolean; // 是否公开展示自己发的forum posts（可选） / Whether forum posts are shown publicly (optional)
   showForumPostCommentsPublicly?: boolean; // 是否公开展示自己发的forum post comments（可选） / Whether forum post comments are shown publicly (optional)
   showCourseReviewsPublicly?: boolean; // 是否公开展示自己发的course reviews（可选） / Whether course reviews are shown publicly (optional)

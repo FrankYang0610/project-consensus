@@ -8,7 +8,6 @@ export async function updateProfile(data: {
   display_name?: string;
   avatar_url?: string;
   pronouns?: string;
-  pronouns_shared?: boolean;
 }): Promise<{ success: boolean; user: User }> {
   return await apiPatch<{ success: boolean; user: User }>(
     '/api/accounts/profile/',
