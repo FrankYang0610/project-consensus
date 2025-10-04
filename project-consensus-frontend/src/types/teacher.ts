@@ -42,6 +42,6 @@ export interface Teacher {
   yearsExperience?: number;
   rating?: TeacherRating;
   courses?: TeacherCourseRef[];
-  createdAt?: string | Date;
-  updatedAt?: string | Date;
+  createdAt?: string;
+  updatedAt?: string;
 }

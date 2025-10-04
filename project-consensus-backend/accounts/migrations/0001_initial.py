@@ -17,12 +17,53 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Profile',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('display_name', models.CharField(blank=True, help_text='展示昵称（不唯一）', max_length=100)),
-                ('avatar_url', models.URLField(blank=True, help_text='头像 URL，可为空')),
-                ('pronouns', models.CharField(blank=True, help_text='用户代词，可为空', max_length=100)),
-                ('pronouns_shared', models.BooleanField(default=False, help_text='是否在个人主页展示代词')),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='profile', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "display_name",
+                    models.CharField(
+                        blank=True, help_text="展示昵称（不唯一）", max_length=100
+                    ),
+                ),
+                (
+                    "avatar_url",
+                    models.URLField(blank=True, help_text="头像 URL，可为空"),
+                ),
+                (
+                    "pronouns",
+                    models.CharField(blank=True, help_text="用户代词，可为空", max_length=100),
+                ),
+                (
+                    "pronouns_shared",
+                    models.BooleanField(default=False, help_text="是否在个人主页展示代词"),
+                ),
+                (
+                    "show_forum_posts_publicly",
+                    models.BooleanField(default=True, help_text="是否公开展示自己发的forum posts"),
+                ),
+                (
+                    "show_forum_post_comments_publicly",
+                    models.BooleanField(default=True, help_text="是否公开展示自己发的forum post comments"),
+                ),
+                (
+                    "show_course_reviews_publicly",
+                    models.BooleanField(default=True, help_text="是否公开展示自己发的course reviews"),
+                ),
+                (
+                    "user",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="profile",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Profile',

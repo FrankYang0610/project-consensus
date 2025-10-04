@@ -23,6 +23,9 @@ class Profile(models.Model):
     avatar_url = models.URLField(blank=True, help_text="头像 URL，可为空")
     pronouns = models.CharField(max_length=100, blank=True, help_text="用户代词，可为空")
     pronouns_shared = models.BooleanField(default=False, help_text="是否在个人主页展示代词")
+    show_forum_posts_publicly = models.BooleanField(default=True, help_text="是否公开展示自己发的forum posts")
+    show_forum_post_comments_publicly = models.BooleanField(default=True, help_text="是否公开展示自己发的forum post comments")
+    show_course_reviews_publicly = models.BooleanField(default=True, help_text="是否公开展示自己发的course reviews")
 
     class Meta:
         verbose_name = "Profile"
