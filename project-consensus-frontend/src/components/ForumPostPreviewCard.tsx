@@ -125,7 +125,7 @@ export function ForumPostPreviewCard({
               {post.isAnonymous ? (
                 <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                   <span className="text-gray-600 dark:text-gray-300 text-xs font-medium">
-                    {post.author.name.charAt(0).toUpperCase()}
+                    {'?'}
                   </span>
                 </div>
               ) : (
