@@ -184,9 +184,6 @@ export function ForumPostPreviewCard({
             <h3 className="text-base font-semibold line-clamp-1 flex-1">
               {isTranslated ? t('post.translateUnavailable') : post.title}
             </h3>
-            <span className="ml-2 px-1.5 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-800 rounded-full whitespace-nowrap">
-              {post.language}
-            </span>
           </div>
           <p className="text-muted-foreground text-sm leading-relaxed mb-1 break-words overflow-wrap-anywhere line-clamp-2 min-h-[3.25em]">
             {isTranslated ? t('post.translateUnavailable') : truncateHtmlContent(post.content)}

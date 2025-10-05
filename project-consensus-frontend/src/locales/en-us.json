@@ -64,6 +64,7 @@
     "copied": "Copied!",
     "copyText": "Copy text",
     "delete": "Delete post",
+    "edit": "Edit post",
     "deleting": "Deleting...",
     "deleteConfirm": {
       "title": "Delete Post",
@@ -80,11 +81,14 @@
     "create": "Create Post",
     "postAnonymously": "Post anonymously",
     "submitting": "Creating...",
+    "update": "Save",
+    "updating": "Saving...",
     "cancel": "Cancel",
     "tags": "Tags",
     "tagPlaceholder": "Enter tag name",
     "removeTag": "Remove tag",
     "maxTagsReached": "Maximum {{max}} tags allowed",
+    "edited": "Edited",
     "validation": {
       "titleRequired": "Title is required",
       "titleTooShort": "Title must be at least 5 characters",

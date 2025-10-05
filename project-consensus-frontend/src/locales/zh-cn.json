@@ -64,6 +64,7 @@
     "copied": "已复制！",
     "copyText": "复制文本",
     "delete": "删除帖子",
+    "edit": "编辑帖子",
     "deleting": "删除中...",
     "deleteConfirm": {
       "title": "删除帖子",
@@ -80,11 +81,14 @@
     "create": "创建帖子",
     "postAnonymously": "匿名发布",
     "submitting": "创建中...",
+    "update": "保存",
+    "updating": "保存中...",
     "cancel": "取消",
     "tags": "标签",
     "tagPlaceholder": "输入标签名称",
     "removeTag": "移除标签",
     "maxTagsReached": "最多只能添加 {{max}} 个标签",
+    "edited": "已编辑",
     "validation": {
       "titleRequired": "标题不能为空",
       "titleTooShort": "标题至少需要5个字符",
