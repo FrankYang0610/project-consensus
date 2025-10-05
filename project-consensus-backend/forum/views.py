@@ -67,6 +67,36 @@ class ForumPostViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
         return super().destroy(request, *args, **kwargs)
 
+    def update(self, request: Request, *args, **kwargs):  # type: ignore[override]
+        """Allow only the author to update their post.
+
+        On successful update, mark the post as edited when any editable field is present.
+        """
+        partial = kwargs.pop("partial", False)
+        instance: ForumPost = self.get_object()
+        if request.user != instance.author:
+            return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+
+        # Determine if incoming data modifies any editable fields
+        editable_fields = {"title", "content", "tags", "is_anonymous"}
+        incoming_keys = set(serializer.validated_data.keys())
+
+        self.perform_update(serializer)
+
+        # Mark as edited if client attempted to update any editable fields
+        if incoming_keys & editable_fields:
+            ForumPost.objects.filter(pk=instance.pk).update(is_edited=True)
+            instance.refresh_from_db(fields=["is_edited"])  # keep instance in sync
+
+        return Response(serializer.data)
+
+    def partial_update(self, request: Request, *args, **kwargs):  # type: ignore[override]
+        kwargs["partial"] = True
+        return self.update(request, *args, **kwargs)
+
     @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
     def like(self, request: Request, pk: str | None = None):
         """Current user likes the post. Idempotent: multiple calls have no additional effect."""

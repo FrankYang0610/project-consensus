@@ -214,6 +214,7 @@ export default function PostPage() {
                   });
               }}
               onDelete={handleDeletePost}
+              onUpdated={(p) => setPost(p)}
             />
             <ForumPostCommentList
               onLike={handleCommentLike}

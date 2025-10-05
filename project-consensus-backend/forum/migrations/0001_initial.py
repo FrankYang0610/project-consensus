@@ -26,6 +26,7 @@ class Migration(migrations.Migration):
                 ('tags', models.JSONField(blank=True, default=list)),
                 ('likes_count', models.PositiveIntegerField(default=0)),
                 ('is_anonymous', models.BooleanField(default=False)),
+                ('is_edited', models.BooleanField(default=False)),
                 ('author', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='forum_posts', to=settings.AUTH_USER_MODEL)),
             ],
             options={

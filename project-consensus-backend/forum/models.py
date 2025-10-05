@@ -28,6 +28,7 @@ class ForumPost(models.Model):
     tags = models.JSONField(default=list, blank=True)
     likes_count = models.PositiveIntegerField(default=0)
     is_anonymous = models.BooleanField(default=False) # Whether the post should display the author as Anonymous on the client
+    is_edited = models.BooleanField(default=False)  # Whether the post has been edited after creation
 
     class Meta:
         ordering = ["-created_at"]
