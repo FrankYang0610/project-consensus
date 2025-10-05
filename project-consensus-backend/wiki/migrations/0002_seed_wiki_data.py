@@ -5,6 +5,7 @@ Creates sample wiki categories and pages for demonstration purposes.
 """
 
 from django.db import migrations
+from django.conf import settings
 
 
 def create_sample_wiki_data(apps, schema_editor):
@@ -17,12 +18,15 @@ def create_sample_wiki_data(apps, schema_editor):
     """
     WikiCategory = apps.get_model('wiki', 'WikiCategory')
     WikiPage = apps.get_model('wiki', 'WikiPage')
-    User = apps.get_model('accounts', 'User')
+    app_label, model_name = settings.AUTH_USER_MODEL.split(".")
+    User = apps.get_model(app_label, model_name)
     
-    # 获取第一个管理员用户 / Get the first admin user
+    # 获取第一个管理员用户 / Get the first admin user; fallback to any existing user
     admin_user = User.objects.filter(is_staff=True).first()
     if not admin_user:
-        print("No admin user found. Skipping wiki data seed.")
+        admin_user = User.objects.first()
+    if not admin_user:
+        print("No user found. Skipping wiki data seed.")
         return
     
     # 创建分类 / Create categories
@@ -270,47 +274,43 @@ Project Consensus 论坛是一个学术交流和讨论的平台。
 - 学习资源
 - 技术问题
 - 经验分享
-
 ### 2. 撰写帖子标题
 - 简洁明了，准确概括内容
 - 避免使用无意义的标题如"求助"、"有问题"
 
-### 3. 编写帖子内容
-- 清晰描述您的问题或想法
-- 使用 Markdown 格式化内容
-- 适当添加代码块、图片等
+    ### 3. 编写帖子内容
+    - 清晰描述您的问题或想法
+    - 使用 Markdown 格式化内容
+    - 适当添加代码块、图片等
 
-## Markdown 基础
+    ## Markdown 基础
 
-论坛支持 Markdown 格式，常用语法：
+    论坛支持 Markdown 格式，常用语法：
 
-\`\`\`markdown
-# 一级标题
-## 二级标题
+    ```markdown
+    # 一级标题
+    ## 二级标题
 
-**粗体** *斜体*
+    **粗体** *斜体*
 
-- 列表项 1
-- 列表项 2
+    - 列表项 1
+    - 列表项 2
 
-[链接文字](https://example.com)
+    [链接文字](https://example.com)
+    ```
 
-\`代码\`
+    ```python
+    # 代码块
+    print("Hello, World!")
+    ```
 
-\`\`\`python
-# 代码块
-print("Hello, World!")
-\`\`\`
-\`\`\`
-
-## 评论和互动
+    ## 评论和互动
 
 - 💬 回复他人的帖子时保持友善和建设性
 - 👍 点赞有价值的内容
-- 🔖 收藏感兴趣的帖子
 
 ## 论坛规则
-
+{{ ... }}
 1. **尊重他人**：不发表攻击性或侮辱性言论
 2. **主题相关**：发帖内容应与学术交流相关
 3. **禁止广告**：不发布商业广告或垃圾信息
@@ -461,7 +461,7 @@ class Migration(migrations.Migration):
     
     dependencies = [
         ('wiki', '0001_initial'),
-        ('accounts', '0001_initial'),  # Ensure User model exists
+        ('accounts', '0002_create_demo_user'),  # Ensure demo user exists before seeding
     ]
     
     operations = [
