@@ -17,8 +17,8 @@ export interface ForumPost {
   likes: number; // 点赞数量 / Number of likes
   comments: number; // 评论数量 / Number of comments
   isLiked?: boolean; // 当前用户是否已点赞（可选） / Whether current user has liked (optional)
-  language: string; // 帖子语言 / Post language
   isAnonymous?: boolean; // 是否匿名发布 / Whether author is anonymous
+  isEdited?: boolean; // 是否已编辑 / Whether post has been edited
 }
 
 /**

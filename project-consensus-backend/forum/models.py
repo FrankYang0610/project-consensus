@@ -17,7 +17,6 @@ class ForumPost(models.Model):
     - author: FK to user (frontend expects nested Author derived from Profile)
     - created_at: creation timestamp
     - tags: list of strings (JSON)
-    - language: display language label
     - likes_count: integer like count (isLiked is session-level, not stored)
     """
 
@@ -27,9 +26,9 @@ class ForumPost(models.Model):
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="forum_posts")
     created_at = models.DateTimeField(default=timezone.now, db_index=True)
     tags = models.JSONField(default=list, blank=True)
-    language = models.CharField(max_length=50, default="")
     likes_count = models.PositiveIntegerField(default=0)
     is_anonymous = models.BooleanField(default=False) # Whether the post should display the author as Anonymous on the client
+    is_edited = models.BooleanField(default=False)  # Whether the post has been edited after creation
 
     class Meta:
         ordering = ["-created_at"]

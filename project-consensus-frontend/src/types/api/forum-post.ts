@@ -16,7 +16,6 @@ export interface CreateForumPostPayload {
   title: string;
   content: string;
   tags: string[];
-  language: string;
   isAnonymous?: boolean;
 }
 
@@ -25,6 +24,5 @@ export interface UpdateForumPostPayload {
   title?: string;
   content?: string;
   tags?: string[];
-  language?: string;
   isAnonymous?: boolean;
 }

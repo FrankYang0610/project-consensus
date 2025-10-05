@@ -24,9 +24,9 @@ class Migration(migrations.Migration):
                 ('content', models.TextField()),
                 ('created_at', models.DateTimeField(db_index=True, default=django.utils.timezone.now)),
                 ('tags', models.JSONField(blank=True, default=list)),
-                ('language', models.CharField(default='', max_length=50)),
                 ('likes_count', models.PositiveIntegerField(default=0)),
                 ('is_anonymous', models.BooleanField(default=False)),
+                ('is_edited', models.BooleanField(default=False)),
                 ('author', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='forum_posts', to=settings.AUTH_USER_MODEL)),
             ],
             options={

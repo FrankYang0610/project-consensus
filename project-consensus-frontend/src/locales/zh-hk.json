@@ -64,6 +64,7 @@
     "copied": "已複製！",
     "copyText": "複製文本",
     "delete": "刪除帖子",
+    "edit": "編輯帖子",
     "deleting": "刪除中...",
     "deleteConfirm": {
       "title": "刪除帖子",
@@ -80,11 +81,14 @@
     "create": "建立帖子",
     "postAnonymously": "匿名發佈",
     "submitting": "建立中...",
+    "update": "儲存",
+    "updating": "儲存中...",
     "cancel": "取消",
     "tags": "標籤",
     "tagPlaceholder": "輸入標籤名稱",
     "removeTag": "移除標籤",
     "maxTagsReached": "最多只能添加 {{max}} 個標籤",
+    "edited": "已編輯",
     "validation": {
       "titleRequired": "標題不能為空",
       "titleTooShort": "標題至少需要5個字符",

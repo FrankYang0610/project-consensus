@@ -22,6 +22,11 @@ export default function ProfilePage() {
   const { user, isLoggedIn } = useApp();
   const { t } = useI18n();
   
+  // Scroll to top when page loads
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+  
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [comments, setComments] = useState<ForumPostComment[]>([]);
   const [reviews, setReviews] = useState<CourseReview[]>([]);
@@ -301,7 +306,7 @@ export default function ProfilePage() {
                       {reviews.slice(0, 5).map((review) => (
                         <Link 
                           key={review.id} 
-                          href={`/courses/${review.subjectId}/review`}
+                          href={`/courses/${review.courseId}/review`}
                           className="block p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors border border-gray-100 dark:border-slate-700"
                         >
                           <div className="flex items-start justify-between gap-3">

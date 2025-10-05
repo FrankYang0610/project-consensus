@@ -76,7 +76,6 @@ def seed_forum_data(apps, schema_editor):
         author=demo,
         created_at=now - timezone.timedelta(days=20),
         tags=["opera", "rossini", "classical-music", "comedy", "barber-of-seville"],
-        language="English",
         likes_count=0,
     )
 

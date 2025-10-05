@@ -48,7 +48,6 @@ export interface ForumPostPreviewCardProps {
   post: ForumPost; // 帖子数据 / Post data
   onLike?: (postId: string) => void; // 点赞回调函数（可选） / Like callback function (optional)
   onTranslate?: (postId: string) => void; // 翻译回调函数（可选） / Translate callback function (optional)
-  onAuthorClick?: (authorId: string) => void; // 作者点击回调函数（可选） / Author click callback function (optional)
   className?: string; // 自定义CSS类名（可选） / Custom CSS class name (optional)
   currentUserId?: string; // 当前用户ID（可选） / Current user ID (optional)
 }
@@ -57,7 +56,6 @@ export function ForumPostPreviewCard({
   post,
   onLike,
   onTranslate,
-  onAuthorClick,
   className,
   currentUserId,
 }: ForumPostPreviewCardProps) {
@@ -112,12 +110,6 @@ export function ForumPostPreviewCard({
     onTranslate?.(post.id);
   };
 
-  const handleAuthorClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (post.isAnonymous) return;
-    onAuthorClick?.(post.author.id);
-  };
 
   return (
     <Card
@@ -128,36 +120,58 @@ export function ForumPostPreviewCard({
     >
       <CardHeader className="pb-0 pt-0 px-4">
         <div className="flex items-start justify-between">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 group">
             <div className="relative">
-              {post.author.avatar ? (
-                <img
-                  src={post.author.avatar}
-                  alt={post.author.name}
-                  className="w-8 h-8 rounded-full object-cover"
-                />
-              ) : (
+              {post.isAnonymous ? (
                 <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                   <span className="text-gray-600 dark:text-gray-300 text-xs font-medium">
-                    {post.author.name.charAt(0).toUpperCase()}
+                    {'?'}
                   </span>
                 </div>
+              ) : (
+                <Link
+                  href={`/user/${post.author.id}`}
+                  className="block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {post.author.avatar ? (
+                    <img
+                      src={post.author.avatar}
+                      alt={post.author.name}
+                      className="w-8 h-8 rounded-full object-cover transition-transform duration-200 group-hover:scale-105 group-hover:ring-2 group-hover:ring-primary/30"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center transition-transform duration-200 group-hover:scale-105 ring-0 group-hover:ring-2 group-hover:ring-primary/30">
+                      <span className="text-gray-600 dark:text-gray-300 text-xs font-medium">
+                        {post.author.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                </Link>
               )}
             </div>
             <div className="flex flex-col">
-              <button
-                onClick={handleAuthorClick}
-                className="text-sm font-medium text-left hover:text-primary transition-colors"
-              >
-                {post.isAnonymous
-                  ? (currentUserId && post.author.id === currentUserId
-                      ? `${post.author.name} (${t('common.anonymous')})`
-                      : t('common.anonymous'))
-                  : post.author.name}
-                {currentUserId && post.author.id === currentUserId && (
-                  <span className="text-muted-foreground"> ({t('common.me')})</span>
-                )}
-              </button>
+              {post.isAnonymous ? (
+                <span className="text-sm font-medium text-foreground">
+                  {currentUserId && post.author.id === currentUserId
+                    ? `${post.author.name} (${t('common.anonymous')})`
+                    : t('common.anonymous')}
+                  {currentUserId && post.author.id === currentUserId && (
+                    <span className="text-muted-foreground"> ({t('common.me')})</span>
+                  )}
+                </span>
+              ) : (
+                <Link
+                  href={`/user/${post.author.id}`}
+                  className="text-sm font-medium text-left group-hover:text-primary group-hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {post.author.name}
+                  {currentUserId && post.author.id === currentUserId && (
+                    <span className="text-muted-foreground"> ({t('common.me')})</span>
+                  )}
+                </Link>
+              )}
               <ClientOnlyTime dateString={post.createdAt} className="text-xs text-muted-foreground" />
             </div>
           </div>
@@ -170,9 +184,6 @@ export function ForumPostPreviewCard({
             <h3 className="text-base font-semibold line-clamp-1 flex-1">
               {isTranslated ? t('post.translateUnavailable') : post.title}
             </h3>
-            <span className="ml-2 px-1.5 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-800 rounded-full whitespace-nowrap">
-              {post.language}
-            </span>
           </div>
           <p className="text-muted-foreground text-sm leading-relaxed mb-1 break-words overflow-wrap-anywhere line-clamp-2 min-h-[3.25em]">
             {isTranslated ? t('post.translateUnavailable') : truncateHtmlContent(post.content)}

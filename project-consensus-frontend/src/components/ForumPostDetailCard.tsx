@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
   Calendar,
   Heart,
@@ -12,6 +14,9 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -37,6 +42,10 @@ import { sanitizeHtml } from "@/lib/html-utils";
 import { cn } from "@/lib/utils";
 import { ForumPost } from "@/types";
 import { useApp } from "@/contexts/AppContext";
+import { updateForumPost } from "@/lib/api/forum-post";
+import { isContentEmpty } from "@/lib/utils";
+import { TagManager } from "@/components/TagManager";
+import { Badge } from "@/components/ui/badge";
 
 import ClientOnlyTime from "./ClientOnlyTime";
 
@@ -47,17 +56,20 @@ export interface ForumPostDetailCardProps {
   post: ForumPost; // 帖子数据 / Post data
   onLike?: (postId: string) => void; // 点赞回调函数（可选） / Like callback function (optional)
   onTranslate?: (postId: string) => void; // 翻译回调函数（可选） / Translate callback function (optional)
-  onAuthorClick?: (authorId: string) => void; // 作者点击回调函数（可选） / Author click callback function (optional)
   onDelete?: (postId: string) => void; // 删除回调（可选） / Delete callback (optional)
+  onUpdated?: (post: ForumPost) => void; // 更新回调（可选） / Update callback (optional)
   className?: string; // 自定义CSS类名（可选） / Custom CSS class name (optional)
 }
+
+// Dynamic import for client-only CKEditor component
+const RichTextEditor = dynamic(() => import("@/components/RichTextEditor"), { ssr: false });
 
 export function ForumPostDetailCard({
   post,
   onLike,
   onTranslate,
-  onAuthorClick,
   onDelete,
+  onUpdated,
   className,
 }: ForumPostDetailCardProps) {
   // i18n translation
@@ -74,6 +86,15 @@ export function ForumPostDetailCard({
   const [isTranslated, setIsTranslated] = React.useState(false);
   const [isCopySuccess, setIsCopySuccess] = React.useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
+
+  // Edit state
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [editTitle, setEditTitle] = React.useState("");
+  const [editContent, setEditContent] = React.useState("");
+  const [editTags, setEditTags] = React.useState<string[]>([]);
+  const [editIsAnonymous, setEditIsAnonymous] = React.useState<boolean>(post.isAnonymous ?? false);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [errors, setErrors] = React.useState<{ title?: string; content?: string; }>(() => ({}));
 
   const handleLikeClick = () => {
     if (!isLoggedIn) {
@@ -110,12 +131,6 @@ export function ForumPostDetailCard({
     onTranslate?.(post.id);
   };
 
-  const handleAuthorClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (post.isAnonymous) return;
-    onAuthorClick?.(post.author.id);
-  };
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -132,40 +147,114 @@ export function ForumPostDetailCard({
     setShowDeleteConfirm(false);
   };
 
+  const beginEdit = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDropdownOpen(false);
+    setEditTitle(post.title);
+    setEditContent(post.content);
+    setEditTags(post.tags || []);
+    setEditIsAnonymous(Boolean(post.isAnonymous));
+    setErrors({});
+    setIsEditing(true);
+  };
+
+  const validate = (): boolean => {
+    const next: typeof errors = {};
+    if (!editTitle.trim()) {
+      next.title = t("post.validation.titleRequired");
+    } else if (editTitle.trim().length < 5) {
+      next.title = t("post.validation.titleTooShort");
+    } else if (editTitle.trim().length > 200) {
+      next.title = t("post.validation.titleTooLong");
+    }
+    if (isContentEmpty(editContent)) {
+      next.content = t("post.validation.contentRequired");
+    }
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
+
+  const handleSave = async () => {
+    if (!validate()) return;
+    try {
+      setIsSaving(true);
+      const updated = await updateForumPost(post.id, {
+        title: editTitle.trim(),
+        content: editContent,
+        tags: editTags,
+        isAnonymous: editIsAnonymous,
+      });
+      onUpdated?.(updated);
+      setIsEditing(false);
+    } catch (err) {
+      console.error(err);
+      setDialogTitle("Error");
+      setDialogMessage(t('common.loadFailedRetry'));
+      setShowDialog(true);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+  };
+
   return (
     <Card className={cn("w-full !gap-4 pb-5", className)}>
       <CardHeader className="pb-0">
         <div className="flex items-start justify-between">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 group">
             <div className="relative">
-              {post.author.avatar ? (
-                <img
-                  src={post.author.avatar}
-                  alt={post.author.name}
-                  className="w-7 h-7 rounded-full object-cover"
-                />
-              ) : (
+              {post.isAnonymous ? (
                 <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                   <span className="text-gray-600 dark:text-gray-300 text-xs font-medium">
-                    {post.author.name.charAt(0).toUpperCase()}
+                    {'?'}
                   </span>
                 </div>
+              ) : (
+                <Link
+                  href={`/user/${post.author.id}`}
+                  className="block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                >
+                  {post.author.avatar ? (
+                    <img
+                      src={post.author.avatar}
+                      alt={post.author.name}
+                      className="w-7 h-7 rounded-full object-cover transition-transform duration-200 group-hover:scale-105 group-hover:ring-2 group-hover:ring-primary/30"
+                    />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center transition-transform duration-200 group-hover:scale-105 ring-0 group-hover:ring-2 group-hover:ring-primary/30">
+                      <span className="text-gray-600 dark:text-gray-300 text-xs font-medium">
+                        {post.author.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                </Link>
               )}
             </div>
             <div className="flex flex-col">
-              <button
-                onClick={handleAuthorClick}
-                className="text-sm font-medium text-left hover:text-primary transition-colors"
-              >
-                {post.isAnonymous
-                  ? (user && post.author.id === user.id
-                      ? `${post.author.name} (${t('common.anonymous')})`
-                      : t('common.anonymous'))
-                  : post.author.name}
-                {user && post.author.id === user.id && (
-                  <span className="text-muted-foreground"> ({t('common.me')})</span>
-                )}
-              </button>
+              {post.isAnonymous ? (
+                <span className="text-sm font-medium text-foreground">
+                  {user && post.author.id === user.id
+                    ? `${post.author.name} (${t('common.anonymous')})`
+                    : t('common.anonymous')}
+                  {user && post.author.id === user.id && (
+                    <span className="text-muted-foreground"> ({t('common.me')})</span>
+                  )}
+                </span>
+              ) : (
+                <Link
+                  href={`/user/${post.author.id}`}
+                  className="text-sm font-medium text-left group-hover:text-primary group-hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                >
+                  {post.author.name}
+                  {user && post.author.id === user.id && (
+                    <span className="text-muted-foreground"> ({t('common.me')})</span>
+                  )}
+                </Link>
+              )}
               <ClientOnlyTime dateString={post.createdAt} />
             </div>
           </div>
@@ -173,34 +262,70 @@ export function ForumPostDetailCard({
       </CardHeader>
 
       <CardContent className="pt-0 pb-0 -mt-1">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl font-bold line-clamp-2 flex-1">
-            {isTranslated ? t('post.translateUnavailable') : post.title}
-          </h1>
-          <span className="ml-2 px-1.5 py-0.5 text-[11px] font-medium bg-blue-100 text-blue-800 rounded-full whitespace-nowrap">
-            {post.language}
-          </span>
-        </div>
+        {!isEditing ? (
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-xl font-bold line-clamp-2 flex-1">
+              {isTranslated ? t('post.translateUnavailable') : post.title}
+            </h1>
+            {post.isEdited && (
+              <Badge variant="secondary" className="ml-3 whitespace-nowrap">{t('post.edited')}</Badge>
+            )}
+          </div>
+        ) : (
+          <div className="mb-4 space-y-3">
+            <Input
+              value={editTitle}
+              onChange={(e) => {
+                setEditTitle(e.target.value);
+                if (errors.title) setErrors(prev => ({ ...prev, title: undefined }));
+              }}
+              placeholder={t('post.titlePlaceholder')}
+              className={cn("h-11 text-lg font-normal px-4", errors.title && "border-red-500 focus:border-red-500")}
+            />
+            {errors.title && <p className="text-red-500 text-sm">{errors.title}</p>}
+          </div>
+        )}
 
-        <div
-          className="prose prose-zinc dark:prose-invert max-w-none mb-2 text-[0.9rem] leading-5 break-words overflow-wrap-anywhere"
-          dangerouslySetInnerHTML={{
-            __html: isTranslated
-              ? t('post.translateUnavailable')
-              : sanitizeHtml(post.content)
-          }}
-        />
+        {!isEditing ? (
+          <div
+            className="prose prose-zinc dark:prose-invert max-w-none mb-2 text-[0.9rem] leading-5 break-words overflow-wrap-anywhere"
+            dangerouslySetInnerHTML={{
+              __html: isTranslated
+                ? t('post.translateUnavailable')
+                : sanitizeHtml(post.content)
+            }}
+          />
+        ) : (
+          <div className="mb-4">
+            <RichTextEditor
+              value={editContent}
+              onChange={(v) => {
+                setEditContent(v);
+                if (errors.content) setErrors(prev => ({ ...prev, content: undefined }));
+              }}
+              placeholder={t('post.contentPlaceholder')}
+              className="prose max-w-none"
+            />
+            {errors.content && <p className="text-red-500 text-sm mt-1">{errors.content}</p>}
+          </div>
+        )}
 
-        {post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-1">
-            {post.tags.map((tag) => (
-              <span
-                key={tag}
-                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground"
-              >
-                #{tag}
-              </span>
-            ))}
+        {!isEditing ? (
+          post.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-1">
+              {post.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )
+        ) : (
+          <div className="mt-1 mb-1">
+            <TagManager tags={editTags} onTagsChange={setEditTags} maxTags={10} />
           </div>
         )}
       </CardContent>
@@ -221,63 +346,88 @@ export function ForumPostDetailCard({
               <span className="text-sm">{likesCount}</span>
             </Button>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleTranslateClick}
-              className={cn(
-                "flex items-center space-x-1 h-8 px-2",
-                isTranslated
-                  ? "text-blue-500 hover:text-blue-600"
-                  : "text-gray-500 hover:text-gray-600"
-              )}
-            >
-              <Languages className="w-4 h-4" />
-              <span className="text-sm">
-                {isTranslated ? t('post.showOriginal') : t('post.translate')}
-              </span>
-            </Button>
-          </div>
-
-          <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
-            <DropdownMenuTrigger asChild>
+            {!isEditing && (
               <Button
                 variant="ghost"
                 size="sm"
+                onClick={handleTranslateClick}
                 className={cn(
-                  "flex items-center space-x-1 h-8 px-2 transition-colors",
-                  isCopySuccess && "text-green-500 hover:text-green-600"
+                  "flex items-center space-x-1 h-8 px-2",
+                  isTranslated
+                    ? "text-blue-500 hover:text-blue-600"
+                    : "text-gray-500 hover:text-gray-600"
                 )}
               >
-                {isCopySuccess ? (
-                  <Check className="w-4 h-4" />
-                ) : (
-                  <MoreHorizontal className="w-4 h-4" />
-                )}
+                <Languages className="w-4 h-4" />
                 <span className="text-sm">
-                  {isCopySuccess ? t('post.copied') : t('post.more')}
+                  {isTranslated ? t('post.showOriginal') : t('post.translate')}
                 </span>
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem
-                onClick={handleCopyText}
-                className="cursor-pointer"
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                <span>{t('post.copyText')}</span>
-              </DropdownMenuItem>
-            {user && post.author.id === user.id && (
-              <DropdownMenuItem
-                onClick={handleDeleteClick}
-                className="cursor-pointer text-red-600 focus:text-red-700"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                <span>{t('post.delete')}</span>
-              </DropdownMenuItem>
             )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          </div>
+
+          {!isEditing ? (
+            <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "flex items-center space-x-1 h-8 px-2 transition-colors",
+                    isCopySuccess && "text-green-500 hover:text-green-600"
+                  )}
+                >
+                  {isCopySuccess ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    <MoreHorizontal className="w-4 h-4" />
+                  )}
+                  <span className="text-sm">
+                    {isCopySuccess ? t('post.copied') : t('post.more')}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem
+                  onClick={handleCopyText}
+                  className="cursor-pointer"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  <span>{t('post.copyText')}</span>
+                </DropdownMenuItem>
+                {user && post.author.id === user.id && (
+                  <>
+                    <DropdownMenuItem onClick={beginEdit} className="cursor-pointer">
+                      <FileText className="w-4 h-4 mr-2" />
+                      <span>{t('post.edit')}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={handleDeleteClick}
+                      className="cursor-pointer text-red-600 focus:text-red-700"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      <span>{t('post.delete')}</span>
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 mr-4">
+                <Checkbox id="anonymous-edit" checked={editIsAnonymous} onCheckedChange={(v) => setEditIsAnonymous(Boolean(v))} />
+                <Label htmlFor="anonymous-edit" className="text-sm cursor-pointer select-none">
+                  {t('post.postAnonymously')}
+                </Label>
+              </div>
+              <Button onClick={handleSave} disabled={isSaving} className="min-w-[90px]">
+                {isSaving ? t('post.updating') : t('post.update')}
+              </Button>
+              <Button variant="ghost" onClick={handleCancel} disabled={isSaving}>
+                {t('post.cancel')}
+              </Button>
+            </div>
+          )}
         </div>
       </CardFooter>
 
