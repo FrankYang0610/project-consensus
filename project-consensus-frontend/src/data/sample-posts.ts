@@ -1,18 +1,7 @@
 import { ForumPost } from "@/types";
 
-// Language options for demo posts
-const LANG_OPTIONS = [
-  "简体中文（普通话）",
-  "繁體中文（粵語）",
-  "繁體中文（國語）",
-  "English",
-  "Not Specified",
-  "Others",
-] as const;
-
-const sampleLanguage = () => LANG_OPTIONS[Math.floor(Math.random() * LANG_OPTIONS.length)];
-
 // Sample data - Computer Science course discussions
+
 const initialSamplePosts: ForumPost[] = [
   {
     id: "a7f3b2c1",
@@ -42,7 +31,6 @@ const initialSamplePosts: ForumPost[] = [
     likes: 8,
     comments: 3,
     isLiked: true,
-    language: sampleLanguage()
   },
   {
     id: "e5d8a9f4",
@@ -58,7 +46,6 @@ const initialSamplePosts: ForumPost[] = [
     likes: 12,
     comments: 5,
     isLiked: false,
-    language: sampleLanguage()
   },
   {
     id: "b6c4e2a8",
@@ -94,7 +81,6 @@ LIMIT 10;</code></pre>
     likes: 25,
     comments: 12,
     isLiked: false,
-    language: sampleLanguage()
   },
   {
     id: "f1a8d3c7",
@@ -125,7 +111,6 @@ LIMIT 10;</code></pre>
     likes: 15,
     comments: 7,
     isLiked: true,
-    language: sampleLanguage()
   },
   {
     id: "c9e6b1f5",
@@ -157,7 +142,6 @@ LIMIT 10;</code></pre>
     likes: 9,
     comments: 4,
     isLiked: false,
-    language: sampleLanguage()
   },
   {
     id: "d4a7f2e9",
@@ -189,13 +173,11 @@ LIMIT 10;</code></pre>
     likes: 18,
     comments: 8,
     isLiked: true,
-    language: sampleLanguage()
   }
 ];
 
 // Auto-extend sample posts for demo purposes
 for (let i = 1; i <= 24; i++) {
-  const language = sampleLanguage();
   const id = `demo-post-${i}`;
   initialSamplePosts.push({
     id,
@@ -211,7 +193,6 @@ for (let i = 1; i <= 24; i++) {
     likes: (i * 2) % 37,
     comments: (i * 3) % 18,
     isLiked: false,
-    language
   });
 }
 

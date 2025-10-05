@@ -190,9 +190,6 @@ export function ForumPostDetailCard({
           <h1 className="text-xl font-bold line-clamp-2 flex-1">
             {isTranslated ? t('post.translateUnavailable') : post.title}
           </h1>
-          <span className="ml-2 px-1.5 py-0.5 text-[11px] font-medium bg-blue-100 text-blue-800 rounded-full whitespace-nowrap">
-            {post.language}
-          </span>
         </div>
 
         <div

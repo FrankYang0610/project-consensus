@@ -62,7 +62,6 @@ class ForumPostSerializer(serializers.ModelSerializer):
             "likes",
             "comments",
             "isLiked",
-            "language",
             "isAnonymous",
         ]
         read_only_fields = ["id", "createdAt", "author"]
