@@ -36,14 +36,14 @@ The following diagram illustrates the complete preprod deployment topology:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        Internet / Users                          │
+│                        Internet / Users                         │
 └────────────────────────┬────────────────────────────────────────┘
                          │
                          │ HTTPS (TLS termination)
                          ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│              Cloudflare Zero Trust + Tunnel                      │
-│  ┌──────────────────────┐      ┌──────────────────────┐        │
+│              Cloudflare Zero Trust + Tunnel                     │
+│  ┌───────────────────────┐      ┌──────────────────────┐        │
 │  │ preprod-app.polyu.life│      │preprod-api.polyu.life│        │
 │  │   (Access Control)    │      │   (Access Control)   │        │
 │  └──────────┬────────────┘      └──────────┬───────────┘        │
@@ -62,11 +62,11 @@ The following diagram illustrates the complete preprod deployment topology:
 │                         │    │ - Sets session cookie            │
 │                         │    │   (Domain=.polyu.life)           │
 └─────────────────────────┘    │ - CORS_ALLOWED_ORIGINS check     │
-                                │ - CSRF_TRUSTED_ORIGINS check     │
-                                └──────────┬───────────────────────┘
-                                           │
-                                           │ SQL
-                                           ▼
+                               │ - CSRF_TRUSTED_ORIGINS check     │
+                               └──────────┬───────────────────────┘
+                                          │
+                                          │ SQL
+                                          ▼
                                 ┌────────────────────┐
                                 │  PostgreSQL 17     │
                                 │  (Docker)          │
@@ -191,7 +191,7 @@ Browser (preprod-app)              API Server (preprod-api)
         │                                    │ - Are headers allowed?
         │                                    │
         │  204 No Content                    │
-        │  AC-Allow-Origin: https://preprod-app...│
+        │  AC-Allow-Origin: https://preprod-app...
         │  AC-Allow-Methods: POST, OPTIONS   │
         │  AC-Allow-Headers: content-type,   │
         │                    x-csrftoken     │
@@ -215,7 +215,7 @@ Browser (preprod-app)              API Server (preprod-api)
         │                                    │ - Authenticates user
         │                                    │
         │  200 OK                            │
-        │  AC-Allow-Origin: https://preprod-app...│
+        │  AC-Allow-Origin: https://preprod-app...
         │  AC-Allow-Credentials: true        │
         │  Set-Cookie: sessionid=...;        │
         │              Domain=.polyu.life    │
@@ -297,37 +297,37 @@ Django implements the **Double Submit Cookie** pattern:
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ Step 1: Get CSRF Token                                      │
-│                                                              │
-│  Frontend                    Backend                         │
-│     │                          │                             │
-│     │ GET /api/accounts/csrf/  │                             │
-│     ├─────────────────────────►│                             │
-│     │                          │ @ensure_csrf_cookie         │
-│     │                          │ generates token             │
-│     │                          │                             │
-│     │  200 OK                  │                             │
-│     │  Set-Cookie: csrftoken=abc123;│                        │
-│     │              Domain=.polyu.life;│                      │
-│     │              HttpOnly=False     │                      │
-│     │◄─────────────────────────┤                             │
-│     │                          │                             │
-│  document.cookie              │                             │
-│  contains csrftoken           │                             │
-│                                                              │
+│                                                             │
+│  Frontend                    Backend                        │
+│     │                          │                            │
+│     │ GET /api/accounts/csrf/  │                            │
+│     ├─────────────────────────►│                            │
+│     │                          │ @ensure_csrf_cookie        │
+│     │                          │ generates token            │
+│     │                          │                            │
+│     │  200 OK                  │                            │
+│     │  Set-Cookie: csrftoken=abc123;                        │
+│     │              Domain=.polyu.life;                      │
+│     │              HttpOnly=False                           │
+│     │◄─────────────────────────┤                            │
+│     │                          │                            │
+│  document.cookie               │                            │
+│  contains csrftoken            │                            │
+│                                                             │
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
 │ Step 2: Mutating Request (POST/PATCH/DELETE)                │
-│                                                              │
-│  Frontend JS                 Backend Middleware              │
-│     │                          │                             │
+│                                                             │
+│  Frontend JS                 Backend Middleware             │
+│     │                         │                             │
 │  1. Read csrftoken            │                             │
 │     from document.cookie      │                             │
 │                               │                             │
 │  2. POST /api/accounts/login/ │                             │
 │     Cookie: csrftoken=abc123  │                             │
 │     X-CSRFToken: abc123       │ ◄─ Must match cookie        │
-│     ├─────────────────────────►│                             │
+│     ├────────────────────────►│                             │
 │     │                         │                             │
 │     │                         │ CsrfViewMiddleware:         │
 │     │                         │ 1. Extract token from cookie│
@@ -338,12 +338,12 @@ Django implements the **Double Submit Cookie** pattern:
 │     │                         │    ORIGINS                  │
 │     │                         │                             │
 │     │  200 OK (if valid)      │                             │
-│     │◄─────────────────────────┤                             │
+│     │◄────────────────────────┤                             │
 │     │  or                     │                             │
 │     │  403 Forbidden          │                             │
 │     │  (CSRF verification     │                             │
 │     │   failed)               │                             │
-│                                                              │
+│                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -429,37 +429,37 @@ If any check fails → 403 Forbidden
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ Host-Only Cookie (no Domain specified)                          │
-│                                                                  │
+│                                                                 │
 │  Set-Cookie: csrftoken=abc; Path=/                              │
 │  (issued by preprod-api.polyu.life)                             │
-│                                                                  │
-│  Browser storage:                                                │
+│                                                                 │
+│  Browser storage:                                               │
 │    preprod-api.polyu.life:                                      │
 │      └─ csrftoken=abc  ✓                                        │
-│                                                                  │
+│                                                                 │
 │    preprod-app.polyu.life:                                      │
 │      └─ (no csrftoken)  ✗                                       │
-│                                                                  │
+│                                                                 │
 │  Result: Frontend cannot read token → Login fails               │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
 │ Domain Cookie (Domain=.polyu.life) ← Method A                   │
-│                                                                  │
+│                                                                 │
 │  Set-Cookie: csrftoken=abc; Domain=.polyu.life; Path=/          │
 │  (issued by preprod-api.polyu.life)                             │
-│                                                                  │
-│  Browser storage:                                                │
+│                                                                 │
+│  Browser storage:                                               │
 │    .polyu.life (shared):                                        │
 │      └─ csrftoken=abc                                           │
-│                                                                  │
-│  Visible to:                                                     │
+│                                                                 │
+│  Visible to:                                                    │
 │    preprod-api.polyu.life   ✓                                   │
 │    preprod-app.polyu.life   ✓                                   │
 │    admin.polyu.life         ✓                                   │
 │    any-subdomain.polyu.life ✓                                   │
-│                                                                  │
-│  Result: Frontend reads token → Includes in X-CSRFToken → ✓    │
+│                                                                 │
+│  Result: Frontend reads token → Includes in X-CSRFToken → ✓     │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -630,13 +630,13 @@ User Browser              Frontend (preprod-app)         Backend (preprod-api)  
      │                           │                               │                          │
      │                           │  3. 200 OK                    │                          │
      │                           │  Set-Cookie: csrftoken=TOKEN; │                          │
-     │                           │              Domain=.polyu.life;│                         │
-     │                           │              Secure;HttpOnly=False│                      │
+     │                           │              Domain=.polyu.life;                         │
+     │                           │              Secure;HttpOnly=False                       │
      │                           │◄──────────────────────────────│                          │
      │                           │                               │                          │
-     │  4. Render page          │                               │                          │
+     │  4. Render page           │                               │                          │
      │◄──────────────────────────│                               │                          │
-     │  (Cookie stored in browser)                              │                          │
+     │  (Cookie stored in browser)                               │                          │
      │                           │                               │                          │
      │  5. User opens login modal│                               │                          │
      │  and enters credentials   │                               │                          │
@@ -647,9 +647,9 @@ User Browser              Frontend (preprod-app)         Backend (preprod-api)  
      │                           │    (Domain=.polyu.life makes  │                          │
      │                           │     it visible here)          │                          │
      │                           │                               │                          │
-     │                           │ 7. OPTIONS /api/accounts/login/│                         │
+     │                           │ 7. OPTIONS /api/accounts/login/                          │
      │                           │    (Preflight)                │                          │
-     │                           │    Origin: https://preprod-app...│                       │
+     │                           │    Origin: https://preprod-app...                        │
      │                           │    AC-Request-Method: POST    │                          │
      │                           │    AC-Request-Headers:        │                          │
      │                           │      content-type,x-csrftoken │                          │
@@ -668,8 +668,8 @@ User Browser              Frontend (preprod-app)         Backend (preprod-api)  
      │                           │◄──────────────────────────────│                          │
      │                           │                               │                          │
      │                           │ 9. POST /api/accounts/login/  │                          │
-     │                           │    Origin: https://preprod-app...│                       │
-     │                           │    Content-Type: application/json│                       │
+     │                           │    Origin: https://preprod-app...                        │
+     │                           │    Content-Type: application/json                        │
      │                           │    Cookie: csrftoken=TOKEN    │                          │
      │                           │    X-CSRFToken: TOKEN         │                          │
      │                           │    Body: {email, password}    │                          │
@@ -700,8 +700,8 @@ User Browser              Frontend (preprod-app)         Backend (preprod-api)  
      │                           │  10. 200 OK                   │                          │
      │                           │      AC-Allow-Origin:         │                          │
      │                           │        https://preprod-app... │                          │
-     │                           │      AC-Allow-Credentials: true│                         │
-     │                           │      Set-Cookie: sessionid=SID;│                         │
+     │                           │      AC-Allow-Credentials: true                          │
+     │                           │      Set-Cookie: sessionid=SID;                          │
      │                           │        Domain=.polyu.life;    │                          │
      │                           │        Secure;HttpOnly;       │                          │
      │                           │        SameSite=Lax           │                          │
@@ -713,11 +713,11 @@ User Browser              Frontend (preprod-app)         Backend (preprod-api)  
      │                           │                               │                          │
      │  12. Show logged-in UI    │                               │                          │
      │◄──────────────────────────│                               │                          │
-     │  (sessionid cookie stored)                               │                          │
+     │  (sessionid cookie stored)│                               │                          │
      │                           │                               │                          │
-     │  ═══════════════════════════════════════════════════════════════════════════════════│
-     │  Subsequent authenticated requests                       │                          │
-     │  ═══════════════════════════════════════════════════════════════════════════════════│
+     │  ════════════════════════════════════════════════════════════════════════════════════│
+     │  Subsequent authenticated requests                        │                          │
+     │  ════════════════════════════════════════════════════════════════════════════════════│
      │                           │                               │                          │
      │  13. API request          │                               │                          │
      │──────────────────────────►│  GET /api/accounts/me/        │                          │
