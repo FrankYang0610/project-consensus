@@ -21,6 +21,7 @@ from .models import (
     CourseVote,
 )
 from .serializers import CourseSerializer, CourseReviewSerializer, CourseReviewReplySerializer
+from accounts.models import Notification
 
 
 def _is_constraint_violation(e: IntegrityError, constraint_name: str) -> bool:
@@ -515,8 +516,17 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
                     )
                 else:
                     # Not liked, so like
-                    CourseReviewLike.objects.create(review=review, user=user)
+                    like = CourseReviewLike.objects.create(review=review, user=user)
                     CourseReview.objects.filter(pk=review.pk).update(likes_count=F("likes_count") + 1)
+                    # Notify review author
+                    if str(user.pk) != str(review.author_id):
+                        Notification.objects.create(
+                            user=review.author,
+                            actor=user,
+                            type=Notification.Type.COURSE_REVIEW_LIKED,
+                            coursereview=review,
+                            created_at=getattr(like, "created_at", None) or None,
+                        )
             # Re-fetch the review to get fresh data and annotation
             review = self.get_queryset().get(pk=pk)
             data = self.get_serializer(review, context={"request": request}).data
@@ -532,9 +542,17 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
         user = request.user
         try:
             with transaction.atomic():
-                _, created = CourseReviewLike.objects.get_or_create(review=review, user=user)
+                like, created = CourseReviewLike.objects.get_or_create(review=review, user=user)
                 if created:
                     CourseReview.objects.filter(pk=review.pk).update(likes_count=F("likes_count") + 1)
+                    if str(user.pk) != str(review.author_id):
+                        Notification.objects.create(
+                            user=review.author,
+                            actor=user,
+                            type=Notification.Type.COURSE_REVIEW_LIKED,
+                            coursereview=review,
+                            created_at=getattr(like, "created_at", None) or None,
+                        )
             review.refresh_from_db(fields=["likes_count"])
             data = self.get_serializer(review, context={"request": request}).data
             return Response(data, status=status.HTTP_200_OK)
@@ -677,6 +695,20 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
         with transaction.atomic():
             instance = serializer.save(author=user, review=review, reply_to_user=reply_to_user)
             _recompute_replies_count(review)
+            # Notify reply target or review author
+            try:
+                target = reply_to_user or review.author
+                if str(target.pk) != str(user.pk):
+                    Notification.objects.create(
+                        user=target,
+                        actor=user,
+                        type=Notification.Type.COURSE_REVIEW_REPLIED,
+                        coursereview=review,
+                        coursereviewreply=instance,
+                        created_at=getattr(instance, "created_at", None) or None,
+                    )
+            except Exception:
+                pass
 
     def perform_update(self, serializer):  # type: ignore[override]
         instance: CourseReviewReply = self.get_object()
@@ -714,8 +746,17 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
                     )
                 else:
                     # Not liked, so like
-                    CourseReviewReplyLike.objects.create(reply=reply, user=user)
+                    like = CourseReviewReplyLike.objects.create(reply=reply, user=user)
                     CourseReviewReply.objects.filter(pk=reply.pk).update(likes_count=F("likes_count") + 1)
+                    if str(user.pk) != str(reply.author_id):
+                        Notification.objects.create(
+                            user=reply.author,
+                            actor=user,
+                            type=Notification.Type.COURSE_REVIEW_LIKED,
+                            coursereview=reply.review,
+                            coursereviewreply=reply,
+                            created_at=getattr(like, "created_at", None) or None,
+                        )
             # Re-fetch the reply to get fresh data and annotation
             reply = self.get_queryset().get(pk=pk)
             data = self.get_serializer(reply, context={"request": request}).data
@@ -731,9 +772,18 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
         user = request.user
         try:
             with transaction.atomic():
-                _, created = CourseReviewReplyLike.objects.get_or_create(reply=reply, user=user)
+                like, created = CourseReviewReplyLike.objects.get_or_create(reply=reply, user=user)
                 if created:
                     CourseReviewReply.objects.filter(pk=reply.pk).update(likes_count=F("likes_count") + 1)
+                    if str(user.pk) != str(reply.author_id):
+                        Notification.objects.create(
+                            user=reply.author,
+                            actor=user,
+                            type=Notification.Type.COURSE_REVIEW_LIKED,
+                            coursereview=reply.review,
+                            coursereviewreply=reply,
+                            created_at=getattr(like, "created_at", None) or None,
+                        )
             reply.refresh_from_db(fields=["likes_count"])
             data = self.get_serializer(reply, context={"request": request}).data
             return Response(data, status=status.HTTP_200_OK)

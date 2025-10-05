@@ -148,7 +148,8 @@
     "loadFailedRetry": "Load failed. Retry",
     "me": "Me",
     "anonymous": "Anonymous",
-    "anonymousWithId": "Anonymous ({{name}})"
+    "anonymousWithId": "Anonymous ({{name}})",
+    "noMore": "No more"
   },
   "courses": {
     "topbar": {
@@ -575,6 +576,21 @@
       "difficulty": "Difficulty",
       "reviews": "Reviews",
       "courses": "Courses"
+    }
+  },
+  "notifications": {
+    "bell": "Notifications",
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "deleteRead": "Delete read",
+    "empty": "No notifications yet.",
+    "messages": {
+      "forumPostLiked": "{{actor}} liked your forum post {{title}}",
+      "forumPostReplied": "{{actor}} replied to your forum post {{title}}",
+      "forumPostCommentLiked": "{{actor}} liked your forum comment",
+      "forumPostCommentReplied": "{{actor}} replied to your forum comment",
+      "courseReviewLiked": "{{actor}} liked your course review {{course}}",
+      "courseReviewReplied": "{{actor}} replied to your course review {{course}}"
     }
   }
 }

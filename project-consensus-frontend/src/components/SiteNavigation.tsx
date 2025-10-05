@@ -28,6 +28,7 @@ import { UserMenu } from './UserMenu';
 import { useApp } from '@/contexts/AppContext';
 import { Language } from '@/types';
 import { ThemeToggle } from './ThemeToggle';
+import { NotificationBell } from './NotificationBell';
 
 
 /**
@@ -325,7 +326,8 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
           {/* Search bar - visible on larger screens */}
           <SearchBar className="hidden lg:flex" placeholder={t('search.placeholder')} />
 
-          {/* Theme toggle */}
+          {/* Notifications + Theme toggle */}
+          <NotificationBell />
           <ThemeToggle />
 
           {/* Language Switcher - visible on larger screens (hidden after login) */}
@@ -393,6 +395,7 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
             {/* Mobile: Search + Login inline */}
             <div className="py-2 flex items-center gap-2">
               <SearchBar className="flex-1" showMobileVersion={true} placeholder={t('search.placeholder')} />
+              <NotificationBell />
               {!isLoading && (
                 isLoggedIn ? (
                   <UserMenu />

@@ -21,6 +21,13 @@ urlpatterns = [
     path("my-posts/", views.my_posts, name="my_posts"),
     path("my-comments/", views.my_comments, name="my_comments"),
     path("my-reviews/", views.my_reviews, name="my_reviews"),
+    # Notifications
+    path("notifications/", views.notifications_list, name="notifications_list"),
+    path("notifications/unread_count/", views.notifications_unread_count, name="notifications_unread_count"),
+    path("notifications/mark_read/", views.notifications_mark_read, name="notifications_mark_read"),
+    path("notifications/mark_all_read/", views.notifications_mark_all_read, name="notifications_mark_all_read"),
+    path("notifications/delete_read/", views.notifications_delete_read, name="notifications_delete_read"),
+    path("notifications/stream/", views.notifications_stream, name="notifications_stream"),
     # Public user endpoints
     path("users/<str:user_id>/", views.public_user, name="public_user"),
     path("users/<str:user_id>/posts/", views.public_user_posts, name="public_user_posts"),

@@ -5,3 +5,4 @@ export * from './course';
 export * from './forum-comment';
 export * from './forum-post';
 export * from './teacher';
+export * from './notification';

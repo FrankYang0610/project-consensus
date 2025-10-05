@@ -148,7 +148,8 @@
     "loadFailedRetry": "加载失败 重新加载",
     "me": "我",
     "anonymous": "匿名",
-    "anonymousWithId": "匿名（{{name}}）"
+    "anonymousWithId": "匿名（{{name}}）",
+    "noMore": "没有更多了"
   },
   "courses": {
     "topbar": {
@@ -577,6 +578,21 @@
       "difficulty": "难度",
       "reviews": "评价数",
       "courses": "课程"
+    }
+  },
+  "notifications": {
+    "bell": "通知",
+    "title": "通知",
+    "markAllRead": "全部标为已读",
+    "deleteRead": "删除已读",
+    "empty": "暂时还没有通知",
+    "messages": {
+      "forumPostLiked": "{{actor}} 赞了你的帖子 {{title}}",
+      "forumPostReplied": "{{actor}} 回复了你的帖子 {{title}}",
+      "forumPostCommentLiked": "{{actor}} 赞了你的帖子评论",
+      "forumPostCommentReplied": "{{actor}} 回复了你的帖子评论",
+      "courseReviewLiked": "{{actor}} 赞了你在 {{course}} 的课程点评",
+      "courseReviewReplied": "{{actor}} 回复了你在 {{course}} 的课程点评"
     }
   }
 }

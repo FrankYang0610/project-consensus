@@ -10,6 +10,7 @@ from django.db import transaction, models
 from django.db.models import F, Count, Q, Case, When, Value, IntegerField, Exists, OuterRef
 from .models import ForumPost, ForumPostComment, ForumPostLike, ForumCommentLike
 from .serializers import ForumPostSerializer, ForumPostCommentSerializer
+from accounts.models import Notification
 
 
 class DefaultPageNumberPagination(PageNumberPagination):
@@ -109,6 +110,15 @@ class ForumPostViewSet(viewsets.ModelViewSet):
                 like, created = ForumPostLike.objects.get_or_create(post=post, user=user)
                 if created:
                     ForumPost.objects.filter(pk=post.pk).update(likes_count=F("likes_count") + 1)
+                    # Notify post author (exclude self-notify)
+                    if str(user.pk) != str(post.author_id):
+                        Notification.objects.create(
+                            user=post.author,
+                            actor=user,
+                            type=Notification.Type.FORUM_POST_LIKED,
+                            forumpost=post,
+                            created_at=getattr(like, "created_at", None) or None,
+                        )
             # Re-fetch to get fresh data and annotations (is_liked)
             post = self.get_queryset().get(pk=pk)
             serializer = self.get_serializer(post, context={"request": request})
@@ -187,7 +197,39 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):  # type: ignore[override]
         # Always set the author to current user; no main thread tracking in flat model
-        serializer.save(author=self.request.user)
+        comment: ForumPostComment = serializer.save(author=self.request.user)
+        # Create notifications based on whether it's a reply to post or to comment
+        try:
+            actor = self.request.user
+            if comment.reply_to_id:
+                # Reply to a comment -> notify that comment's author
+                target_user = comment.reply_to.author
+                if str(target_user.pk) != str(actor.pk):
+                    Notification.objects.create(
+                        user=target_user,
+                        actor=actor,
+                        type=Notification.Type.FORUM_POST_COMMENT_REPLIED,
+                        forumpostcomment=comment,
+                        forumpost=comment.post,
+                        created_at=comment.created_at,
+                        actor_is_anonymous=bool(getattr(comment, "is_anonymous", False)),
+                    )
+            else:
+                # Top-level comment -> notify post author
+                target_user = comment.post.author
+                if str(target_user.pk) != str(actor.pk):
+                    Notification.objects.create(
+                        user=target_user,
+                        actor=actor,
+                        type=Notification.Type.FORUM_POST_REPLIED,
+                        forumpostcomment=comment,
+                        forumpost=comment.post,
+                        created_at=comment.created_at,
+                        actor_is_anonymous=bool(getattr(comment, "is_anonymous", False)),
+                    )
+        except Exception:
+            # Best-effort; don't block comment creation on notification errors
+            pass
 
     def destroy(self, request: Request, *args, **kwargs):  # type: ignore[override]
         """Soft delete a comment: only the author may delete.
@@ -289,9 +331,19 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
         user = request.user
         try:
             with transaction.atomic():
-                _, created = ForumCommentLike.objects.get_or_create(comment=comment, user=user)
+                like, created = ForumCommentLike.objects.get_or_create(comment=comment, user=user)
                 if created:
                     ForumPostComment.objects.filter(pk=comment.pk).update(likes_count=F("likes_count") + 1)
+                    # Notify comment author (exclude self)
+                    if str(user.pk) != str(comment.author_id):
+                        Notification.objects.create(
+                            user=comment.author,
+                            actor=user,
+                            type=Notification.Type.FORUM_POST_COMMENT_LIKED,
+                            forumpostcomment=comment,
+                            forumpost=comment.post,
+                            created_at=getattr(like, "created_at", None) or None,
+                        )
             # Re-fetch to get fresh data and annotations (is_liked, replies_count)
             comment = self.get_queryset().get(pk=pk)
             serializer = self.get_serializer(comment, context={"request": request})
