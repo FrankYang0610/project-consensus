@@ -116,16 +116,24 @@ export default function NotificationsPage() {
     switch (n.type) {
       case 'forumPostLiked':
         return t('notifications.messages.forumPostLiked', { actor, title: n.forumPostTitle || '' }) || `${actor} liked your forum post`;
-      case 'forumPostReplied':
-        return t('notifications.messages.forumPostReplied', { actor, title: n.forumPostTitle || '' }) || `${actor} replied to your forum post`;
+      case 'forumPostCommented':
+        return t('notifications.messages.forumPostCommented', { actor, title: n.forumPostTitle || '' }) || `${actor} commented on your forum post`;
       case 'forumPostCommentLiked':
         return t('notifications.messages.forumPostCommentLiked', { actor, title: n.forumPostTitle || '' }) || `${actor} liked your forum comment`;
       case 'forumPostCommentReplied':
         return t('notifications.messages.forumPostCommentReplied', { actor, title: n.forumPostTitle || '' }) || `${actor} replied to your forum comment`;
+      case 'forumPostCommentReplyLiked':
+        return t('notifications.messages.forumPostCommentReplyLiked', { actor, title: n.forumPostTitle || '' }) || `${actor} liked your forum comment reply`;
+      case 'forumPostCommentReplyReplied':
+        return t('notifications.messages.forumPostCommentReplyReplied', { actor, title: n.forumPostTitle || '' }) || `${actor} replied to your forum comment reply`;
       case 'courseReviewLiked':
         return t('notifications.messages.courseReviewLiked', { actor, course: n.courseTitle || '' }) || `${actor} liked your course review`;
       case 'courseReviewReplied':
         return t('notifications.messages.courseReviewReplied', { actor, course: n.courseTitle || '' }) || `${actor} replied to your course review`;
+      case 'courseReviewReplyLiked':
+        return t('notifications.messages.courseReviewReplyLiked', { actor, course: n.courseTitle || '' }) || `${actor} liked your course review reply`;
+      case 'courseReviewReplyReplied':
+        return t('notifications.messages.courseReviewReplyReplied', { actor, course: n.courseTitle || '' }) || `${actor} replied to your course review reply`;
       default:
         return `${actor}`;
     }

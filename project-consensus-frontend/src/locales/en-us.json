@@ -586,11 +586,15 @@
     "empty": "No notifications yet.",
     "messages": {
       "forumPostLiked": "{{actor}} liked your forum post {{title}}",
-      "forumPostReplied": "{{actor}} replied to your forum post {{title}}",
-      "forumPostCommentLiked": "{{actor}} liked your forum comment",
-      "forumPostCommentReplied": "{{actor}} replied to your forum comment",
-      "courseReviewLiked": "{{actor}} liked your course review {{course}}",
-      "courseReviewReplied": "{{actor}} replied to your course review {{course}}"
+      "forumPostCommented": "{{actor}} commented on your forum post {{title}}",
+      "forumPostCommentLiked": "{{actor}} liked your comment",
+      "forumPostCommentReplied": "{{actor}} replied to your comment",
+      "forumPostCommentReplyLiked": "{{actor}} liked your reply",
+      "forumPostCommentReplyReplied": "{{actor}} replied to your reply",
+      "courseReviewLiked": "{{actor}} liked your course review",
+      "courseReviewReplied": "{{actor}} replied to your course review",
+      "courseReviewReplyLiked": "{{actor}} liked your review reply",
+      "courseReviewReplyReplied": "{{actor}} replied to your review reply"
     }
   }
 }

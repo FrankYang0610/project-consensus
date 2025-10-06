@@ -548,7 +548,7 @@ def seed_forum_data(apps, schema_editor):
                 Notification.objects.create(
                     user=main_post.author,
                     actor=c.author,
-                    type="forumPostReplied",
+                    type="forumPostCommented",
                     forumpost=main_post,
                     forumpostcomment=c,
                     created_at=c.created_at,
@@ -566,7 +566,7 @@ def seed_forum_data(apps, schema_editor):
                 Notification.objects.create(
                     user=target,
                     actor=c.author,
-                    type=("forumPostCommentReplied" if c.reply_to_id else "forumPostReplied"),
+                    type=("forumPostCommentReplied" if c.reply_to_id else "forumPostCommented"),
                     forumpost=main_post,
                     forumpostcomment=c,
                     created_at=c.created_at,

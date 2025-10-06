@@ -205,10 +205,16 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
                 # Reply to a comment -> notify that comment's author
                 target_user = comment.reply_to.author
                 if str(target_user.pk) != str(actor.pk):
+                    # Use different notification types based on whether the target comment is itself a reply
+                    notification_type = (
+                        Notification.Type.FORUM_POST_COMMENT_REPLY_REPLIED 
+                        if comment.reply_to.reply_to_id 
+                        else Notification.Type.FORUM_POST_COMMENT_REPLIED
+                    )
                     Notification.objects.create(
                         user=target_user,
                         actor=actor,
-                        type=Notification.Type.FORUM_POST_COMMENT_REPLIED,
+                        type=notification_type,
                         forumpostcomment=comment,
                         forumpost=comment.post,
                         created_at=comment.created_at,
@@ -222,7 +228,7 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
                     Notification.objects.create(
                         user=target_user,
                         actor=actor,
-                        type=Notification.Type.FORUM_POST_REPLIED,
+                        type=Notification.Type.FORUM_POST_COMMENTED,
                         forumpostcomment=comment,
                         forumpost=comment.post,
                         created_at=comment.created_at,
@@ -338,10 +344,16 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
                     ForumPostComment.objects.filter(pk=comment.pk).update(likes_count=F("likes_count") + 1)
                     # Notify comment author (exclude self)
                     if str(user.pk) != str(comment.author_id):
+                        # Use different notification types based on whether this is a reply to another comment
+                        notification_type = (
+                            Notification.Type.FORUM_POST_COMMENT_REPLY_LIKED 
+                            if comment.reply_to_id 
+                            else Notification.Type.FORUM_POST_COMMENT_LIKED
+                        )
                         Notification.objects.create(
                             user=comment.author,
                             actor=user,
-                            type=Notification.Type.FORUM_POST_COMMENT_LIKED,
+                            type=notification_type,
                             forumpostcomment=comment,
                             forumpost=comment.post,
                             created_at=getattr(like, "created_at", None) or None,

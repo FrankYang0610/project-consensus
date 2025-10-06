@@ -3,11 +3,15 @@ import type { Author } from '../user';
 
 export type NotificationType =
   | 'forumPostLiked'
-  | 'forumPostReplied'
+  | 'forumPostCommented'
   | 'forumPostCommentLiked'
   | 'forumPostCommentReplied'
+  | 'forumPostCommentReplyLiked'
+  | 'forumPostCommentReplyReplied'
   | 'courseReviewLiked'
-  | 'courseReviewReplied';
+  | 'courseReviewReplied'
+  | 'courseReviewReplyLiked'
+  | 'courseReviewReplyReplied';
 
 export interface NotificationItem {
   id: number;

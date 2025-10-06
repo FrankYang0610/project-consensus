@@ -699,10 +699,16 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
             try:
                 target = reply_to_user or review.author
                 if str(target.pk) != str(user.pk):
+                    # Use different notification types based on whether this is a reply to another reply
+                    notification_type = (
+                        Notification.Type.COURSE_REVIEW_REPLY_REPLIED 
+                        if reply_to_user 
+                        else Notification.Type.COURSE_REVIEW_REPLIED
+                    )
                     Notification.objects.create(
                         user=target,
                         actor=user,
-                        type=Notification.Type.COURSE_REVIEW_REPLIED,
+                        type=notification_type,
                         coursereview=review,
                         coursereviewreply=instance,
                         created_at=getattr(instance, "created_at", None) or None,
@@ -753,7 +759,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
                         Notification.objects.create(
                             user=reply.author,
                             actor=user,
-                            type=Notification.Type.COURSE_REVIEW_LIKED,
+                            type=Notification.Type.COURSE_REVIEW_REPLY_LIKED,
                             coursereview=reply.review,
                             coursereviewreply=reply,
                             created_at=getattr(like, "created_at", None) or None,
@@ -780,7 +786,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
                         Notification.objects.create(
                             user=reply.author,
                             actor=user,
-                            type=Notification.Type.COURSE_REVIEW_LIKED,
+                            type=Notification.Type.COURSE_REVIEW_REPLY_LIKED,
                             coursereview=reply.review,
                             coursereviewreply=reply,
                             created_at=getattr(like, "created_at", None) or None,
