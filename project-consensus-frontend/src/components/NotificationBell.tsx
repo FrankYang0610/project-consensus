@@ -33,7 +33,8 @@ export function NotificationBell() {
               setUnread(data.unreadCount);
             }
           } catch {
-            // ignore
+            // Ignore JSON parse errors from malformed or irrelevant SSE data.
+            // Only well-formed notification messages are processed; others can be safely ignored.
           }
         };
         es.onerror = () => {
