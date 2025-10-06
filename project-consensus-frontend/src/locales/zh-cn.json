@@ -589,12 +589,12 @@
     "messages": {
       "forumPostLiked": "{{actor}} 赞了你的帖子 {{target}}",
       "forumPostCommented": "{{actor}} 评论了你的帖子 {{target}}",
-      "forumPostCommentLiked": "{{actor}} 赞了你的评论",
-      "forumPostCommentReplied": "{{actor}} 回复了你的评论",
-      "courseReviewLiked": "{{actor}} 赞了你的课程点评",
-      "courseReviewReplied": "{{actor}} 回复了你的课程点评",
-      "courseReviewReplyLiked": "{{actor}} 赞了你的点评回复",
-      "courseReviewReplyReplied": "{{actor}} 回复了你的点评回复"
+      "forumPostCommentLiked": "{{actor}} 赞了你在 {{target}} 的评论",
+      "forumPostCommentReplied": "{{actor}} 回复了你在 {{target}} 的评论",
+      "courseReviewLiked": "{{actor}} 赞了你对 {{target}} 的课程点评",
+      "courseReviewReplied": "{{actor}} 回复了你对 {{target}} 的课程点评",
+      "courseReviewReplyLiked": "{{actor}} 赞了你在 {{target}} 的点评回复",
+      "courseReviewReplyReplied": "{{actor}} 回复了你在 {{target}} 的点评回复"
     }
   }
 }
