@@ -591,8 +591,6 @@
       "forumPostCommented": "{{actor}} 评论了你的帖子 {{title}}",
       "forumPostCommentLiked": "{{actor}} 赞了你的评论",
       "forumPostCommentReplied": "{{actor}} 回复了你的评论",
-      "forumPostCommentReplyLiked": "{{actor}} 赞了你的回复",
-      "forumPostCommentReplyReplied": "{{actor}} 回复了你的回复",
       "courseReviewLiked": "{{actor}} 赞了你的课程点评",
       "courseReviewReplied": "{{actor}} 回复了你的课程点评",
       "courseReviewReplyLiked": "{{actor}} 赞了你的点评回复",

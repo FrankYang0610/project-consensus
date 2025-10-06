@@ -591,8 +591,6 @@
       "forumPostCommented": "{{actor}} 評論咗你嘅帖子 {{title}}",
       "forumPostCommentLiked": "{{actor}} 讚好咗你嘅留言",
       "forumPostCommentReplied": "{{actor}} 回覆咗你嘅留言",
-      "forumPostCommentReplyLiked": "{{actor}} 讚好咗你嘅回覆",
-      "forumPostCommentReplyReplied": "{{actor}} 回覆咗你嘅回覆",
       "courseReviewLiked": "{{actor}} 讚好咗你嘅課程點評",
       "courseReviewReplied": "{{actor}} 回覆咗你嘅課程點評",
       "courseReviewReplyLiked": "{{actor}} 讚好咗你嘅點評回覆",

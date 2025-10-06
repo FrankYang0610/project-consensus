@@ -122,10 +122,6 @@ export default function NotificationsPage() {
         return t('notifications.messages.forumPostCommentLiked', { actor, title: n.forumPostTitle || '' }) || `${actor} liked your forum comment`;
       case 'forumPostCommentReplied':
         return t('notifications.messages.forumPostCommentReplied', { actor, title: n.forumPostTitle || '' }) || `${actor} replied to your forum comment`;
-      case 'forumPostCommentReplyLiked':
-        return t('notifications.messages.forumPostCommentReplyLiked', { actor, title: n.forumPostTitle || '' }) || `${actor} liked your forum comment reply`;
-      case 'forumPostCommentReplyReplied':
-        return t('notifications.messages.forumPostCommentReplyReplied', { actor, title: n.forumPostTitle || '' }) || `${actor} replied to your forum comment reply`;
       case 'courseReviewLiked':
         return t('notifications.messages.courseReviewLiked', { actor, course: n.courseTitle || '' }) || `${actor} liked your course review`;
       case 'courseReviewReplied':

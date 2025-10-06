@@ -6,8 +6,6 @@ export type NotificationType =
   | 'forumPostCommented'
   | 'forumPostCommentLiked'
   | 'forumPostCommentReplied'
-  | 'forumPostCommentReplyLiked'
-  | 'forumPostCommentReplyReplied'
   | 'courseReviewLiked'
   | 'courseReviewReplied'
   | 'courseReviewReplyLiked'

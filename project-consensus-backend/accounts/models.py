@@ -69,8 +69,6 @@ class Notification(models.Model):
         FORUM_POST_COMMENTED = "forumPostCommented", "forumPostCommented"  # Someone commented on a forum post
         FORUM_POST_COMMENT_LIKED = "forumPostCommentLiked", "forumPostCommentLiked"  # Someone liked a forum post comment
         FORUM_POST_COMMENT_REPLIED = "forumPostCommentReplied", "forumPostCommentReplied"  # Someone replied to a forum post comment
-        FORUM_POST_COMMENT_REPLY_LIKED = "forumPostCommentReplyLiked", "forumPostCommentReplyLiked"  # Someone liked a forum post comment reply
-        FORUM_POST_COMMENT_REPLY_REPLIED = "forumPostCommentReplyReplied", "forumPostCommentReplyReplied"  # Someone replied to a forum post comment reply
         # Course review related notifications
         COURSE_REVIEW_LIKED = "courseReviewLiked", "courseReviewLiked"  # Someone liked a course review
         COURSE_REVIEW_REPLIED = "courseReviewReplied", "courseReviewReplied"  # Someone replied to a course review
