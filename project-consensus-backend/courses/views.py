@@ -519,7 +519,7 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
                     like = CourseReviewLike.objects.create(review=review, user=user)
                     CourseReview.objects.filter(pk=review.pk).update(likes_count=F("likes_count") + 1)
                     # Notify review author
-                    if str(user.pk) != str(review.author_id):
+                    if user.pk != review.author_id:
                         Notification.objects.create(
                             user=review.author,
                             actor=user,
@@ -546,7 +546,7 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
                 like, created = CourseReviewLike.objects.get_or_create(review=review, user=user)
                 if created:
                     CourseReview.objects.filter(pk=review.pk).update(likes_count=F("likes_count") + 1)
-                    if str(user.pk) != str(review.author_id):
+                    if user.pk != review.author_id:
                         Notification.objects.create(
                             user=review.author,
                             actor=user,
@@ -580,7 +580,7 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
 
     def _ensure_owner(self, obj: CourseReview) -> None:
         user = self.request.user
-        if not user or (not getattr(user, "is_staff", False) and str(obj.author_id) != str(user.pk)):
+        if not user or (not getattr(user, "is_staff", False) and obj.author_id != user.pk):
             raise PermissionDenied("You do not have permission to modify this review.")
 
     def perform_create(self, serializer):  # type: ignore[override]
@@ -671,7 +671,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
 
     def _ensure_owner(self, obj: CourseReviewReply) -> None:
         user = self.request.user
-        if not user or (not getattr(user, "is_staff", False) and str(obj.author_id) != str(user.pk)):
+        if not user or (not getattr(user, "is_staff", False) and obj.author_id != user.pk):
             raise PermissionDenied("You do not have permission to modify this reply.")
 
     def perform_create(self, serializer):  # type: ignore[override]
@@ -700,7 +700,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
             # Notify reply target or review author
             try:
                 target = reply_to_user or review.author
-                if str(target.pk) != str(user.pk):
+                if target.pk != user.pk:
                     # Use different notification types based on whether this is a reply to another reply
                     notification_type = (
                         Notification.Type.COURSE_REVIEW_REPLY_REPLIED 
@@ -759,7 +759,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
                     # Not liked, so like
                     like = CourseReviewReplyLike.objects.create(reply=reply, user=user)
                     CourseReviewReply.objects.filter(pk=reply.pk).update(likes_count=F("likes_count") + 1)
-                    if str(user.pk) != str(reply.author_id):
+                    if user.pk != reply.author_id:
                         Notification.objects.create(
                             user=reply.author,
                             actor=user,
@@ -787,7 +787,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
                 like, created = CourseReviewReplyLike.objects.get_or_create(reply=reply, user=user)
                 if created:
                     CourseReviewReply.objects.filter(pk=reply.pk).update(likes_count=F("likes_count") + 1)
-                    if str(user.pk) != str(reply.author_id):
+                    if user.pk != reply.author_id:
                         Notification.objects.create(
                             user=reply.author,
                             actor=user,

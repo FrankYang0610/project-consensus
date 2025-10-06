@@ -297,7 +297,7 @@ def _serialize_notification(n: Notification) -> dict:
     # Actor payload (respect anonymous flag for forum)
     actor: dict | None = None
     if n.actor is not None:
-        if getattr(n, "actor_is_anonymous", False) and str(n.actor_id) != str(n.user_id):
+        if getattr(n, "actor_is_anonymous", False) and n.actor_id != n.user_id:
             actor = {"id": "anonymous", "name": "Anonymous", "avatar": None}
         else:
             actor = _author_payload_for(n.actor)

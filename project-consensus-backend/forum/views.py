@@ -111,7 +111,7 @@ class ForumPostViewSet(viewsets.ModelViewSet):
                 if created:
                     ForumPost.objects.filter(pk=post.pk).update(likes_count=F("likes_count") + 1)
                     # Notify post author (exclude self-notify)
-                    if str(user.pk) != str(post.author_id):
+                    if user.pk != post.author_id:
                         Notification.objects.create(
                             user=post.author,
                             actor=user,
@@ -205,7 +205,7 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
             if comment.reply_to_id:
                 # Reply to a comment -> notify that comment's author
                 target_user = comment.reply_to.author
-                if str(target_user.pk) != str(actor.pk):
+                if target_user.pk != actor.pk:
                     notification_type = Notification.Type.FORUM_POST_COMMENT_REPLIED
                     Notification.objects.create(
                         user=target_user,
@@ -221,7 +221,7 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
             else:
                 # Top-level comment -> notify post author
                 target_user = comment.post.author
-                if str(target_user.pk) != str(actor.pk):
+                if target_user.pk != actor.pk:
                     Notification.objects.create(
                         user=target_user,
                         actor=actor,
@@ -341,7 +341,7 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
                 if created:
                     ForumPostComment.objects.filter(pk=comment.pk).update(likes_count=F("likes_count") + 1)
                     # Notify comment author (exclude self)
-                    if str(user.pk) != str(comment.author_id):
+                    if user.pk != comment.author_id:
                         notification_type = Notification.Type.FORUM_POST_COMMENT_LIKED
                         Notification.objects.create(
                             user=comment.author,
