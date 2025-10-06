@@ -89,6 +89,9 @@ class Notification(models.Model):
 
     # Whether the actor should be displayed as Anonymous (for anonymous forum comments)
     actor_is_anonymous = models.BooleanField(default=False)
+    
+    # Content preview for better UX (e.g., first 100 chars of reply content)
+    content_preview = models.TextField(blank=True)
 
     class Meta:
         indexes = [

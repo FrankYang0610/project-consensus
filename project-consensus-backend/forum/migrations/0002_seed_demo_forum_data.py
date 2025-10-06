@@ -553,6 +553,7 @@ def seed_forum_data(apps, schema_editor):
                     forumpostcomment=c,
                     created_at=c.created_at,
                     actor_is_anonymous=bool(getattr(c, "is_anonymous", False)),
+                    content_preview=c.content[:100] + ("..." if len(c.content) > 100 else ""),
                 )
         except Exception:
             pass
@@ -570,6 +571,7 @@ def seed_forum_data(apps, schema_editor):
                     forumpostcomment=c,
                     created_at=c.created_at,
                     actor_is_anonymous=bool(getattr(c, "is_anonymous", False)),
+                    content_preview=c.content[:100] + ("..." if len(c.content) > 100 else ""),
                 )
         except Exception:
             pass

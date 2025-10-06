@@ -199,6 +199,11 @@ export default function NotificationsPage() {
                       </div>
                       <div className="flex-1">
                         <div className="text-sm">{displayText(n)}</div>
+                        {n.contentPreview && (
+                          <div className="text-sm text-muted-foreground mt-1">
+                            "{n.contentPreview}"
+                          </div>
+                        )}
                         <div className="text-xs text-muted-foreground mt-1">{new Date(n.createdAt).toLocaleString()}</div>
                       </div>
                     </div>

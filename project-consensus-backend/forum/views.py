@@ -213,6 +213,7 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
                         forumpost=comment.post,
                         created_at=comment.created_at,
                         actor_is_anonymous=bool(getattr(comment, "is_anonymous", False)),
+                        content_preview=comment.content[:100] + ("..." if len(comment.content) > 100 else ""),
                     )
             else:
                 # Top-level comment -> notify post author
@@ -226,6 +227,7 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
                         forumpost=comment.post,
                         created_at=comment.created_at,
                         actor_is_anonymous=bool(getattr(comment, "is_anonymous", False)),
+                        content_preview=comment.content[:100] + ("..." if len(comment.content) > 100 else ""),
                     )
         except Exception:
             # Best-effort; don't block comment creation on notification errors

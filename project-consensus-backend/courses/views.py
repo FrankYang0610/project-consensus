@@ -706,6 +706,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
                         coursereview=review,
                         coursereviewreply=instance,
                         created_at=getattr(instance, "created_at", None) or None,
+                        content_preview=instance.content[:100] + ("..." if len(instance.content) > 100 else ""),
                     )
             except Exception:
                 pass

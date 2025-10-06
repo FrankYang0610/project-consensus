@@ -314,6 +314,8 @@ def _serialize_notification(n: Notification) -> dict:
         "courseReviewId": str(n.coursereview_id) if n.coursereview_id else None,
         "courseReviewReplyId": str(n.coursereviewreply_id) if n.coursereviewreply_id else None,
         "courseId": _get_course_id_from_notification(n),
+        # Content preview for better UX
+        "contentPreview": getattr(n, "content_preview", "") or "",
     }
     # Optional titles for better UX
     try:
