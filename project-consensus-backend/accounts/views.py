@@ -268,6 +268,31 @@ def _author_payload_for(user) -> dict:
     return {"id": str(user.pk), "name": user.get_username(), "avatar": None}
 
 
+def _get_course_id_from_notification(n: Notification) -> str | None:
+    """Extract course ID from notification object, handling both direct course reviews and course review replies."""
+    # Case 1: Direct course review notification
+    if n.coursereview_id and hasattr(n, 'coursereview') and n.coursereview:
+        try:
+            course = getattr(n.coursereview, 'course', None)
+            if course:
+                return str(course.course_id)
+        except (AttributeError, TypeError):
+            pass
+    
+    # Case 2: Course review reply notification
+    if n.coursereviewreply_id and hasattr(n, 'coursereviewreply') and n.coursereviewreply:
+        try:
+            review = getattr(n.coursereviewreply, 'review', None)
+            if review:
+                course = getattr(review, 'course', None)
+                if course:
+                    return str(course.course_id)
+        except (AttributeError, TypeError):
+            pass
+    
+    return None
+
+
 def _serialize_notification(n: Notification) -> dict:
     # Actor payload (respect anonymous flag for forum)
     actor: dict | None = None
@@ -288,9 +313,7 @@ def _serialize_notification(n: Notification) -> dict:
         "forumPostCommentId": str(n.forumpostcomment_id) if n.forumpostcomment_id else None,
         "courseReviewId": str(n.coursereview_id) if n.coursereview_id else None,
         "courseReviewReplyId": str(n.coursereviewreply_id) if n.coursereviewreply_id else None,
-        "courseId": str(getattr(getattr(n.coursereview, "course", None), "course_id", "")) if n.coursereview_id else (
-            str(getattr(getattr(getattr(n, "coursereviewreply", None), "review", None), "course", None).course_id) if n.coursereviewreply_id and getattr(getattr(getattr(n, "coursereviewreply", None), "review", None), "course", None) is not None else None
-        ),
+        "courseId": _get_course_id_from_notification(n),
     }
     # Optional titles for better UX
     try:
