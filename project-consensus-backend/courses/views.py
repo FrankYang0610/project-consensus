@@ -525,7 +525,7 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
                             actor=user,
                             type=Notification.Type.COURSE_REVIEW_LIKED,
                             coursereview=review,
-                            created_at=getattr(like, "created_at", None) or None,
+                            created_at=getattr(like, "created_at", None),
                             referenced_content_preview=f"{review.course.subject_code} {review.course.title}",
                         )
             # Re-fetch the review to get fresh data and annotation
@@ -552,7 +552,7 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
                             actor=user,
                             type=Notification.Type.COURSE_REVIEW_LIKED,
                             coursereview=review,
-                            created_at=getattr(like, "created_at", None) or None,
+                            created_at=getattr(like, "created_at", None),
                             referenced_content_preview=f"{review.course.subject_code} {review.course.title}",
                         )
             review.refresh_from_db(fields=["likes_count"])
@@ -713,7 +713,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
                         type=notification_type,
                         coursereview=review,
                         coursereviewreply=instance,
-                        created_at=getattr(instance, "created_at", None) or None,
+                        created_at=getattr(instance, "created_at", None),
                         content_preview=instance.content[:100] + ("..." if len(instance.content) > 100 else ""),
                         # Target is the original review content; for reply->reply we also fallback to review content
                         referenced_content_preview=review.content[:50] + ("..." if len(review.content) > 50 else ""),
@@ -766,7 +766,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
                             type=Notification.Type.COURSE_REVIEW_REPLY_LIKED,
                             coursereview=reply.review,
                             coursereviewreply=reply,
-                            created_at=getattr(like, "created_at", None) or None,
+                            created_at=getattr(like, "created_at", None),
                             referenced_content_preview=reply.content[:50] + ("..." if len(reply.content) > 50 else ""),
                         )
             # Re-fetch the reply to get fresh data and annotation
@@ -794,7 +794,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
                             type=Notification.Type.COURSE_REVIEW_REPLY_LIKED,
                             coursereview=reply.review,
                             coursereviewreply=reply,
-                            created_at=getattr(like, "created_at", None) or None,
+                            created_at=getattr(like, "created_at", None),
                             referenced_content_preview=reply.content[:50] + ("..." if len(reply.content) > 50 else ""),
                         )
             reply.refresh_from_db(fields=["likes_count"])

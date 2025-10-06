@@ -117,7 +117,7 @@ class ForumPostViewSet(viewsets.ModelViewSet):
                             actor=user,
                             type=Notification.Type.FORUM_POST_LIKED,
                             forumpost=post,
-                            created_at=getattr(like, "created_at", None) or None,
+                            created_at=getattr(like, "created_at", None),
                             referenced_content_preview=post.title,
                         )
             # Re-fetch to get fresh data and annotations (is_liked)
@@ -349,7 +349,7 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
                             type=notification_type,
                             forumpostcomment=comment,
                             forumpost=comment.post,
-                            created_at=getattr(like, "created_at", None) or None,
+                            created_at=getattr(like, "created_at", None),
                             referenced_content_preview=(comment.content[:50] + ("..." if len(comment.content) > 50 else "")) if comment and comment.content else comment.post.title,
                         )
             # Re-fetch to get fresh data and annotations (is_liked, replies_count)
