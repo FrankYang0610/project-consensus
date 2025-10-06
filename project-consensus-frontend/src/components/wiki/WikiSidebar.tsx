@@ -4,6 +4,12 @@ import { fetchWikiCategories } from '@/lib/api/wiki';
 import type { LanguageCode } from '@/types/wiki';
 import { ArrowLeft } from 'lucide-react';
 
+const BACK_TO_HOME_LABEL: Record<LanguageCode, string> = {
+  'zh-CN': '返回主页',
+  'zh-HK': '返回主頁',
+  'en': 'Back to home',
+};
+
 interface WikiSidebarProps {
   language?: LanguageCode;
 }
@@ -11,16 +17,17 @@ interface WikiSidebarProps {
 // Server component: left sidebar with categories
 export default async function WikiSidebar({ language }: WikiSidebarProps) {
   const categories = await fetchWikiCategories({ language });
+  const backLabel = BACK_TO_HOME_LABEL[(language ?? 'en') as LanguageCode];
   return (
     <aside className="sticky top-20 p-4 border-r border-neutral-200 dark:border-neutral-800">
       <div className="mb-3">
         <Link
           href="/"
-          aria-label="Back to home"
+          aria-label={backLabel}
           className="inline-flex items-center gap-2 text-sm md:text-base px-3 py-1.5 rounded border border-neutral-300 hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span>返回主页</span>
+          <span>{backLabel}</span>
         </Link>
       </div>
       <div className="mb-3 flex items-center justify-between">

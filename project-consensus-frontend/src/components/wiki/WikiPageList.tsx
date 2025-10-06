@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { fetchWikiPages } from '@/lib/api/wiki';
 import type { WikiPageQuery } from '@/types/wiki';
 
-interface Props extends WikiPageQuery {}
+type Props = WikiPageQuery;
 
 export default async function WikiPageList(props: Props) {
   const pages = await fetchWikiPages(props);

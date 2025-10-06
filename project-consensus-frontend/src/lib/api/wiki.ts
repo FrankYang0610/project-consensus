@@ -25,6 +25,6 @@ export async function fetchWikiPages(params: WikiPageQuery = {}): Promise<WikiPa
 
 export async function fetchWikiPageDetail(slug: string, language?: LanguageCode): Promise<WikiPageDetail> {
   const q = qs({ language });
-  const suffix = q ? q : '';
+  const suffix = q;
   return apiGet(`/api/wiki/pages/${encodeURIComponent(slug)}/${suffix}`, { cache: 'no-store' });
 }
