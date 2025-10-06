@@ -255,7 +255,7 @@ def login_view(request):
 
 # ========== Notifications API ==========
 
-class DefaultPageNumberPagination(PageNumberPagination):
+class DefaultNotificationPageNumberPagination(PageNumberPagination):
     page_size = 20
     page_size_query_param = "page_size"
     max_page_size = 100
@@ -359,7 +359,7 @@ def notifications_list(request):
     )
     if unread_only:
         qs = qs.filter(is_read=False)
-    paginator = DefaultPageNumberPagination()
+    paginator = DefaultNotificationPageNumberPagination()
     page = paginator.paginate_queryset(qs, request)
     items = page or list(qs)
     data = [_serialize_notification(n) for n in items]
