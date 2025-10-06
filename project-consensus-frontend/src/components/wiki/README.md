@@ -164,5 +164,5 @@ These are used for component props and API responses.
 - Lib
   - `src/lib/api/api-utils.ts`
   - `src/lib/api/wiki.ts`
-  - `src/lib/wiki/types.ts`
-  - `src/lib/wiki/markdown.ts`
+  - `src/types/wiki.ts`
+  - `src/lib/markdown.ts`
