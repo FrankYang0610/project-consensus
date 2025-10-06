@@ -8,6 +8,7 @@ import { useApp } from "@/contexts/AppContext";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { stripHtmlTags } from "@/lib/html-utils";
 import { fetchNotifications, markRead, markAllRead, deleteRead } from "@/lib/api/notification";
 import type { NotificationItem } from "@/types";
 
@@ -113,8 +114,9 @@ export default function NotificationsPage() {
 
   const notificationTitleText = (n: NotificationItem): string => {
     const actor = displayActor(n);
-    const referencedContentPreview = n.referencedContentPreview || '';
-    const referencedContentPreviewQuoted = referencedContentPreview ? `“${referencedContentPreview}”` : '';
+    // Strip HTML tags from referenced content
+    const referencedContentPreview = stripHtmlTags(n.referencedContentPreview || '');
+    const referencedContentPreviewQuoted = referencedContentPreview ? `"${referencedContentPreview}"` : '';
 
     switch (n.type) {
       case 'forumPostLiked':
@@ -203,11 +205,11 @@ export default function NotificationsPage() {
                       <div className="mt-1">
                         {!n.isRead && <span className="inline-block w-2 h-2 rounded-full bg-blue-600" />}
                       </div>
-                      <div className="flex-1">
-                        <div className="text-sm">{notificationTitleText(n)}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm line-clamp-1">{notificationTitleText(n)}</div>
                         {n.contentPreview && (
-                          <div className="text-sm text-muted-foreground mt-1">
-                            "{n.contentPreview}"
+                          <div className="text-sm text-muted-foreground mt-1 line-clamp-1">
+                            "{stripHtmlTags(n.contentPreview)}"
                           </div>
                         )}
                         <div className="text-xs text-muted-foreground mt-1">{new Date(n.createdAt).toLocaleString()}</div>
