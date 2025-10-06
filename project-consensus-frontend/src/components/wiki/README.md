@@ -18,9 +18,8 @@ This document explains the architecture, data flow, interfaces, and key componen
   - `WikiCategoryList.tsx`: Category list widget.
   - `WikiLanguageSwitcher.tsx`: Client component to switch language on a detail page.
   - `WikiPageHeader.tsx`: Title, meta info (author, updated, views).
-- `src/lib/wiki/`
-  - `types.ts`: Shared TypeScript types used across Wiki components.
-  - `markdown.ts`: Utilities for extracting headings, slugging and a minimal Markdown→HTML prototype (used mainly by TOC extraction).
+- `src/types/wiki.ts`: Shared TypeScript types used across Wiki components.
+- `src/lib/markdown.ts`: Utilities for extracting headings, slugging, and a minimal Markdown→HTML prototype (used mainly by TOC extraction).
 - `src/lib/api/`
   - `api-utils.ts`: API helpers and fetch wrappers.
   - `wiki.ts`: Wiki-specific API functions.
