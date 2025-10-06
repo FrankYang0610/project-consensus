@@ -544,7 +544,7 @@ def seed_forum_data(apps, schema_editor):
     # Top-level comments -> notify post author
     for c in main_comments:
         try:
-            if str(c.author_id) != str(main_post.author_id):
+            if c.author_id != main_post.author_id:
                 Notification.objects.create(
                     user=main_post.author,
                     actor=c.author,
@@ -563,7 +563,7 @@ def seed_forum_data(apps, schema_editor):
     for c in created_replies + created_nested_replies:
         try:
             target = c.reply_to.author if c.reply_to_id else main_post.author
-            if str(target.pk) != str(c.author_id):
+            if target.pk != c.author_id:
                 Notification.objects.create(
                     user=target,
                     actor=c.author,
