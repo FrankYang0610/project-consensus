@@ -30,7 +30,8 @@ export async function deleteRead(): Promise<void> {
 export function openNotificationSSE(): EventSource {
   const base = getAPIBaseUrl();
   const url = `${base}/api/accounts/notifications/stream/`;
-  // Use withCredentials to send session cookie with SSE (TS typing may not include the option)
-  const es = new (EventSource as any)(url, { withCredentials: true });
-  return es as EventSource;
+  // Use withCredentials to send session cookie with SSE
+  // For older TS versions (4.8 and below), use: new (EventSource as any)(url, { withCredentials: true })
+  const es = new EventSource(url, { withCredentials: true });
+  return es;
 }
