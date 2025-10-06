@@ -32,7 +32,7 @@ export default function NotificationsPage() {
         const page = await fetchNotifications({ page: 1, pageSize: PAGE_SIZE });
         if (!cancelled) {
           setItems(page.results);
-          const next = (page as any)?.next as string | null | undefined;
+          const next = page.next;
           if (next) {
             const u = new URL(next, window.location.origin);
             setNextUrl(u.pathname + u.search);
@@ -65,7 +65,7 @@ export default function NotificationsPage() {
         const deduped = (data.results || []).filter(it => !existing.has(it.id));
         return [...prevList, ...deduped];
       });
-      const next = (data as any)?.next as string | null | undefined;
+      const next = data.next;
       if (next) {
         const nu = new URL(next, window.location.origin);
         setNextUrl(nu.pathname + nu.search);
