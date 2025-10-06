@@ -587,8 +587,8 @@
     "deleteRead": "删除已读",
     "empty": "暂时还没有通知",
     "messages": {
-      "forumPostLiked": "{{actor}} 赞了你的帖子 {{title}}",
-      "forumPostCommented": "{{actor}} 评论了你的帖子 {{title}}",
+      "forumPostLiked": "{{actor}} 赞了你的帖子 {{target}}",
+      "forumPostCommented": "{{actor}} 评论了你的帖子 {{target}}",
       "forumPostCommentLiked": "{{actor}} 赞了你的评论",
       "forumPostCommentReplied": "{{actor}} 回复了你的评论",
       "courseReviewLiked": "{{actor}} 赞了你的课程点评",

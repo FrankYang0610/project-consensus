@@ -526,6 +526,7 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
                             type=Notification.Type.COURSE_REVIEW_LIKED,
                             coursereview=review,
                             created_at=getattr(like, "created_at", None) or None,
+                            referenced_content_preview=f"{review.course.subject_code} {review.course.title}",
                         )
             # Re-fetch the review to get fresh data and annotation
             review = self.get_queryset().get(pk=pk)
@@ -552,6 +553,7 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
                             type=Notification.Type.COURSE_REVIEW_LIKED,
                             coursereview=review,
                             created_at=getattr(like, "created_at", None) or None,
+                            referenced_content_preview=f"{review.course.subject_code} {review.course.title}",
                         )
             review.refresh_from_db(fields=["likes_count"])
             data = self.get_serializer(review, context={"request": request}).data
@@ -713,6 +715,8 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
                         coursereviewreply=instance,
                         created_at=getattr(instance, "created_at", None) or None,
                         content_preview=instance.content[:100] + ("..." if len(instance.content) > 100 else ""),
+                        # Target is the original review content; for reply->reply we also fallback to review content
+                        referenced_content_preview=review.content[:50] + ("..." if len(review.content) > 50 else ""),
                     )
             except Exception:
                 pass
@@ -763,6 +767,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
                             coursereview=reply.review,
                             coursereviewreply=reply,
                             created_at=getattr(like, "created_at", None) or None,
+                            referenced_content_preview=reply.content[:50] + ("..." if len(reply.content) > 50 else ""),
                         )
             # Re-fetch the reply to get fresh data and annotation
             reply = self.get_queryset().get(pk=pk)
@@ -790,6 +795,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
                             coursereview=reply.review,
                             coursereviewreply=reply,
                             created_at=getattr(like, "created_at", None) or None,
+                            referenced_content_preview=reply.content[:50] + ("..." if len(reply.content) > 50 else ""),
                         )
             reply.refresh_from_db(fields=["likes_count"])
             data = self.get_serializer(reply, context={"request": request}).data

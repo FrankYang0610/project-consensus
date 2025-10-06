@@ -316,6 +316,9 @@ def _serialize_notification(n: Notification) -> dict:
         "courseId": _get_course_id_from_notification(n),
         # Content preview for better UX
         "contentPreview": getattr(n, "content_preview", "") or "",
+        # Unified referenced content preview displayed by the client
+        # Note: We only use the stored DB field and do not compute any fallback content here.
+        "referencedContentPreview": getattr(n, "referenced_content_preview", "") or "Error: Cannot get preview",
     }
     # Optional titles for better UX
     try:
@@ -340,7 +343,17 @@ def notifications_list(request):
     unread_only = request.query_params.get("unreadOnly") in {"1", "true", "True"}
     qs = (
         Notification.objects
-        .select_related("actor", "forumpost", "coursereview", "coursereview__course", "coursereviewreply", "coursereviewreply__review", "coursereviewreply__review__course")
+        .select_related(
+            "actor",
+            "forumpost",
+            "forumpostcomment",
+            "forumpostcomment__reply_to",
+            "coursereview",
+            "coursereview__course",
+            "coursereviewreply",
+            "coursereviewreply__review",
+            "coursereviewreply__review__course",
+        )
         .filter(user=request.user, is_deleted=False)
         .order_by("-created_at", "-id")
     )

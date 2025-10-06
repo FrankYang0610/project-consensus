@@ -587,14 +587,14 @@
     "deleteRead": "刪除已讀",
     "empty": "暫時未有通知",
     "messages": {
-      "forumPostLiked": "{{actor}} 讚好咗你嘅帖子 {{title}}",
-      "forumPostCommented": "{{actor}} 評論咗你嘅帖子 {{title}}",
-      "forumPostCommentLiked": "{{actor}} 讚好咗你嘅留言",
-      "forumPostCommentReplied": "{{actor}} 回覆咗你嘅留言",
-      "courseReviewLiked": "{{actor}} 讚好咗你嘅課程點評",
-      "courseReviewReplied": "{{actor}} 回覆咗你嘅課程點評",
-      "courseReviewReplyLiked": "{{actor}} 讚好咗你嘅點評回覆",
-      "courseReviewReplyReplied": "{{actor}} 回覆咗你嘅點評回覆"
+      "forumPostLiked": "{{actor}} 讚好咗你嘅帖子 {{target}}",
+      "forumPostCommented": "{{actor}} 評論咗你嘅帖子 {{target}}",
+      "forumPostCommentLiked": "{{actor}} 讚好咗你喺 {{target}} 嘅留言",
+      "forumPostCommentReplied": "{{actor}} 回覆咗你喺 {{target}} 嘅留言",
+      "courseReviewLiked": "{{actor}} 讚好咗你對 {{target}} 嘅課程點評",
+      "courseReviewReplied": "{{actor}} 回覆咗你對 {{target}} 嘅課程點評",
+      "courseReviewReplyLiked": "{{actor}} 讚好咗你喺 {{target}} 嘅點評回覆",
+      "courseReviewReplyReplied": "{{actor}} 回覆咗你喺 {{target}} 嘅點評回覆"
     }
   }
 }

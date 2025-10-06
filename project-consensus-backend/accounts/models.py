@@ -96,6 +96,8 @@ class Notification(models.Model):
     
     # Content preview for better UX (e.g., first 100 chars of reply content)
     content_preview = models.TextField(blank=True)
+    # Unified preview of the referenced content (forum post title, course code+title, or target comment/reply snippet)
+    referenced_content_preview = models.TextField(blank=True)
 
     class Meta:
         indexes = [

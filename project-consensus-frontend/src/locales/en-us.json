@@ -585,14 +585,14 @@
     "deleteRead": "Delete read",
     "empty": "No notifications yet.",
     "messages": {
-      "forumPostLiked": "{{actor}} liked your forum post {{title}}",
-      "forumPostCommented": "{{actor}} commented on your forum post {{title}}",
-      "forumPostCommentLiked": "{{actor}} liked your comment",
-      "forumPostCommentReplied": "{{actor}} replied to your comment",
-      "courseReviewLiked": "{{actor}} liked your course review",
-      "courseReviewReplied": "{{actor}} replied to your course review",
-      "courseReviewReplyLiked": "{{actor}} liked your review reply",
-      "courseReviewReplyReplied": "{{actor}} replied to your review reply"
+      "forumPostLiked": "{{actor}} liked your forum post {{target}}",
+      "forumPostCommented": "{{actor}} commented on your forum post {{target}}",
+      "forumPostCommentLiked": "{{actor}} liked your comment on {{target}}",
+      "forumPostCommentReplied": "{{actor}} replied to your comment on {{target}}",
+      "courseReviewLiked": "{{actor}} liked your course review for {{target}}",
+      "courseReviewReplied": "{{actor}} replied to your course review for {{target}}",
+      "courseReviewReplyLiked": "{{actor}} liked your review reply for {{target}}",
+      "courseReviewReplyReplied": "{{actor}} replied to your review reply for {{target}}"
     }
   }
 }

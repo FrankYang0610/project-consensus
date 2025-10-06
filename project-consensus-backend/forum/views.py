@@ -118,6 +118,7 @@ class ForumPostViewSet(viewsets.ModelViewSet):
                             type=Notification.Type.FORUM_POST_LIKED,
                             forumpost=post,
                             created_at=getattr(like, "created_at", None) or None,
+                            referenced_content_preview=post.title,
                         )
             # Re-fetch to get fresh data and annotations (is_liked)
             post = self.get_queryset().get(pk=pk)
@@ -215,6 +216,7 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
                         created_at=comment.created_at,
                         actor_is_anonymous=bool(getattr(comment, "is_anonymous", False)),
                         content_preview=comment.content[:100] + ("..." if len(comment.content) > 100 else ""),
+                        referenced_content_preview=(comment.reply_to.content[:50] + ("..." if len(comment.reply_to.content) > 50 else "")) if comment.reply_to and comment.reply_to.content else comment.post.title,
                     )
             else:
                 # Top-level comment -> notify post author
@@ -229,6 +231,7 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
                         created_at=comment.created_at,
                         actor_is_anonymous=bool(getattr(comment, "is_anonymous", False)),
                         content_preview=comment.content[:100] + ("..." if len(comment.content) > 100 else ""),
+                        referenced_content_preview=comment.post.title,
                     )
         except Exception:
             # Best-effort; don't block comment creation on notification errors
@@ -347,6 +350,7 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
                             forumpostcomment=comment,
                             forumpost=comment.post,
                             created_at=getattr(like, "created_at", None) or None,
+                            referenced_content_preview=(comment.content[:50] + ("..." if len(comment.content) > 50 else "")) if comment and comment.content else comment.post.title,
                         )
             # Re-fetch to get fresh data and annotations (is_liked, replies_count)
             comment = self.get_queryset().get(pk=pk)

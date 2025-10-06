@@ -22,9 +22,8 @@ export interface NotificationItem {
   courseReviewId?: string | null;
   courseReviewReplyId?: string | null;
   courseId?: string | null;
-  forumPostTitle?: string;
-  courseTitle?: string;
   contentPreview?: string;
+  referencedContentPreview?: string;
 }
 
 export interface NotificationsListResponse extends PaginatedResponse<NotificationItem> {}

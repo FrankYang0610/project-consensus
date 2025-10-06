@@ -111,25 +111,28 @@ export default function NotificationsPage() {
     return n.actor?.name || t('common.anonymous') || 'Someone';
   };
 
-  const displayText = (n: NotificationItem): string => {
+  const notificationTitleText = (n: NotificationItem): string => {
     const actor = displayActor(n);
+    const referencedContentPreview = n.referencedContentPreview || '';
+    const referencedContentPreviewQuoted = referencedContentPreview ? `“${referencedContentPreview}”` : '';
+
     switch (n.type) {
       case 'forumPostLiked':
-        return t('notifications.messages.forumPostLiked', { actor, title: n.forumPostTitle || '' }) || `${actor} liked your forum post`;
+        return t('notifications.messages.forumPostLiked', { actor, target: referencedContentPreviewQuoted }) || `${actor} liked your forum post ${referencedContentPreviewQuoted}`.trim();
       case 'forumPostCommented':
-        return t('notifications.messages.forumPostCommented', { actor, title: n.forumPostTitle || '' }) || `${actor} commented on your forum post`;
+        return t('notifications.messages.forumPostCommented', { actor, target: referencedContentPreviewQuoted }) || `${actor} commented on your forum post ${referencedContentPreviewQuoted}`.trim();
       case 'forumPostCommentLiked':
-        return t('notifications.messages.forumPostCommentLiked', { actor, title: n.forumPostTitle || '' }) || `${actor} liked your forum comment`;
+        return t('notifications.messages.forumPostCommentLiked', { actor, target: referencedContentPreviewQuoted }) || `${actor} liked your forum comment ${referencedContentPreviewQuoted}`.trim();
       case 'forumPostCommentReplied':
-        return t('notifications.messages.forumPostCommentReplied', { actor, title: n.forumPostTitle || '' }) || `${actor} replied to your forum comment`;
+        return t('notifications.messages.forumPostCommentReplied', { actor, target: referencedContentPreviewQuoted }) || `${actor} replied to your forum comment ${referencedContentPreviewQuoted}`.trim();
       case 'courseReviewLiked':
-        return t('notifications.messages.courseReviewLiked', { actor, course: n.courseTitle || '' }) || `${actor} liked your course review`;
+        return t('notifications.messages.courseReviewLiked', { actor, target: referencedContentPreviewQuoted }) || `${actor} liked your course review ${referencedContentPreviewQuoted}`.trim();
       case 'courseReviewReplied':
-        return t('notifications.messages.courseReviewReplied', { actor, course: n.courseTitle || '' }) || `${actor} replied to your course review`;
+        return t('notifications.messages.courseReviewReplied', { actor, target: referencedContentPreviewQuoted }) || `${actor} replied to your course review ${referencedContentPreviewQuoted}`.trim();
       case 'courseReviewReplyLiked':
-        return t('notifications.messages.courseReviewReplyLiked', { actor, course: n.courseTitle || '' }) || `${actor} liked your course review reply`;
+        return t('notifications.messages.courseReviewReplyLiked', { actor, target: referencedContentPreviewQuoted }) || `${actor} liked your course review reply ${referencedContentPreviewQuoted}`.trim();
       case 'courseReviewReplyReplied':
-        return t('notifications.messages.courseReviewReplyReplied', { actor, course: n.courseTitle || '' }) || `${actor} replied to your course review reply`;
+        return t('notifications.messages.courseReviewReplyReplied', { actor, target: referencedContentPreviewQuoted }) || `${actor} replied to your course review reply ${referencedContentPreviewQuoted}`.trim();
       default:
         return `${actor}`;
     }
@@ -202,7 +205,7 @@ export default function NotificationsPage() {
                         {!n.isRead && <span className="inline-block w-2 h-2 rounded-full bg-blue-600" />}
                       </div>
                       <div className="flex-1">
-                        <div className="text-sm">{displayText(n)}</div>
+                        <div className="text-sm">{notificationTitleText(n)}</div>
                         {n.contentPreview && (
                           <div className="text-sm text-muted-foreground mt-1">
                             "{n.contentPreview}"
