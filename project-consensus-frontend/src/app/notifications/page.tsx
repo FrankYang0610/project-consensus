@@ -196,8 +196,7 @@ export default function NotificationsPage() {
                     key={n.id}
                     onClick={() => handleClickItem(n)}
                     className={cn(
-                      "w-full text-left p-4 hover:bg-accent/100 transition-colors",
-                      !n.isRead ? "bg-accent/0" : ""
+                      "w-full text-left p-4 hover:bg-accent/100 transition-colors"
                     )}
                   >
                     <div className="flex items-start gap-3">
