@@ -73,7 +73,16 @@ class Migration(migrations.Migration):
             name='Notification',
             fields=[
                 ('id', models.BigAutoField(primary_key=True, serialize=False)),
-                ('type', models.CharField(choices=[('forumPostLiked', 'forumPostLiked'), ('forumPostReplied', 'forumPostReplied'), ('forumPostCommentLiked', 'forumPostCommentLiked'), ('forumPostCommentReplied', 'forumPostCommentReplied'), ('courseReviewLiked', 'courseReviewLiked'), ('courseReviewReplied', 'courseReviewReplied')], max_length=50)),
+                ('type', models.CharField(choices=[
+                    ('forumPostLiked', 'forumPostLiked'), 
+                    ('forumPostCommented', 'forumPostCommented'), 
+                    ('forumPostCommentLiked', 'forumPostCommentLiked'), 
+                    ('forumPostCommentReplied', 'forumPostCommentReplied'), 
+                    ('courseReviewLiked', 'courseReviewLiked'), 
+                    ('courseReviewReplied', 'courseReviewReplied'), 
+                    ('courseReviewReplyLiked', 'courseReviewReplyLiked'), 
+                    ('courseReviewReplyReplied', 'courseReviewReplyReplied')
+                ], max_length=50)),
                 ('is_read', models.BooleanField(default=False)),
                 ('is_deleted', models.BooleanField(default=False)),
                 ('created_at', models.DateTimeField(db_index=True, default=django.utils.timezone.now)),
