@@ -113,7 +113,7 @@ class ForumPostViewSet(viewsets.ModelViewSet):
                     # Notify post author (exclude self-notify)
                     if user.pk != post.author_id:
                         Notification.objects.create(
-                            user=post.author,
+                            recipient=post.author,
                             actor=user,
                             type=Notification.Type.FORUM_POST_LIKED,
                             forumpost=post,
@@ -208,7 +208,7 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
                 if target_user.pk != actor.pk:
                     notification_type = Notification.Type.FORUM_POST_COMMENT_REPLIED
                     Notification.objects.create(
-                        user=target_user,
+                        recipient=target_user,
                         actor=actor,
                         type=notification_type,
                         forumpostcomment=comment,
@@ -223,7 +223,7 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
                 target_user = comment.post.author
                 if target_user.pk != actor.pk:
                     Notification.objects.create(
-                        user=target_user,
+                        recipient=target_user,
                         actor=actor,
                         type=Notification.Type.FORUM_POST_COMMENTED,
                         forumpostcomment=comment,
@@ -344,7 +344,7 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
                     if user.pk != comment.author_id:
                         notification_type = Notification.Type.FORUM_POST_COMMENT_LIKED
                         Notification.objects.create(
-                            user=comment.author,
+                            recipient=comment.author,
                             actor=user,
                             type=notification_type,
                             forumpostcomment=comment,

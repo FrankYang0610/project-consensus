@@ -24,7 +24,12 @@ class Notification(models.Model):
         COURSE_REVIEW_REPLY_REPLIED = "courseReviewReplyReplied", "courseReviewReplyReplied"
 
     id = models.BigAutoField(primary_key=True)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifications")
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="received_notifications",
+        db_column="user_id",
+    )
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="triggered_notifications")
     type = models.CharField(max_length=50, choices=Type.choices)
 
@@ -49,13 +54,13 @@ class Notification(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=["user", "is_read", "is_deleted", "created_at"]),
-            models.Index(fields=["user", "is_read"]),
+            models.Index(fields=["recipient", "is_read", "is_deleted", "created_at"]),
+            models.Index(fields=["recipient", "is_read"]),
         ]
         ordering = ["-created_at"]
         verbose_name = "Notification"
         verbose_name_plural = "Notifications"
 
     def __str__(self) -> str:  # pragma: no cover
-        return f"notif:{self.id} -> {self.user_id} [{self.type}]"
+        return f"notif:{self.id} -> {self.recipient_id} [{self.type}]"
 

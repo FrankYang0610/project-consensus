@@ -38,7 +38,7 @@ class Migration(migrations.Migration):
                 ('content_preview', models.TextField(blank=True)),
                 ('referenced_content_preview', models.TextField(blank=True)),
                 ('actor', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='triggered_notifications', to=settings.AUTH_USER_MODEL)),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='notifications', to=settings.AUTH_USER_MODEL)),
+                ('recipient', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='received_notifications', db_column='user_id', to=settings.AUTH_USER_MODEL)),
                 ('forumpost', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='notifications', to='forum.forumpost')),
                 ('forumpostcomment', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='notifications', to='forum.forumpostcomment')),
                 ('coursereview', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='notifications', to='courses.coursereview')),
@@ -52,11 +52,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='notification',
-            index=models.Index(fields=['user', 'is_read', 'is_deleted', 'created_at'], name='notifications_user_is__created_idx'),
+            index=models.Index(fields=['recipient', 'is_read', 'is_deleted', 'created_at'], name='notifications_recipient_is__created_idx'),
         ),
         migrations.AddIndex(
             model_name='notification',
-            index=models.Index(fields=['user', 'is_read'], name='notifications_user_is__idx'),
+            index=models.Index(fields=['recipient', 'is_read'], name='notifications_recipient_is__idx'),
         ),
     ]
 

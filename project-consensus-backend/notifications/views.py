@@ -50,7 +50,7 @@ def _serialize_notification(n: Notification) -> dict:
     # Actor payload (respect anonymous flag for forum)
     actor: dict | None = None
     if n.actor is not None:
-        if getattr(n, "actor_is_anonymous", False) and n.actor_id != n.user_id:
+        if getattr(n, "actor_is_anonymous", False) and n.actor_id != n.recipient_id:
             actor = {"id": "anonymous", "name": "Anonymous", "avatar": None}
         else:
             actor = _author_payload_for(n.actor)
@@ -107,7 +107,7 @@ def notifications_list(request):
             "coursereviewreply__review",
             "coursereviewreply__review__course",
         )
-        .filter(user=request.user, is_deleted=False)
+        .filter(recipient=request.user, is_deleted=False)
         .order_by("-created_at", "-id")
     )
     if unread_only:
@@ -125,7 +125,7 @@ def notifications_list(request):
 def notifications_unread_count(request):
     if not request.user.is_authenticated:
         return Response({"count": 0})
-    cnt = Notification.objects.filter(user=request.user, is_read=False, is_deleted=False).count()
+    cnt = Notification.objects.filter(recipient=request.user, is_read=False, is_deleted=False).count()
     return Response({"count": int(cnt)})
 
 
@@ -137,11 +137,11 @@ def notifications_mark_read(request):
     if not nid:
         return Response({"detail": "id is required"}, status=status.HTTP_400_BAD_REQUEST)
     try:
-        Notification.objects.filter(user=request.user, id=nid).update(is_read=True)
+        Notification.objects.filter(recipient=request.user, id=nid).update(is_read=True)
     except Exception:
         pass
     # publish new unread count
-    unread = Notification.objects.filter(user=request.user, is_read=False, is_deleted=False).count()
+    unread = Notification.objects.filter(recipient=request.user, is_read=False, is_deleted=False).count()
     try:
         publish(str(request.user.pk), {"type": "notification", "unreadCount": int(unread)})
     except Exception:
@@ -153,7 +153,7 @@ def notifications_mark_read(request):
 def notifications_mark_all_read(request):
     if not request.user.is_authenticated:
         return Response({"message": "Not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
-    Notification.objects.filter(user=request.user, is_read=False, is_deleted=False).update(is_read=True)
+    Notification.objects.filter(recipient=request.user, is_read=False, is_deleted=False).update(is_read=True)
     try:
         publish(str(request.user.pk), {"type": "notification", "unreadCount": 0})
     except Exception:
@@ -165,7 +165,7 @@ def notifications_mark_all_read(request):
 def notifications_delete_read(request):
     if not request.user.is_authenticated:
         return Response({"message": "Not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
-    Notification.objects.filter(user=request.user, is_read=True, is_deleted=False).update(is_deleted=True)
+    Notification.objects.filter(recipient=request.user, is_read=True, is_deleted=False).update(is_deleted=True)
     return Response({"success": True})
 
 
@@ -178,7 +178,7 @@ def notifications_stream(request: HttpRequest):
 
     def _gen():
         # initial event
-        cnt = Notification.objects.filter(user=user, is_read=False, is_deleted=False).count()
+        cnt = Notification.objects.filter(recipient=user, is_read=False, is_deleted=False).count()
         yield f"data: {{\"type\": \"notification\", \"unreadCount\": {int(cnt)} }}\n\n"
         # subsequent events
         for chunk in sub.listen():

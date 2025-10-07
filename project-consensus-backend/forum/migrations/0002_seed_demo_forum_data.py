@@ -546,7 +546,7 @@ def seed_forum_data(apps, schema_editor):
         try:
             if c.author_id != main_post.author_id:
                 Notification.objects.create(
-                    user=main_post.author,
+                    recipient=main_post.author,
                     actor=c.author,
                     type="forumPostCommented",
                     forumpost=main_post,
@@ -565,7 +565,7 @@ def seed_forum_data(apps, schema_editor):
             target = c.reply_to.author if c.reply_to_id else main_post.author
             if target.pk != c.author_id:
                 Notification.objects.create(
-                    user=target,
+                    recipient=target,
                     actor=c.author,
                     type=("forumPostCommentReplied" if c.reply_to_id else "forumPostCommented"),
                     forumpost=main_post,

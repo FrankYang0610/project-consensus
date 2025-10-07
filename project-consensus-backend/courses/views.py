@@ -521,7 +521,7 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
                     # Notify review author
                     if user.pk != review.author_id:
                         Notification.objects.create(
-                            user=review.author,
+                            recipient=review.author,
                             actor=user,
                             type=Notification.Type.COURSE_REVIEW_LIKED,
                             coursereview=review,
@@ -548,7 +548,7 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
                     CourseReview.objects.filter(pk=review.pk).update(likes_count=F("likes_count") + 1)
                     if user.pk != review.author_id:
                         Notification.objects.create(
-                            user=review.author,
+                            recipient=review.author,
                             actor=user,
                             type=Notification.Type.COURSE_REVIEW_LIKED,
                             coursereview=review,
@@ -708,7 +708,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
                         else Notification.Type.COURSE_REVIEW_REPLIED
                     )
                     Notification.objects.create(
-                        user=target,
+                        recipient=target,
                         actor=user,
                         type=notification_type,
                         coursereview=review,
@@ -761,7 +761,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
                     CourseReviewReply.objects.filter(pk=reply.pk).update(likes_count=F("likes_count") + 1)
                     if user.pk != reply.author_id:
                         Notification.objects.create(
-                            user=reply.author,
+                            recipient=reply.author,
                             actor=user,
                             type=Notification.Type.COURSE_REVIEW_REPLY_LIKED,
                             coursereview=reply.review,
@@ -789,7 +789,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
                     CourseReviewReply.objects.filter(pk=reply.pk).update(likes_count=F("likes_count") + 1)
                     if user.pk != reply.author_id:
                         Notification.objects.create(
-                            user=reply.author,
+                            recipient=reply.author,
                             actor=user,
                             type=Notification.Type.COURSE_REVIEW_REPLY_LIKED,
                             coursereview=reply.review,
