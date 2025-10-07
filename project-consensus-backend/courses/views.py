@@ -22,6 +22,7 @@ from .models import (
 )
 from .serializers import CourseSerializer, CourseReviewSerializer, CourseReviewReplySerializer
 from notifications.models import Notification
+from django.utils import timezone
 
 
 def _is_constraint_violation(e: IntegrityError, constraint_name: str) -> bool:
@@ -525,7 +526,7 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
                             actor=user,
                             type=Notification.Type.COURSE_REVIEW_LIKED,
                             coursereview=review,
-                            created_at=getattr(like, "created_at", None),
+                            created_at=getattr(like, "created_at", timezone.now()),
                             referenced_content_preview=f"{review.course.subject_code} {review.course.title}",
                         )
             # Re-fetch the review to get fresh data and annotation
@@ -552,7 +553,7 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
                             actor=user,
                             type=Notification.Type.COURSE_REVIEW_LIKED,
                             coursereview=review,
-                            created_at=getattr(like, "created_at", None),
+                            created_at=getattr(like, "created_at", timezone.now()),
                             referenced_content_preview=f"{review.course.subject_code} {review.course.title}",
                         )
             review.refresh_from_db(fields=["likes_count"])
@@ -766,7 +767,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
                             type=Notification.Type.COURSE_REVIEW_REPLY_LIKED,
                             coursereview=reply.review,
                             coursereviewreply=reply,
-                            created_at=getattr(like, "created_at", None),
+                            created_at=getattr(like, "created_at", timezone.now()),
                             referenced_content_preview=reply.content,
                         )
             # Re-fetch the reply to get fresh data and annotation
@@ -794,7 +795,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
                             type=Notification.Type.COURSE_REVIEW_REPLY_LIKED,
                             coursereview=reply.review,
                             coursereviewreply=reply,
-                            created_at=getattr(like, "created_at", None),
+                            created_at=getattr(like, "created_at", timezone.now()),
                             referenced_content_preview=reply.content,
                         )
             reply.refresh_from_db(fields=["likes_count"])

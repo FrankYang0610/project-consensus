@@ -11,6 +11,7 @@ from django.db.models import F, Count, Q, Case, When, Value, IntegerField, Exist
 from .models import ForumPost, ForumPostComment, ForumPostLike, ForumCommentLike
 from .serializers import ForumPostSerializer, ForumPostCommentSerializer
 from notifications.models import Notification
+from django.utils import timezone
 
 
 class DefaultPageNumberPagination(PageNumberPagination):
@@ -117,7 +118,7 @@ class ForumPostViewSet(viewsets.ModelViewSet):
                             actor=user,
                             type=Notification.Type.FORUM_POST_LIKED,
                             forumpost=post,
-                            created_at=getattr(like, "created_at", None),
+                            created_at=getattr(like, "created_at", timezone.now()),
                             referenced_content_preview=post.title,
                         )
             # Re-fetch to get fresh data and annotations (is_liked)
@@ -349,7 +350,7 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
                             type=notification_type,
                             forumpostcomment=comment,
                             forumpost=comment.post,
-                            created_at=getattr(like, "created_at", None),
+                            created_at=getattr(like, "created_at", timezone.now()),
                             referenced_content_preview=comment.content if comment and comment.content else comment.post.title,
                         )
             # Re-fetch to get fresh data and annotations (is_liked, replies_count)
