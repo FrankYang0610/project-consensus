@@ -8,7 +8,7 @@ from django.utils import timezone
 class Notification(models.Model):
     """Generic notification for user activities.
 
-    Stored in the original accounts_notification table to preserve existing migrations.
+    Stores notifications for user activities such as forum posts and course reviews.
     """
 
     class Type(models.TextChoices):
