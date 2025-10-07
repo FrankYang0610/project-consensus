@@ -32,7 +32,7 @@ class _Subscriber:
             self._closed = True
             self._cv.notify_all()
 
-    def __iter__(self) -> Iterator[str]:  # pragma: no cover (helper)
+    def __iter__(self) -> Iterator[str]:
         return self.listen()
 
     def listen(self, keepalive_seconds: int = 25) -> Iterator[str]:
