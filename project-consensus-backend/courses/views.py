@@ -21,7 +21,7 @@ from .models import (
     CourseVote,
 )
 from .serializers import CourseSerializer, CourseReviewSerializer, CourseReviewReplySerializer
-from accounts.models import Notification
+from notifications.models import Notification
 
 
 def _is_constraint_violation(e: IntegrityError, constraint_name: str) -> bool:

@@ -4,7 +4,7 @@ import json
 import threading
 import time
 from collections import defaultdict, deque
-from typing import Deque, Dict, Iterator, Optional
+from typing import Deque, Dict, Iterator
 
 # Simple in-process pub/sub keyed by user_id (string)
 # Not persistent; suitable for single-process development/demo.

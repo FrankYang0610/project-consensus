@@ -10,7 +10,7 @@ from django.db import transaction, models
 from django.db.models import F, Count, Q, Case, When, Value, IntegerField, Exists, OuterRef
 from .models import ForumPost, ForumPostComment, ForumPostLike, ForumCommentLike
 from .serializers import ForumPostSerializer, ForumPostCommentSerializer
-from accounts.models import Notification
+from notifications.models import Notification
 
 
 class DefaultPageNumberPagination(PageNumberPagination):

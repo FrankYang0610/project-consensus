@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'courses',
     'forum',
     'teachers',
+    'notifications',
 ]
 
 MIDDLEWARE = [
