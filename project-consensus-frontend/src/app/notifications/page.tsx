@@ -109,7 +109,7 @@ export default function NotificationsPage() {
   }, [router]);
 
   const displayActor = (n: NotificationItem): string => {
-    return n.actor?.name || t('common.anonymous') || 'Someone';
+    return n.actor?.name || 'Someone';
   };
 
   const notificationTitleText = (n: NotificationItem): string => {
