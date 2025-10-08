@@ -8,7 +8,8 @@ from .models import Teacher
 class TeacherSerializer(serializers.ModelSerializer):
     """Serializer mapping to frontend Teacher type (camelCase)."""
 
-    avatarUrl = serializers.URLField(source="avatar_url", required=False, allow_null=True)
+    # Coalesce empty string to None for consistent frontend handling
+    avatarUrl = serializers.SerializerMethodField()
     officeHours = serializers.CharField(source="office_hours", required=False, allow_blank=True)
     homepageUrl = serializers.URLField(source="homepage_url", required=False, allow_null=True)
     yearsExperience = serializers.IntegerField(source="years_experience", required=False, allow_null=True)
@@ -48,6 +49,9 @@ class TeacherSerializer(serializers.ModelSerializer):
             "grading": obj.rating_grading or None,
             "reviewsCount": obj.rating_reviews_count,
         }
+
+    def get_avatarUrl(self, obj: Teacher):
+        return obj.avatar_url or None
 
 
 class TeacherCourseRefSerializer(serializers.Serializer):
