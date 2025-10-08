@@ -100,7 +100,7 @@ def _build_base_user_payload(user):
     return {
         "id": str(user.pk),
         "name": getattr(profile, "display_name", None) or user.get_username(),
-        "avatar": getattr(profile, "avatar_url", None),
+        "avatar": (getattr(profile, "avatar_url", None) or None),
         "pronouns": getattr(profile, "pronouns", None) or "prefer_not_to_say",
         "showForumPostsPublicly": getattr(profile, "show_forum_posts_publicly", True),
         "showForumPostCommentsPublicly": getattr(profile, "show_forum_post_comments_publicly", True),
