@@ -73,7 +73,7 @@ class ForumPostSerializer(serializers.ModelSerializer):
             # Check if current user is the author of this anonymous post
             request = self.context.get("request")
             user = getattr(request, "user", None)
-            if user is not None and getattr(user, "is_authenticated", False) and str(user.pk) == str(obj.author_id):
+            if user is not None and getattr(user, "is_authenticated", False) and user.pk == obj.author_id:
                 # Current user is the author of this anonymous post, show real author info
                 real_author = _author_payload_for(obj.author)
                 return {
@@ -144,7 +144,7 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
             # Check if current user is the author of this anonymous comment
             request = self.context.get("request")
             user = getattr(request, "user", None)
-            if user is not None and getattr(user, "is_authenticated", False) and str(user.pk) == str(obj.author_id):
+            if user is not None and getattr(user, "is_authenticated", False) and user.pk == obj.author_id:
                 # Current user is the author of this anonymous comment, show real author info
                 real_author = _author_payload_for(obj.author)
                 return {
@@ -163,7 +163,7 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         user = getattr(request, "user", None)
         if user is not None and getattr(user, "is_authenticated", False):
-            return str(user.pk) == str(obj.author_id)
+            return user.pk == obj.author_id
         return False
 
     def get_isLiked(self, obj: ForumPostComment) -> bool:

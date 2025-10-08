@@ -10,6 +10,9 @@ from django.db import transaction, models
 from django.db.models import F, Count, Q, Case, When, Value, IntegerField, Exists, OuterRef
 from .models import ForumPost, ForumPostComment, ForumPostLike, ForumCommentLike
 from .serializers import ForumPostSerializer, ForumPostCommentSerializer
+from notifications import NotificationType
+from notifications.events import emit, DomainEvent
+from django.utils import timezone
 
 
 class DefaultPageNumberPagination(PageNumberPagination):
@@ -109,6 +112,23 @@ class ForumPostViewSet(viewsets.ModelViewSet):
                 like, created = ForumPostLike.objects.get_or_create(post=post, user=user)
                 if created:
                     ForumPost.objects.filter(pk=post.pk).update(likes_count=F("likes_count") + 1)
+                    # Notify post author (exclude self-notify)
+                    if user.pk != post.author_id:
+                        emit(DomainEvent(
+                            type=NotificationType.FORUM_POST_LIKED,
+                            recipient_id=post.author_id,
+                            actor_id=user.pk,
+                            target_app="forum",
+                            target_model="ForumPost",
+                            target_id=str(post.pk),
+                            route=f"/post/{post.pk}",
+                            metadata={
+                                "forumPostId": str(post.pk),
+                                "forumPostTitle": post.title,
+                            },
+                            referenced_content_preview=post.title,
+                            created_at=getattr(like, "created_at", timezone.now()),
+                        ))
             # Re-fetch to get fresh data and annotations (is_liked)
             post = self.get_queryset().get(pk=pk)
             serializer = self.get_serializer(post, context={"request": request})
@@ -187,7 +207,57 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):  # type: ignore[override]
         # Always set the author to current user; no main thread tracking in flat model
-        serializer.save(author=self.request.user)
+        comment: ForumPostComment = serializer.save(author=self.request.user)
+        # Create notifications based on whether it's a reply to post or to comment
+        try:
+            actor = self.request.user
+            if comment.reply_to_id:
+                # Reply to a comment -> notify that comment's author
+                target_user = comment.reply_to.author
+                if target_user.pk != actor.pk:
+                    emit(DomainEvent(
+                        type=NotificationType.FORUM_POST_COMMENT_REPLIED,
+                        recipient_id=target_user.pk,
+                        actor_id=actor.pk,
+                        target_app="forum",
+                        target_model="ForumPostComment",
+                        target_id=str(comment.pk),
+                        route=f"/post/{comment.post_id}#comment-{comment.pk}",
+                        metadata={
+                            "forumPostId": str(comment.post_id),
+                            "forumPostCommentId": str(comment.pk),
+                            "forumPostTitle": comment.post.title,
+                        },
+                        actor_is_anonymous=bool(getattr(comment, "is_anonymous", False)),
+                        content_preview=comment.content,
+                        referenced_content_preview=(comment.reply_to.content if comment.reply_to and comment.reply_to.content else comment.post.title),
+                        created_at=comment.created_at,
+                    ))
+            else:
+                # Top-level comment -> notify post author
+                target_user = comment.post.author
+                if target_user.pk != actor.pk:
+                    emit(DomainEvent(
+                        type=NotificationType.FORUM_POST_COMMENTED,
+                        recipient_id=target_user.pk,
+                        actor_id=actor.pk,
+                        target_app="forum",
+                        target_model="ForumPostComment",
+                        target_id=str(comment.pk),
+                        route=f"/post/{comment.post_id}#comment-{comment.pk}",
+                        metadata={
+                            "forumPostId": str(comment.post_id),
+                            "forumPostCommentId": str(comment.pk),
+                            "forumPostTitle": comment.post.title,
+                        },
+                        actor_is_anonymous=bool(getattr(comment, "is_anonymous", False)),
+                        content_preview=comment.content,
+                        referenced_content_preview=comment.post.title,
+                        created_at=comment.created_at,
+                    ))
+        except Exception:
+            # Best-effort; don't block comment creation on notification errors
+            pass
 
     def destroy(self, request: Request, *args, **kwargs):  # type: ignore[override]
         """Soft delete a comment: only the author may delete.
@@ -289,9 +359,27 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
         user = request.user
         try:
             with transaction.atomic():
-                _, created = ForumCommentLike.objects.get_or_create(comment=comment, user=user)
+                like, created = ForumCommentLike.objects.get_or_create(comment=comment, user=user)
                 if created:
                     ForumPostComment.objects.filter(pk=comment.pk).update(likes_count=F("likes_count") + 1)
+                    # Notify comment author (exclude self)
+                    if user.pk != comment.author_id:
+                        emit(DomainEvent(
+                            type=NotificationType.FORUM_POST_COMMENT_LIKED,
+                            recipient_id=comment.author_id,
+                            actor_id=user.pk,
+                            target_app="forum",
+                            target_model="ForumPostComment",
+                            target_id=str(comment.pk),
+                            route=f"/post/{comment.post_id}#comment-{comment.pk}",
+                            metadata={
+                                "forumPostId": str(comment.post_id),
+                                "forumPostCommentId": str(comment.pk),
+                                "forumPostTitle": comment.post.title,
+                            },
+                            referenced_content_preview=(comment.content if comment and comment.content else comment.post.title),
+                            created_at=getattr(like, "created_at", timezone.now()),
+                        ))
             # Re-fetch to get fresh data and annotations (is_liked, replies_count)
             comment = self.get_queryset().get(pk=pk)
             serializer = self.get_serializer(comment, context={"request": request})

@@ -447,9 +447,10 @@ def seed_forum_data(apps, schema_editor):
     ]
 
     # Create replies object
+    created_replies = []
     for reply_data in replies_data:
         author = User.objects.get(email=reply_data["author"])
-        ForumPostComment.objects.create(
+        c = ForumPostComment.objects.create(
             post=main_post,
             content=reply_data["content"],
             author=author,
@@ -457,6 +458,7 @@ def seed_forum_data(apps, schema_editor):
             created_at=reply_data["created_at"],
             is_anonymous=reply_data.get("is_anonymous", False),
         )
+        created_replies.append(c)
 
     # Create some nested replies (replies to replies)
     nested_replies_data = [
@@ -523,10 +525,11 @@ def seed_forum_data(apps, schema_editor):
     ]
 
     # Create nested replies
+    created_nested_replies = []
     for nested_data in nested_replies_data:
         author = User.objects.get(email=nested_data["author"])
         reply_to_comment = nested_data["reply_to"]
-        ForumPostComment.objects.create(
+        c = ForumPostComment.objects.create(
             post=main_post,
             content=nested_data["content"],
             author=author,
@@ -534,6 +537,7 @@ def seed_forum_data(apps, schema_editor):
             created_at=nested_data["created_at"],
             is_anonymous=nested_data.get("is_anonymous", False),
         )
+        created_nested_replies.append(c)
 
 
 def unseed_forum_data(apps, schema_editor):

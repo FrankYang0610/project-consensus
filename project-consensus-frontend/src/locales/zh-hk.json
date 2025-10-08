@@ -148,7 +148,8 @@
     "loadFailedRetry": "載入失敗 重新載入",
     "me": "我",
     "anonymous": "匿名",
-    "anonymousWithId": "匿名（{{name}}）"
+    "anonymousWithId": "匿名（{{name}}）",
+    "noMore": "已顯示全部"
   },
   "courses": {
     "topbar": {
@@ -577,6 +578,24 @@
       "difficulty": "難度",
       "reviews": "評價數",
       "courses": "課程"
+    }
+  },
+  "notifications": {
+    "bell": "通知",
+    "title": "通知",
+    "markAllRead": "全部標示為已讀",
+    "deleteRead": "刪除已讀",
+    "empty": "暫時未有通知",
+    "messages": {
+      "forumPostLiked": "{{actor}} 讚好咗你嘅帖子 {{target}}",
+      "forumPostCommented": "{{actor}} 評論咗你嘅帖子 {{target}}",
+      "forumPostCommentLiked": "{{actor}} 讚好咗你喺 {{target}} 嘅留言",
+      "forumPostCommentReplied": "{{actor}} 回覆咗你喺 {{target}} 嘅留言",
+      "courseReviewLiked": "{{actor}} 讚好咗你對 {{target}} 嘅課程點評",
+      "courseReviewReplied": "{{actor}} 回覆咗你對 {{target}} 嘅課程點評",
+      "courseReviewReplyLiked": "{{actor}} 讚好咗你喺 {{target}} 嘅點評回覆",
+      "courseReviewReplyReplied": "{{actor}} 回覆咗你喺 {{target}} 嘅點評回覆",
+      "unknownType": "未知通知類型 ({{type}}) 來自 {{actor}}"
     }
   }
 }
