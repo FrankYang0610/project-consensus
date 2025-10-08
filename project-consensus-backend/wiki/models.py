@@ -15,7 +15,14 @@ User = get_user_model()
 
 
 class LanguageChoices(models.TextChoices):
-    """支持的语言选项 / Supported language options (BCP 47)"""
+    """
+    支持的语言选项 / Supported language options (subset of BCP 47)
+
+    Only the following BCP 47 language codes are supported:
+        - zh-CN: 简体中文
+        - zh-HK: 繁體中文（香港）
+        - en: English
+    """
     ZH_CN = 'zh-CN', '简体中文'
     ZH_HK = 'zh-HK', '繁體中文（香港）'
     EN = 'en', 'English'
