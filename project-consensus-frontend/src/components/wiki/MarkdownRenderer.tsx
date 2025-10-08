@@ -73,53 +73,10 @@ export default function MarkdownRenderer({ content, className }: MarkdownRendere
     },
   } as const;
 
-  // Heuristic: if raw HTML contains unmatched <code> tags, fall back to safe renderer
-  const openCodeTags = (content.match(/<code(\s|>)/gi) || []).length;
-  const closeCodeTags = (content.match(/<\/code>/gi) || []).length;
-  if (closeCodeTags < openCodeTags) {
-    const html = renderMarkdownToHtml(content ?? '');
-    return (
-      <div className={className ?? 'prose dark:prose-invert max-w-none'}>
-        <div dangerouslySetInnerHTML={{ __html: html }} />
-      </div>
-    );
-  }
-
-  // Heuristic: detect any curly braces or raw HTML outside fenced code blocks
-  const hasSuspiciousCurly = (() => {
-    const lines = (content ?? '').split(/\r?\n/);
-    let inFence = false;
-    for (const ln of lines) {
-      if (/^\s*```/.test(ln)) { inFence = !inFence; continue; }
-      if (!inFence && /[{}]/.test(ln)) return true;
-    }
-    return false;
-  })();
-
-  const hasRawHtmlOutsideFences = (() => {
-    const lines = (content ?? '').split(/\r?\n/);
-    let inFence = false;
-    for (const ln of lines) {
-      if (/^\s*```/.test(ln)) { inFence = !inFence; continue; }
-      // very rough check for HTML-like tags
-      if (!inFence && /<[^>]+>/.test(ln)) return true;
-    }
-    return false;
-  })();
-
-  if (hasSuspiciousCurly || hasRawHtmlOutsideFences) {
-    const html = renderMarkdownToHtml(content ?? '');
-    return (
-      <div className={className ?? 'prose dark:prose-invert max-w-none'}>
-        <div dangerouslySetInnerHTML={{ __html: html }} />
-      </div>
-    );
-  }
-
-  let mdxNode: React.ReactNode | null = null;
-  let failed = false;
+  // Attempt MDX rendering with proper error handling
+  // If MDX compilation fails, fall back to safe HTML renderer
   try {
-    mdxNode = (
+    const mdxNode = (
       <MDXRemote
         source={content ?? ''}
         components={mdxComponents as unknown as MDXComponents}
@@ -135,15 +92,12 @@ export default function MarkdownRenderer({ content, className }: MarkdownRendere
         }}
       />
     );
-  } catch {
-    failed = true;
-  }
-
-  if (!failed && mdxNode) {
     return <div className={className ?? 'prose dark:prose-invert max-w-none'}>{mdxNode}</div>;
+  } catch {
+    // MDX compilation failed - fall back to safe HTML renderer
   }
 
-  // Fallback: render with our safe markdown-to-HTML renderer when MDX compilation fails
+  // Fallback: render with our safe markdown-to-HTML renderer
   const html = renderMarkdownToHtml(content ?? '');
   return (
     <div className={className ?? 'prose dark:prose-invert max-w-none'}>

@@ -51,31 +51,31 @@ export function renderMarkdownToHtml(markdown: string): string {
       ...defaultSchema.attributes,
       code: [
         ...(defaultSchema.attributes?.code || []),
-        ['className'],
+        'className',
       ],
       pre: [
         ...(defaultSchema.attributes?.pre || []),
-        ['className'],
+        'className',
       ],
       a: [
         ...(defaultSchema.attributes?.a || []),
-        ['className'],
-        ['href'],
-        ['rel'],
-        ['target'],
+        'className',
+        'href',
+        'rel',
+        'target',
       ],
       span: [
         ...(defaultSchema.attributes?.span || []),
-        ['className'],
+        'className',
       ],
-      h1: [ ...(defaultSchema.attributes?.h1 || []), ['id'], ['className'] ],
-      h2: [ ...(defaultSchema.attributes?.h2 || []), ['id'], ['className'] ],
-      h3: [ ...(defaultSchema.attributes?.h3 || []), ['id'], ['className'] ],
-      h4: [ ...(defaultSchema.attributes?.h4 || []), ['id'], ['className'] ],
-      h5: [ ...(defaultSchema.attributes?.h5 || []), ['id'], ['className'] ],
-      h6: [ ...(defaultSchema.attributes?.h6 || []), ['id'], ['className'] ],
+      h1: [ ...(defaultSchema.attributes?.h1 || []), 'id', 'className' ],
+      h2: [ ...(defaultSchema.attributes?.h2 || []), 'id', 'className' ],
+      h3: [ ...(defaultSchema.attributes?.h3 || []), 'id', 'className' ],
+      h4: [ ...(defaultSchema.attributes?.h4 || []), 'id', 'className' ],
+      h5: [ ...(defaultSchema.attributes?.h5 || []), 'id', 'className' ],
+      h6: [ ...(defaultSchema.attributes?.h6 || []), 'id', 'className' ],
     },
-  } as unknown as Schema;
+  } satisfies Schema;
 
   const vfile = unified()
     .use(remarkParse)
