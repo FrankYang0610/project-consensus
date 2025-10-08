@@ -8,18 +8,27 @@ import { useI18n } from "@/hooks/use-i18n";
 import CreateForumPostButton from "@/components/CreateForumPostButton";
 import { useApp } from "@/contexts/AppContext";
 import { Button } from "@/components/ui/button";
-import { fetchForumPosts, likeForumPost, unlikeForumPost } from "@/lib/api/forum-post";
+import { likeForumPost, unlikeForumPost, fetchForumPosts } from "@/lib/api/forum-post";
 import { ForumPost } from "@/types";
+import { useInfiniteList } from "@/hooks/use-infinite-list";
 
 export default function HomePage() {
   const { t } = useI18n();
   const { isLoggedIn, user } = useApp();
-  const [posts, setPosts] = React.useState<ForumPost[]>([]);
-  const loaderRef = React.useRef<HTMLDivElement | null>(null);
-  const loadingRef = React.useRef(false);
-  const [nextPage, setNextPage] = React.useState<number>(1);
-  const [hasNextPage, setHasNextPage] = React.useState<boolean>(true);
-  const [loadError, setLoadError] = React.useState(false);
+  const {
+    items: posts,
+    setItems: setPosts,
+    loaderRef,
+    hasMore,
+    error: loadError,
+    setError: setLoadError,
+    loadMore,
+  } = useInfiniteList<ForumPost, import("@/types").FetchForumPostsParams>({
+    fetchPage: fetchForumPosts,
+    initialParams: { page: 1, pageSize: 12 },
+    pageSize: 12,
+    dedupeKey: (p) => p.id,
+  });
 
   // 防止 "连点点赞/取消赞" 导致 UI 和后端状态打架的轻量级锁
   // Lightweight lock to prevent double-tap like/unlike causing UI/server mismatch
@@ -68,52 +77,7 @@ export default function HomePage() {
       });
   }, [posts]);
 
-  const visiblePosts = posts; // We append pages from server; all posts are visible
-  const remaining = hasNextPage ? 1 : 0; // sentinel uses presence of next page
-
-  const fetchMore = React.useCallback(async () => {
-    if (!hasNextPage || loadingRef.current) return;
-    loadingRef.current = true;
-    try {
-      const data = await fetchForumPosts({ page: nextPage, pageSize: 12 });
-      setPosts(prev => {
-        const existing = new Set(prev.map(p => p.id));
-        const deduped = data.results.filter(p => !existing.has(p.id));
-        return [...prev, ...deduped];
-      });
-      setNextPage(prev => prev + 1);
-      setHasNextPage(!!data.next);
-      setLoadError(false);
-    } catch (err) {
-      console.error(err);
-      setLoadError(true);
-    } finally {
-      loadingRef.current = false;
-    }
-  }, [hasNextPage, nextPage]);
-
-  React.useEffect(() => {
-    // initial fetch
-    if (posts.length === 0 && hasNextPage) {
-      fetchMore();
-    }
-  }, []);
-
-  React.useEffect(() => {
-    if (!loaderRef.current) return;
-    const target = loaderRef.current;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (entry.isIntersecting && remaining > 0) {
-          fetchMore();
-        }
-      },
-      { root: null, rootMargin: '200px 0px', threshold: 0 }
-    );
-    observer.observe(target);
-    return () => observer.disconnect();
-  }, [remaining, fetchMore]);
+  const visiblePosts = posts; // All loaded posts are shown
 
   // no-op
 
@@ -140,19 +104,19 @@ export default function HomePage() {
               ))}
             </div>
 
-            {/* Infinite scroll sentinel */}
+            {/* Infinite scroll sentinel (handled by useInfiniteList) */}
             <div className="max-w-7xl mx-auto flex justify-center mt-6">
               <div ref={loaderRef} className="h-8 w-full" aria-hidden="true" />
             </div>
           </div>
         </main>
       </div>
-      {loadError && hasNextPage && (
+      {loadError && hasMore && (
         <Button
           className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-red-600 hover:bg-red-700 text-white"
           onClick={() => {
             setLoadError(false);
-            fetchMore();
+            loadMore();
           }}
         >
           {t('common.loadFailedRetry')}

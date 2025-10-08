@@ -11,6 +11,33 @@ import type {
   VoteCourseResponse,
 } from "@/types";
 import { apiGet, apiPost, apiPatch, apiDeleteVoid } from "./api-utils";
+import type { PaginatedResponse as P } from "@/types";
+
+export interface FetchCoursesParams {
+  page?: number;
+  pageSize?: number;
+  ordering?: string;
+  subjectCode?: string;
+  department?: string[];
+  category?: string;
+  categories?: string[];
+  level?: string[];
+  search?: string;
+}
+
+export async function fetchCourses(params: FetchCoursesParams, init?: RequestInit): Promise<P<Course>> {
+  const q = new URLSearchParams();
+  if (params.page) q.set('page', String(params.page));
+  if (params.pageSize) q.set('page_size', String(params.pageSize));
+  if (params.ordering) q.set('ordering', params.ordering);
+  if (params.subjectCode) q.set('subjectCode', params.subjectCode);
+  (params.department || []).forEach((d) => q.append('department', d));
+  if (params.category) q.set('category', params.category);
+  (params.categories || []).forEach((c) => q.append('categories', c));
+  (params.level || []).forEach((lv) => q.append('level', lv));
+  if (params.search) q.set('search', params.search);
+  return apiGet<P<Course>>(`/api/courses/?${q.toString()}`, init);
+}
 
 export async function fetchCourseById(courseId: string, init?: RequestInit): Promise<Course | null> {
   try {

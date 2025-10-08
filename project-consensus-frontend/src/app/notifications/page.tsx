@@ -11,90 +11,30 @@ import { cn } from "@/lib/utils";
 import { stripHtmlTags } from "@/lib/html-utils";
 import { fetchNotifications, markRead, markAllRead, deleteRead } from "@/lib/api/notification";
 import type { NotificationItem } from "@/types";
+import { useInfiniteList } from "@/hooks/use-infinite-list";
 
 export default function NotificationsPage() {
   const { t } = useI18n();
   const router = useRouter();
   const { isLoggedIn, openLoginModal } = useApp();
-  const [items, setItems] = React.useState<NotificationItem[] | null>(null);
-  const [loading, setLoading] = React.useState<boolean>(true);
   const [busy, setBusy] = React.useState<boolean>(false);
-  const [nextUrl, setNextUrl] = React.useState<string | null>(null);
-  const [loadError, setLoadError] = React.useState<boolean>(false);
-  const loaderRef = React.useRef<HTMLDivElement | null>(null);
-  const loadingRef = React.useRef<boolean>(false);
-  const PAGE_SIZE = 20;
 
-  React.useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!isLoggedIn) { setLoading(false); return; }
-      try {
-        const page = await fetchNotifications({ page: 1, pageSize: PAGE_SIZE });
-        if (!cancelled) {
-          setItems(page.results);
-          const next = page.next;
-          if (next) {
-            const u = new URL(next, window.location.origin);
-            setNextUrl(u.pathname + u.search);
-          } else {
-            setNextUrl(null);
-          }
-          setLoadError(false);
-        }
-      } catch {
-        if (!cancelled) { setItems([]); setLoadError(true); }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [isLoggedIn]);
-
-  const fetchMore = React.useCallback(async () => {
-    if (!nextUrl || loadingRef.current) return;
-    loadingRef.current = true;
-    try {
-      // Parse page and page_size from nextUrl
-      const u = new URL(nextUrl, window.location.origin);
-      const page = parseInt(u.searchParams.get('page') || '2');
-      const pageSize = parseInt(u.searchParams.get('page_size') || String(PAGE_SIZE));
-      const data = await fetchNotifications({ page, pageSize });
-      setItems(prev => {
-        const prevList = prev || [];
-        const existing = new Set(prevList.map(it => it.id));
-        const deduped = (data.results || []).filter(it => !existing.has(it.id));
-        return [...prevList, ...deduped];
-      });
-      const next = data.next;
-      if (next) {
-        const nu = new URL(next, window.location.origin);
-        setNextUrl(nu.pathname + nu.search);
-      } else {
-        setNextUrl(null);
-      }
-      setLoadError(false);
-    } catch (e) {
-      console.error(e);
-      setLoadError(true);
-    } finally {
-      loadingRef.current = false;
-    }
-  }, [nextUrl]);
-
-  // Infinite scroll
-  React.useEffect(() => {
-    if (!loaderRef.current) return;
-    const target = loaderRef.current;
-    const observer = new IntersectionObserver((entries) => {
-      const entry = entries[0];
-      if (entry.isIntersecting && nextUrl) {
-        fetchMore();
-      }
-    }, { root: null, rootMargin: '200px 0px', threshold: 0 });
-    observer.observe(target);
-    return () => observer.disconnect();
-  }, [nextUrl, fetchMore]);
+  const {
+    items,
+    setItems,
+    loaderRef,
+    hasMore,
+    error: loadError,
+    setError: setLoadError,
+    loadMore,
+    reset,
+  } = useInfiniteList<NotificationItem, { unreadOnly?: boolean }>({
+    fetchPage: fetchNotifications,
+    initialParams: isLoggedIn ? {} : undefined,
+    pageSize: 20,
+    dedupeKey: (n) => String(n.id),
+    enabled: isLoggedIn,
+  });
 
   const navigateToTarget = React.useCallback((n: NotificationItem) => {
     if (n.courseId) {
@@ -182,15 +122,15 @@ export default function NotificationsPage() {
             </div>
           </div>
 
-          {loading && (
+          {!items && (
             <div className="text-sm text-muted-foreground">Loading…</div>
           )}
 
-          {!loading && (!items || items.length === 0) && (
+          {items && items.length === 0 && (
             <div className="text-sm text-muted-foreground">{t('notifications.empty') || 'No notifications yet.'}</div>
           )}
 
-          {!loading && items && items.length > 0 && (
+          {items && items.length > 0 && (
             <>
               <div className="divide-y border rounded">
                 {items.map((n) => (
@@ -219,20 +159,20 @@ export default function NotificationsPage() {
                 ))}
               </div>
 
-              {/* Infinite scroll sentinel & controls */}
+              {/* Infinite scroll sentinel & controls (handled by useInfiniteList) */}
               <div className="text-center pt-3">
                 <div ref={loaderRef} className="h-6 w-full" aria-hidden="true" />
-                {loadError && nextUrl && (
+                {loadError && hasMore && (
                   <Button
                     className="mt-2"
                     variant="outline"
                     size="sm"
-                    onClick={() => { setLoadError(false); fetchMore(); }}
+                    onClick={() => { setLoadError(false); loadMore(); }}
                   >
                     {t('common.loadFailedRetry') || 'Retry'}
                   </Button>
                 )}
-                {!nextUrl && (
+                {!hasMore && (
                   <div className="text-xs text-muted-foreground mt-2">
                     {t('common.noMore') || 'No more'}
                   </div>
