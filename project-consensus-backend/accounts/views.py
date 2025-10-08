@@ -9,11 +9,14 @@ import logging
 from django.db import transaction, models
 from django.core.cache import cache
 from django.db.models import Count, Exists, OuterRef
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.middleware.csrf import get_token
+from django.http import HttpRequest
+from rest_framework.pagination import PageNumberPagination
+from rest_framework import permissions
 
 from .models import Profile
 from .serializers import SendCodeSerializer, RegisterSerializer, LoginSerializer, ProfileSerializer
@@ -97,7 +100,7 @@ def _build_base_user_payload(user):
     return {
         "id": str(user.pk),
         "name": getattr(profile, "display_name", None) or user.get_username(),
-        "avatar": getattr(profile, "avatar_url", None) or None,
+        "avatar": getattr(profile, "avatar_url", None),
         "pronouns": getattr(profile, "pronouns", None) or "prefer_not_to_say",
         "showForumPostsPublicly": getattr(profile, "show_forum_posts_publicly", True),
         "showForumPostCommentsPublicly": getattr(profile, "show_forum_post_comments_publicly", True),

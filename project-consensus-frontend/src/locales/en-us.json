@@ -148,7 +148,8 @@
     "loadFailedRetry": "Load failed. Retry",
     "me": "Me",
     "anonymous": "Anonymous",
-    "anonymousWithId": "Anonymous ({{name}})"
+    "anonymousWithId": "Anonymous ({{name}})",
+    "noMore": "No more"
   },
   "courses": {
     "topbar": {
@@ -575,6 +576,24 @@
       "difficulty": "Difficulty",
       "reviews": "Reviews",
       "courses": "Courses"
+    }
+  },
+  "notifications": {
+    "bell": "Notifications",
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "deleteRead": "Delete read",
+    "empty": "No notifications yet.",
+    "messages": {
+      "forumPostLiked": "{{actor}} liked your forum post {{target}}",
+      "forumPostCommented": "{{actor}} commented on your forum post {{target}}",
+      "forumPostCommentLiked": "{{actor}} liked your comment on {{target}}",
+      "forumPostCommentReplied": "{{actor}} replied to your comment on {{target}}",
+      "courseReviewLiked": "{{actor}} liked your course review for {{target}}",
+      "courseReviewReplied": "{{actor}} replied to your course review for {{target}}",
+      "courseReviewReplyLiked": "{{actor}} liked your review reply for {{target}}",
+      "courseReviewReplyReplied": "{{actor}} replied to your review reply for {{target}}",
+      "unknownType": "Unknown notification type ({{type}}) from {{actor}}"
     }
   }
 }

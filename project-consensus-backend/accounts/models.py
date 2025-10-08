@@ -47,3 +47,4 @@ class Profile(models.Model):
             "name": self.display_name or self.user.get_username(),
             "avatar": self.avatar_url or None,
         }
+

@@ -21,6 +21,9 @@ from .models import (
     CourseVote,
 )
 from .serializers import CourseSerializer, CourseReviewSerializer, CourseReviewReplySerializer
+from notifications import NotificationType
+from notifications.events import emit, DomainEvent
+from django.utils import timezone
 
 
 def _is_constraint_violation(e: IntegrityError, constraint_name: str) -> bool:
@@ -515,8 +518,26 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
                     )
                 else:
                     # Not liked, so like
-                    CourseReviewLike.objects.create(review=review, user=user)
+                    like = CourseReviewLike.objects.create(review=review, user=user)
                     CourseReview.objects.filter(pk=review.pk).update(likes_count=F("likes_count") + 1)
+                    # Notify review author
+                    if user.pk != review.author_id:
+                        emit(DomainEvent(
+                            type=NotificationType.COURSE_REVIEW_LIKED,
+                            recipient_id=review.author_id,
+                            actor_id=user.pk,
+                            target_app="courses",
+                            target_model="CourseReview",
+                            target_id=str(review.pk),
+                            route=f"/courses/{review.course.course_id}",
+                            metadata={
+                                "courseId": str(review.course.course_id),
+                                "courseReviewId": str(review.pk),
+                                "courseTitle": f"{review.course.subject_code} {review.course.title}",
+                            },
+                            referenced_content_preview=f"{review.course.subject_code} {review.course.title}",
+                            created_at=getattr(like, "created_at", timezone.now()),
+                        ))
             # Re-fetch the review to get fresh data and annotation
             review = self.get_queryset().get(pk=pk)
             data = self.get_serializer(review, context={"request": request}).data
@@ -532,9 +553,26 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
         user = request.user
         try:
             with transaction.atomic():
-                _, created = CourseReviewLike.objects.get_or_create(review=review, user=user)
+                like, created = CourseReviewLike.objects.get_or_create(review=review, user=user)
                 if created:
                     CourseReview.objects.filter(pk=review.pk).update(likes_count=F("likes_count") + 1)
+                    if user.pk != review.author_id:
+                        emit(DomainEvent(
+                            type=NotificationType.COURSE_REVIEW_LIKED,
+                            recipient_id=review.author_id,
+                            actor_id=user.pk,
+                            target_app="courses",
+                            target_model="CourseReview",
+                            target_id=str(review.pk),
+                            route=f"/courses/{review.course.course_id}",
+                            metadata={
+                                "courseId": str(review.course.course_id),
+                                "courseReviewId": str(review.pk),
+                                "courseTitle": f"{review.course.subject_code} {review.course.title}",
+                            },
+                            referenced_content_preview=f"{review.course.subject_code} {review.course.title}",
+                            created_at=getattr(like, "created_at", timezone.now()),
+                        ))
             review.refresh_from_db(fields=["likes_count"])
             data = self.get_serializer(review, context={"request": request}).data
             return Response(data, status=status.HTTP_200_OK)
@@ -560,7 +598,7 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
 
     def _ensure_owner(self, obj: CourseReview) -> None:
         user = self.request.user
-        if not user or (not getattr(user, "is_staff", False) and str(obj.author_id) != str(user.pk)):
+        if not user or (not getattr(user, "is_staff", False) and obj.author_id != user.pk):
             raise PermissionDenied("You do not have permission to modify this review.")
 
     def perform_create(self, serializer):  # type: ignore[override]
@@ -651,7 +689,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
 
     def _ensure_owner(self, obj: CourseReviewReply) -> None:
         user = self.request.user
-        if not user or (not getattr(user, "is_staff", False) and str(obj.author_id) != str(user.pk)):
+        if not user or (not getattr(user, "is_staff", False) and obj.author_id != user.pk):
             raise PermissionDenied("You do not have permission to modify this reply.")
 
     def perform_create(self, serializer):  # type: ignore[override]
@@ -677,6 +715,37 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
         with transaction.atomic():
             instance = serializer.save(author=user, review=review, reply_to_user=reply_to_user)
             _recompute_replies_count(review)
+            # Notify reply target or review author
+            try:
+                target = reply_to_user or review.author
+                if target.pk != user.pk:
+                    # Use different notification types based on whether this is a reply to another reply
+                    notification_type = (
+                        NotificationType.COURSE_REVIEW_REPLY_REPLIED 
+                        if reply_to_user 
+                        else NotificationType.COURSE_REVIEW_REPLIED
+                    )
+                    emit(DomainEvent(
+                        type=notification_type,
+                        recipient_id=target.pk,
+                        actor_id=user.pk,
+                        target_app="courses",
+                        target_model="CourseReviewReply",
+                        target_id=str(instance.pk),
+                        route=f"/courses/{review.course.course_id}",
+                        metadata={
+                            "courseId": str(review.course.course_id),
+                            "courseReviewId": str(review.pk),
+                            "courseReviewReplyId": str(instance.pk),
+                            "courseTitle": f"{review.course.subject_code} {review.course.title}",
+                        },
+                        content_preview=instance.content,
+                        # Target is the original review content; for reply->reply we also fallback to review content
+                        referenced_content_preview=review.content,
+                        created_at=getattr(instance, "created_at", None),
+                    ))
+            except Exception:
+                pass
 
     def perform_update(self, serializer):  # type: ignore[override]
         instance: CourseReviewReply = self.get_object()
@@ -714,8 +783,26 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
                     )
                 else:
                     # Not liked, so like
-                    CourseReviewReplyLike.objects.create(reply=reply, user=user)
+                    like = CourseReviewReplyLike.objects.create(reply=reply, user=user)
                     CourseReviewReply.objects.filter(pk=reply.pk).update(likes_count=F("likes_count") + 1)
+                    if user.pk != reply.author_id:
+                        emit(DomainEvent(
+                            type=NotificationType.COURSE_REVIEW_REPLY_LIKED,
+                            recipient_id=reply.author_id,
+                            actor_id=user.pk,
+                            target_app="courses",
+                            target_model="CourseReviewReply",
+                            target_id=str(reply.pk),
+                            route=f"/courses/{reply.review.course.course_id}",
+                            metadata={
+                                "courseId": str(reply.review.course.course_id),
+                                "courseReviewId": str(reply.review.pk),
+                                "courseReviewReplyId": str(reply.pk),
+                                "courseTitle": f"{reply.review.course.subject_code} {reply.review.course.title}",
+                            },
+                            referenced_content_preview=reply.content,
+                            created_at=getattr(like, "created_at", timezone.now()),
+                        ))
             # Re-fetch the reply to get fresh data and annotation
             reply = self.get_queryset().get(pk=pk)
             data = self.get_serializer(reply, context={"request": request}).data
@@ -731,9 +818,27 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
         user = request.user
         try:
             with transaction.atomic():
-                _, created = CourseReviewReplyLike.objects.get_or_create(reply=reply, user=user)
+                like, created = CourseReviewReplyLike.objects.get_or_create(reply=reply, user=user)
                 if created:
                     CourseReviewReply.objects.filter(pk=reply.pk).update(likes_count=F("likes_count") + 1)
+                    if user.pk != reply.author_id:
+                        emit(DomainEvent(
+                            type=NotificationType.COURSE_REVIEW_REPLY_LIKED,
+                            recipient_id=reply.author_id,
+                            actor_id=user.pk,
+                            target_app="courses",
+                            target_model="CourseReviewReply",
+                            target_id=str(reply.pk),
+                            route=f"/courses/{reply.review.course.course_id}",
+                            metadata={
+                                "courseId": str(reply.review.course.course_id),
+                                "courseReviewId": str(reply.review.pk),
+                                "courseReviewReplyId": str(reply.pk),
+                                "courseTitle": f"{reply.review.course.subject_code} {reply.review.course.title}",
+                            },
+                            referenced_content_preview=reply.content,
+                            created_at=getattr(like, "created_at", timezone.now()),
+                        ))
             reply.refresh_from_db(fields=["likes_count"])
             data = self.get_serializer(reply, context={"request": request}).data
             return Response(data, status=status.HTTP_200_OK)

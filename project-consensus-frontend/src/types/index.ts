@@ -64,4 +64,7 @@ export type {
   FetchForumCommentsParams,
   CreateForumCommentPayload,
   UpdateForumCommentPayload,
+  // Notifications API types
+  NotificationItem,
+  NotificationSSEEvent,
 } from './api';
