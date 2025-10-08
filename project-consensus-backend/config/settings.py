@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'courses',
     'forum',
     'teachers',
+    'wiki',
     'notifications',
 ]
 
@@ -131,6 +132,10 @@ LANGUAGE_CODE = env("LANGUAGE_CODE", default="zh-hans")  # Simplified Chinese; c
 TIME_ZONE = env("TIME_ZONE", default="Asia/Shanghai")    # Configurable via env; default is Asia/Shanghai
 USE_I18N = True
 USE_TZ = True
+
+# Default content language for translatable content (e.g., Wiki)
+# Frontend may request a specific language via query; when absent, use this.
+DEFAULT_CONTENT_LANGUAGE = env("DEFAULT_CONTENT_LANGUAGE", default="zh-CN")
 
 
 # Static files (CSS, JavaScript, Images)

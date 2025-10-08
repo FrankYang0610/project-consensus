@@ -5,6 +5,7 @@ import { User, AppContextType, ThemeMode } from '@/types';
 import { getCookie, getAPIBaseUrl, ensureCSRFCookie, apiGet } from '@/lib/api/api-utils';
 import { normalizeLanguage, defaultLanguage } from '@/lib/locale';
 import { useTranslation } from 'react-i18next';
+import '@/lib/i18n';
 
 // Create Context
 const AppContext = createContext<AppContextType | undefined>(undefined);
