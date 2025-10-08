@@ -136,7 +136,7 @@ export default function NotificationsPage() {
       case 'courseReviewReplyReplied':
         return t('notifications.messages.courseReviewReplyReplied', { actor, target: referencedContentPreviewQuoted }) || `${actor} replied to your course review reply ${referencedContentPreviewQuoted}`.trim();
       default:
-        return `${actor}`;
+        return t('notifications.messages.unknownType', { actor, type: n.type }) || `Unknown notification type (${n.type}) from ${actor}`;
     }
   };
 

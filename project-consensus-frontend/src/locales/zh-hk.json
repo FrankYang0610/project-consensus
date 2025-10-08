@@ -594,7 +594,8 @@
       "courseReviewLiked": "{{actor}} 讚好咗你對 {{target}} 嘅課程點評",
       "courseReviewReplied": "{{actor}} 回覆咗你對 {{target}} 嘅課程點評",
       "courseReviewReplyLiked": "{{actor}} 讚好咗你喺 {{target}} 嘅點評回覆",
-      "courseReviewReplyReplied": "{{actor}} 回覆咗你喺 {{target}} 嘅點評回覆"
+      "courseReviewReplyReplied": "{{actor}} 回覆咗你喺 {{target}} 嘅點評回覆",
+      "unknownType": "未知通知類型 ({{type}}) 來自 {{actor}}"
     }
   }
 }

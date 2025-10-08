@@ -592,7 +592,8 @@
       "courseReviewLiked": "{{actor}} liked your course review for {{target}}",
       "courseReviewReplied": "{{actor}} replied to your course review for {{target}}",
       "courseReviewReplyLiked": "{{actor}} liked your review reply for {{target}}",
-      "courseReviewReplyReplied": "{{actor}} replied to your review reply for {{target}}"
+      "courseReviewReplyReplied": "{{actor}} replied to your review reply for {{target}}",
+      "unknownType": "Unknown notification type ({{type}}) from {{actor}}"
     }
   }
 }
