@@ -18,7 +18,6 @@ def seed_forum_data(apps, schema_editor):
     app_label, model_name = settings.AUTH_USER_MODEL.split(".")
     User = apps.get_model(app_label, model_name)
     Profile = apps.get_model("accounts", "Profile")
-    Notification = apps.get_model("notifications", "Notification")
     ForumPost = apps.get_model("forum", "ForumPost")
     ForumPostComment = apps.get_model("forum", "ForumPostComment")
 
@@ -540,7 +539,10 @@ def seed_forum_data(apps, schema_editor):
         )
         created_nested_replies.append(c)
 
-    # Create notifications for top-level comments (notify post author) and replies (notify comment author)
+    # Create notifications for top-level comments (notify post author)
+    # and replies (notify comment author) using decoupled Notification schema
+    Notification = apps.get_model("notifications", "Notification")
+
     # Top-level comments -> notify post author
     for c in main_comments:
         try:
@@ -549,17 +551,24 @@ def seed_forum_data(apps, schema_editor):
                     recipient=main_post.author,
                     actor=c.author,
                     type="forumPostCommented",
-                    forumpost=main_post,
-                    forumpostcomment=c,
                     created_at=c.created_at,
                     actor_is_anonymous=bool(getattr(c, "is_anonymous", False)),
                     content_preview=c.content,
                     referenced_content_preview=main_post.title,
+                    target_app="forum",
+                    target_model="ForumPostComment",
+                    target_id=str(c.pk),
+                    route=f"/post/{main_post.pk}#comment-{c.pk}",
+                    metadata={
+                        "forumPostId": str(main_post.pk),
+                        "forumPostCommentId": str(c.pk),
+                        "forumPostTitle": main_post.title,
+                    },
                 )
         except Exception:
             pass
 
-    # Replies to comments -> notify target comment author
+    # Replies to comments -> notify target comment author (or post author if reply_to is null)
     for c in created_replies + created_nested_replies:
         try:
             target = c.reply_to.author if c.reply_to_id else main_post.author
@@ -568,16 +577,21 @@ def seed_forum_data(apps, schema_editor):
                     recipient=target,
                     actor=c.author,
                     type=("forumPostCommentReplied" if c.reply_to_id else "forumPostCommented"),
-                    forumpost=main_post,
-                    forumpostcomment=c,
                     created_at=c.created_at,
                     actor_is_anonymous=bool(getattr(c, "is_anonymous", False)),
                     content_preview=c.content,
                     referenced_content_preview=(
-                        c.reply_to.content
-                        if c.reply_to_id
-                        else main_post.title
+                        c.reply_to.content if c.reply_to_id else main_post.title
                     ),
+                    target_app="forum",
+                    target_model="ForumPostComment",
+                    target_id=str(c.pk),
+                    route=f"/post/{main_post.pk}#comment-{c.pk}",
+                    metadata={
+                        "forumPostId": str(main_post.pk),
+                        "forumPostCommentId": str(c.pk),
+                        "forumPostTitle": main_post.title,
+                    },
                 )
         except Exception:
             pass
@@ -588,10 +602,16 @@ def unseed_forum_data(apps, schema_editor):
     ForumPost = apps.get_model("forum", "ForumPost")
     ForumPostComment = apps.get_model("forum", "ForumPostComment")
     Notification = apps.get_model("notifications", "Notification")
-    # Delete notifications referencing these forum objects first
+    # Delete notifications referencing forum comments created by this seeding
     try:
-        Notification.objects.filter(forumpostcomment__isnull=False).delete()
-        Notification.objects.filter(forumpost__isnull=False).delete()
+        comment_ids = list(ForumPostComment.objects.values_list("pk", flat=True))
+        comment_ids_str = [str(x) for x in comment_ids]
+        if comment_ids_str:
+            Notification.objects.filter(
+                target_app="forum",
+                target_model="ForumPostComment",
+                target_id__in=comment_ids_str,
+            ).delete()
     except Exception:
         pass
     ForumPostComment.objects.all().delete()

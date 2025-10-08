@@ -38,11 +38,16 @@ class Notification(models.Model):
     is_deleted = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now, db_index=True)
 
-    # Targets (SET_NULL to preserve notification rows after content deletion)
-    forumpost = models.ForeignKey("forum.ForumPost", null=True, blank=True, on_delete=models.SET_NULL, related_name="notifications")
-    forumpostcomment = models.ForeignKey("forum.ForumPostComment", null=True, blank=True, on_delete=models.SET_NULL, related_name="notifications")
-    coursereview = models.ForeignKey("courses.CourseReview", null=True, blank=True, on_delete=models.SET_NULL, related_name="notifications")
-    coursereviewreply = models.ForeignKey("courses.CourseReviewReply", null=True, blank=True, on_delete=models.SET_NULL, related_name="notifications")
+    # Generic target and metadata (decoupled from other apps)
+    # Optional description of the domain object this notification refers to.
+    # This replaces hard foreign keys to other apps and allows cross-service portability.
+    target_app = models.CharField(max_length=50, blank=True)
+    target_model = models.CharField(max_length=50, blank=True)
+    target_id = models.CharField(max_length=64, blank=True)
+    # Suggested client route for navigation (e.g., "/post/{id}" or "/courses/{courseId}")
+    route = models.CharField(max_length=200, blank=True)
+    # Arbitrary key-value metadata to support client rendering without cross-app queries
+    metadata = models.JSONField(default=dict, blank=True)
 
     # Whether the actor should be displayed as Anonymous (for anonymous forum comments)
     actor_is_anonymous = models.BooleanField(default=False)

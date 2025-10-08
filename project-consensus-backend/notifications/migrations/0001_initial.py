@@ -11,8 +11,6 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('forum', '0001_initial'),
-        ('courses', '0001_initial'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
@@ -39,10 +37,12 @@ class Migration(migrations.Migration):
                 ('referenced_content_preview', models.TextField(blank=True)),
                 ('actor', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='triggered_notifications', to=settings.AUTH_USER_MODEL)),
                 ('recipient', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='received_notifications', db_column='user_id', to=settings.AUTH_USER_MODEL)),
-                ('forumpost', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='notifications', to='forum.forumpost')),
-                ('forumpostcomment', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='notifications', to='forum.forumpostcomment')),
-                ('coursereview', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='notifications', to='courses.coursereview')),
-                ('coursereviewreply', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='notifications', to='courses.coursereviewreply')),
+                # Decoupled generic target + routing + metadata
+                ('target_app', models.CharField(blank=True, max_length=50)),
+                ('target_model', models.CharField(blank=True, max_length=50)),
+                ('target_id', models.CharField(blank=True, max_length=64)),
+                ('route', models.CharField(blank=True, max_length=200)),
+                ('metadata', models.JSONField(blank=True, default=dict)),
             ],
             options={
                 'verbose_name': 'Notification',

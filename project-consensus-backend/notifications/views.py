@@ -25,25 +25,14 @@ def _author_payload_for(user) -> dict:
 
 
 def _get_course_id_from_notification(n: Notification) -> str | None:
-    # Case 1: Direct course review notification
-    if n.coursereview_id and hasattr(n, 'coursereview') and n.coursereview:
-        try:
-            course = getattr(n.coursereview, 'course', None)
-            if course:
-                return str(course.course_id)
-        except (AttributeError, TypeError):
-            pass
-    # Case 2: Course review reply notification
-    if n.coursereviewreply_id and hasattr(n, 'coursereviewreply') and n.coursereviewreply:
-        try:
-            review = getattr(n.coursereviewreply, 'review', None)
-            if review:
-                course = getattr(review, 'course', None)
-                if course:
-                    return str(course.course_id)
-        except (AttributeError, TypeError):
-            pass
-    return None
+    # Prefer metadata-provided courseId to avoid cross-app fetch
+    course_id = None
+    try:
+        meta = getattr(n, "metadata", None) or {}
+        course_id = meta.get("courseId")
+    except Exception:
+        course_id = None
+    return str(course_id) if course_id else None
 
 
 def _serialize_notification(n: Notification) -> dict:
@@ -61,11 +50,11 @@ def _serialize_notification(n: Notification) -> dict:
         "isRead": bool(n.is_read),
         "createdAt": n.created_at.isoformat(),
         "actor": actor,
-        # Minimal target IDs for client routing
-        "forumPostId": str(n.forumpost_id) if n.forumpost_id else None,
-        "forumPostCommentId": str(n.forumpostcomment_id) if n.forumpostcomment_id else None,
-        "courseReviewId": str(n.coursereview_id) if n.coursereview_id else None,
-        "courseReviewReplyId": str(n.coursereviewreply_id) if n.coursereviewreply_id else None,
+        # Minimal target IDs for client routing (kept for compatibility; filled from metadata when possible)
+        "forumPostId": (n.metadata or {}).get("forumPostId") if getattr(n, "metadata", None) else None,
+        "forumPostCommentId": (n.metadata or {}).get("forumPostCommentId") if getattr(n, "metadata", None) else None,
+        "courseReviewId": (n.metadata or {}).get("courseReviewId") if getattr(n, "metadata", None) else None,
+        "courseReviewReplyId": (n.metadata or {}).get("courseReviewReplyId") if getattr(n, "metadata", None) else None,
         "courseId": _get_course_id_from_notification(n),
         # Content preview for better UX
         "contentPreview": getattr(n, "content_preview", "") or "",
@@ -73,17 +62,13 @@ def _serialize_notification(n: Notification) -> dict:
         # Note: We only use the stored DB field and do not compute any fallback content here.
         "referencedContentPreview": getattr(n, "referenced_content_preview", "") or "Error: Cannot get preview",
     }
-    # Optional titles for better UX
+    # Optional titles for better UX from metadata only
     try:
-        if n.forumpost_id and getattr(n, "forumpost", None) is not None:
-            payload["forumPostTitle"] = n.forumpost.title
-    except Exception:
-        pass
-    try:
-        if n.coursereview_id and getattr(n.coursereview, "course", None) is not None:
-            payload["courseTitle"] = n.coursereview.course.title
-        elif n.coursereviewreply_id and getattr(n.coursereviewreply, "review", None) is not None and getattr(n.coursereviewreply.review, "course", None) is not None:
-            payload["courseTitle"] = n.coursereviewreply.review.course.title
+        meta = getattr(n, "metadata", None) or {}
+        if "forumPostTitle" in meta:
+            payload["forumPostTitle"] = meta.get("forumPostTitle")
+        if "courseTitle" in meta:
+            payload["courseTitle"] = meta.get("courseTitle")
     except Exception:
         pass
     return payload
@@ -96,17 +81,7 @@ def notifications_list(request):
     unread_only = request.query_params.get("unreadOnly") in {"1", "true", "True"}
     qs = (
         Notification.objects
-        .select_related(
-            "actor",
-            "forumpost",
-            "forumpostcomment",
-            "forumpostcomment__reply_to",
-            "coursereview",
-            "coursereview__course",
-            "coursereviewreply",
-            "coursereviewreply__review",
-            "coursereviewreply__review__course",
-        )
+        .select_related("actor")
         .filter(recipient=request.user, is_deleted=False)
         .order_by("-created_at", "-id")
     )

@@ -10,7 +10,8 @@ from django.db import transaction, models
 from django.db.models import F, Count, Q, Case, When, Value, IntegerField, Exists, OuterRef
 from .models import ForumPost, ForumPostComment, ForumPostLike, ForumCommentLike
 from .serializers import ForumPostSerializer, ForumPostCommentSerializer
-from notifications.models import Notification
+from notifications import NotificationType
+from notifications.events import emit, DomainEvent
 from django.utils import timezone
 
 
@@ -113,14 +114,21 @@ class ForumPostViewSet(viewsets.ModelViewSet):
                     ForumPost.objects.filter(pk=post.pk).update(likes_count=F("likes_count") + 1)
                     # Notify post author (exclude self-notify)
                     if user.pk != post.author_id:
-                        Notification.objects.create(
-                            recipient=post.author,
-                            actor=user,
-                            type=Notification.Type.FORUM_POST_LIKED,
-                            forumpost=post,
-                            created_at=getattr(like, "created_at", timezone.now()),
+                        emit(DomainEvent(
+                            type=NotificationType.FORUM_POST_LIKED,
+                            recipient_id=post.author_id,
+                            actor_id=user.pk,
+                            target_app="forum",
+                            target_model="ForumPost",
+                            target_id=str(post.pk),
+                            route=f"/post/{post.pk}",
+                            metadata={
+                                "forumPostId": str(post.pk),
+                                "forumPostTitle": post.title,
+                            },
                             referenced_content_preview=post.title,
-                        )
+                            created_at=getattr(like, "created_at", timezone.now()),
+                        ))
             # Re-fetch to get fresh data and annotations (is_liked)
             post = self.get_queryset().get(pk=pk)
             serializer = self.get_serializer(post, context={"request": request})
@@ -207,33 +215,46 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
                 # Reply to a comment -> notify that comment's author
                 target_user = comment.reply_to.author
                 if target_user.pk != actor.pk:
-                    notification_type = Notification.Type.FORUM_POST_COMMENT_REPLIED
-                    Notification.objects.create(
-                        recipient=target_user,
-                        actor=actor,
-                        type=notification_type,
-                        forumpostcomment=comment,
-                        forumpost=comment.post,
-                        created_at=comment.created_at,
+                    emit(DomainEvent(
+                        type=NotificationType.FORUM_POST_COMMENT_REPLIED,
+                        recipient_id=target_user.pk,
+                        actor_id=actor.pk,
+                        target_app="forum",
+                        target_model="ForumPostComment",
+                        target_id=str(comment.pk),
+                        route=f"/post/{comment.post_id}#comment-{comment.pk}",
+                        metadata={
+                            "forumPostId": str(comment.post_id),
+                            "forumPostCommentId": str(comment.pk),
+                            "forumPostTitle": comment.post.title,
+                        },
                         actor_is_anonymous=bool(getattr(comment, "is_anonymous", False)),
                         content_preview=comment.content,
-                        referenced_content_preview=comment.reply_to.content if comment.reply_to and comment.reply_to.content else comment.post.title,
-                    )
+                        referenced_content_preview=(comment.reply_to.content if comment.reply_to and comment.reply_to.content else comment.post.title),
+                        created_at=comment.created_at,
+                    ))
             else:
                 # Top-level comment -> notify post author
                 target_user = comment.post.author
                 if target_user.pk != actor.pk:
-                    Notification.objects.create(
-                        recipient=target_user,
-                        actor=actor,
-                        type=Notification.Type.FORUM_POST_COMMENTED,
-                        forumpostcomment=comment,
-                        forumpost=comment.post,
-                        created_at=comment.created_at,
+                    emit(DomainEvent(
+                        type=NotificationType.FORUM_POST_COMMENTED,
+                        recipient_id=target_user.pk,
+                        actor_id=actor.pk,
+                        target_app="forum",
+                        target_model="ForumPostComment",
+                        target_id=str(comment.pk),
+                        route=f"/post/{comment.post_id}#comment-{comment.pk}",
+                        metadata={
+                            "forumPostId": str(comment.post_id),
+                            "forumPostCommentId": str(comment.pk),
+                            "forumPostTitle": comment.post.title,
+                        },
                         actor_is_anonymous=bool(getattr(comment, "is_anonymous", False)),
                         content_preview=comment.content,
                         referenced_content_preview=comment.post.title,
-                    )
+                        created_at=comment.created_at,
+                    ))
         except Exception:
             # Best-effort; don't block comment creation on notification errors
             pass
@@ -343,16 +364,22 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
                     ForumPostComment.objects.filter(pk=comment.pk).update(likes_count=F("likes_count") + 1)
                     # Notify comment author (exclude self)
                     if user.pk != comment.author_id:
-                        notification_type = Notification.Type.FORUM_POST_COMMENT_LIKED
-                        Notification.objects.create(
-                            recipient=comment.author,
-                            actor=user,
-                            type=notification_type,
-                            forumpostcomment=comment,
-                            forumpost=comment.post,
+                        emit(DomainEvent(
+                            type=NotificationType.FORUM_POST_COMMENT_LIKED,
+                            recipient_id=comment.author_id,
+                            actor_id=user.pk,
+                            target_app="forum",
+                            target_model="ForumPostComment",
+                            target_id=str(comment.pk),
+                            route=f"/post/{comment.post_id}#comment-{comment.pk}",
+                            metadata={
+                                "forumPostId": str(comment.post_id),
+                                "forumPostCommentId": str(comment.pk),
+                                "forumPostTitle": comment.post.title,
+                            },
+                            referenced_content_preview=(comment.content if comment and comment.content else comment.post.title),
                             created_at=getattr(like, "created_at", timezone.now()),
-                            referenced_content_preview=comment.content if comment and comment.content else comment.post.title,
-                        )
+                        ))
             # Re-fetch to get fresh data and annotations (is_liked, replies_count)
             comment = self.get_queryset().get(pk=pk)
             serializer = self.get_serializer(comment, context={"request": request})
