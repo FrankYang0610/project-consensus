@@ -32,8 +32,6 @@ export default function TeachersPage() {
   // Debounce search input (500ms delay)
   const debouncedSearchQuery = useDebounce(searchInput, 500);
 
-  const loaderRef = React.useRef<HTMLDivElement | null>(null);
-
   // Map sort options to backend ordering (stable identity)
   const getSortOrdering = React.useCallback((sort: string): string => {
     switch (sort) {

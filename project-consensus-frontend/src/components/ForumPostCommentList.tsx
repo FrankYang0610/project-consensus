@@ -78,8 +78,6 @@ export function ForumPostCommentList({
   const { t } = useI18n();
   const { isLoggedIn, openLoginModal } = useApp();
 
-  const loaderRef = React.useRef<HTMLDivElement | null>(null);
-
   // 防止 "连点点赞/取消赞" 导致 UI 和后端状态打架的轻量级锁
   // Lightweight lock to prevent double-tap like/unlike causing UI/server mismatch
   //
@@ -102,6 +100,7 @@ export function ForumPostCommentList({
     setError: setLoadError,
     loadMore,
     reset,
+    loaderRef,
   } = useInfiniteList<ForumPostComment, { postId: string; replyTo?: string; ordering?: string }>({
     pageFetcher: fetchForumComments,
     initialParams: { postId, ordering: 'created_at' },
@@ -179,27 +178,8 @@ export function ForumPostCommentList({
     [postId, scrollToComment]
   );
 
-  // Initial comment load is done by the hook automatically
-
   // 总评论数（从 parent 组件传入或根据已加载数据估算）/ Total comments count
   const totalComments = totalCount ?? comments.length;
-
-  // 还有更多可加载的评论？ / Whether more pages exist
-  const more = hasMore ? 1 : 0;
-
-  React.useEffect(() => {
-    if (!loaderRef.current) return;
-    const target = loaderRef.current;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (entry.isIntersecting && more > 0) { fetchMore(); }
-      },
-      { root: null, rootMargin: '200px 0px', threshold: 0 }
-    );
-    observer.observe(target);
-    return () => observer.disconnect();
-  }, [more, fetchMore]);
 
   // 用于快速查找 parent 评论 / Map for quick parent lookup
   const idToComment = React.useRef<Map<string, ForumPostComment>>(new Map());
