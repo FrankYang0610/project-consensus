@@ -189,7 +189,7 @@ export default function TeachersPage() {
                   <p className="text-destructive mb-4">
                     {t("common.loadFailedRetry")}
                   </p>
-                  <Button onClick={() => { setLoadError(false); reset(buildTeachersParams()); }} variant="outline">
+                  <Button onClick={() => { setLoadError(false); loadMore(); }} variant="outline">
                     {t("teachers.retry")}
                   </Button>
                 </CardContent>
