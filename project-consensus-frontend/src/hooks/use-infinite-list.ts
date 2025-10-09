@@ -150,12 +150,10 @@ export function useInfiniteList<T, P = Record<string, unknown>>(options: UseInfi
     return () => observer.disconnect();
   }, [enabled, hasMoreBool, loadMore]);
 
-  const hasMore = React.useMemo(() => hasMoreBool, [hasMoreBool]);
-
   return {
     items,
     setItems,
-    hasMore,
+    hasMore: hasMoreBool,
     loading,
     error,
     setError,
