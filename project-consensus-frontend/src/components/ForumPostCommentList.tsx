@@ -103,7 +103,7 @@ export function ForumPostCommentList({
     loadMore,
     reset,
   } = useInfiniteList<ForumPostComment, { postId: string; replyTo?: string; ordering?: string }>({
-    fetchPage: fetchForumComments,
+    pageFetcher: fetchForumComments,
     initialParams: { postId, ordering: 'created_at' },
     pageSize: 20,
     dedupeKey: (c) => c.id,

@@ -70,7 +70,7 @@ export default function TeachersPage() {
     reset,
     totalCount: teachersTotalCount,
   } = useInfiniteList<Teacher, { q?: string; ordering?: string }>({
-    fetchPage: fetchTeachers,
+    pageFetcher: fetchTeachers,
     initialParams: buildTeachersParams(),
     pageSize: 20,
     dedupeKey: (t) => t.id,

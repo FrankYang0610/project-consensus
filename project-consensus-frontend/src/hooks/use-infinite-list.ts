@@ -1,10 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { apiGet } from "@/lib/api/api-utils";
 
 export interface UseInfiniteListOptions<T, P = Record<string, unknown>> {
-  fetchPage: (args: { page: number; pageSize: number } & P) => Promise<unknown>;
+  pageFetcher: (args: { page: number; pageSize: number } & P) => Promise<unknown>;
   initialParams?: P;
   pageSize?: number;
   dedupeKey: (item: T) => string;
@@ -20,7 +19,7 @@ export interface PaginatedLike<T> {
 }
 
 function normalizeResponse<T>(data: unknown): PaginatedLike<T> {
-  // Default DRF PaginatedResponse has { count, next, previous, results }
+  // DRF PaginatedResponse: { count, next, previous, results }
   if (data && typeof data === "object" && "results" in (data as any)) {
     const d = data as { results?: T[]; next?: string | null; count?: number };
     return {
@@ -29,18 +28,14 @@ function normalizeResponse<T>(data: unknown): PaginatedLike<T> {
       count: typeof d.count === "number" ? d.count : null,
     };
   }
-  // Fallback to array response
-  if (Array.isArray(data)) {
-    return { results: data as T[], next: null, count: null };
-  }
+  // Non‑DRF shapes are treated as empty; the app requires proper pagination.
   return { results: [], next: null, count: null };
 }
 
 export function useInfiniteList<T, P = Record<string, unknown>>(options: UseInfiniteListOptions<T, P>) {
-  const { fetchPage, initialParams, pageSize = 20, dedupeKey, sortFn, autoLoad = true, enabled = true } = options;
+  const { pageFetcher, initialParams, pageSize = 20, dedupeKey, sortFn, autoLoad = true, enabled = true } = options;
 
   const [items, setItems] = React.useState<T[]>([]);
-  const [currentPage, setCurrentPage] = React.useState<number>(1);
   const [nextPage, setNextPage] = React.useState<number>(1);
   const [hasMoreBool, setHasMoreBool] = React.useState<boolean>(false);
   const [loading, setLoading] = React.useState<boolean>(false);
@@ -54,12 +49,12 @@ export function useInfiniteList<T, P = Record<string, unknown>>(options: UseInfi
   const loadMore = React.useCallback(async (): Promise<void> => {
     if (!enabled) return;
     if (loadingRef.current) return;
-    if (!fetchPage) return;
+    if (!pageFetcher) return;
     loadingRef.current = true;
     setLoading(true);
     try {
       // Ensure paging arguments take precedence over any values passed in initial/reset params
-      const data = await (fetchPage as NonNullable<typeof fetchPage>)({ ...(paramsRef.current as P), page: nextPage, pageSize });
+      const data = await (pageFetcher as NonNullable<typeof pageFetcher>)({ ...(paramsRef.current as P), page: nextPage, pageSize });
       const page = normalizeResponse<T>(data);
       setItems(prev => {
         const existing = new Set(prev.map(dedupeKey));
@@ -67,10 +62,10 @@ export function useInfiniteList<T, P = Record<string, unknown>>(options: UseInfi
         const merged = [...prev, ...deduped];
         return sortFn ? [...merged].sort(sortFn) : merged;
       });
-      const more = Boolean(page.next) || (typeof page.count === "number" ? (items.length + page.results.length) < page.count : page.results.length > 0);
+      const more = Boolean(page.next);
       setHasMoreBool(more);
       if (more) setNextPage(prev => prev + 1);
-      setTotalCount(typeof page.count === "number" ? page.count : totalCount);
+      setTotalCount(prev => (typeof page.count === "number" ? page.count : prev));
       setError(false);
     } catch (e) {
       // eslint-disable-next-line no-console
@@ -80,12 +75,11 @@ export function useInfiniteList<T, P = Record<string, unknown>>(options: UseInfi
       loadingRef.current = false;
       setLoading(false);
     }
-  }, [enabled, fetchPage, pageSize, dedupeKey, sortFn, totalCount, items.length, nextPage]);
+  }, [enabled, pageFetcher, pageSize, dedupeKey, sortFn, nextPage]);
 
   const reset = React.useCallback((params: P) => {
     paramsRef.current = params as P;
     setItems([]);
-    setCurrentPage(1);
     setNextPage(1);
     setHasMoreBool(true);
     setError(false);
@@ -96,11 +90,11 @@ export function useInfiniteList<T, P = Record<string, unknown>>(options: UseInfi
   React.useEffect(() => {
     if (!enabled) return;
     if (!autoLoad) return;
-    if (items.length === 0 && Boolean(fetchPage)) {
+    if (items.length === 0 && Boolean(pageFetcher)) {
       // fire and forget
       loadMore();
     }
-  }, [enabled, autoLoad, items.length, loadMore, fetchPage]);
+  }, [enabled, autoLoad, items.length, loadMore, pageFetcher]);
 
   // IntersectionObserver for infinite scrolling
   React.useEffect(() => {

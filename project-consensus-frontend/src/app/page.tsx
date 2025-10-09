@@ -24,7 +24,7 @@ export default function HomePage() {
     setError: setLoadError,
     loadMore,
   } = useInfiniteList<ForumPost, import("@/types").FetchForumPostsParams>({
-    fetchPage: fetchForumPosts,
+    pageFetcher: fetchForumPosts,
     initialParams: { page: 1, pageSize: 12 },
     pageSize: 12,
     dedupeKey: (p) => p.id,

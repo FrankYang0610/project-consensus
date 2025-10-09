@@ -29,7 +29,7 @@ export default function NotificationsPage() {
     loadMore,
     reset,
   } = useInfiniteList<NotificationItem, { unreadOnly?: boolean }>({
-    fetchPage: fetchNotifications,
+    pageFetcher: fetchNotifications,
     initialParams: isLoggedIn ? {} : undefined,
     pageSize: 20,
     dedupeKey: (n) => String(n.id),
