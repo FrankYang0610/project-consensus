@@ -82,8 +82,6 @@ export default function TeachersPage() {
     reset(buildTeachersParams());
   }, [debouncedSearchQuery, sortBy, buildTeachersParams, reset]);
 
-  // Hook supplies its own observer via hookLoaderRef; keep isLoading for skeleton only
-
   // Handle search form submit (optional, debounce already handles it)
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
