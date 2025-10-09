@@ -119,6 +119,14 @@ class SendCodeSerializer(serializers.Serializer):
     """Request body for sending a verification code."""
 
     email = serializers.EmailField()
+    
+    def validate_email(self, value):
+        """Validate that email is from PolyU domain."""
+        if not value.lower().endswith('@connect.polyu.hk'):
+            raise serializers.ValidationError(
+                "Only PolyU email addresses (@connect.polyu.hk) are allowed."
+            )
+        return value.lower()
 
 
 class RegisterSerializer(serializers.Serializer):
@@ -126,7 +134,7 @@ class RegisterSerializer(serializers.Serializer):
 
     Fields:
     - nickname: display name (max 15 characters after sanitization)
-    - email: university email (frontend restricts to @connect.polyu.hk)
+    - email: university email (must be @connect.polyu.hk)
     - verification_code: email verification code
     - password: password
     """
@@ -135,6 +143,14 @@ class RegisterSerializer(serializers.Serializer):
     email = serializers.EmailField()
     verification_code = serializers.CharField(max_length=16)
     password = serializers.CharField(write_only=True)
+    
+    def validate_email(self, value):
+        """Validate that email is from PolyU domain."""
+        if not value.lower().endswith('@connect.polyu.hk'):
+            raise serializers.ValidationError(
+                "Only PolyU email addresses (@connect.polyu.hk) are allowed."
+            )
+        return value.lower()
     
     def validate_nickname(self, value):
         """Validate and sanitize nickname (used as display name), check uniqueness."""
@@ -154,9 +170,17 @@ class LoginSerializer(serializers.Serializer):
     """Request body for login endpoint.
 
     Fields:
-    - email: user email
+    - email: user email (must be @connect.polyu.hk)
     - password: user password
     """
 
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
+    
+    def validate_email(self, value):
+        """Validate that email is from PolyU domain."""
+        if not value.lower().endswith('@connect.polyu.hk'):
+            raise serializers.ValidationError(
+                "Only PolyU email addresses (@connect.polyu.hk) are allowed."
+            )
+        return value.lower()

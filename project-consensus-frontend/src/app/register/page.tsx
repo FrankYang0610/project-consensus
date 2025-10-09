@@ -103,6 +103,13 @@ export default function RegisterPage() {
       return;
     }
     
+    // Ensure sanitizedValue exists when validation passes
+    // 确保验证通过时 sanitizedValue 存在
+    if (!nicknameValidation.sanitizedValue) {
+      setError(t('validation.displayName.invalid'));
+      return;
+    }
+    
     if (!POLYU_EMAIL_REGEX.test(email)) {
       setError(t('auth.errorPolyuEmail'));
       return;
@@ -114,8 +121,6 @@ export default function RegisterPage() {
 
     try {
       setIsRegistering(true);
-      // TODO: Actual server address (backend)
-      // TODO：实际服务器地址（后端）
       await fetch(`${getAPIBaseUrl()}/api/accounts/csrf/`, { method: 'GET', credentials: 'include' });
       const csrfToken = getCookie('csrftoken');
       const res = await fetch(`${getAPIBaseUrl()}/api/accounts/register/`, {
@@ -123,24 +128,39 @@ export default function RegisterPage() {
         headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({
-          nickname: nicknameValidation.sanitizedValue || nickname,
+          nickname: nicknameValidation.sanitizedValue,
           email,
           verification_code: verificationCode,
           password,
         }),
       });
-      const data: RegisterSuccessResponse | ErrorResponse = await res
-        .json()
-        .catch(() => ({ message: 'Register failed' } as ErrorResponse));
-      if (!res.ok || !(data as RegisterSuccessResponse).success) {
-        const err = data as ErrorResponse;
-        throw new Error(err.message || err.detail || 'Register failed');
+      if (!res.ok) {
+        const data: ErrorResponse = await res.json().catch(() => ({ message: 'Register failed' } as ErrorResponse));
+        
+        // Extract error message from various possible formats
+        // 从各种可能的格式中提取错误信息
+        let errorMessage = data.message || data.detail || '';
+        
+        // Backend may return validation errors in a nested format
+        // 后端可能以嵌套格式返回验证错误
+        if (!errorMessage && data.nickname) {
+          // Handle DRF validation error format: { nickname: ["error message"] }
+          // 处理 DRF 验证错误格式: { nickname: ["错误信息"] }
+          const nicknameErrors = Array.isArray(data.nickname) ? data.nickname : [data.nickname];
+          errorMessage = nicknameErrors[0] || '';
+        }
+        
+        throw new Error(errorMessage || 'Register failed');
+      }
+      
+      const data: RegisterSuccessResponse = await res.json();
+      if (!data.success) {
+        throw new Error('Register failed');
       }
 
       // Session cookie is set by backend; update UI state and go back
-      const successData = data as RegisterSuccessResponse;
-      if (successData.user) {
-        login(successData.user);
+      if (data.user) {
+        login(data.user);
       }
       window.history.back();
     } catch (e: unknown) {
@@ -148,7 +168,11 @@ export default function RegisterPage() {
       // 检查显示名称是否已被占用
       if (e instanceof Error) {
         const errorMessage = e.message.toLowerCase();
-        if (errorMessage.includes('already taken') || errorMessage.includes('已被使用')) {
+        if (
+          errorMessage.includes('already taken') || 
+          errorMessage.includes('已被使用') ||
+          errorMessage.includes('display name')
+        ) {
           setError(t('validation.displayName.alreadyTaken'));
         } else {
           setError(e.message);
