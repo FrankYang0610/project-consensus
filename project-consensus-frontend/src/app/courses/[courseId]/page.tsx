@@ -78,7 +78,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
     totalCount: reviewsTotalCount,
   } = useInfiniteList<CourseReview, import("@/types").FetchCourseReviewsParams>({
     pageFetcher: fetchCourseReviews,
-    initialParams: { courseId: '', page: 1, pageSize: 10, ordering: '-created_at' },
+    initialParams: { courseId, page: 1, pageSize: 10, ordering: '-created_at' },
     pageSize: 10,
     dedupeKey: (r) => r.id,
   });
