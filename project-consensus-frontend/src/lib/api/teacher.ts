@@ -69,19 +69,7 @@ export async function fetchTeachers(
 
   const queryString = queryParams.toString();
   const url = `/api/teachers/${queryString ? `?${queryString}` : ''}`;
-  
-  try {
-    return await apiGet<PaginatedResponse<Teacher>>(url, init);
-  } catch (error) {
-    console.error('Failed to fetch teachers:', error);
-    // Return empty paginated response on error
-    return {
-      count: 0,
-      next: null,
-      previous: null,
-      results: [],
-    };
-  }
+  return apiGet<PaginatedResponse<Teacher>>(url, init);
 }
 
 /**

@@ -171,7 +171,7 @@ class CourseSerializer(serializers.ModelSerializer):
             payload = {
                 "courseId": str(c.course_id),
                 "teacherName": getattr(teacher, "name", "Unknown"),
-                "teacherAvatarUrl": getattr(teacher, "avatar_url", None) if teacher else None,
+                "teacherAvatarUrl": (getattr(teacher, "avatar_url", None) or None) if teacher else None,
                 "rating": {
                     "score": c.rating_score,
                     "reviewsCount": c.rating_reviews_count,

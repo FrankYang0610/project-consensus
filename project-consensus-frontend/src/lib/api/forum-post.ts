@@ -55,19 +55,7 @@ export async function fetchForumPosts(
 
   const queryString = queryParams.toString();
   const url = `/api/forum/posts/${queryString ? `?${queryString}` : ''}`;
-  
-  try {
-    return await apiGet<PaginatedResponse<ForumPost>>(url, init);
-  } catch (error) {
-    console.error('Failed to fetch forum posts:', error);
-    // Return empty paginated response on error
-    return {
-      count: 0,
-      next: null,
-      previous: null,
-      results: [],
-    };
-  }
+  return apiGet<PaginatedResponse<ForumPost>>(url, init);
 }
 
 /**
