@@ -40,6 +40,7 @@
     "errorInvalidEmail": "Please enter a valid email address",
     "errorNetwork": "Network error. Please try again.",
     "errorGoogleFailed": "Google login failed",
+    "errorAccountDisabled": "This account has been disabled. Please contact support for assistance.",
     "register": "Register",
     "nickname": "Nickname",
     "verificationCode": "Verification Code",
@@ -443,7 +444,12 @@
       "pronouns": "Pronouns",
       "preview": "Preview",
       "saved": "Profile updated.",
-      "saveFailed": "Failed to save profile."
+      "saveFailed": "Failed to save profile.",
+      "updateRestriction": "Display name can only be updated once every 14 days.",
+      "lastUpdated": "Display name last updated",
+      "canUpdateIn": "Display name can be updated in {{days}} day(s)",
+      "canUpdateNow": "You can update your display name now",
+      "updateLimitReached": "Display name update limit reached. Please wait {{days}} more day(s) before updating again."
     },
     "account": {
       "title": "Account Security",
@@ -490,6 +496,17 @@
   "pronouns": {
     "info": "polyu.life values diversity and inclusion. We support you in expressing your identity authentically. If you don't find suitable pronouns in the preset list, you can choose \\\"custom\\\" and set your own pronouns.",
     "share": "Share pronouns on profile"
+  },
+  "validation": {
+    "displayName": {
+      "required": "Display name is required",
+      "onlyWhitespace": "Display name cannot be only whitespace",
+      "tooLong": "Display name must be 15 characters or less",
+      "invalidCharacters": "Display name cannot contain < or > characters",
+      "invalid": "Invalid display name",
+      "characters": "characters",
+      "alreadyTaken": "This display name is already taken. Please choose another one."
+    }
   },
   "profile": {
     "title": "Profile",

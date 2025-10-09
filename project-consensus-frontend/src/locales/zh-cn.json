@@ -40,6 +40,7 @@
     "errorInvalidEmail": "请输入有效的邮箱地址",
     "errorNetwork": "网络错误，请重试",
     "errorGoogleFailed": "Google 登录失败",
+    "errorAccountDisabled": "此账户已被停用，请联系支持团队寻求协助。",
     "register": "注册",
     "nickname": "昵称",
     "verificationCode": "验证码",
@@ -445,7 +446,12 @@
       "pronouns": "代词",
       "preview": "预览",
       "saved": "个人资料已更新。",
-      "saveFailed": "保存个人资料失败。"
+      "saveFailed": "保存个人资料失败。",
+      "updateRestriction": "显示名称每14天只能修改一次。",
+      "lastUpdated": "显示名称最后更新",
+      "canUpdateIn": "显示名称还需 {{days}} 天后才能再次更新",
+      "canUpdateNow": "现在可以更新显示名称",
+      "updateLimitReached": "已达到显示名称修改限制，请等待 {{days}} 天后再次更新。"
     },
     "account": {
       "title": "账号安全",
@@ -492,6 +498,17 @@
   "pronouns": {
     "info": "polyu.life是重视多样性与包容性的社区，我们支持您按照自己的真实方式表达认同。如果您在预设的代词列表中没有找到合适的代词，您可以选择\"custom\"并设置自己的代词。",
     "share": "在个人主页展示代词"
+  },
+  "validation": {
+    "displayName": {
+      "required": "显示名称不能为空",
+      "onlyWhitespace": "显示名称不能只包含空格",
+      "tooLong": "显示名称必须在15个字符以内",
+      "invalidCharacters": "显示名称不能包含 < 或 > 字符",
+      "invalid": "无效的显示名称",
+      "characters": "字符",
+      "alreadyTaken": "此显示名称已被使用，请选择其他名称。"
+    }
   },
   "profile": {
     "title": "个人资料",

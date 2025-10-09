@@ -27,6 +27,7 @@ import { ChevronDown } from 'lucide-react';
 import { Language, User } from '@/types';
 import { updateProfile, updatePrivacySettings } from '@/lib/api/user-profile';
 import { PronounsSelector } from '@/components/PronounsSelector';
+import { validateDisplayName } from '@/lib/utils';
 
 type PrivacySettings = {
   showForumPostsPublicly: boolean;
@@ -125,21 +126,66 @@ export default function SettingsPage() {
   const handleSaveProfile = async () => {
     setProfileErr(null);
     setProfileMsg(null);
+    
+    // Validate display name if it's being updated
+    // 如果要更新显示名称，先进行验证
+    if (displayName !== user?.name) {
+      const validation = validateDisplayName(displayName);
+      if (!validation.isValid) {
+        setProfileErr(t(validation.error || 'settings.profile.saveFailed'));
+        return;
+      }
+      // Use sanitized value
+      // 使用消毒后的值
+      setDisplayName(validation.sanitizedValue || displayName);
+    }
+    
     setProfileSaving(true);
     try {
-      // Persist to backend
+      // Persist to backend (send sanitized value)
+      const validation = validateDisplayName(displayName);
       const resp = await updateProfile({
-        display_name: displayName,
+        display_name: validation.sanitizedValue || displayName,
         avatar_url: avatarUrl,
         pronouns: pronouns,
       });
 
       // Update local user from backend response
-      updateUser?.({ name: resp.user.name, avatar: resp.user.avatar, pronouns: resp.user.pronouns });
+      updateUser?.({ 
+        name: resp.user.name, 
+        avatar: resp.user.avatar, 
+        pronouns: resp.user.pronouns,
+        lastDisplayNameUpdatedAt: resp.user.lastDisplayNameUpdatedAt,
+        daysUntilNextUpdate: resp.user.daysUntilNextUpdate
+      });
       setProfileMsg(t('settings.profile.saved'));
-    } catch (e) {
+    } catch (e: unknown) {
       console.error(e);
-      setProfileErr(t('settings.profile.saveFailed'));
+      
+      // Check if this is a display name rate limit error (429) or already taken error
+      // 检查是否为显示名称修改频率限制错误（429）或名称已被占用错误
+      if (e instanceof Error) {
+        const errorMessage = e.message.toLowerCase();
+        
+        // Check if display name is already taken
+        // 检查显示名称是否已被占用
+        if (errorMessage.includes('already taken') || errorMessage.includes('已被使用')) {
+          setProfileErr(t('validation.displayName.alreadyTaken'));
+        }
+        // Check if this is a rate limit error
+        // 检查是否为频率限制错误
+        else if (errorMessage.includes('display name') && (errorMessage.includes('14 days') || errorMessage.includes('wait'))) {
+          // Extract days from error message if possible
+          // 尝试从错误消息中提取天数
+          const match = errorMessage.match(/(\d+)\s*(?:more\s+)?day/i);
+          const days = match ? match[1] : user?.daysUntilNextUpdate || '?';
+          setProfileErr(t('settings.profile.updateLimitReached', { days }));
+        } else {
+          setProfileErr(e.message || t('settings.profile.saveFailed'));
+        }
+      } else {
+        setProfileErr(t('settings.profile.saveFailed'));
+      }
     } finally {
       setProfileSaving(false);
     }
@@ -237,7 +283,24 @@ export default function SettingsPage() {
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="Alice"
+              maxLength={15}
+              disabled={user?.daysUntilNextUpdate !== undefined && user.daysUntilNextUpdate !== null && user.daysUntilNextUpdate > 0}
             />
+            <p className="text-sm text-muted-foreground">
+              {displayName.trim().length}/15 {t('validation.displayName.characters')}
+            </p>
+            {/* Display name update restriction info / 显示名称修改限制提示 */}
+            {user?.daysUntilNextUpdate !== undefined && user.daysUntilNextUpdate !== null && user.daysUntilNextUpdate > 0 && (
+              <p className="text-sm text-muted-foreground">
+                {t('settings.profile.canUpdateIn', { days: user.daysUntilNextUpdate })}
+              </p>
+            )}
+            {/* Last updated info / 最后更新信息 */}
+            {user?.lastDisplayNameUpdatedAt && (
+              <p className="text-sm text-muted-foreground">
+                {t('settings.profile.lastUpdated')}: {new Date(user.lastDisplayNameUpdatedAt).toLocaleDateString()}
+              </p>
+            )}
           </div>
 
           <div className="grid gap-2">
@@ -270,7 +333,10 @@ export default function SettingsPage() {
           />
 
           <div className="pt-2">
-            <Button onClick={handleSaveProfile} disabled={profileSaving}>
+            <Button 
+              onClick={handleSaveProfile} 
+              disabled={profileSaving}
+            >
               {profileSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {t('settings.actions.saveProfile')}
             </Button>

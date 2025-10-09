@@ -20,6 +20,7 @@ import Link from 'next/link';
 import { ErrorResponse, RegisterSuccessResponse, SendVerificationCodeResponse } from '@/types';
 import { getCookie, getAPIBaseUrl } from '@/lib/api/api-utils';
 import { useApp } from '@/contexts/AppContext';
+import { validateDisplayName } from '@/lib/utils';
 
 const POLYU_EMAIL_REGEX = /@connect\.polyu\.hk$/i;
 
@@ -93,6 +94,15 @@ export default function RegisterPage() {
       setError(t('auth.errorRequiredFields'));
       return;
     }
+    
+    // Validate nickname (display name)
+    // 验证昵称（显示名称）
+    const nicknameValidation = validateDisplayName(nickname);
+    if (!nicknameValidation.isValid) {
+      setError(t(nicknameValidation.error || 'validation.displayName.invalid'));
+      return;
+    }
+    
     if (!POLYU_EMAIL_REGEX.test(email)) {
       setError(t('auth.errorPolyuEmail'));
       return;
@@ -113,7 +123,7 @@ export default function RegisterPage() {
         headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({
-          nickname,
+          nickname: nicknameValidation.sanitizedValue || nickname,
           email,
           verification_code: verificationCode,
           password,
@@ -134,8 +144,18 @@ export default function RegisterPage() {
       }
       window.history.back();
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : t('auth.errorNetwork');
-      setError(message);
+      // Check if display name is already taken
+      // 检查显示名称是否已被占用
+      if (e instanceof Error) {
+        const errorMessage = e.message.toLowerCase();
+        if (errorMessage.includes('already taken') || errorMessage.includes('已被使用')) {
+          setError(t('validation.displayName.alreadyTaken'));
+        } else {
+          setError(e.message);
+        }
+      } else {
+        setError(t('auth.errorNetwork'));
+      }
     } finally {
       setIsRegistering(false);
     }
@@ -175,8 +195,12 @@ export default function RegisterPage() {
                   value={nickname}
                   onChange={(e) => setNickname(e.target.value)}
                   disabled={isRegistering}
+                  maxLength={15}
                   required
                 />
+                <p className="text-sm text-muted-foreground">
+                  {nickname.trim().length}/15 {t('validation.displayName.characters')}
+                </p>
               </div>
 
               <div className="grid gap-2">
