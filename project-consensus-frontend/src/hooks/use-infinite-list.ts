@@ -111,7 +111,7 @@ export function useInfiniteList<T, P = Record<string, unknown>>(options: UseInfi
   }, [enabled, pageFetcher, pageSize, dedupeKey, sortFn, nextPage]);
 
   const reset = React.useCallback((params: P) => {
-    paramsRef.current = params as P;
+    paramsRef.current = params;
     setItems([]);
     setNextPage(1);
     // Start with hasMore = false; will be set correctly after the first load
