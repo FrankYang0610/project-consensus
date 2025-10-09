@@ -97,8 +97,8 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
     }
   }, []);
 
-  const buildReviewsParams = React.useCallback(() => {
-    if (!course?.courseId) return null as import("@/types").FetchCourseReviewsParams | null;
+  const buildReviewsParams: () => import("@/types").FetchCourseReviewsParams | undefined = React.useCallback(() => {
+    if (!course?.courseId) return undefined;
     const selectedKeys = Object.entries(filterSelectedTerms).filter(([, v]) => v).map(([k]) => k);
     let termYear: number | undefined; let termSemester: 'spring' | 'summer' | 'fall' | undefined;
     if (selectedKeys.length === 1) {
