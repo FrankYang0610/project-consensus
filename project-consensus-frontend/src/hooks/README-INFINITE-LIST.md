@@ -53,7 +53,7 @@ The hook uses DRF’s `next`/`previous` as the single source of truth for pagina
 - **`count`:** total number of items across all pages (integer). The hook exposes this as `totalCount` when provided.
 - **`next`:** URL string of the next page, or `null` when there is no next page. The hook sets `hasMore` to `true` when this is truthy.
 - **`previous`:** URL string of the previous page, or `null` on the first page. Not used by the hook.
-- **`results`:** array of items for the current page (`T[]`). These are merged into `items` with de‑duplication and optional sorting.
+- **`results`:** array of items for the current page (`T[]`). These are merged into `items` with de-duplication and optional sorting.
 
 ### Quick start
 ```tsx

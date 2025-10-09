@@ -28,7 +28,7 @@ function normalizeResponse<T>(data: unknown): PaginatedLike<T> {
       count: typeof d.count === "number" ? d.count : null,
     };
   }
-  // Non‑DRF shapes are treated as empty; the app requires proper pagination.
+  // Non-DRF shapes are treated as empty; the app requires proper pagination.
   return { results: [], next: null, count: null };
 }
 
