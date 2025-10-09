@@ -17,7 +17,7 @@ import {
 } from "@/lib/api/course";
 import { useI18n } from "@/hooks/use-i18n";
 import { fetchCourseById } from "@/lib/api/course";
-import type { Course, TeacherInfo, CourseReview } from "@/types";
+import type { Course, TeacherInfo, CourseReview, FetchCourseReviewsParams, CourseReviewReply } from "@/types";
 import { Button } from "@/components/ui/button";
 import { isContentEmpty } from "@/lib/utils";
 import { useApp } from "@/contexts/AppContext";
@@ -76,7 +76,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
     loadMore: loadMoreReviews,
     reset: resetReviews,
     totalCount: reviewsTotalCount,
-  } = useInfiniteList<CourseReview, import("@/types").FetchCourseReviewsParams>({
+  } = useInfiniteList<CourseReview, FetchCourseReviewsParams>({
     pageFetcher: fetchCourseReviews,
     initialParams: { courseId, page: 1, pageSize: 10, ordering: '-created_at' },
     pageSize: 10,
@@ -97,7 +97,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
     }
   }, []);
 
-  const buildReviewsParams: () => import("@/types").FetchCourseReviewsParams | undefined = React.useCallback(() => {
+  const buildReviewsParams: () => FetchCourseReviewsParams | undefined = React.useCallback(() => {
     if (!course?.courseId) return undefined;
     const selectedKeys = Object.entries(filterSelectedTerms).filter(([, v]) => v).map(([k]) => k);
     let termYear: number | undefined; let termSemester: 'spring' | 'summer' | 'fall' | undefined;
@@ -149,7 +149,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
 
   // Toggle replies expanded/collapsed per review (default collapsed)
   // Replies cache per review (initial page)
-  const [repliesByReview, setRepliesByReview] = React.useState<Record<string, import("@/types").CourseReviewReply[]>>({});
+  const [repliesByReview, setRepliesByReview] = React.useState<Record<string, CourseReviewReply[]>>({});
   const [newReplyContentByReview, setNewReplyContentByReview] = React.useState<Record<string, string>>({});
   // Track which reviews have the inline reply composer open
   const [replyComposerOpen, setReplyComposerOpen] = React.useState<Set<string>>(new Set());
@@ -190,7 +190,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
   }, [isLoggedIn, openLoginModal]);
 
   // Open composer targeting a specific reply's author (reply to reply)
-  const handleReplyToReply = React.useCallback((reviewId: string, target: import("@/types").CourseReviewReply) => {
+  const handleReplyToReply = React.useCallback((reviewId: string, target: CourseReviewReply) => {
     if (!isLoggedIn) { openLoginModal(); return; }
     setExpandedReviews(prev => new Set(prev).add(reviewId));
     setReplyComposerOpen(prev => {
