@@ -93,7 +93,7 @@ export default function CoursesPage() {
                   <div className="flex justify-center">
                     <div ref={loaderRef} className="h-8 w-full" aria-hidden="true" />
                   </div>
-                  {loadError && hasMore && (
+                  {loadError && (hasMore || courses.length === 0) && (
                     <div className="flex justify-center">
                       <button
                         className="mt-2 bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"

@@ -102,7 +102,7 @@ export function useInfiniteList<T, P = Record<string, unknown>>(options: UseInfi
       setError(false);
     } catch (e) {
       // eslint-disable-next-line no-console
-      console.error(e);
+      console.log(e);
       setError(true);
     } finally {
       loadingRef.current = false;

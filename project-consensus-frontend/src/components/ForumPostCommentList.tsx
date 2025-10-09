@@ -420,7 +420,7 @@ export function ForumPostCommentList({
         </div>
       )}
 
-      {loadError && hasMore && (
+      {loadError && (hasMore || comments.length === 0) && (
         <Button
           className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-red-600 hover:bg-red-700 text-white"
           onClick={() => {
