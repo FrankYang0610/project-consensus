@@ -10,12 +10,12 @@ from .models import Profile
 User = get_user_model()
 
 
-def validate_and_sanitize_display_name(value: str) -> str:
+def validate_and_sanitize_nickname(value: str) -> str:
     """
-    Validate and sanitize display name using bleach.
+    Validate and sanitize nickname using bleach.
     
     This function provides defense against XSS attacks by:
-    1. Stripping all HTML tags (display names should be plain text)
+    1. Stripping all HTML tags (nicknames should be plain text)
     2. Removing control characters
     3. Validating length constraints
     
@@ -25,10 +25,10 @@ def validate_and_sanitize_display_name(value: str) -> str:
     - No HTML tags allowed (bleach removes them)
     - At least 1 non-whitespace character
     
-    校验和消毒显示名称（使用 bleach）。
+    校验和消毒昵称（使用 bleach）。
     
     此函数通过以下方式防御 XSS 攻击：
-    1. 去除所有 HTML 标签（显示名称应为纯文本）
+    1. 去除所有 HTML 标签（昵称应为纯文本）
     2. 移除控制字符
     3. 验证长度限制
     
@@ -39,12 +39,12 @@ def validate_and_sanitize_display_name(value: str) -> str:
     - 至少包含1个非空字符
     """
     if not value:
-        raise serializers.ValidationError("Display name cannot be empty.")
+        raise serializers.ValidationError("Nickname cannot be empty.")
     
     # First, use bleach to remove all HTML tags and sanitize
     # 首先，使用 bleach 移除所有 HTML 标签并消毒
-    # Display names should be plain text, so no tags are allowed
-    # 显示名称应为纯文本，因此不允许任何标签
+    # Nicknames should be plain text, so no tags are allowed
+    # 昵称应为纯文本，因此不允许任何标签
     sanitized = bleach.clean(
         value,
         tags=[],  # No HTML tags allowed / 不允许任何 HTML 标签
@@ -60,14 +60,35 @@ def validate_and_sanitize_display_name(value: str) -> str:
     # Check minimum length (after sanitization)
     # 检查最小长度（消毒后）
     if not sanitized:
-        raise serializers.ValidationError("Display name cannot be empty or only whitespace.")
+        raise serializers.ValidationError("Nickname cannot be empty or only whitespace.")
     
     # Check maximum length
     # 检查最大长度
     if len(sanitized) > 15:
-        raise serializers.ValidationError("Display name must be 15 characters or less.")
+        raise serializers.ValidationError("Nickname must be 15 characters or less.")
     
     return sanitized
+
+
+def validate_polyu_email(value: str) -> str:
+    """
+    Validate that email is from PolyU domain.
+    
+    Rules:
+    - Must end with @connect.polyu.hk
+    - Returns lowercase version for consistency
+    
+    校验邮箱是否来自理大域名。
+    
+    规则：
+    - 必须以 @connect.polyu.hk 结尾
+    - 返回小写版本以保持一致性
+    """
+    if not value.lower().endswith('@connect.polyu.hk'):
+        raise serializers.ValidationError(
+            "Only PolyU email addresses (@connect.polyu.hk) are allowed."
+        )
+    return value.lower()
 
 
 class AuthorSerializer(serializers.Serializer):
@@ -94,22 +115,22 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Profile
-        fields = ["user_id", "display_name", "avatar_url", "pronouns", "show_forum_posts_publicly", "show_forum_post_comments_publicly", "show_course_reviews_publicly"]
+        fields = ["user_id", "nickname", "avatar_url", "pronouns", "show_forum_posts_publicly", "show_forum_post_comments_publicly", "show_course_reviews_publicly"]
     
-    def validate_display_name(self, value):
-        """Validate and sanitize display name field, check uniqueness."""
+    def validate_nickname(self, value):
+        """Validate and sanitize nickname field, check uniqueness."""
         if value is not None and value != '':
             # First, validate and sanitize the value
             # 首先，验证和消毒值
-            sanitized_value = validate_and_sanitize_display_name(value)
+            sanitized_value = validate_and_sanitize_nickname(value)
             
             # Check uniqueness (exclude current user's profile)
             # 检查唯一性（排除当前用户的资料）
             current_user = self.context.get('request').user if self.context.get('request') else None
             if current_user:
-                existing = Profile.objects.filter(display_name=sanitized_value).exclude(user=current_user).first()
+                existing = Profile.objects.filter(nickname=sanitized_value).exclude(user=current_user).first()
                 if existing:
-                    raise serializers.ValidationError("This display name is already taken. Please choose another one.")
+                    raise serializers.ValidationError("This nickname is already taken. Please choose another one.")
             
             return sanitized_value
         return value
@@ -122,18 +143,14 @@ class SendCodeSerializer(serializers.Serializer):
     
     def validate_email(self, value):
         """Validate that email is from PolyU domain."""
-        if not value.lower().endswith('@connect.polyu.hk'):
-            raise serializers.ValidationError(
-                "Only PolyU email addresses (@connect.polyu.hk) are allowed."
-            )
-        return value.lower()
+        return validate_polyu_email(value)
 
 
 class RegisterSerializer(serializers.Serializer):
     """Request body for the register endpoint.
 
     Fields:
-    - nickname: display name (max 15 characters after sanitization)
+    - nickname: nickname (max 15 characters after sanitization)
     - email: university email (must be @connect.polyu.hk)
     - verification_code: email verification code
     - password: password
@@ -146,22 +163,18 @@ class RegisterSerializer(serializers.Serializer):
     
     def validate_email(self, value):
         """Validate that email is from PolyU domain."""
-        if not value.lower().endswith('@connect.polyu.hk'):
-            raise serializers.ValidationError(
-                "Only PolyU email addresses (@connect.polyu.hk) are allowed."
-            )
-        return value.lower()
+        return validate_polyu_email(value)
     
     def validate_nickname(self, value):
-        """Validate and sanitize nickname (used as display name), check uniqueness."""
+        """Validate and sanitize nickname, check uniqueness."""
         # Validate and sanitize
         # 验证和消毒
-        sanitized_value = validate_and_sanitize_display_name(value)
+        sanitized_value = validate_and_sanitize_nickname(value)
         
         # Check uniqueness for registration
         # 检查注册时的唯一性
-        if Profile.objects.filter(display_name=sanitized_value).exists():
-            raise serializers.ValidationError("This display name is already taken. Please choose another one.")
+        if Profile.objects.filter(nickname=sanitized_value).exists():
+            raise serializers.ValidationError("This nickname is already taken. Please choose another one.")
         
         return sanitized_value
 
@@ -179,8 +192,4 @@ class LoginSerializer(serializers.Serializer):
     
     def validate_email(self, value):
         """Validate that email is from PolyU domain."""
-        if not value.lower().endswith('@connect.polyu.hk'):
-            raise serializers.ValidationError(
-                "Only PolyU email addresses (@connect.polyu.hk) are allowed."
-            )
-        return value.lower()
+        return validate_polyu_email(value)

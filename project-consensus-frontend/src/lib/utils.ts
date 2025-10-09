@@ -17,8 +17,8 @@ export function isContentEmpty(content: string | null | undefined): boolean {
 }
 
 /**
- * Validate and sanitize display name
- * 验证和消毒显示名称
+ * Validate and sanitize nickname
+ * 验证和消毒昵称
  * 
  * Rules / 规则:
  * - Strip leading/trailing whitespace / 去除首尾空格
@@ -26,16 +26,16 @@ export function isContentEmpty(content: string | null | undefined): boolean {
  * - No HTML tags (< >) allowed / 不允许HTML标签
  * - At least 1 non-whitespace character / 至少包含1个非空字符
  * 
- * @param value - The display name to validate
+ * @param value - The nickname to validate
  * @returns ValidationResult with sanitized value or error message
  */
-export function validateDisplayName(value: string): ValidationResult {
+export function validateNickname(value: string): ValidationResult {
   // Check if empty
   // 检查是否为空
   if (!value) {
     return {
       isValid: false,
-      error: 'validation.displayName.required',
+      error: 'validation.nickname.required',
     };
   }
 
@@ -48,7 +48,7 @@ export function validateDisplayName(value: string): ValidationResult {
   if (!sanitized) {
     return {
       isValid: false,
-      error: 'validation.displayName.onlyWhitespace',
+      error: 'validation.nickname.onlyWhitespace',
     };
   }
 
@@ -57,7 +57,7 @@ export function validateDisplayName(value: string): ValidationResult {
   if (sanitized.length > 15) {
     return {
       isValid: false,
-      error: 'validation.displayName.tooLong',
+      error: 'validation.nickname.tooLong',
     };
   }
 
@@ -66,7 +66,7 @@ export function validateDisplayName(value: string): ValidationResult {
   if (/<|>/.test(sanitized)) {
     return {
       isValid: false,
-      error: 'validation.displayName.invalidCharacters',
+      error: 'validation.nickname.invalidCharacters',
     };
   }
 

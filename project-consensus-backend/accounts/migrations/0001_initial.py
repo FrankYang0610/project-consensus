@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
-                    "display_name",
+                    "nickname",
                     models.CharField(
                         blank=True, help_text="展示昵称（唯一）", max_length=100, unique=True
                     ),
@@ -54,8 +54,8 @@ class Migration(migrations.Migration):
                     models.BooleanField(default=True, help_text="是否公开展示自己发的course reviews"),
                 ),
                 (
-                    "last_display_name_updated_at",
-                    models.DateTimeField(blank=True, help_text="最后一次修改显示名称的时间", null=True),
+                    "last_nickname_updated_at",
+                    models.DateTimeField(blank=True, help_text="最后一次修改昵称的时间", null=True),
                 ),
                 (
                     "is_account_active",

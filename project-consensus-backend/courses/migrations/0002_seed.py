@@ -97,7 +97,7 @@ def _ensure_min_users(apps, min_users: int):
         user.save()
         # Create profile
         try:
-            Profile.objects.create(user=user, display_name=f"User {i}")
+            Profile.objects.create(user=user, nickname=f"User {i}")
         except Exception:
             # If Profile model or relation differs in historical state, ignore
             pass

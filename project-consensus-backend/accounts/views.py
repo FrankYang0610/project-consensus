@@ -97,10 +97,10 @@ def _build_base_user_payload(user):
         delta = timezone.now() - user.date_joined
         joined_days = delta.days
     
-    # Calculate days until next display name update is allowed
-    # 计算距离下次可以更新显示名称还剩多少天
+    # Calculate days until next nickname update is allowed
+    # 计算距离下次可以更新昵称还剩多少天
     days_until_next_update = None
-    last_updated = getattr(profile, "last_display_name_updated_at", None)
+    last_updated = getattr(profile, "last_nickname_updated_at", None)
     if last_updated:
         from django.utils import timezone
         days_since_update = (timezone.now() - last_updated).days
@@ -109,7 +109,7 @@ def _build_base_user_payload(user):
     
     return {
         "id": str(user.pk),
-        "name": getattr(profile, "display_name", None) or user.get_username(),
+        "name": getattr(profile, "nickname", None) or user.get_username(),
         "avatar": (getattr(profile, "avatar_url", None) or None),
         "pronouns": getattr(profile, "pronouns", None) or "prefer_not_to_say",
         "showForumPostsPublicly": getattr(profile, "show_forum_posts_publicly", True),
@@ -215,7 +215,7 @@ def register(request):
     # Default pronouns to 'not_specified' for new users
     Profile.objects.create(
         user=user,
-        display_name=nickname,
+        nickname=nickname,
         pronouns="not_specified",
     )
 
@@ -296,19 +296,19 @@ def update_profile(request):
         return Response({"message": "Not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
     profile, _ = Profile.objects.get_or_create(user=request.user)
     
-    # Check if user is trying to update display name (has 14-day restriction)
-    # 检查用户是否试图更新显示名称（有14天限制）
-    is_display_name_update = 'display_name' in request.data
+    # Check if user is trying to update nickname (has 14-day restriction)
+    # 检查用户是否试图更新昵称（有14天限制）
+    is_nickname_update = 'nickname' in request.data
     
-    # If updating display name, check the 14-day restriction
-    # 如果更新显示名称，检查14天限制
-    if is_display_name_update and profile.last_display_name_updated_at:
+    # If updating nickname, check the 14-day restriction
+    # 如果更新昵称，检查14天限制
+    if is_nickname_update and profile.last_nickname_updated_at:
         from django.utils import timezone
-        days_since_update = (timezone.now() - profile.last_display_name_updated_at).days
+        days_since_update = (timezone.now() - profile.last_nickname_updated_at).days
         if days_since_update < 14:
             days_remaining = 14 - days_since_update
             return Response({
-                "message": f"Display name can only be updated once every 14 days. Please wait {days_remaining} more day(s).",
+                "message": f"Nickname can only be updated once every 14 days. Please wait {days_remaining} more day(s).",
                 "days_remaining": days_remaining
             }, status=status.HTTP_429_TOO_MANY_REQUESTS)
     
@@ -316,12 +316,12 @@ def update_profile(request):
     serializer.is_valid(raise_exception=True)
     serializer.save()
     
-    # Update last_display_name_updated_at if display name was changed
-    # 如果修改了显示名称，更新最后修改时间
-    if is_display_name_update:
+    # Update last_nickname_updated_at if nickname was changed
+    # 如果修改了昵称，更新最后修改时间
+    if is_nickname_update:
         from django.utils import timezone
-        profile.last_display_name_updated_at = timezone.now()
-        profile.save(update_fields=['last_display_name_updated_at'])
+        profile.last_nickname_updated_at = timezone.now()
+        profile.save(update_fields=['last_nickname_updated_at'])
     
     # Fetch user with optimized stats to avoid N+1 queries
     # 获取用户时同时计算统计数据，避免 N+1 查询

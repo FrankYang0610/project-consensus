@@ -20,7 +20,7 @@ import Link from 'next/link';
 import { ErrorResponse, RegisterSuccessResponse, SendVerificationCodeResponse } from '@/types';
 import { getCookie, getAPIBaseUrl } from '@/lib/api/api-utils';
 import { useApp } from '@/contexts/AppContext';
-import { validateDisplayName } from '@/lib/utils';
+import { validateNickname } from '@/lib/utils';
 
 const POLYU_EMAIL_REGEX = /@connect\.polyu\.hk$/i;
 
@@ -95,18 +95,11 @@ export default function RegisterPage() {
       return;
     }
     
-    // Validate nickname (display name)
-    // 验证昵称（显示名称）
-    const nicknameValidation = validateDisplayName(nickname);
+    // Validate nickname
+    // 验证昵称
+    const nicknameValidation = validateNickname(nickname);
     if (!nicknameValidation.isValid) {
-      setError(t(nicknameValidation.error || 'validation.displayName.invalid'));
-      return;
-    }
-    
-    // Ensure sanitizedValue exists when validation passes
-    // 确保验证通过时 sanitizedValue 存在
-    if (!nicknameValidation.sanitizedValue) {
-      setError(t('validation.displayName.invalid'));
+      setError(t(nicknameValidation.error || 'validation.nickname.invalid'));
       return;
     }
     
@@ -173,7 +166,7 @@ export default function RegisterPage() {
           errorMessage.includes('已被使用') ||
           errorMessage.includes('display name')
         ) {
-          setError(t('validation.displayName.alreadyTaken'));
+          setError(t('validation.nickname.alreadyTaken'));
         } else {
           setError(e.message);
         }
@@ -223,7 +216,7 @@ export default function RegisterPage() {
                   required
                 />
                 <p className="text-sm text-muted-foreground">
-                  {nickname.trim().length}/15 {t('validation.displayName.characters')}
+                  {nickname.trim().length}/15 {t('validation.nickname.characters')}
                 </p>
               </div>
 

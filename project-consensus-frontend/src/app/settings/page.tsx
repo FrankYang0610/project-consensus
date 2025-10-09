@@ -27,7 +27,7 @@ import { ChevronDown } from 'lucide-react';
 import { Language, User } from '@/types';
 import { updateProfile, updatePrivacySettings } from '@/lib/api/user-profile';
 import { PronounsSelector } from '@/components/PronounsSelector';
-import { validateDisplayName } from '@/lib/utils';
+import { validateNickname } from '@/lib/utils';
 
 type PrivacySettings = {
   showForumPostsPublicly: boolean;
@@ -40,7 +40,7 @@ export default function SettingsPage() {
   const { user, isLoggedIn, updateUser } = useApp();
 
   // Profile form
-  const [displayName, setDisplayName] = useState(user?.name || '');
+  const [nickname, setNickname] = useState(user?.name || '');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar || '');
   const [pronouns, setPronouns] = useState<string>(user?.pronouns || '');
   const [profileSaving, setProfileSaving] = useState(false);
@@ -74,7 +74,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     // Initialize profile fields from user
-    setDisplayName(user?.name || '');
+    setNickname(user?.name || '');
     setAvatarUrl(user?.avatar || '');
     setPronouns(user?.pronouns || '');
     
@@ -127,25 +127,25 @@ export default function SettingsPage() {
     setProfileErr(null);
     setProfileMsg(null);
     
-    // Validate display name if it's being updated
-    // 如果要更新显示名称，先进行验证
-    if (displayName !== user?.name) {
-      const validation = validateDisplayName(displayName);
+    // Validate nickname if it's being updated
+    // 如果要更新昵称，先进行验证
+    if (nickname !== user?.name) {
+      const validation = validateNickname(nickname);
       if (!validation.isValid) {
         setProfileErr(t(validation.error || 'settings.profile.saveFailed'));
         return;
       }
       // Use sanitized value
       // 使用消毒后的值
-      setDisplayName(validation.sanitizedValue || displayName);
+      setNickname(validation.sanitizedValue || nickname);
     }
     
     setProfileSaving(true);
     try {
       // Persist to backend (send sanitized value)
-      const validation = validateDisplayName(displayName);
+      const validation = validateNickname(nickname);
       const resp = await updateProfile({
-        display_name: validation.sanitizedValue || displayName,
+        nickname: validation.sanitizedValue || nickname,
         avatar_url: avatarUrl,
         pronouns: pronouns,
       });
@@ -155,7 +155,7 @@ export default function SettingsPage() {
         name: resp.user.name, 
         avatar: resp.user.avatar, 
         pronouns: resp.user.pronouns,
-        lastDisplayNameUpdatedAt: resp.user.lastDisplayNameUpdatedAt,
+        lastNicknameUpdatedAt: resp.user.lastProfileUpdatedAt,
         daysUntilNextUpdate: resp.user.daysUntilNextUpdate
       });
       setProfileMsg(t('settings.profile.saved'));
@@ -170,7 +170,7 @@ export default function SettingsPage() {
         // Check if display name is already taken
         // 检查显示名称是否已被占用
         if (errorMessage.includes('already taken') || errorMessage.includes('已被使用')) {
-          setProfileErr(t('validation.displayName.alreadyTaken'));
+          setProfileErr(t('validation.nickname.alreadyTaken'));
         }
         // Check if this is a rate limit error
         // 检查是否为频率限制错误
@@ -277,28 +277,28 @@ export default function SettingsPage() {
           )}
 
           <div className="grid gap-2">
-            <Label htmlFor="displayName">{t('settings.profile.displayName')}</Label>
+            <Label htmlFor="nickname">{t('settings.profile.nickname')}</Label>
             <Input
-              id="displayName"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
+              id="nickname"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
               placeholder="Alice"
               maxLength={15}
               disabled={user?.daysUntilNextUpdate !== undefined && user.daysUntilNextUpdate !== null && user.daysUntilNextUpdate > 0}
             />
             <p className="text-sm text-muted-foreground">
-              {displayName.trim().length}/15 {t('validation.displayName.characters')}
+              {nickname.trim().length}/15 {t('validation.nickname.characters')}
             </p>
-            {/* Display name update restriction info / 显示名称修改限制提示 */}
+            {/* Nickname update restriction info / 昵称修改限制提示 */}
             {user?.daysUntilNextUpdate !== undefined && user.daysUntilNextUpdate !== null && user.daysUntilNextUpdate > 0 && (
               <p className="text-sm text-muted-foreground">
                 {t('settings.profile.canUpdateIn', { days: user.daysUntilNextUpdate })}
               </p>
             )}
             {/* Last updated info / 最后更新信息 */}
-            {user?.lastDisplayNameUpdatedAt && (
+            {user?.lastProfileUpdatedAt && (
               <p className="text-sm text-muted-foreground">
-                {t('settings.profile.lastUpdated')}: {new Date(user.lastDisplayNameUpdatedAt).toLocaleDateString()}
+                {t('settings.profile.lastUpdated')}: {new Date(user.lastProfileUpdatedAt).toLocaleDateString()}
               </p>
             )}
           </div>

@@ -38,7 +38,15 @@ export default function NotificationsPage() {
 
   const navigateToTarget = React.useCallback((n: NotificationItem) => {
     if (n.courseId) {
-      router.push(`/courses/${n.courseId}`);
+      // Build hash anchor for course review or reply
+      // If replyId exists, jump to the specific reply; otherwise jump to the review
+      let hash = '';
+      if (n.courseReviewReplyId) {
+        hash = `#reply-${n.courseReviewReplyId}`;
+      } else if (n.courseReviewId) {
+        hash = `#review-${n.courseReviewId}`;
+      }
+      router.push(`/courses/${n.courseId}${hash}`);
       return;
     }
     if (n.forumPostId) {

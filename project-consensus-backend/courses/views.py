@@ -529,7 +529,7 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
                             target_app="courses",
                             target_model="CourseReview",
                             target_id=str(review.pk),
-                            route=f"/courses/{review.course.course_id}",
+                            route=f"/courses/{review.course.course_id}#review-{review.pk}",
                             metadata={
                                 "courseId": str(review.course.course_id),
                                 "courseReviewId": str(review.pk),
@@ -564,7 +564,7 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
                             target_app="courses",
                             target_model="CourseReview",
                             target_id=str(review.pk),
-                            route=f"/courses/{review.course.course_id}",
+                            route=f"/courses/{review.course.course_id}#review-{review.pk}",
                             metadata={
                                 "courseId": str(review.course.course_id),
                                 "courseReviewId": str(review.pk),
@@ -732,7 +732,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
                         target_app="courses",
                         target_model="CourseReviewReply",
                         target_id=str(instance.pk),
-                        route=f"/courses/{review.course.course_id}",
+                        route=f"/courses/{review.course.course_id}#review-{review.pk}",
                         metadata={
                             "courseId": str(review.course.course_id),
                             "courseReviewId": str(review.pk),
@@ -793,7 +793,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
                             target_app="courses",
                             target_model="CourseReviewReply",
                             target_id=str(reply.pk),
-                            route=f"/courses/{reply.review.course.course_id}",
+                            route=f"/courses/{reply.review.course.course_id}#review-{reply.review.pk}",
                             metadata={
                                 "courseId": str(reply.review.course.course_id),
                                 "courseReviewId": str(reply.review.pk),
@@ -829,7 +829,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
                             target_app="courses",
                             target_model="CourseReviewReply",
                             target_id=str(reply.pk),
-                            route=f"/courses/{reply.review.course.course_id}",
+                            route=f"/courses/{reply.review.course.course_id}#review-{reply.review.pk}",
                             metadata={
                                 "courseId": str(reply.review.course.course_id),
                                 "courseReviewId": str(reply.review.pk),

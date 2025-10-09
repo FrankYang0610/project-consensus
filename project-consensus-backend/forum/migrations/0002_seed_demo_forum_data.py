@@ -54,7 +54,7 @@ def seed_forum_data(apps, schema_editor):
             user = User.objects.create_user(username=email, email=email, password="Demo1234!")
         profile = Profile.objects.filter(user=user).first()
         if profile is None:
-            Profile.objects.create(user=user, display_name=name)
+            Profile.objects.create(user=user, nickname=name)
         authors.append(user)
 
     # Create the main post about "The Barber of Seville" / 创建关于塞维利亚理发师的主帖

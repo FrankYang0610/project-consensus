@@ -438,18 +438,18 @@
     "requireLogin": "Please login to access settings.",
     "profile": {
       "title": "Profile",
-      "desc": "Update your display name and avatar.",
-      "displayName": "Display Name",
+      "desc": "Update your nickname and avatar.",
+      "nickname": "Nickname",
       "avatarUrl": "Avatar URL",
       "pronouns": "Pronouns",
       "preview": "Preview",
       "saved": "Profile updated.",
       "saveFailed": "Failed to save profile.",
-      "updateRestriction": "Display name can only be updated once every 14 days.",
-      "lastUpdated": "Display name last updated",
-      "canUpdateIn": "Display name can be updated in {{days}} day(s)",
-      "canUpdateNow": "You can update your display name now",
-      "updateLimitReached": "Display name update limit reached. Please wait {{days}} more day(s) before updating again."
+      "updateRestriction": "Nickname can only be updated once every 14 days.",
+      "lastUpdated": "Nickname last updated",
+      "canUpdateIn": "Nickname can be updated in {{days}} day(s)",
+      "canUpdateNow": "You can update your nickname now",
+      "updateLimitReached": "Nickname update limit reached. Please wait {{days}} more day(s) before updating again."
     },
     "account": {
       "title": "Account Security",
@@ -498,14 +498,14 @@
     "share": "Share pronouns on profile"
   },
   "validation": {
-    "displayName": {
-      "required": "Display name is required",
-      "onlyWhitespace": "Display name cannot be only whitespace",
-      "tooLong": "Display name must be 15 characters or less",
-      "invalidCharacters": "Display name cannot contain < or > characters",
-      "invalid": "Invalid display name",
+    "nickname": {
+      "required": "Nickname is required",
+      "onlyWhitespace": "Nickname cannot be only whitespace",
+      "tooLong": "Nickname must be 15 characters or less",
+      "invalidCharacters": "Nickname cannot contain < or > characters",
+      "invalid": "Invalid nickname",
       "characters": "characters",
-      "alreadyTaken": "This display name is already taken. Please choose another one."
+      "alreadyTaken": "This nickname is already taken. Please choose another one."
     }
   },
   "profile": {

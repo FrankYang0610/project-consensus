@@ -441,17 +441,17 @@
     "profile": {
       "title": "個人資料",
       "desc": "更新你的暱稱與頭像。",
-      "displayName": "暱稱",
+      "nickname": "暱稱",
       "avatarUrl": "頭像 URL",
       "pronouns": "代稱",
       "preview": "預覽",
       "saved": "個人資料已更新。",
       "saveFailed": "儲存個人資料失敗。",
-      "updateRestriction": "顯示名稱每14天只能修改一次。",
-      "lastUpdated": "顯示名稱最後更新",
-      "canUpdateIn": "顯示名稱還需 {{days}} 天後才能再次更新",
-      "canUpdateNow": "現在可以更新顯示名稱",
-      "updateLimitReached": "已達到顯示名稱修改限制，請等待 {{days}} 天後再次更新。"
+      "updateRestriction": "暱稱每14天只能修改一次。",
+      "lastUpdated": "暱稱最後更新",
+      "canUpdateIn": "暱稱還需 {{days}} 天後才能再次更新",
+      "canUpdateNow": "現在可以更新暱稱",
+      "updateLimitReached": "已達到暱稱修改限制，請等待 {{days}} 天後再次更新。"
     },
     "account": {
       "title": "帳戶安全",
@@ -500,14 +500,14 @@
     "share": "在個人主頁展示代稱"
   },
   "validation": {
-    "displayName": {
-      "required": "顯示名稱不能為空",
-      "onlyWhitespace": "顯示名稱不能只包含空格",
-      "tooLong": "顯示名稱必須在15個字符以內",
-      "invalidCharacters": "顯示名稱不能包含 < 或 > 字符",
-      "invalid": "無效的顯示名稱",
+    "nickname": {
+      "required": "暱稱不能為空",
+      "onlyWhitespace": "暱稱不能只包含空格",
+      "tooLong": "暱稱必須在15個字符以內",
+      "invalidCharacters": "暱稱不能包含 < 或 > 字符",
+      "invalid": "無效的暱稱",
       "characters": "字符",
-      "alreadyTaken": "此顯示名稱已被使用，請選擇其他名稱。"
+      "alreadyTaken": "此暱稱已被使用，請選擇其他名稱。"
     }
   },
   "profile": {

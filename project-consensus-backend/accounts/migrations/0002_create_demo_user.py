@@ -34,7 +34,7 @@ def create_demo_user(apps, schema_editor):
         # Create a simple profile with default pronouns
         Profile.objects.create(
             user=user,
-            display_name=DEMO_NAME,
+            nickname=DEMO_NAME,
             pronouns="not_specified",
         )
 

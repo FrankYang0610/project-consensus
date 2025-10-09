@@ -48,7 +48,7 @@ def _author_payload_for(user: User) -> dict:
     """
     try:
         p: Profile = user.profile  # type: ignore[attr-defined]
-        name = p.display_name or user.get_username()
+        name = p.nickname or user.get_username()
         avatar_url = p.avatar_url or None
     except Profile.DoesNotExist:  # pragma: no cover
         name = user.get_username()

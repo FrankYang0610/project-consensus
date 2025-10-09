@@ -135,6 +135,181 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
 
   // Track which reviews' replies are expanded (default collapsed)
   const [expandedReviews, setExpandedReviews] = React.useState<Set<string>>(new Set());
+  // Replies cache per review (initial page)
+  const [repliesByReview, setRepliesByReview] = React.useState<Record<string, CourseReviewReply[]>>({});
+  const [newReplyContentByReview, setNewReplyContentByReview] = React.useState<Record<string, string>>({});
+  // Track which reviews have the inline reply composer open
+  const [replyComposerOpen, setReplyComposerOpen] = React.useState<Set<string>>(new Set());
+  // Track reply target user per review when replying to a reply
+  const [replyToUserByReview, setReplyToUserByReview] = React.useState<Record<string, { id: string; name: string } | null>>({});
+
+  // Parse URL hash on mount and when URL changes to support notification anchors
+  const [targetReviewId, setTargetReviewId] = React.useState<string | undefined>(undefined);
+  const [targetReplyId, setTargetReplyId] = React.useState<string | undefined>(undefined);
+  
+  React.useEffect(() => {
+    const parseHash = () => {
+      const hash = window.location.hash;
+      
+      // Check for reply anchor first (more specific)
+      if (hash && hash.startsWith('#reply-')) {
+        const replyId = hash.replace('#reply-', '');
+        if (replyId) {
+          setTargetReplyId(replyId);
+          setTargetReviewId(undefined);
+          return; // Don't scroll to top if we have a target reply
+        }
+      }
+      
+      // Check for review anchor
+      if (hash && hash.startsWith('#review-')) {
+        const reviewId = hash.replace('#review-', '');
+        if (reviewId) {
+          setTargetReviewId(reviewId);
+          setTargetReplyId(undefined);
+          return; // Don't scroll to top if we have a target review
+        }
+      }
+      
+      setTargetReviewId(undefined);
+      setTargetReplyId(undefined);
+    };
+
+    // Parse on mount
+    parseHash();
+
+    // Listen for hash changes (browser back/forward, manual hash changes)
+    window.addEventListener('hashchange', parseHash);
+    return () => window.removeEventListener('hashchange', parseHash);
+  }, [courseId]);
+
+  // Auto-expand and scroll to target review when available
+  React.useEffect(() => {
+    if (!targetReviewId || reviews.length === 0) return;
+    
+    // Check if target review exists in current reviews list
+    const targetReview = reviews.find(r => r.id === targetReviewId);
+    if (!targetReview) return;
+
+    // Auto-expand replies for this review
+    setExpandedReviews(prev => new Set(prev).add(targetReviewId));
+
+    // Lazy-load replies if not already loaded
+    if (!repliesByReview[targetReviewId]) {
+      (async () => {
+        try {
+          const page = await fetchReviewReplies({ reviewId: targetReviewId, page: 1, pageSize: 20, ordering: "created_at" });
+          setRepliesByReview(prev => ({ ...prev, [targetReviewId]: page.results }));
+        } catch (e) {
+          console.error('Failed to load replies for target review', e);
+        }
+      })();
+    }
+
+    // Scroll to the review element after a short delay to ensure rendering
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const element = document.getElementById(`review-${targetReviewId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Clear target after scrolling
+          setTargetReviewId(undefined);
+        }
+      }, 300);
+    });
+  }, [targetReviewId, reviews, repliesByReview]);
+
+  // Auto-expand and scroll to target reply when available (similar to forum)
+  React.useEffect(() => {
+    if (!targetReplyId || reviews.length === 0) return;
+
+    // Find which review contains this reply by checking metadata from notification
+    // Since we don't have direct reply->review mapping, we need to find it
+    // The notification should have included the reviewId, but we're using replyId as anchor
+    // We'll need to load all reviews' replies to find the target
+    
+    // For now, we'll try a simpler approach: find the review that has this reply
+    // by loading replies for reviews that have any replies
+    const reviewsWithReplies = reviews.filter(r => (r.repliesCount ?? 0) > 0);
+    
+    let foundReviewId: string | undefined;
+    
+    // Check if any already-loaded replies contain our target
+    for (const reviewId of Object.keys(repliesByReview)) {
+      const replies = repliesByReview[reviewId] || [];
+      if (replies.some(r => r.id === targetReplyId)) {
+        foundReviewId = reviewId;
+        break;
+      }
+    }
+
+    if (foundReviewId) {
+      // We found it in already-loaded data, just expand and scroll
+      const reviewId = foundReviewId;
+      setExpandedReviews(prev => new Set(prev).add(reviewId));
+      
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          const element = document.getElementById(`reply-${targetReplyId}`);
+          if (element) {
+            // Use forum-style scroll calculation for better centering
+            const rect = element.getBoundingClientRect();
+            const absoluteTop = rect.top + window.pageYOffset;
+            const targetTop = Math.max(absoluteTop - (window.innerHeight / 2 - rect.height / 2), 0);
+            window.scrollTo({ top: targetTop, behavior: 'smooth' });
+            
+            // Add highlight effect (same as forum)
+            element.classList.add('ring-2', 'ring-primary/40');
+            setTimeout(() => element.classList.remove('ring-2', 'ring-primary/40'), 2000);
+            
+            // Clear target after scrolling
+            setTargetReplyId(undefined);
+          }
+        }, 400);
+      });
+    } else {
+      // Need to search through reviews to find which one contains this reply
+      // Load replies for all reviews with replies count > 0
+      (async () => {
+        for (const review of reviewsWithReplies) {
+          if (repliesByReview[review.id]) continue; // Already loaded
+          
+          try {
+            const page = await fetchReviewReplies({ reviewId: review.id, page: 1, pageSize: 20, ordering: "created_at" });
+            const replies = page.results;
+            setRepliesByReview(prev => ({ ...prev, [review.id]: replies }));
+            
+            // Check if this review contains our target reply
+            if (replies.some(r => r.id === targetReplyId)) {
+              foundReviewId = review.id;
+              setExpandedReviews(prev => new Set(prev).add(review.id));
+              
+              // Schedule scroll after state updates
+              requestAnimationFrame(() => {
+                setTimeout(() => {
+                  const element = document.getElementById(`reply-${targetReplyId}`);
+                  if (element) {
+                    const rect = element.getBoundingClientRect();
+                    const absoluteTop = rect.top + window.pageYOffset;
+                    const targetTop = Math.max(absoluteTop - (window.innerHeight / 2 - rect.height / 2), 0);
+                    window.scrollTo({ top: targetTop, behavior: 'smooth' });
+                    
+                    element.classList.add('ring-2', 'ring-primary/40');
+                    setTimeout(() => element.classList.remove('ring-2', 'ring-primary/40'), 2000);
+                    
+                    setTargetReplyId(undefined);
+                  }
+                }, 400);
+              });
+              break; // Found it, stop searching
+            }
+          } catch (e) {
+            console.error('Failed to load replies while searching for target', e);
+          }
+        }
+      })();
+    }
+  }, [targetReplyId, reviews, repliesByReview]);
 
   // Toggle like/unlike a review
   const handleLikeReview = React.useCallback(async (reviewId: string) => {
@@ -146,15 +321,6 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
       console.error('Failed to toggle like review', e);
     }
   }, [isLoggedIn, openLoginModal]);
-
-  // Toggle replies expanded/collapsed per review (default collapsed)
-  // Replies cache per review (initial page)
-  const [repliesByReview, setRepliesByReview] = React.useState<Record<string, CourseReviewReply[]>>({});
-  const [newReplyContentByReview, setNewReplyContentByReview] = React.useState<Record<string, string>>({});
-  // Track which reviews have the inline reply composer open
-  const [replyComposerOpen, setReplyComposerOpen] = React.useState<Set<string>>(new Set());
-  // Track reply target user per review when replying to a reply
-  const [replyToUserByReview, setReplyToUserByReview] = React.useState<Record<string, { id: string; name: string } | null>>({});
 
   const handleToggleReplies = React.useCallback((reviewId: string, nextExpanded: boolean) => {
     setExpandedReviews(prev => {
@@ -344,7 +510,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
                     const isExpanded = expandedReviews.has(review.id);
                     const replies = isExpanded ? (repliesByReview[review.id] || []) : [];
                     return (
-                      <div key={review.id} className="space-y-0.5">
+                      <div key={review.id} id={`review-${review.id}`} className="space-y-0.5">
                         {/* Review card */}
                         <CourseReviewCard
                           review={review}
@@ -419,10 +585,10 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
                               </div>
                             )}
                             {replies.map((r) => (
-                              <CourseReviewReplyCard
-                                key={r.id}
-                                reply={r}
-                                onLike={async (id) => {
+                              <div key={r.id} id={`reply-${r.id}`}>
+                                <CourseReviewReplyCard
+                                  reply={r}
+                                  onLike={async (id) => {
                                   if (!isLoggedIn) { openLoginModal(); return; }
                                   try {
                                     const updated = await toggleLikeReply(id);
@@ -437,6 +603,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
                                 onReply={() => handleReplyToReply(review.id, r)}
                                 onDelete={(id) => handleDeleteReply(review.id, id)}
                               />
+                              </div>
                             ))}
                           </div>
                         )}

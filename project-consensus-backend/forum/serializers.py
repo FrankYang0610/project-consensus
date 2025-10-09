@@ -74,7 +74,7 @@ def _sanitize_html(html: str) -> str:
 def _author_payload_for(user) -> dict:
     """Build an Author dict compatible with the frontend type.
 
-    Prefer Profile.display_name / avatar_url; fallback to username.
+    Prefer Profile.nickname / avatar_url; fallback to username.
     """
 
     try:
