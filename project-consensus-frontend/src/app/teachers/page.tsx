@@ -27,7 +27,6 @@ export default function TeachersPage() {
   // Loading comes from hook
   const [searchInput, setSearchInput] = React.useState("");
   const [sortBy, setSortBy] = React.useState<string>("name");
-  const [totalCount, setTotalCount] = React.useState(0);
   const [loadError, setLoadError] = React.useState(false);
 
   // Debounce search input (500ms delay)
@@ -76,6 +75,8 @@ export default function TeachersPage() {
     dedupeKey: (t) => t.id,
   });
 
+  const countForDisplay = teachersTotalCount ?? teachers.length;
+
   // Reload on debounced search or sort change (fetcher mode)
   React.useEffect(() => {
     reset(buildTeachersParams());
@@ -111,7 +112,7 @@ export default function TeachersPage() {
             <div className="mb-6">
               <h1 className="text-3xl font-bold mb-2">{t("teachers.title")}</h1>
               <p className="text-muted-foreground">
-                {totalCount > 0 && t("teachers.total", { count: totalCount })}
+                {countForDisplay > 0 && t("teachers.total", { count: countForDisplay })}
               </p>
             </div>
 
@@ -237,7 +238,7 @@ export default function TeachersPage() {
                 {/* End of Results */}
                 {!hasMore && teachers.length > 0 && (
                   <div className="text-center py-8 text-muted-foreground text-sm">
-                    {t("teachers.endOfResults", { count: typeof teachersTotalCount === 'number' ? teachersTotalCount : totalCount })}
+                    {t("teachers.endOfResults", { count: countForDisplay })}
                   </div>
                 )}
               </>
