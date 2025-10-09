@@ -87,7 +87,7 @@ export function useInfiniteList<T, P = Record<string, unknown>>(options: UseInfi
     setLoading(true);
     try {
       // Ensure paging arguments take precedence over any values passed in initial/reset params
-      const data = await (pageFetcher as NonNullable<typeof pageFetcher>)({ ...(paramsRef.current as P), page: nextPage, pageSize });
+      const data = await pageFetcher({ ...(paramsRef.current as P), page: nextPage, pageSize });
       const page = normalizeResponse<T>(data);
       setItems(prev => {
         const existing = new Set(prev.map(dedupeKey));
