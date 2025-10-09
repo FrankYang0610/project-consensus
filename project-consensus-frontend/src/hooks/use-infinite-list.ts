@@ -18,15 +18,18 @@ export interface PaginatedLike<T> {
   count?: number | null;
 }
 
+function isPaginatedLikeShape(value: unknown): value is { results?: unknown; next?: unknown; count?: unknown } {
+  if (typeof value !== "object" || value === null) return false;
+  return "results" in value;
+}
+
 function normalizeResponse<T>(data: unknown): PaginatedLike<T> {
   // DRF PaginatedResponse: { count, next, previous, results }
-  if (data && typeof data === "object" && "results" in (data as any)) {
-    const d = data as { results?: T[]; next?: string | null; count?: number };
-    return {
-      results: Array.isArray(d.results) ? d.results : [],
-      next: d.next ?? null,
-      count: typeof d.count === "number" ? d.count : null,
-    };
+  if (isPaginatedLikeShape(data)) {
+    const results = Array.isArray(data.results) ? (data.results as T[]) : [];
+    const next = typeof data.next === "string" || data.next === null ? data.next : null;
+    const count = typeof data.count === "number" ? data.count : null;
+    return { results, next, count };
   }
   // Non-DRF shapes are treated as empty; the app requires proper pagination.
   return { results: [], next: null, count: null };
