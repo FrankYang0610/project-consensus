@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { Heart, Reply, Trash2, Languages } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -79,18 +80,28 @@ export function CourseReviewReplyCard({
   return (
     <Card className={cn("transition-all duration-200 hover:shadow-sm", className)}>
       <CardContent className="px-2 py-0.5">
-        <div className="flex items-start gap-2">
+        <div className="flex items-start gap-2 group">
           {/* Avatar (initials only, no image) */}
           <div className="flex-shrink-0">
-            <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-xs font-medium text-primary">{initials}</span>
-            </div>
+            <Link
+              href={`/user/${reply.author.id}`}
+              className="block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center transition-transform duration-200 group-hover:scale-105 ring-0 group-hover:ring-2 group-hover:ring-primary/30">
+                <span className="text-xs font-medium text-primary">{initials}</span>
+              </div>
+            </Link>
           </div>
 
           {/* Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-0.5">
-              <span className="font-medium text-sm text-foreground">{reply.author.name}</span>
+              <Link
+                href={`/user/${reply.author.id}`}
+                className="font-medium text-sm text-foreground group-hover:text-primary group-hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              >
+                {reply.author.name}
+              </Link>
               {reply.replyToUser && (
                 <span className="text-xs text-muted-foreground">
                   {t("comment.replyTo") + " @" + reply.replyToUser.name}
