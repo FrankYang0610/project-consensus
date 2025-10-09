@@ -1,5 +1,18 @@
 // MARK: ============ Course API types ============
 
+// GET /api/courses/ query parameters
+export interface FetchCoursesParams {
+  page?: number;
+  pageSize?: number;
+  ordering?: string;
+  subjectCode?: string;
+  department?: string[];
+  category?: string;
+  categories?: string[];
+  level?: string[];
+  search?: string;
+}
+
 // GET /api/reviews/ query parameters
 export interface FetchCourseReviewsParams {
   courseId: string;

@@ -47,6 +47,7 @@ export type {
   ErrorResponse,
   PaginatedResponse,
   // Course API types
+  FetchCoursesParams,
   FetchCourseReviewsParams,
   CreateCourseReviewPayload,
   UpdateCourseReviewPayload,

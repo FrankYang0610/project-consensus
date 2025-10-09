@@ -22,7 +22,7 @@ export default function CoursesPage() {
     setError: setLoadError,
     loadMore,
     reset,
-  } = useInfiniteList<Course, import("@/lib/api/course").FetchCoursesParams>({
+  } = useInfiniteList<Course, import("@/types").FetchCoursesParams>({
     pageFetcher: fetchCourses,
     initialParams: { page: 1, pageSize: 20, ordering: '-last_updated' },
     pageSize: 20,

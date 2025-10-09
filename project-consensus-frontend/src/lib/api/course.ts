@@ -3,6 +3,7 @@ import type {
   CourseReview,
   CourseReviewReply,
   PaginatedResponse,
+  FetchCoursesParams,
   FetchCourseReviewsParams,
   CreateCourseReviewPayload,
   UpdateCourseReviewPayload,
@@ -12,18 +13,6 @@ import type {
 } from "@/types";
 import { apiGet, apiPost, apiPatch, apiDeleteVoid } from "./api-utils";
 import type { PaginatedResponse as P } from "@/types";
-
-export interface FetchCoursesParams {
-  page?: number;
-  pageSize?: number;
-  ordering?: string;
-  subjectCode?: string;
-  department?: string[];
-  category?: string;
-  categories?: string[];
-  level?: string[];
-  search?: string;
-}
 
 export async function fetchCourses(params: FetchCoursesParams, init?: RequestInit): Promise<P<Course>> {
   const q = new URLSearchParams();
