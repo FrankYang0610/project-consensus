@@ -3,6 +3,7 @@ import type {
   CourseReview,
   CourseReviewReply,
   PaginatedResponse,
+  FetchCoursesParams,
   FetchCourseReviewsParams,
   CreateCourseReviewPayload,
   UpdateCourseReviewPayload,
@@ -11,6 +12,20 @@ import type {
   VoteCourseResponse,
 } from "@/types";
 import { apiGet, apiPost, apiPatch, apiDeleteVoid } from "./api-utils";
+
+export async function fetchCourses(params: FetchCoursesParams, init?: RequestInit): Promise<PaginatedResponse<Course>> {
+  const q = new URLSearchParams();
+  if (params.page) q.set('page', String(params.page));
+  if (params.pageSize) q.set('page_size', String(params.pageSize));
+  if (params.ordering) q.set('ordering', params.ordering);
+  if (params.subjectCode) q.set('subjectCode', params.subjectCode);
+  (params.department || []).forEach((d) => q.append('department', d));
+  if (params.category) q.set('category', params.category);
+  (params.categories || []).forEach((c) => q.append('categories', c));
+  (params.level || []).forEach((lv) => q.append('level', lv));
+  if (params.search) q.set('search', params.search);
+  return apiGet<PaginatedResponse<Course>>(`/api/courses/?${q.toString()}`, init);
+}
 
 export async function fetchCourseById(courseId: string, init?: RequestInit): Promise<Course | null> {
   try {

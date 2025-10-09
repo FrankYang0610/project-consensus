@@ -18,6 +18,7 @@ import {
   deleteForumComment
 } from "@/lib/api/forum-comment";
 import { isContentEmpty } from "@/lib/utils";
+import { useInfiniteList } from "@/hooks/use-infinite-list";
 
 // Use a stable component identity for the editor to avoid remounts on each render
 const RichTextEditor = dynamic(() => import("@/components/RichTextEditor"), { ssr: false });
@@ -77,9 +78,6 @@ export function ForumPostCommentList({
   const { t } = useI18n();
   const { isLoggedIn, openLoginModal } = useApp();
 
-  const loaderRef = React.useRef<HTMLDivElement | null>(null);
-  const loadingRef = React.useRef(false);
-
   // 防止 "连点点赞/取消赞" 导致 UI 和后端状态打架的轻量级锁
   // Lightweight lock to prevent double-tap like/unlike causing UI/server mismatch
   //
@@ -94,45 +92,33 @@ export function ForumPostCommentList({
   const likeInFlightRef = React.useRef<Set<string>>(new Set());
 
   // 扁平评论流：服务端分页 / Flat comments feed with server pagination
-  const [comments, setComments] = React.useState<ForumPostComment[]>([]);
-  const [nextUrl, setNextUrl] = React.useState<string | null>(`/api/forum/comments/?postId=${postId}&page=1&page_size=20`);
-  const [loadError, setLoadError] = React.useState(false);
+  const {
+    items: comments,
+    setItems: setComments,
+    hasMore,
+    error: loadError,
+    setError: setLoadError,
+    loadMore,
+    reset,
+    loaderRef,
+  } = useInfiniteList<ForumPostComment, { postId: string; replyTo?: string; ordering?: string }>({
+    pageFetcher: fetchForumComments,
+    initialParams: { postId, ordering: 'created_at' },
+    pageSize: 20,
+    dedupeKey: (c) => c.id,
+    // Ensure chronological ascending order stable
+    sortFn: (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  });
   const [isJumpLoading, setIsJumpLoading] = React.useState(false);
 
   // Reset when postId changes
   React.useEffect(() => {
-    setComments([]);
-    setNextUrl(`/api/forum/comments/?postId=${postId}&page=1&page_size=20`);
-  }, [postId]);
+    reset({ postId, ordering: 'created_at' });
+  }, [postId, reset]);
 
   const fetchMore = React.useCallback(async () => {
-    if (!nextUrl || loadingRef.current) return;
-    loadingRef.current = true;
-    try {
-      // Parse nextUrl to extract page number and other parameters
-      const url = new URL(nextUrl, window.location.origin);
-      const page = parseInt(url.searchParams.get('page') || '1');
-      const data = await fetchForumComments({
-        postId,
-        page,
-        pageSize: 20
-      });
-      setComments(prev => {
-        const existing = new Set(prev.map(c => c.id));
-        const deduped = data.results.filter(c => !existing.has(c.id));
-        const merged = [...prev, ...deduped];
-        // 按时间升序确保顺序稳定 / ensure chronological ascending order
-        return merged.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-      });
-      setNextUrl(data.next ? new URL(data.next).pathname + new URL(data.next).search : null);
-      setLoadError(false);
-    } catch (e) {
-      console.error(e);
-      setLoadError(true);
-    } finally {
-      loadingRef.current = false;
-    }
-  }, [nextUrl]);
+    await loadMore();
+  }, [loadMore]);
 
   // 平滑滚动到指定评论位置 / Smooth scroll to a comment by id
   const scrollToComment = React.useCallback((targetId: string) => {
@@ -192,34 +178,8 @@ export function ForumPostCommentList({
     [postId, scrollToComment]
   );
 
-  // 初次加载评论 / Initial load of comments
-  React.useEffect(() => {
-    if (comments.length === 0 && nextUrl) {
-      fetchMore();
-    }
-  }, [comments.length, nextUrl, fetchMore]);
-
   // 总评论数（从 parent 组件传入或根据已加载数据估算）/ Total comments count
   const totalComments = totalCount ?? comments.length;
-
-  // 还有更多可加载的评论？ / Whether more pages exist
-  const hasMore = nextUrl ? 1 : 0;
-
-  React.useEffect(() => {
-    if (!loaderRef.current) return;
-    const target = loaderRef.current;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (entry.isIntersecting && hasMore > 0) {
-          fetchMore();
-        }
-      },
-      { root: null, rootMargin: '200px 0px', threshold: 0 }
-    );
-    observer.observe(target);
-    return () => observer.disconnect();
-  }, [hasMore, fetchMore]);
 
   // 用于快速查找 parent 评论 / Map for quick parent lookup
   const idToComment = React.useRef<Map<string, ForumPostComment>>(new Map());
@@ -460,7 +420,7 @@ export function ForumPostCommentList({
         </div>
       )}
 
-      {loadError && nextUrl && (
+      {loadError && (hasMore || comments.length === 0) && (
         <Button
           className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-red-600 hover:bg-red-700 text-white"
           onClick={() => {

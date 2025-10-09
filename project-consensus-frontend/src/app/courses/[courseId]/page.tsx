@@ -17,12 +17,13 @@ import {
 } from "@/lib/api/course";
 import { useI18n } from "@/hooks/use-i18n";
 import { fetchCourseById } from "@/lib/api/course";
-import type { Course, TeacherInfo } from "@/types";
+import type { Course, TeacherInfo, CourseReview, FetchCourseReviewsParams, CourseReviewReply } from "@/types";
 import { Button } from "@/components/ui/button";
 import { isContentEmpty } from "@/lib/utils";
 import { useApp } from "@/contexts/AppContext";
 import { deleteCourseReview } from "@/lib/api/course";
 import { useRouter } from "next/navigation";
+import { useInfiniteList } from "@/hooks/use-infinite-list";
 // No longer needed to map names -> ids; sample courses already carry {id,name}
 
 // Client-only CKEditor wrapper for inline reply composer
@@ -64,34 +65,68 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
   // Get other teachers teaching the same course
   const otherTeacherCourses = React.useMemo(() => (course?.otherTeacherCourses ?? []), [course]);
 
-  // Reviews state (paginated; initial load only)
-  const [reviews, setReviews] = React.useState<import("@/types").CourseReview[]>([]);
-  const [reviewsCount, setReviewsCount] = React.useState<number>(0);
+  // Reviews list (paginated via unified hook)
+  const {
+    items: reviews,
+    setItems: setReviews,
+    loaderRef: reviewsLoaderRef,
+    hasMore: reviewsHasMore,
+    error: reviewsLoadError,
+    setError: setReviewsLoadError,
+    loadMore: loadMoreReviews,
+    reset: resetReviews,
+    totalCount: reviewsTotalCount,
+  } = useInfiniteList<CourseReview, FetchCourseReviewsParams>({
+    pageFetcher: fetchCourseReviews,
+    initialParams: { courseId, page: 1, pageSize: 10, ordering: '-created_at' },
+    pageSize: 10,
+    dedupeKey: (r) => r.id,
+  });
   const [filterSort, setFilterSort] = React.useState<string>("mostLiked");
   const [filterSelectedTerms, setFilterSelectedTerms] = React.useState<Record<string, boolean>>({});
   const [filterRatingMin, setFilterRatingMin] = React.useState<number>(0);
   const [filterRatingMax, setFilterRatingMax] = React.useState<number>(10);
-  React.useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      // Only fetch reviews when we have a valid courseId (from the course)
-      // SubjectId now changed to courseId
-      const courseSubjectId = course?.courseId;
-      if (!courseSubjectId) return;
+  const mapSortToOrdering = React.useCallback((key: string): string => {
+    switch (key) {
+      case 'mostLiked': return '-likes_count';
+      case 'newest': return '-created_at';
+      case 'oldest': return 'created_at';
+      case 'ratingHighToLow': return '-overall_rating';
+      case 'ratingLowToHigh': return 'overall_rating';
+      default: return '-created_at';
+    }
+  }, []);
 
-      try {
-        const page = await fetchCourseReviews({ courseId: courseSubjectId, page: 1, pageSize: 10, ordering: "-created_at" });
-        if (!cancelled) {
-          setReviews(page.results);
-          setReviewsCount(page.count);
-        }
-      } catch (e) {
-        // Ignore errors; keep empty state
-        console.error('Failed to load reviews', e);
+  const buildReviewsParams: () => FetchCourseReviewsParams | undefined = React.useCallback(() => {
+    if (!course?.courseId) return undefined;
+    const selectedKeys = Object.entries(filterSelectedTerms).filter(([, v]) => v).map(([k]) => k);
+    let termYear: number | undefined; let termSemester: 'spring' | 'summer' | 'fall' | undefined;
+    if (selectedKeys.length === 1) {
+      const [y, s] = selectedKeys[0].split('-');
+      const yNum = Number(y);
+      if (!Number.isNaN(yNum) && (s === 'spring' || s === 'summer' || s === 'fall')) {
+        termYear = yNum; termSemester = s as 'spring' | 'summer' | 'fall';
       }
-    })();
-    return () => { cancelled = true; };
-  }, [course?.courseId]); // Only re-fetch when courseId changes, not when course object reference changes
+    }
+    return {
+      courseId: course.courseId,
+      page: 1,
+      pageSize: 10,
+      ordering: mapSortToOrdering(filterSort),
+      minRating: filterRatingMin,
+      maxRating: filterRatingMax,
+      ...(termYear ? { termYear } : {}),
+      ...(termSemester ? { termSemester } : {}),
+    };
+  }, [course?.courseId, filterSort, filterRatingMin, filterRatingMax, filterSelectedTerms, mapSortToOrdering]);
+
+  // Trigger initial load when course becomes available
+  React.useEffect(() => {
+    const params = buildReviewsParams();
+    if (params) {
+      resetReviews(params);
+    }
+  }, [buildReviewsParams, resetReviews]);
 
   // Reset selected term filter when switching to a different course
   React.useEffect(() => {
@@ -114,7 +149,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
 
   // Toggle replies expanded/collapsed per review (default collapsed)
   // Replies cache per review (initial page)
-  const [repliesByReview, setRepliesByReview] = React.useState<Record<string, import("@/types").CourseReviewReply[]>>({});
+  const [repliesByReview, setRepliesByReview] = React.useState<Record<string, CourseReviewReply[]>>({});
   const [newReplyContentByReview, setNewReplyContentByReview] = React.useState<Record<string, string>>({});
   // Track which reviews have the inline reply composer open
   const [replyComposerOpen, setReplyComposerOpen] = React.useState<Set<string>>(new Set());
@@ -155,7 +190,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
   }, [isLoggedIn, openLoginModal]);
 
   // Open composer targeting a specific reply's author (reply to reply)
-  const handleReplyToReply = React.useCallback((reviewId: string, target: import("@/types").CourseReviewReply) => {
+  const handleReplyToReply = React.useCallback((reviewId: string, target: CourseReviewReply) => {
     if (!isLoggedIn) { openLoginModal(); return; }
     setExpandedReviews(prev => new Set(prev).add(reviewId));
     setReplyComposerOpen(prev => {
@@ -203,56 +238,15 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
     }
   }, [isLoggedIn, openLoginModal]);
 
-  // Map filter sort key to backend ordering
-  const mapSortToOrdering = React.useCallback((key: string): string => {
-    switch (key) {
-      case 'mostLiked': return '-likes_count';
-      case 'newest': return '-created_at';
-      case 'oldest': return 'created_at';
-      case 'ratingHighToLow': return '-overall_rating';
-      case 'ratingLowToHigh': return 'overall_rating';
-      default: return '-created_at';
-    }
-  }, []);
-
-  // Helper: reload reviews with current filters from server (ensures counts are authoritative)
-  const reloadReviews = React.useCallback(async (): Promise<number> => {
-    // Guard: return early if course is not yet loaded
+  // Helper: reload reviews with current filters from server (via unified hook)
+  const reloadReviews = React.useCallback(async (): Promise<void> => {
     if (!course) {
       console.warn('reloadReviews called before course loaded');
-      return 0;
+      return;
     }
-
-    const selectedKeys = Object.entries(filterSelectedTerms).filter(([, v]) => v).map(([k]) => k);
-    let termYear: number | undefined; let termSemester: 'spring'|'summer'|'fall' | undefined;
-    if (selectedKeys.length === 1) {
-      const [y, s] = selectedKeys[0].split('-');
-      const yNum = Number(y);
-      if (!Number.isNaN(yNum) && (s === 'spring' || s === 'summer' || s === 'fall')) {
-        termYear = yNum; termSemester = s as 'spring' | 'summer' | 'fall';
-      }
-    }
-
-    try {
-      const page = await fetchCourseReviews({
-        courseId: course.courseId,
-        page: 1,
-        pageSize: 10,
-        ordering: mapSortToOrdering(filterSort),
-        minRating: filterRatingMin,
-        maxRating: filterRatingMax,
-        ...(termYear ? { termYear } : {}),
-        ...(termSemester ? { termSemester } : {}),
-      });
-      setReviews(page.results);
-      setReviewsCount(page.count);
-      return page.count;
-    } catch (error) {
-      console.error('Failed to reload reviews:', error);
-      // Don't update state on error, keep existing data
-      return reviewsCount;
-    }
-  }, [course, filterSelectedTerms, filterRatingMin, filterRatingMax, filterSort, mapSortToOrdering, reviewsCount]);
+    const params = buildReviewsParams();
+    if (params) resetReviews(params);
+  }, [course, buildReviewsParams, resetReviews]);
 
   const filterCallbacks = React.useMemo(() => ({
     onSortChange: (value: string) => setFilterSort(value),
@@ -281,14 +275,14 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
 
   // Inline reply is handled by the earlier handleCreateReply
 
-  // Use backend rating counts, but override reviewsCount with filtered count
+  // Use backend rating counts, override reviewsCount with filtered count from hook
   const derivedRating = React.useMemo(() => {
     const baseRating = course?.rating ?? { score: 0, reviewsCount: 0, recommendCount: 0, notRecommendCount: 0 };
     return {
       ...baseRating,
-      reviewsCount: reviewsCount, // Use filtered count for display
+      reviewsCount: (typeof reviewsTotalCount === 'number' ? reviewsTotalCount : reviews.length),
     };
-  }, [course?.rating, reviewsCount]);
+  }, [course?.rating, reviewsTotalCount, reviews.length]);
 
 
   if (!course) {
@@ -449,6 +443,20 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
                       </div>
                     );
                   })}
+                  {/* Infinite scroll sentinel for reviews */}
+                  <div className="text-center pt-2">
+                    <div ref={reviewsLoaderRef} className="h-6 w-full" aria-hidden="true" />
+                    {reviewsLoadError && reviewsHasMore && (
+                      <Button
+                        className="mt-2"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => { setReviewsLoadError(false); loadMoreReviews(); }}
+                      >
+                        {t('common.loadFailedRetry')}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

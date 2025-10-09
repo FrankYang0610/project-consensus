@@ -30,19 +30,7 @@ export async function fetchForumComments(
 
   const queryString = queryParams.toString();
   const url = `/api/forum/comments/?${queryString}`;
-  
-  try {
-    return await apiGet<PaginatedResponse<ForumPostComment>>(url, init);
-  } catch (error) {
-    console.error('Failed to fetch forum comments:', error);
-    // Return empty paginated response on error
-    return {
-      count: 0,
-      next: null,
-      previous: null,
-      results: [],
-    };
-  }
+  return apiGet<PaginatedResponse<ForumPostComment>>(url, init);
 }
 
 /**
