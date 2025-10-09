@@ -24,10 +24,8 @@ export default function TeachersPage() {
   const { t } = useI18n();
 
   // State
-  // Loading comes from hook
   const [searchInput, setSearchInput] = React.useState("");
   const [sortBy, setSortBy] = React.useState<string>("name");
-  const [loadError, setLoadError] = React.useState(false);
 
   // Debounce search input (500ms delay)
   const debouncedSearchQuery = useDebounce(searchInput, 500);
@@ -61,8 +59,8 @@ export default function TeachersPage() {
     loaderRef: hookLoaderRef,
     hasMore,
     loading,
-    error: hookError,
-    setError: setHookError,
+    error: loadError,
+    setError: setLoadError,
     loadMore,
     reset,
     totalCount: teachersTotalCount,
@@ -185,13 +183,13 @@ export default function TeachersPage() {
             )}
 
             {/* Error State */}
-            {(loadError || hookError) && teachers.length === 0 && (
+            {loadError && teachers.length === 0 && (
               <Card>
                 <CardContent className="py-12 text-center">
                   <p className="text-destructive mb-4">
                     {t("common.loadFailedRetry")}
                   </p>
-                  <Button onClick={() => { setLoadError(false); setHookError(false); reset(buildTeachersParams()); }} variant="outline">
+                  <Button onClick={() => { setLoadError(false); reset(buildTeachersParams()); }} variant="outline">
                     {t("teachers.retry")}
                   </Button>
                 </CardContent>
@@ -228,6 +226,17 @@ export default function TeachersPage() {
                     className="text-center py-8 text-muted-foreground"
                   >
                     {t("teachers.loadingMore")}
+                  </div>
+                )}
+
+                {loadError && hasMore && (
+                  <div className="flex justify-center">
+                    <Button
+                      className="mt-2"
+                      onClick={() => { setLoadError(false); loadMore(); }}
+                    >
+                      {t("common.loadFailedRetry")}
+                    </Button>
                   </div>
                 )}
 
