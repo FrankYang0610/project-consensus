@@ -32,6 +32,35 @@ function normalizeResponse<T>(data: unknown): PaginatedLike<T> {
   return { results: [], next: null, count: null };
 }
 
+/**
+ * How this hook works (variables and flow)
+ *
+ * State
+ * - items: merged list of items across pages; de-duplicated via dedupeKey and optionally sorted via sortFn.
+ * - nextPage: the next page number to request; starts at 1; increments when the last response had a next page.
+ * - hasMoreBool: true when the server response includes a truthy `next`; drives auto pagination.
+ * - loading: true while a request is in flight (mirrors loadingRef); false when settled.
+ * - error: true if the last load failed; cleared on success and on reset.
+ * - totalCount: server-provided total item count if available; otherwise null.
+ *
+ * Refs
+ * - loaderRef: attach to a sentinel element. When it enters the viewport and hasMoreBool is true, we call loadMore().
+ * - loadingRef: an in-flight lock to prevent concurrent loadMore calls.
+ * - paramsRef: latest filter/search params (from initialParams or reset); merged into each page request.
+ * - autoLoadedRef: ensures the initial auto-load runs exactly once per mount/reset.
+ *
+ * Actions
+ * - loadMore(): builds `{ ...paramsRef.current, page: nextPage, pageSize }`, fetches a page, merges results,
+ *   updates hasMoreBool from `next`, advances nextPage when appropriate, sets totalCount, and manages error/loading flags.
+ * - reset(params): stores new params, clears items, sets nextPage=1 and hasMoreBool=false (until first response),
+ *   resets error/totalCount and autoLoadedRef to allow a single initial auto-load again.
+ *
+ * Effects
+ * - Auto-load effect: when enabled && autoLoad && items are empty and not already loading, it triggers loadMore() exactly once
+ *   per mount/reset (guarded by autoLoadedRef).
+ * - IntersectionObserver effect: observes loaderRef and calls loadMore() when the sentinel becomes visible, hasMoreBool is true,
+ *   and no request is currently in flight.
+ */
 export function useInfiniteList<T, P = Record<string, unknown>>(options: UseInfiniteListOptions<T, P>) {
   const { pageFetcher, initialParams, pageSize = 20, dedupeKey, sortFn, autoLoad = true, enabled = true } = options;
 
@@ -45,6 +74,7 @@ export function useInfiniteList<T, P = Record<string, unknown>>(options: UseInfi
   const loaderRef = React.useRef<HTMLDivElement | null>(null);
   const loadingRef = React.useRef<boolean>(false);
   const paramsRef = React.useRef<P | undefined>(initialParams);
+  const autoLoadedRef = React.useRef<boolean>(false);
 
   const loadMore = React.useCallback(async (): Promise<void> => {
     if (!enabled) return;
@@ -81,16 +111,19 @@ export function useInfiniteList<T, P = Record<string, unknown>>(options: UseInfi
     paramsRef.current = params as P;
     setItems([]);
     setNextPage(1);
-    setHasMoreBool(true);
+    // Start with hasMore = false; will be set correctly after the first load
+    setHasMoreBool(false);
     setError(false);
     setTotalCount(null);
+    autoLoadedRef.current = false;
   }, []);
 
   // Auto-load first page when mounted or when nextUrl is set/reset
   React.useEffect(() => {
     if (!enabled) return;
     if (!autoLoad) return;
-    if (items.length === 0 && Boolean(pageFetcher)) {
+    if (items.length === 0 && Boolean(pageFetcher) && !loadingRef.current && !autoLoadedRef.current) {
+      autoLoadedRef.current = true;
       // fire and forget
       loadMore();
     }

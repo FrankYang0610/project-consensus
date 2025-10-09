@@ -11,6 +11,38 @@ It is designed to work well with **Django REST Framework (DRF) pagination**.
 - It exposes a `loaderRef` you can attach to a small, empty div at the bottom of your list. When it comes into view, the hook automatically calls `loadMore()`.
 - You can also call `loadMore()` manually, or `reset(params)` to clear the list and start over with new filters.
 
+### Loading flow (step-by-step)
+#### 1. Initial auto-load
+- On mount (or after `reset()`), if `enabled` and `autoLoad` are both `true` and the list is empty, the hook triggers exactly one initial request. An internal guard ensures it runs only once per mount/reset (to prevent duplicate requests on empty results).
+
+#### 2. First response
+- The hook merges the page `results` into `items` (removing duplicates via `dedupeKey`).
+- It sets `totalCount` when `count` is provided by the server.
+- It sets `hasMore` from the server’s `next` field (`truthy` → `true`, otherwise `false`).
+- If `hasMore` is `true`, `nextPage` advances to the next page number.
+
+#### 3. Scrolling (automatic pagination)
+- The hook attaches an `IntersectionObserver` to `loaderRef`.
+- When the sentinel enters the viewport AND `hasMore` is `true` AND no request is in flight, it calls `loadMore()`.
+
+#### 4. Subsequent loads (`loadMore`)
+- Sends `{ ...paramsRef.current, page: nextPage, pageSize }` to your `pageFetcher`.
+- Merges new `results` (de-duplicated) and applies `sortFn` if provided.
+- Updates `hasMore` from `next` and increments `nextPage` when appropriate.
+- Sets `error` to `false` on success; sets `error` to `true` on failure (you can show a retry UI).
+
+#### 5. Resetting with new filters (`reset(params)`)
+- Clears the list and restarts pagination: `items = []`, `nextPage = 1`, `hasMore = false` (until the first response), `error = false`, `totalCount = null`.
+- Resets the internal auto-load guard so the first page will auto-load once again.
+
+#### 6. Manual control
+- Set `autoLoad: false` if you prefer to call `loadMore()` yourself.
+- Typical retry pattern: when `error && hasMore`, call `setError(false); loadMore();`.
+
+#### 7. Edge cases to expect
+- Empty first page: if the server returns `results: []` and `next: null`, the list stays empty and `hasMore` is `false`. The sentinel won’t trigger further requests—render an empty state instead.
+- Rapid filter changes: debounce in your component (e.g., search input) and call `reset()` with the final params; the hook will handle a single initial request per reset.
+
 ### Server expectations
 Your `pageFetcher` must return a DRF-style paginated response:
 `{ count: number, next: string | null, previous: string | null, results: T[] }`
