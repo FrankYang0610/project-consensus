@@ -41,6 +41,10 @@ class ForumPostViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):  # type: ignore[override]
         qs = super().get_queryset()
+        # Annotate derived fields used by serializer and ordering
+        # - comments_count: total number of comments on the post
+        qs = qs.annotate(comments_count=Count("comments"))
+
         # Annotate is_liked for authenticated users to avoid N+1 queries
         if self.request.user.is_authenticated:
             qs = qs.annotate(
@@ -53,14 +57,39 @@ class ForumPostViewSet(viewsets.ModelViewSet):
             )
         else:
             qs = qs.annotate(is_liked=Value(False))
+
+        # Filters
+        params = self.request.query_params
+        author_id = params.get("author")
+        if author_id:
+            qs = qs.filter(author_id=author_id)
+
+        mine = params.get("mine")
+        if mine and self.request.user.is_authenticated:
+            qs = qs.filter(author_id=self.request.user.pk)
+
+        # Tag filtering: accepts repeated ?tags=foo&tags=bar and matches posts containing ALL selected tags
+        # Industry practice: tag filters usually narrow results; "all-of" semantics provide predictable filtering.
+        tags = params.getlist("tags")
+        if tags:
+            # JSONField contains supports subset matching for lists (SQLite and Postgres)
+            # Require all selected tags to be present
+            qs = qs.filter(tags__contains=list(tags))
+
         return qs
 
     def perform_create(self, serializer):  # type: ignore[override]
         # Force the author to the current user
         serializer.save(author=self.request.user)
 
-    filter_backends = [filters.SearchFilter]
+    # Enable search and ordering
+    # - Search: title, content, tags
+    # - Ordering: by created_at (time), likes_count (likes), comments_count (computed)
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["title", "content", "tags"]
+    ordering_fields = ["created_at", "likes_count", "comments_count", "id"]
+    # Sensible default ordering for feeds without ML: newest first, break ties by engagement
+    ordering = ["-created_at", "-likes_count", "-id"]
     pagination_class = DefaultPageNumberPagination
 
     def destroy(self, request: Request, *args, **kwargs):  # type: ignore[override]

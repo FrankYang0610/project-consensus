@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { likeForumPost, unlikeForumPost, fetchForumPosts } from "@/lib/api/forum-post";
 import { ForumPost } from "@/types";
 import { useInfiniteList } from "@/hooks/use-infinite-list";
+import { ForumFilterBar } from "@/components/ForumFilterBar";
 
 export default function HomePage() {
   const { t } = useI18n();
@@ -23,6 +24,7 @@ export default function HomePage() {
     error: loadError,
     setError: setLoadError,
     loadMore,
+    reset,
   } = useInfiniteList<ForumPost, import("@/types").FetchForumPostsParams>({
     pageFetcher: fetchForumPosts,
     initialParams: { page: 1, pageSize: 12 },
@@ -98,6 +100,22 @@ export default function HomePage() {
           </div>
 
           <div className="w-full p-6 pt-0">
+            <div className="max-w-7xl mx-auto mb-4">
+              <ForumFilterBar
+                onApply={(filters) => {
+                  const ordering = filters.ordering;
+                  const search = filters.search?.trim() || undefined;
+                  const tags = Array.isArray(filters.tags) ? filters.tags.filter(Boolean) : [];
+                  reset({
+                    page: 1,
+                    pageSize: 12,
+                    ...(ordering ? { ordering } : {}),
+                    ...(search ? { search } : {}),
+                    ...(tags.length ? { tags } : {}),
+                  });
+                }}
+              />
+            </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto">
               {visiblePosts.map(post => (
                 <ForumPostPreviewCard key={post.id} post={post} onLike={handleLike} currentUserId={user?.id} />

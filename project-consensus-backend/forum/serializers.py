@@ -163,6 +163,10 @@ class ForumPostSerializer(serializers.ModelSerializer):
         return _author_payload_for(obj.author)
 
     def get_comments(self, obj: ForumPost) -> int:
+        # Prefer DB-annotated comments_count when available to avoid extra queries
+        annotated = getattr(obj, "comments_count", None)
+        if isinstance(annotated, int):
+            return annotated
         return obj.comments.count()
 
     def get_isLiked(self, obj: ForumPost) -> bool:
