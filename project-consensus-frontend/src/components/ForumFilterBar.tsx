@@ -75,9 +75,9 @@ export function ForumFilterBar({ className, onApply }: ForumFilterBarProps) {
   return (
     <div
       className={cn(
-        "w-full flex items-center gap-2",
-        // Keep in one line; allow horizontal scroll if overflow
-        "whitespace-nowrap overflow-x-auto",
+        "w-full flex flex-wrap items-center gap-2",
+        // Wrap on small screens; keep single-line behavior from sm+ if needed
+        "sm:whitespace-nowrap sm:overflow-x-auto",
         className
       )}
     >
@@ -108,14 +108,40 @@ export function ForumFilterBar({ className, onApply }: ForumFilterBarProps) {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder={t("search.placeholder")}
-        className="h-8 text-xs max-w-[320px]"
+        className="h-8 text-xs flex-1 min-w-[140px] sm:max-w-[320px]"
       />
 
+      {/* Tags dropdown for small screens */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" className="h-8 text-xs sm:hidden">
+            <span>{t("post.tags", { defaultValue: "Tags" })}</span>
+            {tags.length > 0 && <span className="ml-1 opacity-70">({tags.length})</span>}
+            <ChevronDown className="ml-2 size-4 opacity-60" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-72 p-2">
+          <div className="flex items-center gap-2">
+            <InlineTagManager
+              value={tags}
+              onChange={onTagsChange}
+              placeholder={t("post.tagPlaceholder")}
+              className="w-full"
+            />
+          </div>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
       {/* Inline Tag Manager */}
-      <InlineTagManager value={tags} onChange={onTagsChange} placeholder={t("post.tagPlaceholder")} />
+      <InlineTagManager
+        value={tags}
+        onChange={onTagsChange}
+        placeholder={t("post.tagPlaceholder")}
+        className="hidden sm:flex flex-1 h-auto sm:h-8 min-w-0 sm:min-w-[240px]"
+      />
 
       {/* Actions */}
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex items-center gap-2 flex-none">
         <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={clearAll}>
           {t("courses.topbar.actions.clear")}
         </Button>
