@@ -39,7 +39,16 @@
     "reviewOn": "点评于",
     "resultsFor": "搜索结果：{{query}}",
     "totalResults": "共 {{count}} 条结果",
-    "filterByType": "按类型筛选"
+    "filterByType": "按类型筛选",
+    "enterSearchQuery": "请输入搜索关键词",
+    "backToHome": "返回主页",
+    "searchFailed": "搜索失败，请重试",
+    "retry": "重试",
+    "noResultsForQuery": "未找到与 \"{{query}}\" 相关的内容",
+    "loadMore": "加载更多",
+    "loadFailedRetry": "加载失败，点击重试",
+    "likes": "赞",
+    "views": "浏览"
   },
   "auth": {
     "login": "登录",

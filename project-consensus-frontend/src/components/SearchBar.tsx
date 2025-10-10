@@ -6,6 +6,7 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { searchSuggestions } from '@/lib/api/search';
 import { SearchResult } from '@/types/search';
 import { stripHtml, getHighlightParts, getSearchTypeLabel, validateSearchQuery, type TextPart } from '@/lib/search-utils';
+import { useI18n } from '@/hooks/use-i18n';
 
 // Render highlighted text from TextPart array
 function renderHighlightedText(parts: TextPart[]): React.ReactNode {
@@ -32,7 +33,7 @@ interface SearchBarProps {
 }
 
 export function SearchBar({
-  placeholder = "Search...",
+  placeholder = "search.placeholder",
   className = "",
   onSubmit,
   showMobileVersion = false,
@@ -40,6 +41,7 @@ export function SearchBar({
   liveSearchDelay = 500,
   showSuggestions = true,
 }: SearchBarProps) {
+  const { t } = useI18n();
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -152,7 +154,7 @@ export function SearchBar({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={placeholder}
+            placeholder={typeof placeholder === 'string' && placeholder.startsWith('search.') ? t(placeholder) : placeholder}
             className={cn(
               "pl-10 pr-10",
               showMobileVersion ? "w-full h-9" : "w-64 h-9"
@@ -212,7 +214,7 @@ export function SearchBar({
             onClick={() => setShowDropdown(false)}
             className="block px-4 py-2 text-sm text-center text-primary hover:bg-accent border-t font-medium"
           >
-            查看全部结果
+            {t('search.seeAllResults')}
           </Link>
         </div>
       )}

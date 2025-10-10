@@ -39,7 +39,16 @@
     "reviewOn": "Review on",
     "resultsFor": "Search results for: {{query}}",
     "totalResults": "{{count}} results found",
-    "filterByType": "Filter by type"
+    "filterByType": "Filter by type",
+    "enterSearchQuery": "Please enter search keywords",
+    "backToHome": "Back to Home",
+    "searchFailed": "Search failed, please try again",
+    "retry": "Retry",
+    "noResultsForQuery": "No results found for \"{{query}}\"",
+    "loadMore": "Load More",
+    "loadFailedRetry": "Load failed, click to retry",
+    "likes": "likes",
+    "views": "views"
   },
   "auth": {
     "login": "Login",

@@ -164,12 +164,12 @@ export function SearchResultCard({ result, className, highlight }: SearchResultC
         )}
         {result.metadata.likes_count !== undefined && result.metadata.likes_count > 0 && (
           <span>
-            {result.metadata.likes_count} 赞
+            {result.metadata.likes_count} {t('search.likes')}
           </span>
         )}
         {result.metadata.view_count !== undefined && result.metadata.view_count > 0 && (
           <span>
-            {result.metadata.view_count} 浏览
+            {result.metadata.view_count} {t('search.views')}
           </span>
         )}
       </div>

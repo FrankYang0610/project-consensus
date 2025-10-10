@@ -97,7 +97,7 @@ export default function SearchPage() {
             {t('search.noResults')}
           </h1>
           <p className="text-muted-foreground">
-            请输入搜索关键词
+            {t('search.enterSearchQuery')}
           </p>
         </div>
       </div>
@@ -112,7 +112,7 @@ export default function SearchPage() {
           <Link href="/">
             <Button variant="ghost" size="sm">
               <Home className="w-4 h-4 mr-2" />
-              返回主页
+              {t('search.backToHome')}
             </Button>
           </Link>
         </div>
@@ -153,8 +153,8 @@ export default function SearchPage() {
         {/* Error State */}
         {loadError && results.length === 0 && (
           <div className="text-center py-16">
-            <p className="text-destructive mb-4">搜索失败，请重试</p>
-            <Button onClick={() => { setLoadError(false); loadMore(); }}>重试</Button>
+            <p className="text-destructive mb-4">{t('search.searchFailed')}</p>
+            <Button onClick={() => { setLoadError(false); loadMore(); }}>{t('search.retry')}</Button>
           </div>
         )}
 
@@ -166,7 +166,7 @@ export default function SearchPage() {
               {t('search.noResults')}
             </h2>
             <p className="text-muted-foreground">
-              未找到与 &ldquo;{query}&rdquo; 相关的内容
+              {t('search.noResultsForQuery', { query })}
             </p>
           </div>
         )}
@@ -192,7 +192,7 @@ export default function SearchPage() {
                   variant="outline"
                   className="mt-2"
                 >
-                  加载更多 {totalCount !== null && `(${results.length} / ${totalCount})`}
+                  {t('search.loadMore')} {totalCount !== null && `(${results.length} / ${totalCount})`}
                 </Button>
               )}
               {isLoading && (
@@ -206,7 +206,7 @@ export default function SearchPage() {
                   variant="outline"
                   className="mt-2"
                 >
-                  加载失败，点击重试
+                  {t('search.loadFailedRetry')}
                 </Button>
               )}
             </div>
