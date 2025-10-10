@@ -128,8 +128,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # Store timestamps in UTC (USE_TZ=True) and display/parse according to TIME_ZONE.
 # Make language and timezone configurable via environment variables.
-LANGUAGE_CODE = env("LANGUAGE_CODE", default="zh-hans")  # Simplified Chinese; configurable via env
-TIME_ZONE = env("TIME_ZONE", default="Asia/Shanghai")    # Configurable via env; default is Asia/Shanghai
+LANGUAGE_CODE = env("LANGUAGE_CODE", default="en")  # English; configurable via env
+TIME_ZONE = env("TIME_ZONE", default="Asia/Hong_Kong")    # Configurable via env; default is Asia/Hong_Kong
 USE_I18N = True
 USE_TZ = True
 
