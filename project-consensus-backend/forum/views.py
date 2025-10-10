@@ -77,6 +77,7 @@ class ForumPostViewSet(viewsets.ModelViewSet):
             if normalized_tags:
                 # Apply AND semantics by requiring each tag to be contained
                 # Using per-tag contains ensures consistent behavior across backends
+                # Deduplicate tags while preserving order using dict.fromkeys()
                 for tag in dict.fromkeys(normalized_tags):
                     qs = qs.filter(tags__contains=[tag])
 
