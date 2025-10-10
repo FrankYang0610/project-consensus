@@ -73,7 +73,7 @@ class ForumPostViewSet(viewsets.ModelViewSet):
         tags = params.getlist("tags")
         if tags:
             # Normalize and deduplicate incoming tags while preserving order
-            normalized_tags = [t.strip() for t in tags if t and t.strip()]
+            normalized_tags = [stripped for t in tags if (stripped := t.strip())]
             if normalized_tags:
                 # Apply AND semantics by requiring all selected tags to be contained
                 # Use a single JSON contains condition with the full unique tag list
