@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
                 (
                     "nickname",
                     models.CharField(
-                        help_text="展示昵称（唯一）", max_length=100, unique=True
+                        help_text="展示昵称（唯一）", max_length=15, unique=True
                     ),
                 ),
                 (

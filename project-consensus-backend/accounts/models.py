@@ -19,7 +19,7 @@ class Profile(models.Model):
     """
 
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile")
-    nickname = models.CharField(max_length=100, unique=True, help_text="展示昵称（唯一）")
+    nickname = models.CharField(max_length=15, unique=True, help_text="展示昵称（唯一）")
     avatar_url = models.URLField(blank=True, help_text="头像 URL，可为空")
     pronouns = models.CharField(max_length=100, blank=True, help_text="用户代词，可为空")
     show_forum_posts_publicly = models.BooleanField(default=True, help_text="是否公开展示自己发的forum posts")
