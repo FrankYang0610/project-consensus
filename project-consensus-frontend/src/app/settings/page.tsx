@@ -27,6 +27,7 @@ import { ChevronDown } from 'lucide-react';
 import { Language, User } from '@/types';
 import { updateProfile, updatePrivacySettings } from '@/lib/api/user-profile';
 import { PronounsSelector } from '@/components/PronounsSelector';
+import { validateNickname } from '@/lib/utils';
 
 type PrivacySettings = {
   showForumPostsPublicly: boolean;
@@ -39,7 +40,7 @@ export default function SettingsPage() {
   const { user, isLoggedIn, updateUser } = useApp();
 
   // Profile form
-  const [displayName, setDisplayName] = useState(user?.name || '');
+  const [nickname, setNickname] = useState(user?.name || '');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar || '');
   const [pronouns, setPronouns] = useState<string>(user?.pronouns || '');
   const [profileSaving, setProfileSaving] = useState(false);
@@ -73,7 +74,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     // Initialize profile fields from user
-    setDisplayName(user?.name || '');
+    setNickname(user?.name || '');
     setAvatarUrl(user?.avatar || '');
     setPronouns(user?.pronouns || '');
     
@@ -125,21 +126,66 @@ export default function SettingsPage() {
   const handleSaveProfile = async () => {
     setProfileErr(null);
     setProfileMsg(null);
+    
+    // Validate nickname if it's being updated
+    // 如果要更新昵称，先进行验证
+    if (nickname !== user?.name) {
+      const validation = validateNickname(nickname);
+      if (!validation.isValid) {
+        setProfileErr(t(validation.error || 'settings.profile.saveFailed'));
+        return;
+      }
+      // Use sanitized value
+      // 使用消毒后的值
+      setNickname(validation.sanitizedValue || nickname);
+    }
+    
     setProfileSaving(true);
     try {
-      // Persist to backend
+      // Persist to backend (send sanitized value)
+      const validation = validateNickname(nickname);
       const resp = await updateProfile({
-        display_name: displayName,
+        nickname: validation.sanitizedValue || nickname,
         avatar_url: avatarUrl,
         pronouns: pronouns,
       });
 
       // Update local user from backend response
-      updateUser?.({ name: resp.user.name, avatar: resp.user.avatar, pronouns: resp.user.pronouns });
+      updateUser?.({ 
+        name: resp.user.name, 
+        avatar: resp.user.avatar, 
+        pronouns: resp.user.pronouns,
+        lastNicknameUpdatedAt: resp.user.lastProfileUpdatedAt,
+        daysUntilNextUpdate: resp.user.daysUntilNextUpdate
+      });
       setProfileMsg(t('settings.profile.saved'));
-    } catch (e) {
+    } catch (e: unknown) {
       console.error(e);
-      setProfileErr(t('settings.profile.saveFailed'));
+      
+      // Check if this is a display name rate limit error (429) or already taken error
+      // 检查是否为显示名称修改频率限制错误（429）或名称已被占用错误
+      if (e instanceof Error) {
+        const errorMessage = e.message.toLowerCase();
+        
+        // Check if display name is already taken
+        // 检查显示名称是否已被占用
+        if (errorMessage.includes('already taken') || errorMessage.includes('已被使用')) {
+          setProfileErr(t('validation.nickname.alreadyTaken'));
+        }
+        // Check if this is a rate limit error
+        // 检查是否为频率限制错误
+        else if (errorMessage.includes('display name') && (errorMessage.includes('14 days') || errorMessage.includes('wait'))) {
+          // Extract days from error message if possible
+          // 尝试从错误消息中提取天数
+          const match = errorMessage.match(/(\d+)\s*(?:more\s+)?day/i);
+          const days = match ? match[1] : user?.daysUntilNextUpdate || '?';
+          setProfileErr(t('settings.profile.updateLimitReached', { days }));
+        } else {
+          setProfileErr(e.message || t('settings.profile.saveFailed'));
+        }
+      } else {
+        setProfileErr(t('settings.profile.saveFailed'));
+      }
     } finally {
       setProfileSaving(false);
     }
@@ -231,13 +277,30 @@ export default function SettingsPage() {
           )}
 
           <div className="grid gap-2">
-            <Label htmlFor="displayName">{t('settings.profile.displayName')}</Label>
+            <Label htmlFor="nickname">{t('settings.profile.nickname')}</Label>
             <Input
-              id="displayName"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
+              id="nickname"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
               placeholder="Alice"
+              maxLength={15}
+              disabled={user?.daysUntilNextUpdate !== undefined && user.daysUntilNextUpdate !== null && user.daysUntilNextUpdate > 0}
             />
+            <p className="text-sm text-muted-foreground">
+              {nickname.trim().length}/15 {t('validation.nickname.characters')}
+            </p>
+            {/* Nickname update restriction info / 昵称修改限制提示 */}
+            {user?.daysUntilNextUpdate !== undefined && user.daysUntilNextUpdate !== null && user.daysUntilNextUpdate > 0 && (
+              <p className="text-sm text-muted-foreground">
+                {t('settings.profile.canUpdateIn', { days: user.daysUntilNextUpdate })}
+              </p>
+            )}
+            {/* Last updated info / 最后更新信息 */}
+            {user?.lastProfileUpdatedAt && (
+              <p className="text-sm text-muted-foreground">
+                {t('settings.profile.lastUpdated')}: {new Date(user.lastProfileUpdatedAt).toLocaleDateString()}
+              </p>
+            )}
           </div>
 
           <div className="grid gap-2">
@@ -270,7 +333,10 @@ export default function SettingsPage() {
           />
 
           <div className="pt-2">
-            <Button onClick={handleSaveProfile} disabled={profileSaving}>
+            <Button 
+              onClick={handleSaveProfile} 
+              disabled={profileSaving}
+            >
               {profileSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {t('settings.actions.saveProfile')}
             </Button>

@@ -10,6 +10,9 @@
 // 用户相关类型 / User-related types
 export type { User, PublicUser, Author, UserStats } from './user';
 
+// 验证相关类型 / Validation-related types
+export type { ValidationResult } from './validation';
+
 // 论坛相关类型 / Forum-related types
 export type { ForumPost } from './forum';
 

@@ -97,14 +97,27 @@ def _build_base_user_payload(user):
         delta = timezone.now() - user.date_joined
         joined_days = delta.days
     
+    # Calculate days until next nickname update is allowed
+    # 计算距离下次可以更新昵称还剩多少天
+    days_until_next_update = None
+    last_updated = getattr(profile, "last_nickname_updated_at", None)
+    if last_updated:
+        from django.utils import timezone
+        days_since_update = (timezone.now() - last_updated).days
+        if days_since_update < 14:
+            days_until_next_update = 14 - days_since_update
+    
     return {
         "id": str(user.pk),
-        "name": getattr(profile, "display_name", None) or user.get_username(),
+        "name": getattr(profile, "nickname", None) or user.get_username(),
         "avatar": (getattr(profile, "avatar_url", None) or None),
         "pronouns": getattr(profile, "pronouns", None) or "prefer_not_to_say",
         "showForumPostsPublicly": getattr(profile, "show_forum_posts_publicly", True),
         "showForumPostCommentsPublicly": getattr(profile, "show_forum_post_comments_publicly", True),
         "showCourseReviewsPublicly": getattr(profile, "show_course_reviews_publicly", True),
+        "isAccountActive": getattr(profile, "is_account_active", True),
+        "lastProfileUpdatedAt": last_updated.isoformat() if last_updated else None,
+        "daysUntilNextUpdate": days_until_next_update,
         "stats": {
             "posts": posts_count,
             "comments": comments_count,
@@ -202,7 +215,7 @@ def register(request):
     # Default pronouns to 'not_specified' for new users
     Profile.objects.create(
         user=user,
-        display_name=nickname,
+        nickname=nickname,
         pronouns="not_specified",
     )
 
@@ -236,6 +249,15 @@ def login_view(request):
     user = authenticate(username=email, password=password)
     if not user:
         return Response({"message": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Check if the account is active
+    # 检查账户是否激活
+    profile = getattr(user, 'profile', None)
+    if profile and not profile.is_account_active:
+        return Response({
+            "message": "This account has been disabled. Please contact support for assistance.",
+            "account_disabled": True
+        }, status=status.HTTP_403_FORBIDDEN)
 
     # Fetch user with optimized stats to avoid N+1 queries
     # 获取用户时同时计算统计数据，避免 N+1 查询
@@ -273,9 +295,37 @@ def update_profile(request):
     if not request.user.is_authenticated:
         return Response({"message": "Not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
     profile, _ = Profile.objects.get_or_create(user=request.user)
-    serializer = ProfileSerializer(profile, data=request.data, partial=True)
+    
+    # Check if user is trying to update nickname (has 14-day restriction)
+    # 检查用户是否试图更新昵称（有14天限制）
+    new_nickname = request.data.get('nickname')
+    is_nickname_changed = (
+        new_nickname is not None and 
+        new_nickname != profile.nickname
+    )
+    
+    # If changing nickname, check the 14-day restriction
+    # 如果修改昵称（不同于当前昵称），检查14天限制
+    if is_nickname_changed and profile.last_nickname_updated_at:
+        from django.utils import timezone
+        days_since_update = (timezone.now() - profile.last_nickname_updated_at).days
+        if days_since_update < 14:
+            days_remaining = 14 - days_since_update
+            return Response({
+                "message": f"Nickname can only be updated once every 14 days. Please wait {days_remaining} more day(s).",
+                "days_remaining": days_remaining
+            }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+    
+    serializer = ProfileSerializer(profile, data=request.data, partial=True, context={'request': request})
     serializer.is_valid(raise_exception=True)
     serializer.save()
+    
+    # Update last_nickname_updated_at if nickname was actually changed
+    # 如果昵称确实被修改了，更新最后修改时间
+    if is_nickname_changed:
+        from django.utils import timezone
+        profile.last_nickname_updated_at = timezone.now()
+        profile.save(update_fields=['last_nickname_updated_at'])
     
     # Fetch user with optimized stats to avoid N+1 queries
     # 获取用户时同时计算统计数据，避免 N+1 查询

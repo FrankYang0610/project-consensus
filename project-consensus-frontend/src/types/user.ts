@@ -26,6 +26,9 @@ export interface PublicUser {
   showForumPostsPublicly?: boolean; // 是否公开展示自己发的forum posts（可选） / Whether forum posts are shown publicly (optional)
   showForumPostCommentsPublicly?: boolean; // 是否公开展示自己发的forum post comments（可选） / Whether forum post comments are shown publicly (optional)
   showCourseReviewsPublicly?: boolean; // 是否公开展示自己发的course reviews（可选） / Whether course reviews are shown publicly (optional)
+  isAccountActive?: boolean; // 账户是否激活（可选） / Whether account is active (optional)
+  lastProfileUpdatedAt?: string; // 最后一次修改昵称的时间（ISO格式，可选） / Last nickname update time in ISO format (optional)
+  daysUntilNextUpdate?: number | null; // 距离下次可修改昵称还剩多少天（可选，null表示可以立即修改） / Days until next nickname update is allowed (optional, null means can update now)
   stats?: UserStats; // 用户统计信息（可选） / User statistics (optional)
 }
 

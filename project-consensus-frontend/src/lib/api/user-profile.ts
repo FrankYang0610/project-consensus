@@ -2,10 +2,10 @@ import { apiPatch } from './api-utils';
 import type { User } from '@/types/user';
 
 /**
- * Update user profile (display name, avatar, pronouns)
+ * Update user profile (nickname, avatar, pronouns)
  */
 export async function updateProfile(data: {
-  display_name?: string;
+  nickname?: string;
   avatar_url?: string;
   pronouns?: string;
 }): Promise<{ success: boolean; user: User }> {
