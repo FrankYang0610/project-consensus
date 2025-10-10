@@ -21,7 +21,25 @@
     "resourcesDesc": "Useful tools and materials"
   },
   "search": {
-    "placeholder": "Type to search..."
+    "placeholder": "Search courses, posts, comments, reviews...",
+    "noResults": "No results found",
+    "suggestions": "Suggestions",
+    "seeAllResults": "See all results",
+    "types": {
+      "all": "All",
+      "course": "Course",
+      "forum_post": "Post",
+      "forum_comment": "Comment",
+      "course_review": "Course Review",
+      "wiki": "Wiki",
+      "teacher": "Teacher",
+      "user": "User"
+    },
+    "commentOn": "Comment on",
+    "reviewOn": "Review on",
+    "resultsFor": "Search results for: {{query}}",
+    "totalResults": "{{count}} results found",
+    "filterByType": "Filter by type"
   },
   "auth": {
     "login": "Login",

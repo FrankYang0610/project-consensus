@@ -21,7 +21,25 @@
     "resourcesDesc": "有用的工具和资料"
   },
   "search": {
-    "placeholder": "输入搜索..."
+    "placeholder": "搜索课程、帖子、评论、点评...",
+    "noResults": "未找到结果",
+    "suggestions": "建议",
+    "seeAllResults": "查看全部结果",
+    "types": {
+      "all": "全部",
+      "course": "课程",
+      "forum_post": "帖子",
+      "forum_comment": "评论",
+      "course_review": "课程点评",
+      "wiki": "Wiki",
+      "teacher": "教师",
+      "user": "用户"
+    },
+    "commentOn": "评论于",
+    "reviewOn": "点评于",
+    "resultsFor": "搜索结果：{{query}}",
+    "totalResults": "共 {{count}} 条结果",
+    "filterByType": "按类型筛选"
   },
   "auth": {
     "login": "登录",

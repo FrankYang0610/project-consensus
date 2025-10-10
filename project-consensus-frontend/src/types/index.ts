@@ -40,6 +40,15 @@ export type {
   TeacherCourseRef,
 } from './teacher';
 
+// 搜索相关类型 / Search-related types
+export type {
+  SearchResult,
+  SearchResponse,
+  SearchResultType,
+  SearchResultMetadata,
+  SearchParams,
+} from './search';
+
 // API response types
 export type {
   SendVerificationCodeResponse,
