@@ -72,9 +72,13 @@ class ForumPostViewSet(viewsets.ModelViewSet):
         # Industry practice: tag filters usually narrow results; "all-of" semantics provide predictable filtering.
         tags = params.getlist("tags")
         if tags:
-            # JSONField contains supports subset matching for lists (SQLite and Postgres)
-            # Require all selected tags to be present
-            qs = qs.filter(tags__contains=list(tags))
+            # Normalize and deduplicate incoming tags while preserving order
+            normalized_tags = [t.strip() for t in tags if t and t.strip()]
+            if normalized_tags:
+                # Apply AND semantics by requiring each tag to be contained
+                # Using per-tag contains ensures consistent behavior across backends
+                for tag in dict.fromkeys(normalized_tags):
+                    qs = qs.filter(tags__contains=[tag])
 
         return qs
 
