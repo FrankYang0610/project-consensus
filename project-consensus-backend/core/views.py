@@ -1,7 +1,6 @@
-from django.shortcuts import render
 from django.db.models import Q, F, Value, FloatField, Case, When
 from django.contrib.postgres.search import TrigramSimilarity
-from django.db.models.functions import Greatest, Coalesce
+from django.db.models.functions import Greatest, Coalesce, Substr, Least, Trim, NullIf
 import bleach
 import re
 from django.core.exceptions import ValidationError
@@ -188,47 +187,83 @@ def search(request):
     else:
         filter_types = allowed_types
     
-    # Similarity threshold for trigram matching (lower = more permissive, 0.1 is good for Chinese)
-    SIMILARITY_THRESHOLD = 0.1
+    # Similarity threshold tuned by query length
+    # Long queries keep lower threshold; very short queries raise threshold to reduce noise.
+    # For 1-char queries, be stricter; for 2-char queries, slightly higher than default.
+    qlen = len(query)
+    if qlen <= 1:
+        SIMILARITY_THRESHOLD = 0.30
+        is_short_query = True
+    elif qlen == 2:
+        SIMILARITY_THRESHOLD = 0.15
+        is_short_query = True
+    else:
+        SIMILARITY_THRESHOLD = 0.1
+        is_short_query = False
     
     results = []
     
     # Search in Course using trigram similarity
     if 'course' in filter_types:
-        courses = Course.objects.annotate(
+        courses_qs = Course.objects.annotate(
             similarity=Greatest(
                 Coalesce(TrigramSimilarity('subject_code', query), Value(0.0)),
                 Coalesce(TrigramSimilarity('title', query), Value(0.0)),
                 Coalesce(TrigramSimilarity('department', query), Value(0.0))
+            ),
+            # DB-side snippet generation
+            snippet=Coalesce(
+                NullIf(Trim(Substr('ai_summary', 1, 200)), Value('')),
+                Substr('title', 1, 200),
+                Value('')
+            ),
+            # Popularity normalization (clipped to [0,1])
+            popularity_norm=Least(F('rating_reviews_count') / Value(100.0), Value(1.0)),
+        ).annotate(
+            final_score=F('similarity') * Value(0.9) + F('popularity_norm') * Value(0.1)
+        )
+
+        # Short-query prefix fallback
+        if is_short_query:
+            prefix_filter = (
+                Q(subject_code__istartswith=query) |
+                Q(title__istartswith=query) |
+                Q(department__istartswith=query)
             )
-        ).filter(
-            similarity__gte=SIMILARITY_THRESHOLD
-        ).select_related().order_by('-similarity', '-last_updated')[:30]
+            text_fallback = (
+                Q(subject_code__icontains=query) |
+                Q(title__icontains=query) |
+                Q(department__icontains=query)
+            )
+            courses_qs = courses_qs.filter(
+                Q(similarity__gte=SIMILARITY_THRESHOLD) | prefix_filter | text_fallback
+            )
+        else:
+            courses_qs = courses_qs.filter(similarity__gte=SIMILARITY_THRESHOLD)
+
+        courses = courses_qs.only(
+            'course_id', 'subject_code', 'title', 'ai_summary', 'department', 'rating_score', 'last_updated', 'rating_reviews_count'
+        ).order_by('-final_score', '-last_updated')[:60]
         
         for course in courses:
-            snippet = course.title
-            if course.ai_summary:
-                snippet = course.ai_summary[:200] + ('...' if len(course.ai_summary) > 200 else '')
-            
+            snippet = course.snippet or ''
             results.append({
-                'type': 'course',
-                'id': str(course.course_id),
-                'title': f"{course.subject_code} {course.title}",
-                'snippet': snippet,
-                'url': f"/courses/{course.course_id}",
-                'similarity': float(course.similarity),
-                'metadata': {
-                    'subject_code': course.subject_code,
-                    'department': course.department,
-                    'rating': course.rating_score,
-                    'created_at': course.last_updated.isoformat()
-                }
+                **_build_search_result(
+                    'course', course.course_id, f"{course.subject_code} {course.title}", snippet, f"/courses/{course.course_id}",
+                    {
+                        'subject_code': course.subject_code,
+                        'department': course.department,
+                        'rating': course.rating_score,
+                        'created_at': course.last_updated.isoformat()
+                    }
+                ),
+                'score': float(getattr(course, 'final_score', getattr(course, 'similarity', 0.0)))
             })
     
     # Search in ForumPost using trigram similarity
     if 'forum_post' in filter_types:
         # Compute trigram similarity for title, content, and author nickname
-        posts = ForumPost.objects.annotate(
+        posts_qs = ForumPost.objects.annotate(
             title_sim=Coalesce(TrigramSimilarity('title', query), Value(0.0)),
             content_sim=Coalesce(TrigramSimilarity('content', query), Value(0.0)),
             # For anonymous posts, author similarity is 0
@@ -236,22 +271,28 @@ def search(request):
                 When(is_anonymous=True, then=Value(0.0)),
                 default=Coalesce(TrigramSimilarity('author__profile__nickname', query), Value(0.0)),
                 output_field=FloatField()
-            )
+            ),
+            # DB-side snippet
+            snippet=Coalesce(Substr('content', 1, 200), Value('')),
         ).annotate(
-            # Calculate max similarity
-            similarity=Greatest(
-                F('title_sim'),
-                F('content_sim'),
-                F('author_sim')
-            )
-        ).filter(
-            similarity__gte=SIMILARITY_THRESHOLD
-        ).select_related(
-            'author', 'author__profile'
-        ).order_by('-similarity', '-created_at')[:30]
+            # Weighted similarity instead of Greatest
+            similarity=F('title_sim') * Value(0.6) + F('content_sim') * Value(0.35) + F('author_sim') * Value(0.05),
+            # Popularity boost (likes_count)
+            popularity_norm=Least(F('likes_count') / Value(100.0), Value(1.0)),
+            final_score=F('similarity') * Value(0.9) + F('popularity_norm') * Value(0.1)
+        )
+
+        if is_short_query:
+            prefix_filter = Q(title__istartswith=query) | Q(author__profile__nickname__istartswith=query)
+            text_fallback = Q(title__icontains=query) | Q(content__icontains=query) | Q(author__profile__nickname__icontains=query)
+            posts_qs = posts_qs.filter(Q(similarity__gte=SIMILARITY_THRESHOLD) | prefix_filter | text_fallback)
+        else:
+            posts_qs = posts_qs.filter(similarity__gte=SIMILARITY_THRESHOLD)
+
+        posts = posts_qs.select_related('author', 'author__profile').defer('content').order_by('-final_score', '-created_at')[:60]
         
         for post in posts:
-            snippet = _truncate_content(post.content)
+            snippet = post.snippet or ''
             metadata = {
                 'author': _get_author_name(post.author) if not post.is_anonymous else 'Anonymous',
                 'created_at': post.created_at.isoformat(),
@@ -261,30 +302,38 @@ def search(request):
                 **_build_search_result(
                     'forum_post', post.id, post.title, snippet, f"/post/{post.id}", metadata
                 ),
-                'similarity': float(post.similarity)
+                'score': float(getattr(post, 'final_score', getattr(post, 'similarity', 0.0)))
             })
     
     # Search in ForumPostComment using trigram similarity
     if 'forum_comment' in filter_types:
-        comments = ForumPostComment.objects.annotate(
+        comments_qs = ForumPostComment.objects.annotate(
             content_sim=Coalesce(TrigramSimilarity('content', query), Value(0.0)),
             author_sim=Case(
                 When(is_anonymous=True, then=Value(0.0)),
                 default=Coalesce(TrigramSimilarity('author__profile__nickname', query), Value(0.0)),
                 output_field=FloatField()
-            )
+            ),
+            snippet=Coalesce(NullIf(Trim(Substr('content', 1, 200)), Value('')), Value('')),
         ).annotate(
-            similarity=Greatest(
-                F('content_sim'),
-                F('author_sim')
-            )
+            similarity=Greatest(F('content_sim'), F('author_sim')),
+            popularity_norm=Least(F('likes_count') / Value(100.0), Value(1.0)),
+            final_score=F('similarity') * Value(0.9) + F('popularity_norm') * Value(0.1)
         ).filter(
-            similarity__gte=SIMILARITY_THRESHOLD,
             is_deleted=False
-        ).select_related('post', 'author', 'author__profile').order_by('-similarity', '-created_at')[:30]
+        )
+
+        if is_short_query:
+            prefix_filter = Q(author__profile__nickname__istartswith=query) | Q(post__title__istartswith=query)
+            text_fallback = Q(content__icontains=query) | Q(author__profile__nickname__icontains=query) | Q(post__title__icontains=query)
+            comments_qs = comments_qs.filter(Q(similarity__gte=SIMILARITY_THRESHOLD) | prefix_filter | text_fallback)
+        else:
+            comments_qs = comments_qs.filter(similarity__gte=SIMILARITY_THRESHOLD)
+
+        comments = comments_qs.select_related('post', 'author', 'author__profile').defer('content').order_by('-final_score', '-created_at')[:60]
         
         for comment in comments:
-            snippet = _truncate_content(comment.content)
+            snippet = comment.snippet or ''
             metadata = {
                 'parent_id': str(comment.post.id),
                 'parent_title': comment.post.title,
@@ -297,121 +346,160 @@ def search(request):
                     'forum_comment', comment.id, comment.post.title, snippet, 
                     f"/post/{comment.post.id}#comment-{comment.id}", metadata
                 ),
-                'similarity': float(comment.similarity)
+                'score': float(getattr(comment, 'final_score', getattr(comment, 'similarity', 0.0)))
             })
     
     # Search in CourseReview using trigram similarity
     if 'course_review' in filter_types:
-        reviews = CourseReview.objects.annotate(
+        reviews_qs = CourseReview.objects.annotate(
             content_sim=Coalesce(TrigramSimilarity('content', query), Value(0.0)),
             author_sim=Case(
                 When(is_anonymous=True, then=Value(0.0)),
                 default=Coalesce(TrigramSimilarity('author__profile__nickname', query), Value(0.0)),
                 output_field=FloatField()
-            )
+            ),
+            snippet=Coalesce(NullIf(Trim(Substr('content', 1, 200)), Value('')), Value('')),
         ).annotate(
-            similarity=Greatest(
-                F('content_sim'),
-                F('author_sim')
-            )
-        ).filter(
-            similarity__gte=SIMILARITY_THRESHOLD
-        ).select_related('course', 'author', 'author__profile').order_by('-similarity', '-created_at')[:30]
+            similarity=Greatest(F('content_sim'), F('author_sim')),
+            popularity_norm=Least(F('likes_count') / Value(100.0), Value(1.0)),
+            final_score=F('similarity') * Value(0.9) + F('popularity_norm') * Value(0.1)
+        )
+
+        if is_short_query:
+            prefix_filter = Q(author__profile__nickname__istartswith=query)
+            text_fallback = Q(content__icontains=query) | Q(author__profile__nickname__icontains=query)
+            reviews_qs = reviews_qs.filter(Q(similarity__gte=SIMILARITY_THRESHOLD) | prefix_filter | text_fallback)
+        else:
+            reviews_qs = reviews_qs.filter(similarity__gte=SIMILARITY_THRESHOLD)
+
+        reviews = reviews_qs.select_related('course', 'author', 'author__profile').defer('content').order_by('-final_score', '-created_at')[:60]
         
         for review in reviews:
-            content_snippet = review.content[:200] + ('...' if len(review.content) > 200 else '')
+            content_snippet = review.snippet or ''
             course_title = f"{review.course.subject_code} {review.course.title}"
             
             results.append({
-                'type': 'course_review',
-                'id': str(review.id),
-                'title': course_title,
-                'snippet': content_snippet,
-                'url': f"/courses/{review.course.course_id}#review-{review.id}",
-                'similarity': float(review.similarity),
-                'metadata': {
-                    'parent_id': str(review.course.course_id),
-                    'parent_title': course_title,
-                    'author': _get_author_name(review.author) if not review.is_anonymous else 'Anonymous',
-                    'created_at': review.created_at.isoformat(),
-                    'rating': review.overall_rating,
-                    'title_template': 'reviewOn',
-                }
+                **_build_search_result(
+                    'course_review', review.id, course_title, content_snippet,
+                    f"/courses/{review.course.course_id}#review-{review.id}",
+                    {
+                        'parent_id': str(review.course.course_id),
+                        'parent_title': course_title,
+                        'author': _get_author_name(review.author) if not review.is_anonymous else 'Anonymous',
+                        'created_at': review.created_at.isoformat(),
+                        'rating': review.overall_rating,
+                        'title_template': 'reviewOn',
+                    }
+                ),
+                'score': float(getattr(review, 'final_score', getattr(review, 'similarity', 0.0)))
             })
     
     # Search in WikiPage using trigram similarity
     if 'wiki' in filter_types:
-        wiki_pages = WikiPage.objects.annotate(
+        wiki_qs = WikiPage.objects.annotate(
             similarity=Greatest(
                 Coalesce(TrigramSimilarity('title', query), Value(0.0)),
                 Coalesce(TrigramSimilarity('content', query), Value(0.0)),
                 Coalesce(TrigramSimilarity('summary', query), Value(0.0)),
                 Coalesce(TrigramSimilarity('tags', query), Value(0.0)),
                 Coalesce(TrigramSimilarity('author__profile__nickname', query), Value(0.0))
-            )
+            ),
+            snippet=Coalesce(
+                NullIf(Trim(Substr('summary', 1, 200)), Value('')),
+                Substr('content', 1, 200),
+                Value('')
+            ),
+        ).annotate(
+            popularity_norm=Least(F('view_count') / Value(1000.0), Value(1.0)),
+            final_score=F('similarity') * Value(0.9) + F('popularity_norm') * Value(0.1)
         ).filter(
-            similarity__gte=SIMILARITY_THRESHOLD,
             status='published'
-        ).select_related('author', 'author__profile').order_by('-similarity', '-updated_at')[:30]
+        )
+
+        if is_short_query:
+            prefix_filter = Q(title__istartswith=query) | Q(tags__istartswith=query) | Q(author__profile__nickname__istartswith=query)
+            text_fallback = Q(title__icontains=query) | Q(content__icontains=query) | Q(summary__icontains=query) | Q(tags__icontains=query) | Q(author__profile__nickname__icontains=query)
+            wiki_qs = wiki_qs.filter(Q(similarity__gte=SIMILARITY_THRESHOLD) | prefix_filter | text_fallback)
+        else:
+            wiki_qs = wiki_qs.filter(similarity__gte=SIMILARITY_THRESHOLD)
+
+        wiki_pages = wiki_qs.select_related('author', 'author__profile').defer('content').order_by('-final_score', '-updated_at')[:60]
         
         for wiki_page in wiki_pages:
-            snippet = wiki_page.summary if wiki_page.summary else wiki_page.content[:200] + ('...' if len(wiki_page.content) > 200 else '')
+            snippet = wiki_page.snippet or ''
             
             results.append({
-                'type': 'wiki',
-                'id': str(wiki_page.id),
-                'title': wiki_page.title,
-                'snippet': snippet,
-                'url': f"/wiki/{wiki_page.slug}",
-                'similarity': float(wiki_page.similarity),
-                'metadata': {
-                    'author': _get_author_name(wiki_page.author),
-                    'created_at': wiki_page.created_at.isoformat(),
-                    'updated_at': wiki_page.updated_at.isoformat(),
-                    'view_count': wiki_page.view_count
-                }
+                **_build_search_result(
+                    'wiki', wiki_page.id, wiki_page.title, snippet, f"/wiki/{wiki_page.slug}",
+                    {
+                        'author': _get_author_name(wiki_page.author),
+                        'created_at': wiki_page.created_at.isoformat(),
+                        'updated_at': wiki_page.updated_at.isoformat(),
+                        'view_count': wiki_page.view_count
+                    }
+                ),
+                'score': float(getattr(wiki_page, 'final_score', getattr(wiki_page, 'similarity', 0.0)))
             })
     
     # Search in Teacher using trigram similarity
     if 'teacher' in filter_types:
-        teachers = Teacher.objects.annotate(
+        teachers_qs = Teacher.objects.annotate(
             similarity=Greatest(
                 Coalesce(TrigramSimilarity('name', query), Value(0.0)),
                 Coalesce(TrigramSimilarity('department', query), Value(0.0)),
                 Coalesce(TrigramSimilarity('bio', query), Value(0.0))
-            )
-        ).filter(
-            similarity__gte=SIMILARITY_THRESHOLD
-        ).order_by('-similarity', '-updated_at')[:30]
+            ),
+            snippet=Coalesce(NullIf(Trim(Substr('bio', 1, 200)), Value('')), Value('')),
+        ).annotate(
+            popularity_norm=Least(F('rating_reviews_count') / Value(100.0), Value(1.0)),
+            final_score=F('similarity') * Value(0.9) + F('popularity_norm') * Value(0.1)
+        )
+
+        if is_short_query:
+            prefix_filter = Q(name__istartswith=query) | Q(department__istartswith=query)
+            text_fallback = Q(name__icontains=query) | Q(department__icontains=query) | Q(bio__icontains=query)
+            teachers_qs = teachers_qs.filter(Q(similarity__gte=SIMILARITY_THRESHOLD) | prefix_filter | text_fallback)
+        else:
+            teachers_qs = teachers_qs.filter(similarity__gte=SIMILARITY_THRESHOLD)
+
+        teachers = teachers_qs.order_by('-final_score', '-updated_at')[:60]
         
         for teacher in teachers:
-            snippet = teacher.bio[:200] + ('...' if teacher.bio and len(teacher.bio) > 200 else '') if teacher.bio else f"{teacher.title} - {teacher.department}"
+            snippet = teacher.snippet or (f"{teacher.title} - {teacher.department}" if teacher.title or teacher.department else '')
             
             results.append({
-                'type': 'teacher',
-                'id': str(teacher.id),
-                'title': teacher.name,
-                'snippet': snippet,
-                'url': f"/teachers/{teacher.id}",
-                'similarity': float(teacher.similarity),
-                'metadata': {
-                    'title': teacher.title,
-                    'department': teacher.department,
-                    'rating': teacher.rating_overall,
-                    'reviews_count': teacher.rating_reviews_count
-                }
+                **_build_search_result(
+                    'teacher', teacher.id, teacher.name, snippet, f"/teachers/{teacher.id}",
+                    {
+                        'title': teacher.title,
+                        'department': teacher.department,
+                        'rating': teacher.rating_overall,
+                        'reviews_count': teacher.rating_reviews_count
+                    }
+                ),
+                'score': float(getattr(teacher, 'final_score', getattr(teacher, 'similarity', 0.0)))
             })
     
     # Search in User/Profile using trigram similarity
     if 'user' in filter_types:
-        profiles = Profile.objects.annotate(
+        profiles_qs = Profile.objects.annotate(
             similarity=Coalesce(TrigramSimilarity('nickname', query), Value(0.0))
-        ).filter(
-            similarity__gte=SIMILARITY_THRESHOLD
-        ).select_related('user').annotate(
+        )
+
+        if is_short_query:
+            prefix_filter = Q(nickname__istartswith=query)
+            text_fallback = Q(nickname__icontains=query)
+            profiles_qs = profiles_qs.filter(Q(similarity__gte=SIMILARITY_THRESHOLD) | prefix_filter | text_fallback)
+        else:
+            profiles_qs = profiles_qs.filter(similarity__gte=SIMILARITY_THRESHOLD)
+
+        profiles = profiles_qs.select_related('user').annotate(
             posts_count=Count('user__forum_posts', distinct=True),
             reviews_count=Count('user__course_reviews', distinct=True)
-        ).order_by('-similarity')[:30]
+        ).annotate(
+            popularity_norm=Least((F('posts_count') + F('reviews_count')) / Value(100.0), Value(1.0)),
+            final_score=F('similarity') * Value(0.9) + F('popularity_norm') * Value(0.1)
+        ).order_by('-final_score')[:60]
         
         for profile in profiles:
             user = profile.user
@@ -422,27 +510,26 @@ def search(request):
                 snippet_parts.append(profile.pronouns)
             
             results.append({
-                'type': 'user',
-                'id': str(user.id),
-                'title': profile.nickname,
-                'snippet': ' | '.join(snippet_parts) if snippet_parts else '',
-                'url': f"/user/{user.id}",
-                'similarity': float(profile.similarity),
-                'metadata': {
-                    'nickname': profile.nickname,
-                    'avatar_url': profile.avatar_url,
-                    'posts_count': profile.posts_count,
-                    'reviews_count': profile.reviews_count,
-                    'pronouns': profile.pronouns if profile.pronouns != 'not_specified' else None
-                }
+                **_build_search_result(
+                    'user', user.id, profile.nickname, ' | '.join(snippet_parts) if snippet_parts else '', f"/user/{user.id}",
+                    {
+                        'nickname': profile.nickname,
+                        'avatar_url': profile.avatar_url,
+                        'posts_count': profile.posts_count,
+                        'reviews_count': profile.reviews_count,
+                        'pronouns': profile.pronouns if profile.pronouns != 'not_specified' else None
+                    }
+                ),
+                'score': float(getattr(profile, 'final_score', getattr(profile, 'similarity', 0.0)))
             })
     
-    # Sort all results by similarity score (already computed by database)
-    results.sort(key=lambda x: x.get('similarity', 0), reverse=True)
+    # Sort all results by final score (fallback to similarity if needed)
+    results.sort(key=lambda x: x.get('score', x.get('similarity', 0)), reverse=True)
     
-    # Remove similarity from final results (internal metric)
+    # Remove internal metrics from final results
     for result in results:
         result.pop('similarity', None)
+        result.pop('score', None)
     
     # Apply pagination
     total = len(results)
