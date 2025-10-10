@@ -14,6 +14,7 @@ from forum.models import ForumPost, ForumPostComment
 from wiki.models import WikiPage
 from teachers.models import Teacher
 from accounts.models import Profile
+from django.db.models import Count
 
 
 def _get_author_name(user) -> str:
@@ -347,7 +348,6 @@ def search(request):
         
         for profile in profiles:
             # Count user's content
-            from django.db.models import Count
             user = profile.user
             posts_count = user.forum_posts.count()
             reviews_count = user.course_reviews.count()

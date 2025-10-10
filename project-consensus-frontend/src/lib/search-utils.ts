@@ -75,7 +75,6 @@ export function translateAuthorName(author: string, t: (key: string) => string):
  * Uses the existing html-utils stripHtmlTags function
  */
 export function stripHtml(html: string): string {
-  if (typeof window === 'undefined') return html; // SSR safety
   return stripHtmlTags(html);
 }
 

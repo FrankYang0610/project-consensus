@@ -7,6 +7,7 @@ import { searchSuggestions } from '@/lib/api/search';
 import { SearchResult } from '@/types/search';
 import { stripHtml, getHighlightParts, getSearchTypeLabel, validateSearchQuery, type TextPart } from '@/lib/search-utils';
 import { useI18n } from '@/hooks/use-i18n';
+import Link from 'next/link';
 
 // Render highlighted text from TextPart array
 function renderHighlightedText(parts: TextPart[]): React.ReactNode {
@@ -20,7 +21,6 @@ function renderHighlightedText(parts: TextPart[]): React.ReactNode {
     )
   );
 }
-import Link from 'next/link';
 
 interface SearchBarProps {
   placeholder?: string;
