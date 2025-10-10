@@ -19,7 +19,7 @@ import { useApp } from '@/contexts/AppContext';
 import { LoginResponse, LoginApiResponse, ErrorResponse, LoginSuccessResponse } from '@/types';
 import { getCookie, getAPIBaseUrl } from '@/lib/api/api-utils';
 import { useI18n } from '@/hooks/use-i18n';
-import { cn } from '@/lib/utils';
+import { cn, validatePolyuEmail } from '@/lib/utils';
 
 /**
  * 登录模态框属性 / Login modal props
@@ -110,14 +110,17 @@ export function LoginModal({ className, onLoginSuccess }: LoginModalProps) {
       return;
     }
 
-    if (!email.includes('@')) {
-      setError(t('auth.errorInvalidEmail'));
+    // Validate PolyU email
+    // 验证理大邮箱
+    const emailValidation = validatePolyuEmail(email);
+    if (!emailValidation.isValid) {
+      setError(t(emailValidation.error || 'auth.errorPolyuEmail'));
       setIsLoading(false);
       return;
     }
 
     try {
-      const result = await handleLogin(email, password);
+      const result = await handleLogin(emailValidation.sanitizedValue!, password);
 
       if (result.success && result.user) {
         // Use AuthContext to save user information

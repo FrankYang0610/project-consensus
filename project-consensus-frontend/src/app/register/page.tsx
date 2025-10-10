@@ -20,9 +20,7 @@ import Link from 'next/link';
 import { ErrorResponse, RegisterSuccessResponse, SendVerificationCodeResponse } from '@/types';
 import { getCookie, getAPIBaseUrl } from '@/lib/api/api-utils';
 import { useApp } from '@/contexts/AppContext';
-import { validateNickname } from '@/lib/utils';
-
-const POLYU_EMAIL_REGEX = /@connect\.polyu\.hk$/i;
+import { validateNickname, validatePolyuEmail } from '@/lib/utils';
 
 export default function RegisterPage() {
   const { t } = useI18n();
@@ -54,10 +52,16 @@ export default function RegisterPage() {
     setError('');
     setSuccess('');
 
-    if (!email || !POLYU_EMAIL_REGEX.test(email)) {
-      setError(t('auth.errorPolyuEmail'));
+    // Validate PolyU email
+    // 验证理大邮箱
+    const emailValidation = validatePolyuEmail(email);
+    if (!emailValidation.isValid) {
+      setError(t(emailValidation.error || 'auth.errorPolyuEmail'));
       return;
     }
+    
+    const sanitizedEmail = emailValidation.sanitizedValue!;
+    
     try {
       setIsSendingCode(true);
       // TODO: Actual server address (backend)
@@ -68,7 +72,7 @@ export default function RegisterPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}) },
         credentials: 'include',
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: sanitizedEmail }),
       });
       if (!res.ok) {
         const errorData: ErrorResponse = await res.json().catch(() => ({} as ErrorResponse));
@@ -103,8 +107,11 @@ export default function RegisterPage() {
       return;
     }
     
-    if (!POLYU_EMAIL_REGEX.test(email)) {
-      setError(t('auth.errorPolyuEmail'));
+    // Validate PolyU email
+    // 验证理大邮箱
+    const emailValidation = validatePolyuEmail(email);
+    if (!emailValidation.isValid) {
+      setError(t(emailValidation.error || 'auth.errorPolyuEmail'));
       return;
     }
     if (password !== confirmPassword) {
@@ -122,7 +129,7 @@ export default function RegisterPage() {
         credentials: 'include',
         body: JSON.stringify({
           nickname: nicknameValidation.sanitizedValue,
-          email,
+          email: emailValidation.sanitizedValue,
           verification_code: verificationCode,
           password,
         }),

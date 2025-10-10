@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import validator from "validator"
 import type { ValidationResult } from "@/types/validation"
 
 export function cn(...inputs: ClassValue[]) {
@@ -17,6 +18,61 @@ export function isContentEmpty(content: string | null | undefined): boolean {
 }
 
 /**
+ * Validate PolyU email address
+ * 验证理大邮箱地址
+ * 
+ * Rules / 规则:
+ * - Must be a valid email format / 必须是有效的邮箱格式
+ * - Must end with @connect.polyu.hk / 必须以 @connect.polyu.hk 结尾
+ * 
+ * @param email - The email to validate
+ * @returns ValidationResult with sanitized value or error message
+ */
+export function validatePolyuEmail(email: string): ValidationResult {
+  // Check if empty
+  // 检查是否为空
+  if (!email) {
+    return {
+      isValid: false,
+      error: 'auth.errorPolyuEmail',
+    };
+  }
+
+  // Normalize and sanitize email
+  // 标准化和消毒邮箱
+  const sanitized = validator.normalizeEmail(email, {
+    gmail_remove_dots: false,
+    gmail_remove_subaddress: false,
+    outlookdotcom_remove_subaddress: false,
+    yahoo_remove_subaddress: false,
+    icloud_remove_subaddress: false,
+  }) || email.trim().toLowerCase();
+
+  // Validate email format
+  // 验证邮箱格式
+  if (!validator.isEmail(sanitized)) {
+    return {
+      isValid: false,
+      error: 'auth.errorPolyuEmail',
+    };
+  }
+
+  // Check if it's a PolyU email
+  // 检查是否是理大邮箱
+  if (!sanitized.endsWith('@connect.polyu.hk')) {
+    return {
+      isValid: false,
+      error: 'auth.errorPolyuEmail',
+    };
+  }
+
+  return {
+    isValid: true,
+    sanitizedValue: sanitized,
+  };
+}
+
+/**
  * Validate and sanitize nickname
  * 验证和消毒昵称
  * 
@@ -25,6 +81,7 @@ export function isContentEmpty(content: string | null | undefined): boolean {
  * - Max length: 15 characters / 最长15个字符
  * - No HTML tags (< >) allowed / 不允许HTML标签
  * - At least 1 non-whitespace character / 至少包含1个非空字符
+ * - Remove control characters / 移除控制字符
  * 
  * @param value - The nickname to validate
  * @returns ValidationResult with sanitized value or error message
@@ -39,9 +96,10 @@ export function validateNickname(value: string): ValidationResult {
     };
   }
 
-  // Strip whitespace
-  // 去除首尾空格
-  const sanitized = value.trim();
+  // Use validator.js to sanitize
+  // 使用 validator.js 消毒
+  let sanitized = validator.trim(value);  // 去除首尾空格
+  sanitized = validator.stripLow(sanitized);  // 移除控制字符（包括 \x00-\x1F 和 \x7F-\x9F）
 
   // Check minimum length (after stripping)
   // 检查最小长度（去除空格后）
@@ -70,13 +128,8 @@ export function validateNickname(value: string): ValidationResult {
     };
   }
 
-  // Remove control characters (additional sanitization)
-  // 移除控制字符（额外消毒）
-  // eslint-disable-next-line no-control-regex
-  const finalValue = sanitized.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
-
   return {
     isValid: true,
-    sanitizedValue: finalValue,
+    sanitizedValue: sanitized,
   };
 }
