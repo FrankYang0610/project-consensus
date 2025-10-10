@@ -4,6 +4,7 @@ import django.db.models.deletion
 import django.utils.timezone
 import uuid
 from django.conf import settings
+from django.contrib.postgres.indexes import GistIndex
 from django.db import migrations, models
 
 
@@ -12,6 +13,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
+        ('core', '0001_initial'),  # Ensure pg_trgm extension is available
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
@@ -83,5 +85,23 @@ class Migration(migrations.Migration):
                 'indexes': [models.Index(fields=['post', 'user'], name='forum_forum_post_id_611220_idx')],
                 'unique_together': {('post', 'user')},
             },
+        ),
+        # Add trigram indexes for better search performance
+        migrations.AddIndex(
+            model_name='forumpost',
+            index=GistIndex(fields=['title'], name='forumpost_title_trgm_idx', opclasses=['gist_trgm_ops']),
+        ),
+        migrations.AddIndex(
+            model_name='forumpost',
+            index=GistIndex(fields=['content'], name='forumpost_content_trgm_idx', opclasses=['gist_trgm_ops']),
+        ),
+        migrations.AddIndex(
+            model_name='forumpostcomment',
+            index=GistIndex(fields=['content'], name='forumcomment_content_trgm_idx', opclasses=['gist_trgm_ops']),
+        ),
+        # Add composite index for filtering deleted comments
+        migrations.AddIndex(
+            model_name='forumpostcomment',
+            index=models.Index(fields=['is_deleted', '-created_at'], name='forumcomment_deleted_created_idx'),
         ),
     ]

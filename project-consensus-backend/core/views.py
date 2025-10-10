@@ -1,5 +1,7 @@
 from django.shortcuts import render
-from django.db.models import Q
+from django.db.models import Q, F, Value, FloatField, Case, When
+from django.contrib.postgres.search import TrigramSimilarity
+from django.db.models.functions import Greatest, Coalesce
 import bleach
 import re
 from django.core.exceptions import ValidationError
@@ -134,8 +136,7 @@ class SearchAnonThrottle(AnonRateThrottle):
 @throttle_classes([SearchRateThrottle, SearchAnonThrottle])
 def search(request):
     """
-    Global search endpoint supporting courses, forum posts, forum comments, 
-    course reviews, wiki pages, teachers, and users.
+    Global search endpoint using PostgreSQL trigram similarity for better Chinese text search.
     
     Query params:
     - q: search query (required)
@@ -187,15 +188,22 @@ def search(request):
     else:
         filter_types = allowed_types
     
+    # Similarity threshold for trigram matching (lower = more permissive, 0.1 is good for Chinese)
+    SIMILARITY_THRESHOLD = 0.1
+    
     results = []
     
-    # Search in Course
+    # Search in Course using trigram similarity
     if 'course' in filter_types:
-        courses = Course.objects.filter(
-            Q(subject_code__icontains=query) |
-            Q(title__icontains=query) |
-            Q(department__icontains=query)
-        ).order_by('-last_updated')[:50]
+        courses = Course.objects.annotate(
+            similarity=Greatest(
+                TrigramSimilarity('subject_code', query),
+                TrigramSimilarity('title', query),
+                TrigramSimilarity('department', query)
+            )
+        ).filter(
+            similarity__gte=SIMILARITY_THRESHOLD
+        ).select_related().order_by('-similarity', '-last_updated')[:30]
         
         for course in courses:
             snippet = course.title
@@ -208,6 +216,7 @@ def search(request):
                 'title': f"{course.subject_code} {course.title}",
                 'snippet': snippet,
                 'url': f"/courses/{course.course_id}",
+                'similarity': float(course.similarity),
                 'metadata': {
                     'subject_code': course.subject_code,
                     'department': course.department,
@@ -216,31 +225,30 @@ def search(request):
                 }
             })
     
-    # Search in ForumPost
+    # Search in ForumPost using trigram similarity
     if 'forum_post' in filter_types:
-        # Use separate queries for better index utilization, then combine
-        # Anonymous posts should NOT be searchable by author nickname
-        
-        # Search by title
-        title_posts = ForumPost.objects.filter(
-            title__icontains=query
-        )
-        
-        # Search by content  
-        content_posts = ForumPost.objects.filter(
-            content__icontains=query
-        )
-        
-        # Search by author (only non-anonymous posts)
-        author_posts = ForumPost.objects.filter(
-            author__profile__nickname__icontains=query,
-            is_anonymous=False
-        )
-        
-        # Combine queries using OR and remove duplicates
-        posts = (title_posts | content_posts | author_posts).select_related(
+        # Compute trigram similarity for title, content, and author nickname
+        posts = ForumPost.objects.annotate(
+            title_sim=TrigramSimilarity('title', query),
+            content_sim=TrigramSimilarity('content', query),
+            # For anonymous posts, author similarity is 0
+            author_sim=Case(
+                When(is_anonymous=True, then=Value(0.0)),
+                default=TrigramSimilarity('author__profile__nickname', query),
+                output_field=FloatField()
+            )
+        ).annotate(
+            # Calculate max similarity
+            similarity=Greatest(
+                F('title_sim'),
+                F('content_sim'),
+                F('author_sim')
+            )
+        ).filter(
+            similarity__gte=SIMILARITY_THRESHOLD
+        ).select_related(
             'author', 'author__profile'
-        ).distinct().order_by('-created_at')[:50]
+        ).order_by('-similarity', '-created_at')[:30]
         
         for post in posts:
             snippet = _truncate_content(post.content)
@@ -249,18 +257,31 @@ def search(request):
                 'created_at': post.created_at.isoformat(),
                 'likes_count': post.likes_count
             }
-            results.append(_build_search_result(
-                'forum_post', post.id, post.title, snippet, f"/post/{post.id}", metadata
-            ))
+            results.append({
+                **_build_search_result(
+                    'forum_post', post.id, post.title, snippet, f"/post/{post.id}", metadata
+                ),
+                'similarity': float(post.similarity)
+            })
     
-    # Search in ForumPostComment
+    # Search in ForumPostComment using trigram similarity
     if 'forum_comment' in filter_types:
-        # Anonymous comments should NOT be searchable by author nickname
-        comments = ForumPostComment.objects.filter(
-            Q(content__icontains=query) |
-            (Q(author__profile__nickname__icontains=query) & Q(is_anonymous=False)),
+        comments = ForumPostComment.objects.annotate(
+            content_sim=TrigramSimilarity('content', query),
+            author_sim=Case(
+                When(is_anonymous=True, then=Value(0.0)),
+                default=TrigramSimilarity('author__profile__nickname', query),
+                output_field=FloatField()
+            )
+        ).annotate(
+            similarity=Greatest(
+                F('content_sim'),
+                F('author_sim')
+            )
+        ).filter(
+            similarity__gte=SIMILARITY_THRESHOLD,
             is_deleted=False
-        ).select_related('post', 'author', 'author__profile').order_by('-created_at')[:50]
+        ).select_related('post', 'author', 'author__profile').order_by('-similarity', '-created_at')[:30]
         
         for comment in comments:
             snippet = _truncate_content(comment.content)
@@ -269,20 +290,33 @@ def search(request):
                 'parent_title': comment.post.title,
                 'author': _get_author_name(comment.author) if not comment.is_anonymous else 'Anonymous',
                 'created_at': comment.created_at.isoformat(),
-                'title_template': 'commentOn',  # Frontend will use this to build localized title
+                'title_template': 'commentOn',
             }
-            results.append(_build_search_result(
-                'forum_comment', comment.id, comment.post.title, snippet, 
-                f"/post/{comment.post.id}#comment-{comment.id}", metadata
-            ))
+            results.append({
+                **_build_search_result(
+                    'forum_comment', comment.id, comment.post.title, snippet, 
+                    f"/post/{comment.post.id}#comment-{comment.id}", metadata
+                ),
+                'similarity': float(comment.similarity)
+            })
     
-    # Search in CourseReview
+    # Search in CourseReview using trigram similarity
     if 'course_review' in filter_types:
-        # Anonymous reviews should NOT be searchable by author nickname
-        reviews = CourseReview.objects.filter(
-            Q(content__icontains=query) |
-            (Q(author__profile__nickname__icontains=query) & Q(is_anonymous=False))
-        ).select_related('course', 'author', 'author__profile').order_by('-created_at')[:50]
+        reviews = CourseReview.objects.annotate(
+            content_sim=TrigramSimilarity('content', query),
+            author_sim=Case(
+                When(is_anonymous=True, then=Value(0.0)),
+                default=TrigramSimilarity('author__profile__nickname', query),
+                output_field=FloatField()
+            )
+        ).annotate(
+            similarity=Greatest(
+                F('content_sim'),
+                F('author_sim')
+            )
+        ).filter(
+            similarity__gte=SIMILARITY_THRESHOLD
+        ).select_related('course', 'author', 'author__profile').order_by('-similarity', '-created_at')[:30]
         
         for review in reviews:
             content_snippet = review.content[:200] + ('...' if len(review.content) > 200 else '')
@@ -294,26 +328,31 @@ def search(request):
                 'title': course_title,
                 'snippet': content_snippet,
                 'url': f"/courses/{review.course.course_id}#review-{review.id}",
+                'similarity': float(review.similarity),
                 'metadata': {
                     'parent_id': str(review.course.course_id),
                     'parent_title': course_title,
                     'author': _get_author_name(review.author) if not review.is_anonymous else 'Anonymous',
                     'created_at': review.created_at.isoformat(),
                     'rating': review.overall_rating,
-                    'title_template': 'reviewOn',  # Frontend will use this to build localized title
+                    'title_template': 'reviewOn',
                 }
             })
     
-    # Search in WikiPage
+    # Search in WikiPage using trigram similarity
     if 'wiki' in filter_types:
-        wiki_pages = WikiPage.objects.filter(
-            Q(title__icontains=query) |
-            Q(content__icontains=query) |
-            Q(summary__icontains=query) |
-            Q(tags__icontains=query) |
-            Q(author__profile__nickname__icontains=query),
+        wiki_pages = WikiPage.objects.annotate(
+            similarity=Greatest(
+                TrigramSimilarity('title', query),
+                TrigramSimilarity('content', query),
+                TrigramSimilarity('summary', query),
+                TrigramSimilarity('tags', query),
+                TrigramSimilarity('author__profile__nickname', query)
+            )
+        ).filter(
+            similarity__gte=SIMILARITY_THRESHOLD,
             status='published'
-        ).select_related('author', 'author__profile').order_by('-updated_at')[:50]
+        ).select_related('author', 'author__profile').order_by('-similarity', '-updated_at')[:30]
         
         for wiki_page in wiki_pages:
             snippet = wiki_page.summary if wiki_page.summary else wiki_page.content[:200] + ('...' if len(wiki_page.content) > 200 else '')
@@ -324,6 +363,7 @@ def search(request):
                 'title': wiki_page.title,
                 'snippet': snippet,
                 'url': f"/wiki/{wiki_page.slug}",
+                'similarity': float(wiki_page.similarity),
                 'metadata': {
                     'author': _get_author_name(wiki_page.author),
                     'created_at': wiki_page.created_at.isoformat(),
@@ -332,13 +372,17 @@ def search(request):
                 }
             })
     
-    # Search in Teacher
+    # Search in Teacher using trigram similarity
     if 'teacher' in filter_types:
-        teachers = Teacher.objects.filter(
-            Q(name__icontains=query) |
-            Q(department__icontains=query) |
-            Q(bio__icontains=query)
-        ).order_by('-updated_at')[:50]
+        teachers = Teacher.objects.annotate(
+            similarity=Greatest(
+                TrigramSimilarity('name', query),
+                TrigramSimilarity('department', query),
+                TrigramSimilarity('bio', query)
+            )
+        ).filter(
+            similarity__gte=SIMILARITY_THRESHOLD
+        ).order_by('-similarity', '-updated_at')[:30]
         
         for teacher in teachers:
             snippet = teacher.bio[:200] + ('...' if teacher.bio and len(teacher.bio) > 200 else '') if teacher.bio else f"{teacher.title} - {teacher.department}"
@@ -349,6 +393,7 @@ def search(request):
                 'title': teacher.name,
                 'snippet': snippet,
                 'url': f"/teachers/{teacher.id}",
+                'similarity': float(teacher.similarity),
                 'metadata': {
                     'title': teacher.title,
                     'department': teacher.department,
@@ -357,15 +402,16 @@ def search(request):
                 }
             })
     
-    # Search in User/Profile
+    # Search in User/Profile using trigram similarity
     if 'user' in filter_types:
-        # Use annotations to avoid N+1 queries when counting user content
-        profiles = Profile.objects.filter(
-            Q(nickname__icontains=query)
+        profiles = Profile.objects.annotate(
+            similarity=TrigramSimilarity('nickname', query)
+        ).filter(
+            similarity__gte=SIMILARITY_THRESHOLD
         ).select_related('user').annotate(
             posts_count=Count('user__forum_posts'),
             reviews_count=Count('user__course_reviews')
-        )[:50]
+        ).order_by('-similarity')[:30]
         
         for profile in profiles:
             user = profile.user
@@ -381,6 +427,7 @@ def search(request):
                 'title': profile.nickname,
                 'snippet': ' | '.join(snippet_parts) if snippet_parts else '',
                 'url': f"/user/{user.id}",
+                'similarity': float(profile.similarity),
                 'metadata': {
                     'nickname': profile.nickname,
                     'avatar_url': profile.avatar_url,
@@ -390,12 +437,12 @@ def search(request):
                 }
             })
     
-    # Sort results by relevance (simple: prioritize title matches, then by date)
-    def relevance_score(result):
-        title_match = 1 if query.lower() in result['title'].lower() else 0
-        return title_match
+    # Sort all results by similarity score (already computed by database)
+    results.sort(key=lambda x: x.get('similarity', 0), reverse=True)
     
-    results.sort(key=relevance_score, reverse=True)
+    # Remove similarity from final results (internal metric)
+    for result in results:
+        result.pop('similarity', None)
     
     # Apply pagination
     total = len(results)
