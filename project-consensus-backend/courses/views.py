@@ -861,3 +861,44 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
             return Response(data, status=status.HTTP_200_OK)
         except Exception as e:  # pragma: no cover
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=["GET"], url_path="find-review")
+    def find_review(self, request):
+        """Find the review ID for a given reply ID.
+        
+        Query params:
+        - replyId: UUID of the reply
+        
+        Returns:
+        - reviewId: UUID of the parent review
+        - courseId: UUID of the course
+        
+        This endpoint is used by the frontend to efficiently locate which review
+        contains a specific reply when navigating from notifications.
+        """
+        reply_id = request.query_params.get("replyId")
+        if not reply_id:
+            return Response(
+                {"detail": "replyId query parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            reply = (
+                CourseReviewReply.objects
+                .select_related("review__course")
+                .get(pk=reply_id)
+            )
+            return Response(
+                {
+                    "replyId": str(reply.id),
+                    "reviewId": str(reply.review.id),
+                    "courseId": str(reply.review.course.course_id),
+                },
+                status=status.HTTP_200_OK
+            )
+        except CourseReviewReply.DoesNotExist:
+            return Response(
+                {"detail": "Reply not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
