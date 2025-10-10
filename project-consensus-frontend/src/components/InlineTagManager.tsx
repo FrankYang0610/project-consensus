@@ -4,6 +4,7 @@ import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import { useI18n } from "@/hooks/use-i18n";
+import { cn } from "@/lib/utils";
 
 export interface InlineTagManagerProps {
   value: string[];
@@ -59,7 +60,7 @@ export function InlineTagManager({
   };
 
   return (
-    <div className={["flex items-center gap-2 border rounded-md px-2 h-8 text-xs min-w-[280px]", className].join(" ")}> 
+    <div className={cn("flex items-center gap-2 border rounded-md px-2 h-8 text-xs min-w-[280px]", className)}> 
       <div className="flex items-center gap-1 overflow-hidden">
         {value.map(tag => (
           <Badge key={tag} variant="secondary" className="text-[10px] font-medium">

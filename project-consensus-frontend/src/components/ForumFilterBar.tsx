@@ -13,6 +13,7 @@ import {
 import { ChevronDown } from "lucide-react";
 import { InlineTagManager } from "@/components/InlineTagManager";
 import { useI18n } from "@/hooks/use-i18n";
+import { cn } from "@/lib/utils";
 
 interface ForumFilterBarProps {
   className?: string;
@@ -73,14 +74,12 @@ export function ForumFilterBar({ className, onApply }: ForumFilterBarProps) {
 
   return (
     <div
-      className={
-        [
-          "w-full flex items-center gap-2",
-          // Keep in one line; allow horizontal scroll if overflow
-          "whitespace-nowrap overflow-x-auto",
-          className || "",
-        ].join(" ")
-      }
+      className={cn(
+        "w-full flex items-center gap-2",
+        // Keep in one line; allow horizontal scroll if overflow
+        "whitespace-nowrap overflow-x-auto",
+        className
+      )}
     >
       {/* Sort */}
       <DropdownMenu>
