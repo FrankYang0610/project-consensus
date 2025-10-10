@@ -171,11 +171,21 @@ export function validateSearchQuery(query: string): SearchQueryValidationResult 
   }
 
   // Additional validation: check for excessively repeated characters (potential DoS)
-  if (validator.matches(sanitized, /(.)\1{50,}/)) {
-    return {
-      isValid: false,
-      error: 'Search query contains excessive repeated characters'
-    };
+  // Using efficient linear-time check instead of expensive regex with backreferences
+  const MAX_CONSECUTIVE_CHARS = 50;
+  let consecutiveCount = 1;
+  for (let i = 1; i < sanitized.length; i++) {
+    if (sanitized[i] === sanitized[i - 1]) {
+      consecutiveCount++;
+      if (consecutiveCount > MAX_CONSECUTIVE_CHARS) {
+        return {
+          isValid: false,
+          error: 'Search query contains excessive repeated characters'
+        };
+      }
+    } else {
+      consecutiveCount = 1;
+    }
   }
 
   // Validate that the query doesn't consist entirely of special characters

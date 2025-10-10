@@ -218,12 +218,29 @@ def search(request):
     
     # Search in ForumPost
     if 'forum_post' in filter_types:
+        # Use separate queries for better index utilization, then combine
         # Anonymous posts should NOT be searchable by author nickname
-        posts = ForumPost.objects.filter(
-            Q(title__icontains=query) |
-            Q(content__icontains=query) |
-            (Q(author__profile__nickname__icontains=query) & Q(is_anonymous=False))
-        ).select_related('author', 'author__profile').order_by('-created_at')[:50]
+        
+        # Search by title
+        title_posts = ForumPost.objects.filter(
+            title__icontains=query
+        )
+        
+        # Search by content  
+        content_posts = ForumPost.objects.filter(
+            content__icontains=query
+        )
+        
+        # Search by author (only non-anonymous posts)
+        author_posts = ForumPost.objects.filter(
+            author__profile__nickname__icontains=query,
+            is_anonymous=False
+        )
+        
+        # Combine queries using OR and remove duplicates
+        posts = (title_posts | content_posts | author_posts).select_related(
+            'author', 'author__profile'
+        ).distinct().order_by('-created_at')[:50]
         
         for post in posts:
             snippet = _truncate_content(post.content)
@@ -342,15 +359,16 @@ def search(request):
     
     # Search in User/Profile
     if 'user' in filter_types:
+        # Use annotations to avoid N+1 queries when counting user content
         profiles = Profile.objects.filter(
             Q(nickname__icontains=query)
-        ).select_related('user')[:50]
+        ).select_related('user').annotate(
+            posts_count=Count('user__forum_posts'),
+            reviews_count=Count('user__course_reviews')
+        )[:50]
         
         for profile in profiles:
-            # Count user's content
             user = profile.user
-            posts_count = user.forum_posts.count()
-            reviews_count = user.course_reviews.count()
             
             # Build snippet with pronouns if available
             snippet_parts = []
@@ -366,8 +384,8 @@ def search(request):
                 'metadata': {
                     'nickname': profile.nickname,
                     'avatar_url': profile.avatar_url,
-                    'posts_count': posts_count,
-                    'reviews_count': reviews_count,
+                    'posts_count': profile.posts_count,
+                    'reviews_count': profile.reviews_count,
                     'pronouns': profile.pronouns if profile.pronouns != 'not_specified' else None
                 }
             })
