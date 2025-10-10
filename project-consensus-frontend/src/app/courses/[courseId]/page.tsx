@@ -14,6 +14,7 @@ import {
   toggleLikeReply,
   createReviewReply,
   deleteReviewReply,
+  findReviewByReplyId,
 } from "@/lib/api/course";
 import { useI18n } from "@/hooks/use-i18n";
 import { fetchCourseById } from "@/lib/api/course";
@@ -219,22 +220,12 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
     });
   }, [targetReviewId, reviews, repliesByReview]);
 
-  // Auto-expand and scroll to target reply when available (similar to forum)
+  // Auto-expand and scroll to target reply when available using efficient backend lookup
   React.useEffect(() => {
-    if (!targetReplyId || reviews.length === 0) return;
+    if (!targetReplyId) return;
 
-    // Find which review contains this reply by checking metadata from notification
-    // Since we don't have direct reply->review mapping, we need to find it
-    // The notification should have included the reviewId, but we're using replyId as anchor
-    // We'll need to load all reviews' replies to find the target
-    
-    // For now, we'll try a simpler approach: find the review that has this reply
-    // by loading replies for reviews that have any replies
-    const reviewsWithReplies = reviews.filter(r => (r.repliesCount ?? 0) > 0);
-    
-    let foundReviewId: string | undefined;
-    
     // Check if any already-loaded replies contain our target
+    let foundReviewId: string | undefined;
     for (const reviewId of Object.keys(repliesByReview)) {
       const replies = repliesByReview[reviewId] || [];
       if (replies.some(r => r.id === targetReplyId)) {
@@ -268,48 +259,45 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
         }, 400);
       });
     } else {
-      // Need to search through reviews to find which one contains this reply
-      // Load replies for all reviews with replies count > 0
+      // Use backend endpoint to efficiently find which review contains this reply
       (async () => {
-        for (const review of reviewsWithReplies) {
-          if (repliesByReview[review.id]) continue; // Already loaded
+        try {
+          const result = await findReviewByReplyId(targetReplyId);
+          const reviewId = result.reviewId;
           
-          try {
-            const page = await fetchReviewReplies({ reviewId: review.id, page: 1, pageSize: 20, ordering: "created_at" });
-            const replies = page.results;
-            setRepliesByReview(prev => ({ ...prev, [review.id]: replies }));
-            
-            // Check if this review contains our target reply
-            if (replies.some(r => r.id === targetReplyId)) {
-              foundReviewId = review.id;
-              setExpandedReviews(prev => new Set(prev).add(review.id));
-              
-              // Schedule scroll after state updates
-              requestAnimationFrame(() => {
-                setTimeout(() => {
-                  const element = document.getElementById(`reply-${targetReplyId}`);
-                  if (element) {
-                    const rect = element.getBoundingClientRect();
-                    const absoluteTop = rect.top + window.pageYOffset;
-                    const targetTop = Math.max(absoluteTop - (window.innerHeight / 2 - rect.height / 2), 0);
-                    window.scrollTo({ top: targetTop, behavior: 'smooth' });
-                    
-                    element.classList.add('ring-2', 'ring-primary/40');
-                    setTimeout(() => element.classList.remove('ring-2', 'ring-primary/40'), 2000);
-                    
-                    setTargetReplyId(undefined);
-                  }
-                }, 400);
-              });
-              break; // Found it, stop searching
-            }
-          } catch (e) {
-            console.error('Failed to load replies while searching for target', e);
+          // Expand the review
+          setExpandedReviews(prev => new Set(prev).add(reviewId));
+          
+          // Load replies for this review if not already loaded
+          if (!repliesByReview[reviewId]) {
+            const page = await fetchReviewReplies({ reviewId, page: 1, pageSize: 20, ordering: "created_at" });
+            setRepliesByReview(prev => ({ ...prev, [reviewId]: page.results }));
           }
+          
+          // Schedule scroll after state updates
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              const element = document.getElementById(`reply-${targetReplyId}`);
+              if (element) {
+                const rect = element.getBoundingClientRect();
+                const absoluteTop = rect.top + window.pageYOffset;
+                const targetTop = Math.max(absoluteTop - (window.innerHeight / 2 - rect.height / 2), 0);
+                window.scrollTo({ top: targetTop, behavior: 'smooth' });
+                
+                element.classList.add('ring-2', 'ring-primary/40');
+                setTimeout(() => element.classList.remove('ring-2', 'ring-primary/40'), 2000);
+                
+                setTargetReplyId(undefined);
+              }
+            }, 400);
+          });
+        } catch (e) {
+          console.error('Failed to find review for reply', e);
+          setTargetReplyId(undefined);
         }
       })();
     }
-  }, [targetReplyId, reviews, repliesByReview]);
+  }, [targetReplyId, repliesByReview]);
 
   // Toggle like/unlike a review
   const handleLikeReview = React.useCallback(async (reviewId: string) => {
