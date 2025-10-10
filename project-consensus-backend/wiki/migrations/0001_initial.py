@@ -3,7 +3,7 @@
 import uuid
 import django.db.models.deletion
 from django.conf import settings
-from django.contrib.postgres.indexes import GistIndex
+from django.contrib.postgres.indexes import GinIndex
 from django.db import migrations, models
 
 
@@ -101,18 +101,18 @@ class Migration(migrations.Migration):
         # Add trigram indexes for better search performance
         migrations.AddIndex(
             model_name='wikipage',
-            index=GistIndex(fields=['title'], name='wikipage_title_trgm_idx', opclasses=['gist_trgm_ops']),
+            index=GinIndex(fields=['title'], name='wikipage_title_trgm_idx', opclasses=['gin_trgm_ops']),
         ),
         migrations.AddIndex(
             model_name='wikipage',
-            index=GistIndex(fields=['content'], name='wikipage_content_trgm_idx', opclasses=['gist_trgm_ops']),
+            index=GinIndex(fields=['content'], name='wikipage_content_trgm_idx', opclasses=['gin_trgm_ops']),
         ),
         migrations.AddIndex(
             model_name='wikipage',
-            index=GistIndex(fields=['summary'], name='wikipage_summary_trgm_idx', opclasses=['gist_trgm_ops']),
+            index=GinIndex(fields=['summary'], name='wikipage_summary_trgm_idx', opclasses=['gin_trgm_ops']),
         ),
         migrations.AddIndex(
             model_name='wikipage',
-            index=GistIndex(fields=['tags'], name='wikipage_tags_trgm_idx', opclasses=['gist_trgm_ops']),
+            index=GinIndex(fields=['tags'], name='wikipage_tags_trgm_idx', opclasses=['gin_trgm_ops']),
         ),
     ]

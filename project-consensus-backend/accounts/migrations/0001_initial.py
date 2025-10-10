@@ -3,7 +3,7 @@
 import django.db.models.deletion
 import django.utils.timezone
 from django.conf import settings
-from django.contrib.postgres.indexes import GistIndex
+from django.contrib.postgres.indexes import GinIndex
 from django.db import migrations, models
 
 
@@ -80,6 +80,6 @@ class Migration(migrations.Migration):
         # Add trigram index for better search performance on nickname
         migrations.AddIndex(
             model_name='profile',
-            index=GistIndex(fields=['nickname'], name='profile_nickname_trgm_idx', opclasses=['gist_trgm_ops']),
+            index=GinIndex(fields=['nickname'], name='profile_nickname_trgm_idx', opclasses=['gin_trgm_ops']),
         ),
     ]

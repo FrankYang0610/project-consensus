@@ -4,7 +4,7 @@ import django.db.models.deletion
 import django.utils.timezone
 import uuid
 from django.conf import settings
-from django.contrib.postgres.indexes import GistIndex
+from django.contrib.postgres.indexes import GinIndex
 from django.db import migrations, models
 
 
@@ -89,15 +89,15 @@ class Migration(migrations.Migration):
         # Add trigram indexes for better search performance
         migrations.AddIndex(
             model_name='forumpost',
-            index=GistIndex(fields=['title'], name='forumpost_title_trgm_idx', opclasses=['gist_trgm_ops']),
+            index=GinIndex(fields=['title'], name='forumpost_title_trgm_idx', opclasses=['gin_trgm_ops']),
         ),
         migrations.AddIndex(
             model_name='forumpost',
-            index=GistIndex(fields=['content'], name='forumpost_content_trgm_idx', opclasses=['gist_trgm_ops']),
+            index=GinIndex(fields=['content'], name='forumpost_content_trgm_idx', opclasses=['gin_trgm_ops']),
         ),
         migrations.AddIndex(
             model_name='forumpostcomment',
-            index=GistIndex(fields=['content'], name='forumcomment_content_trgm_idx', opclasses=['gist_trgm_ops']),
+            index=GinIndex(fields=['content'], name='forumcomment_content_trgm_idx', opclasses=['gin_trgm_ops']),
         ),
         # Add composite index for filtering deleted comments
         migrations.AddIndex(

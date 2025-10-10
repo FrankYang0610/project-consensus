@@ -197,9 +197,9 @@ def search(request):
     if 'course' in filter_types:
         courses = Course.objects.annotate(
             similarity=Greatest(
-                TrigramSimilarity('subject_code', query),
-                TrigramSimilarity('title', query),
-                TrigramSimilarity('department', query)
+                Coalesce(TrigramSimilarity('subject_code', query), Value(0.0)),
+                Coalesce(TrigramSimilarity('title', query), Value(0.0)),
+                Coalesce(TrigramSimilarity('department', query), Value(0.0))
             )
         ).filter(
             similarity__gte=SIMILARITY_THRESHOLD
@@ -229,12 +229,12 @@ def search(request):
     if 'forum_post' in filter_types:
         # Compute trigram similarity for title, content, and author nickname
         posts = ForumPost.objects.annotate(
-            title_sim=TrigramSimilarity('title', query),
-            content_sim=TrigramSimilarity('content', query),
+            title_sim=Coalesce(TrigramSimilarity('title', query), Value(0.0)),
+            content_sim=Coalesce(TrigramSimilarity('content', query), Value(0.0)),
             # For anonymous posts, author similarity is 0
             author_sim=Case(
                 When(is_anonymous=True, then=Value(0.0)),
-                default=TrigramSimilarity('author__profile__nickname', query),
+                default=Coalesce(TrigramSimilarity('author__profile__nickname', query), Value(0.0)),
                 output_field=FloatField()
             )
         ).annotate(
@@ -267,10 +267,10 @@ def search(request):
     # Search in ForumPostComment using trigram similarity
     if 'forum_comment' in filter_types:
         comments = ForumPostComment.objects.annotate(
-            content_sim=TrigramSimilarity('content', query),
+            content_sim=Coalesce(TrigramSimilarity('content', query), Value(0.0)),
             author_sim=Case(
                 When(is_anonymous=True, then=Value(0.0)),
-                default=TrigramSimilarity('author__profile__nickname', query),
+                default=Coalesce(TrigramSimilarity('author__profile__nickname', query), Value(0.0)),
                 output_field=FloatField()
             )
         ).annotate(
@@ -303,10 +303,10 @@ def search(request):
     # Search in CourseReview using trigram similarity
     if 'course_review' in filter_types:
         reviews = CourseReview.objects.annotate(
-            content_sim=TrigramSimilarity('content', query),
+            content_sim=Coalesce(TrigramSimilarity('content', query), Value(0.0)),
             author_sim=Case(
                 When(is_anonymous=True, then=Value(0.0)),
-                default=TrigramSimilarity('author__profile__nickname', query),
+                default=Coalesce(TrigramSimilarity('author__profile__nickname', query), Value(0.0)),
                 output_field=FloatField()
             )
         ).annotate(
@@ -343,11 +343,11 @@ def search(request):
     if 'wiki' in filter_types:
         wiki_pages = WikiPage.objects.annotate(
             similarity=Greatest(
-                TrigramSimilarity('title', query),
-                TrigramSimilarity('content', query),
-                TrigramSimilarity('summary', query),
-                TrigramSimilarity('tags', query),
-                TrigramSimilarity('author__profile__nickname', query)
+                Coalesce(TrigramSimilarity('title', query), Value(0.0)),
+                Coalesce(TrigramSimilarity('content', query), Value(0.0)),
+                Coalesce(TrigramSimilarity('summary', query), Value(0.0)),
+                Coalesce(TrigramSimilarity('tags', query), Value(0.0)),
+                Coalesce(TrigramSimilarity('author__profile__nickname', query), Value(0.0))
             )
         ).filter(
             similarity__gte=SIMILARITY_THRESHOLD,
@@ -376,9 +376,9 @@ def search(request):
     if 'teacher' in filter_types:
         teachers = Teacher.objects.annotate(
             similarity=Greatest(
-                TrigramSimilarity('name', query),
-                TrigramSimilarity('department', query),
-                TrigramSimilarity('bio', query)
+                Coalesce(TrigramSimilarity('name', query), Value(0.0)),
+                Coalesce(TrigramSimilarity('department', query), Value(0.0)),
+                Coalesce(TrigramSimilarity('bio', query), Value(0.0))
             )
         ).filter(
             similarity__gte=SIMILARITY_THRESHOLD
@@ -405,12 +405,12 @@ def search(request):
     # Search in User/Profile using trigram similarity
     if 'user' in filter_types:
         profiles = Profile.objects.annotate(
-            similarity=TrigramSimilarity('nickname', query)
+            similarity=Coalesce(TrigramSimilarity('nickname', query), Value(0.0))
         ).filter(
             similarity__gte=SIMILARITY_THRESHOLD
         ).select_related('user').annotate(
-            posts_count=Count('user__forum_posts'),
-            reviews_count=Count('user__course_reviews')
+            posts_count=Count('user__forum_posts', distinct=True),
+            reviews_count=Count('user__course_reviews', distinct=True)
         ).order_by('-similarity')[:30]
         
         for profile in profiles:
