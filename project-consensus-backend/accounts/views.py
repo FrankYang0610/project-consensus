@@ -298,11 +298,15 @@ def update_profile(request):
     
     # Check if user is trying to update nickname (has 14-day restriction)
     # 检查用户是否试图更新昵称（有14天限制）
-    is_nickname_update = 'nickname' in request.data
+    new_nickname = request.data.get('nickname')
+    is_nickname_changed = (
+        new_nickname is not None and 
+        new_nickname != profile.nickname
+    )
     
-    # If updating nickname, check the 14-day restriction
-    # 如果更新昵称，检查14天限制
-    if is_nickname_update and profile.last_nickname_updated_at:
+    # If changing nickname, check the 14-day restriction
+    # 如果修改昵称（不同于当前昵称），检查14天限制
+    if is_nickname_changed and profile.last_nickname_updated_at:
         from django.utils import timezone
         days_since_update = (timezone.now() - profile.last_nickname_updated_at).days
         if days_since_update < 14:
@@ -316,9 +320,9 @@ def update_profile(request):
     serializer.is_valid(raise_exception=True)
     serializer.save()
     
-    # Update last_nickname_updated_at if nickname was changed
-    # 如果修改了昵称，更新最后修改时间
-    if is_nickname_update:
+    # Update last_nickname_updated_at if nickname was actually changed
+    # 如果昵称确实被修改了，更新最后修改时间
+    if is_nickname_changed:
         from django.utils import timezone
         profile.last_nickname_updated_at = timezone.now()
         profile.save(update_fields=['last_nickname_updated_at'])

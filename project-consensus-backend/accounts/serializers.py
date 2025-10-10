@@ -126,11 +126,17 @@ class ProfileSerializer(serializers.ModelSerializer):
             
             # Check uniqueness (exclude current user's profile)
             # 检查唯一性（排除当前用户的资料）
-            current_user = self.context.get('request').user if self.context.get('request') else None
-            if current_user:
-                existing = Profile.objects.filter(nickname=sanitized_value).exclude(user=current_user).first()
-                if existing:
-                    raise serializers.ValidationError("This nickname is already taken. Please choose another one.")
+            request = self.context.get('request')
+            if not request:
+                raise serializers.ValidationError("Request context is required for nickname validation.")
+            
+            current_user = request.user
+            if not current_user or not current_user.is_authenticated:
+                raise serializers.ValidationError("Authentication is required to update nickname.")
+            
+            existing = Profile.objects.filter(nickname=sanitized_value).exclude(user=current_user).first()
+            if existing:
+                raise serializers.ValidationError("This nickname is already taken. Please choose another one.")
             
             return sanitized_value
         return value
