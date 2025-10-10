@@ -3,6 +3,34 @@ import validator from 'validator';
 import DOMPurify from 'isomorphic-dompurify';
 
 /**
+ * Get localized labels for search result types
+ * @param t - Translation function
+ * @returns Object mapping search types to localized labels
+ */
+export function getSearchTypeLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    course: t('search.types.course'),
+    forum_post: t('search.types.forum_post'),
+    forum_comment: t('search.types.forum_comment'),
+    course_review: t('search.types.course_review'),
+    wiki: t('search.types.wiki'),
+    teacher: t('search.types.teacher'),
+    user: t('search.types.user')
+  };
+}
+
+/**
+ * Get localized label for search result type
+ * @param type - Search result type
+ * @param t - Translation function
+ * @returns Localized type label
+ */
+export function getSearchTypeLabel(type: string, t: (key: string) => string): string {
+  const labels = getSearchTypeLabels(t);
+  return labels[type] || type;
+}
+
+/**
  * Strip HTML tags and return plain text (SSR-safe)
  * Uses the existing html-utils stripHtmlTags function
  */
@@ -155,20 +183,3 @@ export function getHighlightParts(text: string, query?: string): TextPart[] {
   })).filter(part => part.text.length > 0); // Remove empty parts
 }
 
-/**
- * Get localized label for search result type
- * @param type - Search result type
- * @returns Localized type label
- */
-export function getSearchTypeLabel(type: string): string {
-  const labels: Record<string, string> = {
-    course: '课程',
-    forum_post: '帖子',
-    forum_comment: '评论',
-    course_review: '点评',
-    wiki: 'Wiki',
-    teacher: '教师',
-    user: '用户'
-  };
-  return labels[type] || type;
-}

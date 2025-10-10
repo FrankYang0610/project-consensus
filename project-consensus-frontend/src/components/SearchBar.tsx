@@ -193,7 +193,7 @@ export function SearchBar({
               >
                 <div className="flex items-start gap-3">
                   <span className="text-xs font-medium text-muted-foreground mt-1">
-                    {getSearchTypeLabel(suggestion.type)}
+                    {getSearchTypeLabel(suggestion.type, t)}
                   </span>
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-sm line-clamp-1">
