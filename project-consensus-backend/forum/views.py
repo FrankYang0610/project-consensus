@@ -75,11 +75,10 @@ class ForumPostViewSet(viewsets.ModelViewSet):
             # Normalize and deduplicate incoming tags while preserving order
             normalized_tags = [t.strip() for t in tags if t and t.strip()]
             if normalized_tags:
-                # Apply AND semantics by requiring each tag to be contained
-                # Using per-tag contains ensures consistent behavior across backends
-                # Deduplicate tags while preserving order using dict.fromkeys()
-                for tag in dict.fromkeys(normalized_tags):
-                    qs = qs.filter(tags__contains=[tag])
+                # Apply AND semantics by requiring all selected tags to be contained
+                # Use a single JSON contains condition with the full unique tag list
+                unique_tags = list(dict.fromkeys(normalized_tags))
+                qs = qs.filter(tags__contains=unique_tags)
 
         return qs
 
