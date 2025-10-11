@@ -114,7 +114,7 @@ export default function HomePage() {
     };
     reset(nextParams);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orderingParam, searchQuery, tagParams.join("|")]);
+  }, [orderingParam, searchQuery, JSON.stringify([...tagParams].sort())]);
 
   // no-op
 
