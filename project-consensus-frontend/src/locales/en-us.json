@@ -87,6 +87,8 @@
     "cancel": "Cancel",
     "tags": "Tags",
     "tagPlaceholder": "Enter tag name",
+    "tagConfirmHint": "press Enter to confirm",
+    "tagPlaceholderWithHint": "{{base}}, {{hint}}",
     "removeTag": "Remove tag",
     "maxTagsReached": "Maximum {{max}} tags allowed",
     "edited": "Edited",

@@ -87,6 +87,8 @@
     "cancel": "取消",
     "tags": "標籤",
     "tagPlaceholder": "輸入標籤名稱",
+    "tagConfirmHint": "回車以確認標籤",
+    "tagPlaceholderWithHint": "{{base}}，{{hint}}",
     "removeTag": "移除標籤",
     "maxTagsReached": "最多只能添加 {{max}} 個標籤",
     "edited": "已編輯",
