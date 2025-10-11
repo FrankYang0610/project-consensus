@@ -133,7 +133,9 @@ export function validateSearchQuery(query: string): SearchQueryValidationResult 
   });
 
   // Remove control characters using validator.js
-  sanitized = validator.stripLow(sanitized, true); // Keep newlines for search
+  sanitized = validator.stripLow(sanitized, true); // Newlines will be normalized for search
+  // Normalize newlines to spaces for better search experience
+  sanitized = sanitized.replace(/[\r\n]+/g, ' ');
 
   // Additional security: check for suspicious content using validator.js
   // Note: These are search-specific validations beyond basic HTML sanitization
