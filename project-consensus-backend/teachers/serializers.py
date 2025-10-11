@@ -51,7 +51,17 @@ class TeacherSerializer(serializers.ModelSerializer):
         }
 
     def get_avatarUrl(self, obj: Teacher):
-        return obj.avatar_url or None
+        """
+        Return avatar URL if available, otherwise return initials for default avatar.
+        
+        Frontend can check if the value is a URL or initials:
+        - URL: starts with "http://" or "https://"
+        - Initials: short string (1-5 characters)
+        
+        """
+        if obj.avatar_url:
+            return obj.avatar_url
+        return obj.initials
 
 
 class TeacherCourseRefSerializer(serializers.Serializer):

@@ -243,9 +243,18 @@ function MetaRow({ label, value }: { label: string; value?: React.ReactNode }) {
 
 /**
  * Teacher avatar component with fallback to initials
+ * Handles both URL and initials from backend
  */
 function TeacherAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string }) {
+  // Check if avatarUrl is a full URL or initials from backend
+  const isUrl = avatarUrl?.startsWith('http://') || avatarUrl?.startsWith('https://');
+  
   const initials = React.useMemo(() => {
+    if (avatarUrl && !isUrl) {
+      // Backend already provided initials (e.g., "WYW")
+      return avatarUrl;
+    }
+    // Fallback: calculate initials from name
     if (!name || typeof name !== 'string') return '?';
     const trimmedName = name.trim();
     if (!trimmedName) return '?';
@@ -253,15 +262,15 @@ function TeacherAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string }
     const parts = trimmedName.split(/\s+/).filter(Boolean);
     const initialsText = parts.slice(0, 2).map(p => p[0]?.toUpperCase() ?? "").join("");
     return initialsText || trimmedName[0]?.toUpperCase() || "?";
-  }, [name]);
+  }, [name, avatarUrl, isUrl]);
 
   return (
     <div className="h-9 w-9 rounded-full bg-muted inline-flex items-center justify-center overflow-hidden">
-      {avatarUrl ? (
+      {isUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={avatarUrl} alt={name} className="h-full w-full object-cover" />
       ) : (
-        <span className="text-xs text-muted-foreground">{initials}</span>
+        <span className="text-xs text-muted-foreground font-medium">{initials}</span>
       )}
     </div>
   );

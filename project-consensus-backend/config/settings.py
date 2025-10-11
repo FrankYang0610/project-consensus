@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     # Third-party apps
     'rest_framework',           # Django REST Framework for building APIs
     'corsheaders',              # CORS handling for browser cross-origin requests
+    'storages',                 # Django-storages for S3-compatible storage (R2)
 
     # Local apps
     'core',
@@ -159,6 +160,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
     "DEFAULT_PARSER_CLASSES": ["rest_framework.parsers.JSONParser"],
+    "DEFAULT_THROTTLE_RATES": {
+        "image_upload": "100/hour",  # Image upload rate limit
+    },
 }
 
 # Cache configuration (LocMem by default; override with CACHE_URL)
@@ -195,3 +199,37 @@ CSRF_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SAMESITE = 'Lax'
 # CSRF token must be readable by JS to set X-CSRFToken header
 CSRF_COOKIE_HTTPONLY = False
+
+# ==================== File Storage Configuration ====================
+# Use Cloudflare R2 for media files via django-storages with S3 backend
+# R2 is S3-compatible with zero egress fees and built-in CDN
+
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "bucket_name": env("R2_BUCKET_NAME", default="placeholder-bucket"),
+            "access_key": env("R2_ACCESS_KEY_ID", default="placeholder-access-key"),
+            "secret_key": env("R2_SECRET_ACCESS_KEY", default="placeholder-secret-key"),
+            "endpoint_url": f'https://{env("R2_ACCOUNT_ID", default="placeholder-account-id")}.r2.cloudflarestorage.com',
+            "region_name": "auto",  # R2 uses 'auto' for region
+            "custom_domain": env("R2_PUBLIC_DOMAIN", default=None),
+            "default_acl": None,  # R2 doesn't use ACLs
+            "file_overwrite": False,  # Keep unique filenames
+            "object_parameters": {
+                "CacheControl": "max-age=86400",  # 1 day cache
+            },
+        },
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
+# Image upload settings
+MAX_IMAGE_SIZE = env.int("MAX_IMAGE_SIZE_MB", default=5) * 1024 * 1024  # Convert to bytes (default: 5MB)
+MAX_IMAGE_PIXELS = env.int("MAX_IMAGE_PIXELS", default=50_000_000)  # Max pixels to prevent decompression bombs (default: 50MP)
+ALLOWED_IMAGE_EXTENSIONS = [
+    ext.strip().lower() 
+    for ext in env("ALLOWED_IMAGE_TYPES", default="jpg,jpeg,png,gif,webp").split(",")
+]

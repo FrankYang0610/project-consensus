@@ -27,7 +27,7 @@ import {
   ImageResize,
   ImageUpload,
   PictureEditing,
-  Base64UploadAdapter
+  SimpleUploadAdapter,
 } from 'ckeditor5';
 import type { EditorConfig } from 'ckeditor5';
 import { cn } from '@/lib/utils';
@@ -40,8 +40,20 @@ type RichTextEditorProps = {
   onChange: (html: string) => void;
   placeholder?: string;
   className?: string;
-  // TODO: If switching to server upload later, add `uploadUrl` and SimpleUploadAdapter
 };
+
+// Helper to get CSRF token from cookie
+function getCsrfToken(): string | null {
+  const name = 'csrftoken';
+  const cookies = document.cookie.split(';');
+  for (let cookie of cookies) {
+    cookie = cookie.trim();
+    if (cookie.startsWith(name + '=')) {
+      return decodeURIComponent(cookie.substring(name.length + 1));
+    }
+  }
+  return null;
+}
 
 export default function RichTextEditor({ value, onChange, placeholder, className }: RichTextEditorProps) {
   const plugins: NonNullable<EditorConfig['plugins']> = [
@@ -67,7 +79,7 @@ export default function RichTextEditor({ value, onChange, placeholder, className
     ImageResize,
     ImageUpload,
     PictureEditing,
-    Base64UploadAdapter
+    SimpleUploadAdapter,
   ];
 
   const toolbar: string[] = [
@@ -97,10 +109,15 @@ export default function RichTextEditor({ value, onChange, placeholder, className
         'resizeImage'
       ]
     },
-    table: { contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells'] }
-    // NOTE: Using Base64UploadAdapter by default. This inlines images as data URI.
-    // TODO[Optional]: Switch to SimpleUploadAdapter with an `uploadUrl` when backend 
-    // is ready to persist files and return a public URL: { url: 'https://...' }.
+    table: { contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells'] },
+    // SimpleUploadAdapter configuration for R2 image upload
+    simpleUpload: {
+      uploadUrl: '/api/upload/image/',
+      withCredentials: true,
+      headers: {
+        'X-CSRFToken': getCsrfToken() || '',
+      },
+    },
   };
 
   return (

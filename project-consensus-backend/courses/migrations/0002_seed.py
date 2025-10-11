@@ -116,7 +116,7 @@ def _ensure_min_teachers(apps, min_teachers: int):
                 "Computer Science", "Mathematics", "Physics", "Chemistry", "Economics",
                 "Psychology", "Electrical Engineering", "Biology", "History", "Art",
             ]),
-            avatar_url="",
+            # avatar_url留空，将使用教师姓名首字母作为默认头像
             email=f"teacher{i}@university.edu",
             office=f"Bldg {random.randint(1,9)}-{random.randint(101, 699)}",
             office_hours=random.choice(["Mon 14:00-16:00", "Wed 10:00-12:00", "Fri 13:00-15:00"]),
