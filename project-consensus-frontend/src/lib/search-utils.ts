@@ -46,11 +46,11 @@ export function buildSearchResultTitle(
 
   // Use title template from backend to build localized title
   if (titleTemplate === 'commentOn') {
-    return t('search.commentOn') + ': ' + title;
+    return `${t('search.commentOn')}: ${title}`;
   }
 
   if (titleTemplate === 'reviewOn') {
-    return t('search.reviewOn') + ': ' + title;
+    return `${t('search.reviewOn')}: ${title}`;
   }
 
   // For regular titles, return as-is
