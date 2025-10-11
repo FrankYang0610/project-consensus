@@ -56,16 +56,33 @@ class ImageUploadView(APIView):
     throttle_classes = [ImageUploadRateThrottle]
     
     def post(self, request):
-        """Handle image upload POST request."""
+        """
+        Handle image upload.
         
-        # Validate request data
-        serializer = ImageUploadSerializer(data=request.data)
+        Supports both 'image' and 'upload' field names for compatibility:
+        - 'image': Used by custom upload forms (e.g., AvatarUpload)
+        - 'upload': Used by CKEditor SimpleUploadAdapter
+        
+        Returns:
+            200: {"url": "https://..."}
+            400: {"error": "...", "detail": {...}}
+        """
+        # Normalize field name: CKEditor uses 'upload', we use 'image'
+        # Note: Can't use .copy() on request.data as it contains file objects
+        data = {}
+        if 'upload' in request.data and 'image' not in request.data:
+            data['image'] = request.data['upload']
+        else:
+            data['image'] = request.data.get('image')
+        
+        # Copy folder parameter if present
+        if 'folder' in request.data:
+            data['folder'] = request.data['folder']
+        
+        serializer = ImageUploadSerializer(data=data)
         
         if not serializer.is_valid():
-            logger.warning(
-                f"Image upload validation failed for user {request.user.id}: "
-                f"{serializer.errors}"
-            )
+            logger.warning(f"Image validation failed during upload: user={request.user.id}, errors={serializer.errors}")
             return Response(
                 {
                     "error": "Invalid upload request",
@@ -74,39 +91,17 @@ class ImageUploadView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Extract validated data
-        image_file = serializer.validated_data['image']
-        folder = serializer.validated_data.get('folder', 'images')
-        
-        # Upload to R2
         try:
+            image_file = serializer.validated_data['image']
+            folder = serializer.validated_data.get('folder', 'images')
+            
             url = upload_image_to_r2(image_file, folder=folder)
             
-            logger.info(
-                f"Image uploaded successfully: user={request.user.id}, "
-                f"size={image_file.size}, folder={folder}"
-            )
-            
-            return Response(
-                {"url": url},
-                status=status.HTTP_200_OK
-            )
-            
-        except DjangoValidationError as e:
-            logger.warning(
-                f"Image validation failed during upload: user={request.user.id}, "
-                f"error={str(e)}"
-            )
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            logger.info(f"Image uploaded successfully: user={request.user.id}, size={image_file.size}, folder={folder}")
+            return Response({"url": url}, status=status.HTTP_200_OK)
             
         except Exception as e:
-            logger.error(
-                f"Image upload failed: user={request.user.id}, error={str(e)}",
-                exc_info=True
-            )
+            logger.error(f"Image upload failed: user={request.user.id}, error={str(e)}", exc_info=True)
             return Response(
                 {"error": "Failed to upload image. Please try again."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

@@ -3,6 +3,7 @@ from __future__ import annotations
 import bleach
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
+from core.validators import validate_https_url_in_allowed_hosts
 
 from .models import Profile
 
@@ -117,6 +118,9 @@ class ProfileSerializer(serializers.ModelSerializer):
         model = Profile
         fields = ["user_id", "nickname", "avatar_url", "pronouns", "show_forum_posts_publicly", "show_forum_post_comments_publicly", "show_course_reviews_publicly"]
     
+    def validate_avatar_url(self, value: str) -> str:
+        return validate_https_url_in_allowed_hosts(value)
+
     def validate_nickname(self, value):
         """Validate and sanitize nickname field, check uniqueness."""
         if value is not None and value != '':

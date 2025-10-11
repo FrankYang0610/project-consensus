@@ -31,6 +31,7 @@ import {
 } from 'ckeditor5';
 import type { EditorConfig } from 'ckeditor5';
 import { cn } from '@/lib/utils';
+import { getAPIBaseUrl, getCookie } from '@/lib/api/api-utils';
 
 // CKEditor 5 styles (required for proper UI rendering)
 // NOTE: Global CSS must be imported in a root layout. See `src/app/layout.tsx`.
@@ -41,19 +42,6 @@ type RichTextEditorProps = {
   placeholder?: string;
   className?: string;
 };
-
-// Helper to get CSRF token from cookie
-function getCsrfToken(): string | null {
-  const name = 'csrftoken';
-  const cookies = document.cookie.split(';');
-  for (let cookie of cookies) {
-    cookie = cookie.trim();
-    if (cookie.startsWith(name + '=')) {
-      return decodeURIComponent(cookie.substring(name.length + 1));
-    }
-  }
-  return null;
-}
 
 export default function RichTextEditor({ value, onChange, placeholder, className }: RichTextEditorProps) {
   const plugins: NonNullable<EditorConfig['plugins']> = [
@@ -111,11 +99,12 @@ export default function RichTextEditor({ value, onChange, placeholder, className
     },
     table: { contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells'] },
     // SimpleUploadAdapter configuration for R2 image upload
+    // CKEditor sends images with field name 'upload'
     simpleUpload: {
-      uploadUrl: '/api/upload/image/',
+      uploadUrl: `${getAPIBaseUrl()}/api/upload/image/`,
       withCredentials: true,
       headers: {
-        'X-CSRFToken': getCsrfToken() || '',
+        'X-CSRFToken': getCookie('csrftoken') || '',
       },
     },
   };

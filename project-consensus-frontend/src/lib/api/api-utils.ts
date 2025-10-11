@@ -134,3 +134,29 @@ export async function apiPatch<T>(path: string, body: unknown, init?: RequestIni
   }
   return res.json();
 }
+
+// CSRF-protected multipart/form-data upload helper
+export async function apiUpload<T>(path: string, formData: FormData, init?: RequestInit): Promise<T> {
+  const base = getAPIBaseUrl();
+  const url = `${base}${path}`;
+  let csrftoken = getCookie('csrftoken');
+  if (!csrftoken) {
+    await ensureCSRFCookie();
+    csrftoken = getCookie('csrftoken');
+  }
+  const res = await fetch(url, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      // Don't set Content-Type - browser will set it with boundary for multipart/form-data
+      ...(csrftoken ? { 'X-CSRFToken': csrftoken } : {}),
+    },
+    body: formData,
+    ...init,
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`UPLOAD ${url} failed: ${res.status} ${text}`);
+  }
+  return res.json();
+}

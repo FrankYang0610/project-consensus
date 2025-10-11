@@ -4,25 +4,12 @@ import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Upload, X } from 'lucide-react';
+import { apiUpload } from '@/lib/api/api-utils';
 
 interface AvatarUploadProps {
   currentAvatar?: string;
   onUploadSuccess: (url: string) => void;
   className?: string;
-}
-
-function getCsrfToken(): string | null {
-  const name = 'csrftoken';
-  const cookies = document.cookie.split(';');
-  
-  for (let cookie of cookies) {
-    cookie = cookie.trim();
-    if (cookie.startsWith(name + '=')) {
-      return decodeURIComponent(cookie.substring(name.length + 1));
-    }
-  }
-  
-  return null;
 }
 
 export function AvatarUpload({ currentAvatar, onUploadSuccess, className }: AvatarUploadProps) {
@@ -65,21 +52,7 @@ export function AvatarUpload({ currentAvatar, onUploadSuccess, className }: Avat
       formData.append('image', file);
       formData.append('folder', 'avatars');
 
-      const response = await fetch('/api/upload/image/', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include',
-        headers: {
-          'X-CSRFToken': getCsrfToken() || '',
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Upload failed');
-      }
-
-      const data = await response.json();
+      const data = await apiUpload<{ url: string }>('/api/upload/image/', formData);
       onUploadSuccess(data.url);
       setPreview(data.url);
     } catch (err) {

@@ -11,18 +11,26 @@ export function sanitizeHtml(html: string): string {
   // This ensures each sanitization call has its own hook context
   const purify = DOMPurify();
 
-  // Strict allowlist policy: only a small set of safe, text-formatting tags are permitted
-  // - Allow minimal safe attributes for tables, code blocks, and lists
-  // - Explicitly forbid rich/embedded and scriptable contexts
+  // Strict allowlist policy with safe support for links and images.
+  // - Permit basic text formatting and tables
+  // - Allow <a> (http/https only) and <img> (restricted hosts and https only)
   const config = {
     ALLOWED_TAGS: [
       'p', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'br',
       'strong', 'em', 'code', 'pre', 'blockquote',
-      'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th'
+      'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th',
+      // Links and images
+      'a', 'img'
     ],
-    // ALLOWED_ATTR expects a string array of globally allowed attributes
-    // Tag-specific attribute control is done via hooks below
-    ALLOWED_ATTR: ['colspan', 'rowspan', 'align', 'start', 'class'],
+    // ALLOWED_ATTR expects a string array of globally allowed attributes; tag-specific
+    // filtering is applied via hooks below
+    ALLOWED_ATTR: [
+      'colspan', 'rowspan', 'align', 'start', 'class',
+      // Link attrs
+      'href', 'title', 'target', 'rel',
+      // Image attrs
+      'src', 'alt', 'width', 'height'
+    ],
     SAFE_FOR_TEMPLATES: true,
     ALLOW_UNKNOWN_PROTOCOLS: false,
   };
@@ -71,10 +79,58 @@ export function sanitizeHtml(html: string): string {
     if (data.attrName === 'start' && node.nodeName !== 'OL') {
       data.keepAttr = false;
     }
+
+    // Validate <a href> to http/https only
+    if (node.nodeName === 'A' && data.attrName === 'href') {
+      try {
+        const u = new URL(data.attrValue, typeof window !== 'undefined' ? window.location.origin : 'https://example.com');
+        if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+          data.keepAttr = false;
+        }
+      } catch {
+        data.keepAttr = false;
+      }
+    }
+
+    // Validate <img src> to https and allowed hosts only
+    if (node.nodeName === 'IMG' && data.attrName === 'src') {
+      const raw = (data.attrValue || '').trim();
+      try {
+        const u = new URL(raw, typeof window !== 'undefined' ? window.location.origin : 'https://example.com');
+        const allowedHosts = (process.env.NEXT_PUBLIC_ALLOWED_IMAGE_HOSTS || 'image.polyu.life')
+          .split(',')
+          .map(h => h.trim().toLowerCase())
+          .filter(Boolean);
+        const host = u.host.toLowerCase();
+        // Only https and within allowlist
+        if (u.protocol !== 'https:' || !allowedHosts.includes(host)) {
+          data.keepAttr = false;
+        }
+      } catch {
+        data.keepAttr = false;
+      }
+    }
   };
 
   // Add hook to this isolated instance only
   purify.addHook('uponSanitizeAttribute', attributeHook);
+
+  // Ensure external links open safely
+  purify.addHook('afterSanitizeAttributes', (node: Element) => {
+    if (node.nodeName === 'A') {
+      const href = (node.getAttribute('href') || '').trim();
+      if (href) {
+        const target = node.getAttribute('target');
+        if (target === '_blank') {
+          const rel = (node.getAttribute('rel') || '').toLowerCase();
+          const needed = ['noopener', 'noreferrer', 'nofollow'];
+          const parts = new Set(rel.split(/\s+/).filter(Boolean));
+          needed.forEach((t) => parts.add(t));
+          node.setAttribute('rel', Array.from(parts).join(' '));
+        }
+      }
+    }
+  });
 
   // Sanitize the HTML using the isolated instance
   const sanitized = purify.sanitize(html, config);

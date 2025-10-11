@@ -4,6 +4,8 @@ import uuid
 from django.contrib.auth import get_user_model
 import bleach
 from rest_framework import serializers
+from urllib.parse import urlparse
+from core.validators import get_allowed_image_hosts
 
 from accounts.models import Profile
 from accounts.serializers import AuthorSerializer
@@ -62,10 +64,55 @@ def _sanitize_html(html: str) -> str:
     """
     if not isinstance(html, str):
         return ""
+    allowed_hosts = get_allowed_image_hosts()
+
+    # Attribute filters for <img> and <a>
+    def _img_attr_filter(tag: str, name: str, value: str):
+        allowed = set(ALLOWED_ATTRS.get('img', []))
+        if name not in allowed:
+            return None
+        if name == 'src':
+            try:
+                parsed = urlparse(value)
+            except Exception:
+                return None
+            if parsed.scheme.lower() != 'https' or not parsed.netloc:
+                return None
+            if parsed.netloc.lower() not in allowed_hosts:
+                return None
+            return value
+        if name in ('width', 'height'):
+            # Only allow numeric values (optionally with 'px')
+            try:
+                s = str(value).strip().lower()
+                if s.endswith('px'):
+                    s = s[:-2]
+                int(s)
+            except Exception:
+                return None
+        return value
+
+    def _link_attr_filter(tag: str, name: str, value: str):
+        allowed = set(ALLOWED_ATTRS.get('a', []))
+        if name not in allowed:
+            return None
+        if name == 'href':
+            try:
+                parsed = urlparse(value)
+            except Exception:
+                return None
+            if parsed.scheme.lower() not in ('http', 'https'):
+                return None
+        return value
+
+    attributes = dict(ALLOWED_ATTRS)
+    attributes['img'] = _img_attr_filter
+    attributes['a'] = _link_attr_filter
+
     return bleach.clean(
         html,
         tags=ALLOWED_TAGS,
-        attributes=ALLOWED_ATTRS,
+        attributes=attributes,
         protocols=ALLOWED_PROTOCOLS,
         strip=True
     )

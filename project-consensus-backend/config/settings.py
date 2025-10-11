@@ -159,7 +159,14 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Django REST Framework minimal configuration: JSON-only API by default.
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
-    "DEFAULT_PARSER_CLASSES": ["rest_framework.parsers.JSONParser"],
+    "DEFAULT_PARSER_CLASSES": [
+        "rest_framework.parsers.JSONParser",
+        "rest_framework.parsers.MultiPartParser",
+        "rest_framework.parsers.FormParser",
+    ],
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+    ],
     "DEFAULT_THROTTLE_RATES": {
         "image_upload": "100/hour",  # Image upload rate limit
     },
@@ -232,4 +239,10 @@ MAX_IMAGE_PIXELS = env.int("MAX_IMAGE_PIXELS", default=50_000_000)  # Max pixels
 ALLOWED_IMAGE_EXTENSIONS = [
     ext.strip().lower() 
     for ext in env("ALLOWED_IMAGE_TYPES", default="jpg,jpeg,png,gif,webp").split(",")
+]
+
+# Allowed public image hosts for rendering and profile avatar URLs
+# Comma-separated. Example: "image.polyu.life,cdn.example.com"
+ALLOWED_IMAGE_HOSTS = [
+    h.strip().lower() for h in env("ALLOWED_IMAGE_HOSTS", default="image.polyu.life").split(",") if h.strip()
 ]
