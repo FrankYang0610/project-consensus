@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.postgres',      # PostgreSQL specific features (full-text search, trigram)
 
     # Third-party apps
     'rest_framework',           # Django REST Framework for building APIs

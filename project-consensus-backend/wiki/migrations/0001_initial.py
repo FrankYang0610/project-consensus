@@ -3,6 +3,7 @@
 import uuid
 import django.db.models.deletion
 from django.conf import settings
+from django.contrib.postgres.indexes import GinIndex
 from django.db import migrations, models
 
 
@@ -11,6 +12,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
+        ('core', '0001_initial'),  # Ensure pg_trgm extension is available
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
@@ -95,5 +97,22 @@ class Migration(migrations.Migration):
             constraint=models.UniqueConstraint(
                 fields=['translation_group', 'language'], name='wiki_page_trans_lang_unique'
             ),
+        ),
+        # Add trigram indexes for better search performance
+        migrations.AddIndex(
+            model_name='wikipage',
+            index=GinIndex(fields=['title'], name='wikipage_title_trgm_idx', opclasses=['gin_trgm_ops']),
+        ),
+        migrations.AddIndex(
+            model_name='wikipage',
+            index=GinIndex(fields=['content'], name='wikipage_content_trgm_idx', opclasses=['gin_trgm_ops']),
+        ),
+        migrations.AddIndex(
+            model_name='wikipage',
+            index=GinIndex(fields=['summary'], name='wikipage_summary_trgm_idx', opclasses=['gin_trgm_ops']),
+        ),
+        migrations.AddIndex(
+            model_name='wikipage',
+            index=GinIndex(fields=['tags'], name='wikipage_tags_trgm_idx', opclasses=['gin_trgm_ops']),
         ),
     ]

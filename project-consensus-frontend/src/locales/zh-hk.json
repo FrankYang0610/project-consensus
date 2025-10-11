@@ -21,7 +21,25 @@
     "resourcesDesc": "有用的工具和資料"
   },
   "search": {
-    "placeholder": "輸入搜尋..."
+    "placeholder": "搜尋課程、帖子、評論、點評...",
+    "noResults": "未找到結果",
+    "suggestions": "建議",
+    "seeAllResults": "查看全部結果",
+    "types": {
+      "all": "全部",
+      "course": "課程",
+      "forum_post": "帖子",
+      "forum_comment": "評論",
+      "course_review": "課程點評",
+      "wiki": "Wiki",
+      "teacher": "教師",
+      "user": "用戶"
+    },
+    "commentOn": "評論於",
+    "reviewOn": "點評於",
+    "resultsFor": "搜尋結果：{{query}}",
+    "totalResults": "共 {{count}} 條結果",
+    "filterByType": "按類型篩選"
   },
   "auth": {
     "login": "登入",

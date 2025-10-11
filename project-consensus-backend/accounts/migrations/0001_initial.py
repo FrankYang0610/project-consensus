@@ -3,6 +3,7 @@
 import django.db.models.deletion
 import django.utils.timezone
 from django.conf import settings
+from django.contrib.postgres.indexes import GinIndex
 from django.db import migrations, models
 
 
@@ -11,6 +12,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
+        ('core', '0001_initial'),  # Ensure pg_trgm extension is available
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
@@ -75,5 +77,9 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'Profiles',
             },
         ),
-        
+        # Add trigram index for better search performance on nickname
+        migrations.AddIndex(
+            model_name='profile',
+            index=GinIndex(fields=['nickname'], name='profile_nickname_trgm_idx', opclasses=['gin_trgm_ops']),
+        ),
     ]

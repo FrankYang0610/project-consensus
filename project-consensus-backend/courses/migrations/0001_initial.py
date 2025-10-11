@@ -4,6 +4,7 @@ import django.db.models.deletion
 import django.utils.timezone
 import uuid
 from django.conf import settings
+from django.contrib.postgres.indexes import GinIndex
 from django.db import migrations, models
 
 
@@ -12,6 +13,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
+        ('core', '0001_initial'),  # Ensure pg_trgm extension is available
         ('teachers', '0001_initial'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
@@ -142,9 +144,32 @@ class Migration(migrations.Migration):
             model_name='course',
             index=models.Index(fields=['course_id'], name='courses_cou_course__119e53_idx'),
         ),
+        # Add trigram indexes for better search performance on Chinese text
+        migrations.AddIndex(
+            model_name='course',
+            index=GinIndex(fields=['subject_code'], name='courses_subject_code_trgm_idx', opclasses=['gin_trgm_ops']),
+        ),
+        migrations.AddIndex(
+            model_name='course',
+            index=GinIndex(fields=['title'], name='courses_title_trgm_idx', opclasses=['gin_trgm_ops']),
+        ),
+        migrations.AddIndex(
+            model_name='course',
+            index=GinIndex(fields=['department'], name='courses_department_trgm_idx', opclasses=['gin_trgm_ops']),
+        ),
+        # Add index for ordering
+        migrations.AddIndex(
+            model_name='course',
+            index=models.Index(fields=['-last_updated'], name='courses_last_updated_idx'),
+        ),
         migrations.AddConstraint(
             model_name='coursereview',
             constraint=models.UniqueConstraint(fields=('author', 'course'), name='unique_course_review_per_user'),
+        ),
+        # Add trigram index for course review content search
+        migrations.AddIndex(
+            model_name='coursereview',
+            index=GinIndex(fields=['content'], name='coursereview_content_trgm_idx', opclasses=['gin_trgm_ops']),
         ),
         migrations.AddIndex(
             model_name='coursereviewlike',
