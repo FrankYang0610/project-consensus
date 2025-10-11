@@ -38,7 +38,7 @@ import { stripHtmlTags, truncateHtmlContent } from "@/lib/html-utils";
 import { ForumPost } from "@/types";
 import { useI18n } from "@/hooks/use-i18n";
 import { useApp } from "@/contexts/AppContext";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import ClientOnlyTime from "./ClientOnlyTime";
 
@@ -64,6 +64,8 @@ export function ForumPostPreviewCard({
   const { t } = useI18n();
   const { isLoggedIn, openLoginModal } = useApp();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const [showDialog, setShowDialog] = React.useState(false);
   const [dialogMessage, setDialogMessage] = React.useState("");
@@ -203,9 +205,14 @@ export function ForumPostPreviewCard({
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  const params = new URLSearchParams();
-                  params.append('tags', tag);
-                  router.push(`/?${params.toString()}`);
+                  // Merge current URL params and append tag
+                  const params = new URLSearchParams(searchParams.toString());
+                  // prevent duplicating the same tag
+                  const existing = params.getAll('tags');
+                  if (!existing.includes(tag)) {
+                    params.append('tags', tag);
+                  }
+                  router.push(`${pathname}?${params.toString()}`);
                 }}
                 className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[11px] font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-transform duration-150 hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
                 title={`#${tag}`}

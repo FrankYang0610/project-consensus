@@ -18,6 +18,11 @@ export default function HomePage() {
   const { t } = useI18n();
   const { isLoggedIn, user } = useApp();
   const searchParams = useSearchParams();
+  
+  // URL is the single source of truth for filters
+  const orderingParam = searchParams.get("ordering") || undefined;
+  const searchQuery = searchParams.get("search") || undefined;
+  const tagParams = searchParams.getAll("tags").filter(Boolean);
   const {
     items: posts,
     setItems: setPosts,
@@ -29,7 +34,14 @@ export default function HomePage() {
     reset,
   } = useInfiniteList<ForumPost, import("@/types").FetchForumPostsParams>({
     pageFetcher: fetchForumPosts,
-    initialParams: { page: 1, pageSize: 12 },
+    // Initialize from URL to avoid a redundant first reset
+    initialParams: {
+      page: 1,
+      pageSize: 12,
+      ...(orderingParam ? { ordering: orderingParam } : {}),
+      ...(searchQuery ? { search: searchQuery } : {}),
+      ...(tagParams.length ? { tags: tagParams } : {}),
+    },
     pageSize: 12,
     dedupeKey: (p) => p.id,
   });
@@ -83,11 +95,7 @@ export default function HomePage() {
 
   const visiblePosts = posts; // All loaded posts are shown
 
-  // Derive filters from URL query
-  const orderingParam = searchParams.get("ordering") || undefined;
-  const searchQuery = searchParams.get("search") || undefined;
-  const tagParams = searchParams.getAll("tags").filter(Boolean);
-
+  // Helper: map ordering to sort key for UI
   const mapOrderingToSort = (ordering?: string): string => {
     switch (ordering) {
       case "-created_at":
@@ -103,7 +111,8 @@ export default function HomePage() {
 
   const initialSort = mapOrderingToSort(orderingParam);
 
-  // React to URL changes by resetting the list with new params
+  // React to URL changes by resetting the list (skip initial run to avoid duplicate fetch)
+  const didInitRef = React.useRef(false);
   React.useEffect(() => {
     const nextParams: import("@/types").FetchForumPostsParams = {
       page: 1,
@@ -112,6 +121,10 @@ export default function HomePage() {
       ...(searchQuery ? { search: searchQuery } : {}),
       ...(tagParams.length ? { tags: tagParams } : {}),
     };
+    if (!didInitRef.current) {
+      didInitRef.current = true;
+      return;
+    }
     reset(nextParams);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderingParam, searchQuery, JSON.stringify([...tagParams].sort())]);
