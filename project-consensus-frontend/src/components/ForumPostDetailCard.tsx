@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import {
   Calendar,
   Heart,
@@ -75,6 +76,7 @@ export function ForumPostDetailCard({
   // i18n translation
   const { t, language } = useI18n();
   const { isLoggedIn, openLoginModal, user } = useApp();
+  const router = useRouter();
 
   const [showDialog, setShowDialog] = React.useState(false);
   const [dialogMessage, setDialogMessage] = React.useState("");
@@ -314,12 +316,22 @@ export function ForumPostDetailCard({
           post.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mb-1">
               {post.tags.map((tag) => (
-                <span
+                <button
                   key={tag}
-                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground"
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const params = new URLSearchParams();
+                    params.append('tags', tag);
+                    router.push(`/?${params.toString()}`);
+                  }}
+                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-transform duration-150 hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
+                  title={`#${tag}`}
+                  aria-label={`Filter by tag ${tag}`}
                 >
                   #{tag}
-                </span>
+                </button>
               ))}
             </div>
           )

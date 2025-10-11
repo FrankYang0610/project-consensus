@@ -14,14 +14,13 @@ import { ChevronDown } from "lucide-react";
 import { InlineTagManager } from "@/components/InlineTagManager";
 import { useI18n } from "@/hooks/use-i18n";
 import { cn } from "@/lib/utils";
+import { usePathname, useRouter } from "next/navigation";
 
 interface ForumFilterBarProps {
   className?: string;
-  onApply?: (filters: {
-    ordering?: string;
-    search?: string;
-    tags?: string[];
-  }) => void;
+  initialSort?: string; // "default" | "newest" | "likes" | "comments"
+  initialSearch?: string;
+  initialTags?: string[];
 }
 
 // Sorting choices follow common industry defaults for forums/feeds.
@@ -34,19 +33,32 @@ const sortOptions = [
   { value: "comments", label: "Most commented" },
 ];
 
-export function ForumFilterBar({ className, onApply }: ForumFilterBarProps) {
+export function ForumFilterBar({ className, initialSort, initialSearch, initialTags }: ForumFilterBarProps) {
   const { t } = useI18n();
-  const [sort, setSort] = React.useState<string>("default");
-  const [search, setSearch] = React.useState<string>("");
-  const [tags, setTags] = React.useState<string[]>([]);
+  const router = useRouter();
+  const pathname = usePathname();
+  const [sort, setSort] = React.useState<string>(initialSort ?? "default");
+  const [search, setSearch] = React.useState<string>(initialSearch ?? "");
+  const [tags, setTags] = React.useState<string[]>(initialTags ?? []);
   const onTagsChange = React.useCallback((next: string[]) => setTags(next), []);
+
+  // Sync internal state when initial props change
+  React.useEffect(() => {
+    setSort(initialSort ?? "default");
+  }, [initialSort]);
+  React.useEffect(() => {
+    setSearch(initialSearch ?? "");
+  }, [initialSearch]);
+  React.useEffect(() => {
+    setTags(initialTags ?? []);
+  }, [initialTags]);
 
   const clearAll = React.useCallback(() => {
     setSort("default");
     setSearch("");
     setTags([]);
-    onApply?.({});
-  }, [onApply]);
+    router.push(pathname);
+  }, [pathname, router]);
 
   const mapSortToOrdering = (s: string): string | undefined => {
     switch (s) {
@@ -64,13 +76,14 @@ export function ForumFilterBar({ className, onApply }: ForumFilterBarProps) {
 
   const handleApply = React.useCallback(() => {
     const ordering = mapSortToOrdering(sort);
-    const payload: { ordering?: string; search?: string; tags?: string[] } = {};
-    if (ordering) payload.ordering = ordering;
+    const params = new URLSearchParams();
+    if (ordering) params.set("ordering", ordering);
     const s = search.trim();
-    if (s) payload.search = s;
-    if (tags.length > 0) payload.tags = tags;
-    onApply?.(payload);
-  }, [onApply, search, sort, tags]);
+    if (s) params.set("search", s);
+    if (tags.length > 0) tags.forEach((t) => params.append("tags", t));
+    const qs = params.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname);
+  }, [pathname, router, search, sort, tags]);
 
   return (
     <div
