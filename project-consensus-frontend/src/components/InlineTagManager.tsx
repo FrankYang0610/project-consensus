@@ -25,7 +25,7 @@ export interface InlineTagManagerProps {
 export function InlineTagManager({
   value,
   onChange,
-  placeholder = "Add tag",
+  placeholder,
   maxTags = 10,
   className = "",
 }: InlineTagManagerProps) {
@@ -80,7 +80,10 @@ export function InlineTagManager({
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder={value.length === 0 ? placeholder : t("post.tagPlaceholder")}
+        placeholder={t("post.tagPlaceholderWithHint", {
+          base: value.length === 0 ? (placeholder ?? t("post.tagPlaceholder")) : t("post.tagPlaceholder"),
+          hint: t("post.tagConfirmHint"),
+        })}
         className="flex-1 outline-none bg-transparent placeholder:text-muted-foreground/70"
         maxLength={20}
       />
