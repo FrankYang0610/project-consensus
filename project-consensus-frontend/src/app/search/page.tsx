@@ -68,8 +68,8 @@ export default function SearchPage() {
     };
     
     reset(params);
-    // Use requestAnimationFrame for better performance than setTimeout
-    requestAnimationFrame(() => loadMore());
+    // Use setTimeout(0) to defer execution after state update
+    setTimeout(() => loadMore(), 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, selectedType]);
 
