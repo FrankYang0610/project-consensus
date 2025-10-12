@@ -14,6 +14,7 @@ import {
   toggleLikeReply,
   createReviewReply,
   deleteReviewReply,
+    fetchCourseReviewById,
   findReviewByReplyId,
 } from "@/lib/api/course";
 import { useI18n } from "@/hooks/use-i18n";
@@ -184,43 +185,59 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
     return () => window.removeEventListener('hashchange', parseHash);
   }, [courseId]);
 
-  // Auto-expand and scroll to target review when available
+  // Auto-insert, expand and scroll to target review when available
   React.useEffect(() => {
-    if (!targetReviewId || reviews.length === 0) return;
-    
-    // Check if target review exists in current reviews list
-    const targetReview = reviews.find(r => r.id === targetReviewId);
-    if (!targetReview) return;
+    if (!targetReviewId) return;
 
-    // Auto-expand replies for this review
-    setExpandedReviews(prev => new Set(prev).add(targetReviewId));
-
-    // Lazy-load replies if not already loaded
-    if (!repliesByReview[targetReviewId]) {
-      (async () => {
+    (async () => {
+      // Ensure the target review is present in the list; if not, fetch and inject
+      let targetReview = reviews.find(r => r.id === targetReviewId);
+      if (!targetReview) {
         try {
-          const page = await fetchReviewReplies({ reviewId: targetReviewId, page: 1, pageSize: 20, ordering: "created_at" });
-          setRepliesByReview(prev => ({ ...prev, [targetReviewId]: page.results }));
+          const fetched = await fetchCourseReviewById(targetReviewId);
+          if (fetched && fetched.courseId === courseId) {
+            setReviews(prev => {
+              // Avoid duplicates if another render already inserted it
+              if (prev.some(r => r.id === fetched.id)) return prev;
+              return [fetched, ...prev];
+            });
+            targetReview = fetched;
+          }
+        } catch (e) {
+          console.error('Failed to fetch target review', e);
+        }
+      }
+
+      if (!targetReview) return;
+
+      // Auto-expand replies for this review
+      setExpandedReviews(prev => new Set(prev).add(targetReview.id));
+
+      // Lazy-load replies if not already loaded
+      if (!repliesByReview[targetReview.id]) {
+        try {
+          const page = await fetchReviewReplies({ reviewId: targetReview.id, page: 1, pageSize: 20, ordering: "created_at" });
+          setRepliesByReview(prev => ({ ...prev, [targetReview!.id]: page.results }));
         } catch (e) {
           console.error('Failed to load replies for target review', e);
         }
-      })();
-    }
+      }
 
-    // Scroll to the review element after a short delay to ensure rendering
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        const element = document.getElementById(`review-${targetReviewId}`);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          // Clear target after scrolling
-          setTargetReviewId(undefined);
-        }
-      }, 300);
-    });
-  }, [targetReviewId, reviews, repliesByReview]);
+      // Scroll to the review element after a short delay to ensure rendering
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          const element = document.getElementById(`review-${targetReviewId}`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Clear target after scrolling
+            setTargetReviewId(undefined);
+          }
+        }, 300);
+      });
+    })();
+  }, [targetReviewId, courseId, reviews, repliesByReview, setReviews]);
 
-  // Auto-expand and scroll to target reply when available using efficient backend lookup
+  // Auto-insert, expand and scroll to target reply when available using efficient backend lookup
   React.useEffect(() => {
     if (!targetReplyId) return;
 
@@ -235,36 +252,55 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
     }
 
     if (foundReviewId) {
-      // We found it in already-loaded data, just expand and scroll
+      // We found it in already-loaded data; ensure the review is loaded, expand and scroll
       const reviewId = foundReviewId;
-      setExpandedReviews(prev => new Set(prev).add(reviewId));
-      
-      requestAnimationFrame(() => {
-        setTimeout(() => {
-          const element = document.getElementById(`reply-${targetReplyId}`);
-          if (element) {
-            // Use forum-style scroll calculation for better centering
-            const rect = element.getBoundingClientRect();
-            const absoluteTop = rect.top + window.pageYOffset;
-            const targetTop = Math.max(absoluteTop - (window.innerHeight / 2 - rect.height / 2), 0);
-            window.scrollTo({ top: targetTop, behavior: 'smooth' });
-            
-            // Add highlight effect (same as forum)
-            element.classList.add('ring-2', 'ring-primary/40');
-            setTimeout(() => element.classList.remove('ring-2', 'ring-primary/40'), 2000);
-            
-            // Clear target after scrolling
-            setTargetReplyId(undefined);
+      (async () => {
+        if (!reviews.some(r => r.id === reviewId)) {
+          try {
+            const fetched = await fetchCourseReviewById(reviewId);
+            if (fetched && fetched.courseId === courseId) {
+              setReviews(prev => (prev.some(r => r.id === fetched.id) ? prev : [fetched, ...prev]));
+            }
+          } catch (e) {
+            console.error('Failed to fetch parent review for reply', e);
           }
-        }, 400);
-      });
+        }
+        setExpandedReviews(prev => new Set(prev).add(reviewId));
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            const element = document.getElementById(`reply-${targetReplyId}`);
+            if (element) {
+              // Use forum-style scroll calculation for better centering
+              const rect = element.getBoundingClientRect();
+              const absoluteTop = rect.top + window.pageYOffset;
+              const targetTop = Math.max(absoluteTop - (window.innerHeight / 2 - rect.height / 2), 0);
+              window.scrollTo({ top: targetTop, behavior: 'smooth' });
+              // Add highlight effect (same as forum)
+              element.classList.add('ring-2', 'ring-primary/40');
+              setTimeout(() => element.classList.remove('ring-2', 'ring-primary/40'), 2000);
+              // Clear target after scrolling
+              setTargetReplyId(undefined);
+            }
+          }, 400);
+        });
+      })();
     } else {
       // Use backend endpoint to efficiently find which review contains this reply
       (async () => {
         try {
           const result = await findReviewByReplyId(targetReplyId);
           const reviewId = result.reviewId;
-          
+          // Ensure the parent review is present; fetch and insert if missing
+          if (!reviews.some(r => r.id === reviewId)) {
+            try {
+              const fetched = await fetchCourseReviewById(reviewId);
+              if (fetched && fetched.courseId === courseId) {
+                setReviews(prev => (prev.some(r => r.id === fetched.id) ? prev : [fetched, ...prev]));
+              }
+            } catch (e) {
+              console.error('Failed to fetch parent review for reply', e);
+            }
+          }
           // Expand the review
           setExpandedReviews(prev => new Set(prev).add(reviewId));
           
@@ -297,7 +333,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
         }
       })();
     }
-  }, [targetReplyId, repliesByReview]);
+  }, [targetReplyId, courseId, reviews, repliesByReview, setReviews]);
 
   // Toggle like/unlike a review
   const handleLikeReview = React.useCallback(async (reviewId: string) => {

@@ -106,6 +106,10 @@ export async function deleteCourseReview(reviewId: string): Promise<void> {
   return apiDeleteVoid(`/api/reviews/${encodeURIComponent(reviewId)}/`);
 }
 
+export async function fetchCourseReviewById(reviewId: string): Promise<CourseReview> {
+  return apiGet<CourseReview>(`/api/reviews/${encodeURIComponent(reviewId)}/`);
+}
+
 export async function findReviewByReplyId(replyId: string): Promise<{ replyId: string; reviewId: string; courseId: string }> {
   return apiGet<{ replyId: string; reviewId: string; courseId: string }>(
     `/api/replies/find-review/?replyId=${encodeURIComponent(replyId)}`
