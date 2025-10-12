@@ -44,13 +44,14 @@ type RichTextEditorProps = {
 };
 
 export default function RichTextEditor({ value, onChange, placeholder, className }: RichTextEditorProps) {
-  const [isCSRFReady, setIsCSRFReady] = useState(false);
+  const [csrfToken, setCSRFToken] = useState<string>('');
 
   // Ensure CSRF token is available before mounting the editor
   useEffect(() => {
     const initCSRF = async () => {
       await ensureCSRFCookie();
-      setIsCSRFReady(true);
+      const token = getCookie('csrftoken') || '';
+      setCSRFToken(token);
     };
     initCSRF();
   }, []);
@@ -114,13 +115,13 @@ export default function RichTextEditor({ value, onChange, placeholder, className
       uploadUrl: `${getAPIBaseUrl()}/api/upload/image/`,
       withCredentials: true,
       headers: {
-        'X-CSRFToken': getCookie('csrftoken') || '',
+        'X-CSRFToken': csrfToken,
       },
     },
   };
 
-  // Don't render editor until CSRF token is ensured
-  if (!isCSRFReady) {
+  // Don't render editor until CSRF token is retrieved
+  if (!csrfToken) {
     return <div className={cn(className, styles.container)}>Loading editor...</div>;
   }
 
