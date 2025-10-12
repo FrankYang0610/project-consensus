@@ -215,12 +215,12 @@ STORAGES = {
     "default": {
         "BACKEND": "storages.backends.s3.S3Storage",
         "OPTIONS": {
-            "bucket_name": env("R2_BUCKET_NAME", default="placeholder-bucket"),
-            "access_key": env("R2_ACCESS_KEY_ID", default="placeholder-access-key"),
-            "secret_key": env("R2_SECRET_ACCESS_KEY", default="placeholder-secret-key"),
-            "endpoint_url": f'https://{env("R2_ACCOUNT_ID", default="placeholder-account-id")}.r2.cloudflarestorage.com',
+            "bucket_name": env("R2_BUCKET_NAME"),
+            "access_key": env("R2_ACCESS_KEY_ID"),
+            "secret_key": env("R2_SECRET_ACCESS_KEY"),
+            "endpoint_url": f'https://{env("R2_ACCOUNT_ID")}.r2.cloudflarestorage.com',
             "region_name": "auto",  # R2 uses 'auto' for region
-            "custom_domain": env("R2_PUBLIC_DOMAIN", default=None),
+            "custom_domain": env("R2_PUBLIC_DOMAIN"),
             "default_acl": None,  # R2 doesn't use ACLs
             "file_overwrite": False,  # Keep unique filenames
             "object_parameters": {
