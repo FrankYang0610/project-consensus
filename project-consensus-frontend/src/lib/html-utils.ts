@@ -83,7 +83,11 @@ export function sanitizeHtml(html: string): string {
     // Validate <a href> to http/https only
     if (node.nodeName === 'A' && data.attrName === 'href') {
       try {
-        const u = new URL(data.attrValue, typeof window !== 'undefined' ? window.location.origin : 'https://example.com');
+        // Use configured site URL or localhost as fallback for base URL resolution
+        const baseUrl = typeof window !== 'undefined' 
+          ? window.location.origin 
+          : (process.env.NEXT_PUBLIC_SITE_URL || 'https://polyu.life');
+        const u = new URL(data.attrValue, baseUrl);
         if (u.protocol !== 'http:' && u.protocol !== 'https:') {
           data.keepAttr = false;
         }
@@ -96,7 +100,11 @@ export function sanitizeHtml(html: string): string {
     if (node.nodeName === 'IMG' && data.attrName === 'src') {
       const raw = (data.attrValue || '').trim();
       try {
-        const u = new URL(raw, typeof window !== 'undefined' ? window.location.origin : 'https://example.com');
+        // Use configured site URL or localhost as fallback for base URL resolution
+        const baseUrl = typeof window !== 'undefined' 
+          ? window.location.origin 
+          : (process.env.NEXT_PUBLIC_SITE_URL || 'https://polyu.life');
+        const u = new URL(raw, baseUrl);
         const allowedHosts = (process.env.NEXT_PUBLIC_ALLOWED_IMAGE_HOSTS || 'image.polyu.life')
           .split(',')
           .map(h => h.trim().toLowerCase())
