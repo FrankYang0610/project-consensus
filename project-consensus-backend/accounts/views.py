@@ -19,6 +19,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework import permissions
 
 from .models import Profile
+from core.utils import delete_storage_object_by_url
 from .serializers import SendCodeSerializer, RegisterSerializer, LoginSerializer, ProfileSerializer
 
 
@@ -316,9 +317,16 @@ def update_profile(request):
                 "days_remaining": days_remaining
             }, status=status.HTTP_429_TOO_MANY_REQUESTS)
     
+    old_avatar_url = getattr(profile, 'avatar_url', '')
     serializer = ProfileSerializer(profile, data=request.data, partial=True, context={'request': request})
     serializer.is_valid(raise_exception=True)
     serializer.save()
+    try:
+        new_avatar_url = getattr(profile, 'avatar_url', '')
+        if old_avatar_url and old_avatar_url != new_avatar_url:
+            delete_storage_object_by_url(old_avatar_url, owner_user_id=request.user.pk)
+    except Exception:
+        pass
     
     # Update last_nickname_updated_at if nickname was actually changed
     # 如果昵称确实被修改了，更新最后修改时间

@@ -11,30 +11,53 @@ from .models import Course, CourseReview, CourseReviewReply, CourseReviewLike, C
 User = get_user_model()
 
 
-# Strict allowlist: align with frontend DOMPurify settings
-ALLOWED_TAGS = [
+# Strict allowlists: review allows images, replies do not
+ALLOWED_TAGS_REVIEW = [
+    'p', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'br',
+    'strong', 'em', 'code', 'pre', 'blockquote',
+    'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th',
+    'img',
+]
+ALLOWED_ATTRS_REVIEW: dict[str, list[str]] = {
+    'td': ['colspan', 'rowspan', 'align'],
+    'th': ['colspan', 'rowspan', 'align'],
+    'code': ['class'],
+    'pre': ['class'],
+    'ol': ['start'],
+    'img': ['src', 'alt', 'title', 'width', 'height'],
+}
+
+ALLOWED_TAGS_TEXT = [
     'p', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'br',
     'strong', 'em', 'code', 'pre', 'blockquote',
     'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th',
 ]
-ALLOWED_ATTRS: dict[str, list[str]] = {
-    # Table attributes for cell merging and alignment
+ALLOWED_ATTRS_TEXT: dict[str, list[str]] = {
     'td': ['colspan', 'rowspan', 'align'],
     'th': ['colspan', 'rowspan', 'align'],
-    # Code syntax highlighting
     'code': ['class'],
     'pre': ['class'],
-    # Ordered list starting number
     'ol': ['start'],
 }
 
-def _sanitize_html(html: str) -> str:
+def _sanitize_html_review(html: str) -> str:
     if not isinstance(html, str):
         return ""
     return bleach.clean(
         html,
-        tags=ALLOWED_TAGS,
-        attributes=ALLOWED_ATTRS,
+        tags=ALLOWED_TAGS_REVIEW,
+        attributes=ALLOWED_ATTRS_REVIEW,
+        protocols=['http', 'https'],
+        strip=True
+    )
+
+def _sanitize_html_text(html: str) -> str:
+    if not isinstance(html, str):
+        return ""
+    return bleach.clean(
+        html,
+        tags=ALLOWED_TAGS_TEXT,
+        attributes=ALLOWED_ATTRS_TEXT,
         protocols=['http', 'https'],
         strip=True
     )
@@ -309,7 +332,7 @@ class CourseReviewSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         # Sanitize content field on output for security
         if 'content' in data and data['content']:
-            data['content'] = _sanitize_html(data['content'])
+            data['content'] = _sanitize_html_review(data['content'])
         # For text-only reviews, omit overallRating field to match frontend optional type
         if instance.only_text and 'overallRating' in data:
             del data['overallRating']
@@ -431,7 +454,7 @@ class CourseReviewSerializer(serializers.ModelSerializer):
         # Sanitize content (always sanitize if provided)
         if "content" in attrs:
             raw = attrs.get("content")
-            attrs["content"] = _sanitize_html(raw)
+            attrs["content"] = _sanitize_html_review(raw)
         return attrs
 
     def create(self, validated_data):  # type: ignore[override]
@@ -467,7 +490,7 @@ class CourseReviewSerializer(serializers.ModelSerializer):
 
         # Sanitize HTML content
         if "content" in validated_data:
-            validated_data["content"] = _sanitize_html(validated_data.get("content", ""))
+            validated_data["content"] = _sanitize_html_review(validated_data.get("content", ""))
 
         instance = CourseReview.objects.create(course=course, author=author, **validated_data)
         return instance
@@ -502,7 +525,7 @@ class CourseReviewSerializer(serializers.ModelSerializer):
             if key in validated_data:
                 val = validated_data[key]
                 if key == "content":
-                    val = _sanitize_html(val)
+                    val = _sanitize_html_review(val)
                 # Only update overall_rating if not in onlyText mode
                 if key == "overall_rating" and only_text:
                     continue
@@ -550,7 +573,7 @@ class CourseReviewReplySerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         # Sanitize content field on output for security
         if 'content' in data and data['content']:
-            data['content'] = _sanitize_html(data['content'])
+            data['content'] = _sanitize_html_text(data['content'])
         return data
 
     def get_author(self, obj: CourseReviewReply) -> dict:
@@ -597,13 +620,13 @@ class CourseReviewReplySerializer(serializers.ModelSerializer):
 
         # Sanitize content
         if "content" in validated_data:
-            validated_data["content"] = _sanitize_html(validated_data.get("content", ""))
+            validated_data["content"] = _sanitize_html_text(validated_data.get("content", ""))
 
         instance = CourseReviewReply.objects.create(review=review, author=author, reply_to_user=reply_to_user, **validated_data)
         return instance
 
     def update(self, instance: CourseReviewReply, validated_data):  # type: ignore[override]
         if "content" in validated_data:
-            instance.content = _sanitize_html(validated_data.get("content", ""))
+            instance.content = _sanitize_html_text(validated_data.get("content", ""))
         instance.save(update_fields=["content"])
         return instance

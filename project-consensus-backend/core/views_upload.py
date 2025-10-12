@@ -95,7 +95,7 @@ class ImageUploadView(APIView):
             image_file = serializer.validated_data['image']
             folder = serializer.validated_data.get('folder', 'images')
             
-            url = upload_image_to_r2(image_file, folder=folder)
+            url = upload_image_to_r2(image_file, folder=folder, user=request.user)
             
             logger.info(f"Image uploaded successfully: user={request.user.id}, size={image_file.size}, folder={folder}")
             return Response({"url": url}, status=status.HTTP_200_OK)

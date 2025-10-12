@@ -24,6 +24,7 @@ from .serializers import CourseSerializer, CourseReviewSerializer, CourseReviewR
 from notifications import NotificationType
 from notifications.events import emit, DomainEvent
 from django.utils import timezone
+from core.utils import delete_images_in_html
 
 
 def _is_constraint_violation(e: IntegrityError, constraint_name: str) -> bool:
@@ -642,6 +643,11 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):  # type: ignore[override]
         self._ensure_owner(instance)
         course = instance.course
+        # Best-effort: remove images referenced in this review that belong to the author
+        try:
+            delete_images_in_html(getattr(instance, "content", ""), owner_user_id=instance.author_id)
+        except Exception:
+            pass
         with transaction.atomic():
             instance.delete()
             _recompute_course_aggregates(course)

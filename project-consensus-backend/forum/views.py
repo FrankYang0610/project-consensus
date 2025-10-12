@@ -13,6 +13,7 @@ from .serializers import ForumPostSerializer, ForumPostCommentSerializer
 from notifications import NotificationType
 from notifications.events import emit, DomainEvent
 from django.utils import timezone
+from core.utils import delete_images_in_html
 
 
 class DefaultPageNumberPagination(PageNumberPagination):
@@ -68,6 +69,10 @@ class ForumPostViewSet(viewsets.ModelViewSet):
         post = self.get_object()
         if request.user != post.author:
             return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            delete_images_in_html(getattr(post, "content", ""), owner_user_id=post.author_id)
+        except Exception:
+            pass
         return super().destroy(request, *args, **kwargs)
 
     def update(self, request: Request, *args, **kwargs):  # type: ignore[override]
@@ -275,6 +280,11 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
         if getattr(comment, "is_deleted", False):
             serializer = self.get_serializer(comment, context={"request": request})
             return Response(serializer.data, status=status.HTTP_200_OK)
+
+        try:
+            delete_images_in_html(getattr(comment, "content", ""), owner_user_id=comment.author_id)
+        except Exception:
+            pass
 
         with transaction.atomic():
             # Soft delete and clear content
