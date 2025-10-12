@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import styles from './RichTextEditor.module.css';
 import {
@@ -31,7 +31,7 @@ import {
 } from 'ckeditor5';
 import type { EditorConfig } from 'ckeditor5';
 import { cn } from '@/lib/utils';
-import { getAPIBaseUrl, getCookie } from '@/lib/api/api-utils';
+import { getAPIBaseUrl, getCookie, ensureCSRFCookie } from '@/lib/api/api-utils';
 
 // CKEditor 5 styles (required for proper UI rendering)
 // NOTE: Global CSS must be imported in a root layout. See `src/app/layout.tsx`.
@@ -44,6 +44,16 @@ type RichTextEditorProps = {
 };
 
 export default function RichTextEditor({ value, onChange, placeholder, className }: RichTextEditorProps) {
+  const [isCSRFReady, setIsCSRFReady] = useState(false);
+
+  // Ensure CSRF token is available before mounting the editor
+  useEffect(() => {
+    const initCSRF = async () => {
+      await ensureCSRFCookie();
+      setIsCSRFReady(true);
+    };
+    initCSRF();
+  }, []);
   const plugins: NonNullable<EditorConfig['plugins']> = [
     Essentials,
     Paragraph,
@@ -108,6 +118,11 @@ export default function RichTextEditor({ value, onChange, placeholder, className
       },
     },
   };
+
+  // Don't render editor until CSRF token is ensured
+  if (!isCSRFReady) {
+    return <div className={cn(className, styles.container)}>Loading editor...</div>;
+  }
 
   return (
     <div className={cn(className, styles.container)}>
