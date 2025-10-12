@@ -17,11 +17,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from core.views import health, search
+from core.views_upload import ImageUploadView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/health/", health),
     path("api/search/", search),
+    path("api/upload/image/", ImageUploadView.as_view(), name='upload_image'),
     # API routers
     path("api/", include("courses.urls")),
     path("api/", include("teachers.urls")),

@@ -6,7 +6,6 @@ import bleach
 from rest_framework import serializers
 
 from accounts.models import Profile
-from accounts.serializers import AuthorSerializer
 from .models import ForumPost, ForumPostComment
 
 

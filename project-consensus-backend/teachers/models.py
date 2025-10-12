@@ -53,4 +53,25 @@ class Teacher(models.Model):
 
     def __str__(self) -> str:  # pragma: no cover
         return self.name
+    
+    @property
+    def initials(self) -> str:
+        """
+        Generate initials from teacher name.
+        
+        Examples:
+        - "Wang Yao Wu" -> "WYW"
+        - "John Smith" -> "JS"
+        - "Li" -> "L"
+        
+        """
+        if not self.name:
+            return "?"
+        
+        # Split name by spaces and get first letter of each part
+        parts = self.name.strip().split()
+        initials = ''.join(part[0].upper() for part in parts if part)
+        
+        # Fallback if something went wrong
+        return initials if initials else "?"
 

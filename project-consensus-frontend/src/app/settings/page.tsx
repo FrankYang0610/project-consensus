@@ -28,6 +28,7 @@ import { Language, User } from '@/types';
 import { updateProfile, updatePrivacySettings } from '@/lib/api/user-profile';
 import { PronounsSelector } from '@/components/PronounsSelector';
 import { validateNickname } from '@/lib/utils';
+import { AvatarUpload } from '@/components/AvatarUpload';
 
 type PrivacySettings = {
   showForumPostsPublicly: boolean;
@@ -304,25 +305,11 @@ export default function SettingsPage() {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="avatarUrl">{t('settings.profile.avatarUrl')}</Label>
-            <Input
-              id="avatarUrl"
-              value={avatarUrl}
-              onChange={(e) => setAvatarUrl(e.target.value)}
-              placeholder="https://..."
+            <Label>{t('settings.profile.avatarUrl')}</Label>
+            <AvatarUpload
+              currentAvatar={avatarUrl}
+              onUploadSuccess={(url) => setAvatarUrl(url)}
             />
-            TODO: validate URL to prevent XSS?
-            {avatarPreview && (
-              <div className="flex items-center gap-3 mt-1">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={avatarPreview}
-                  alt="avatar preview"
-                  className="w-12 h-12 rounded-full border object-cover"
-                />
-                <span className="text-xs text-muted-foreground">{t('settings.profile.preview')}</span>
-              </div>
-            )}
           </div>
 
           <PronounsSelector

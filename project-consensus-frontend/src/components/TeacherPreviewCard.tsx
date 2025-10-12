@@ -11,7 +11,18 @@ export interface TeacherPreviewCardProps {
 
 export function TeacherPreviewCard({ teacher }: TeacherPreviewCardProps) {
   const { t } = useI18n();
-  const avatarUrl = teacher.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(teacher.name)}`;
+  
+  // Check if avatarUrl is a full URL or initials from backend
+  const isUrl = teacher.avatarUrl?.startsWith('http://') || teacher.avatarUrl?.startsWith('https://');
+  const initials = React.useMemo(() => {
+    if (teacher.avatarUrl && !isUrl) {
+      // Backend already provided initials
+      return teacher.avatarUrl;
+    }
+    // Fallback: calculate initials from name
+    const parts = teacher.name.trim().split(/\s+/).filter(Boolean);
+    return parts.slice(0, 3).map(p => p[0]?.toUpperCase()).join("") || "?";
+  }, [teacher.avatarUrl, teacher.name, isUrl]);
 
   return (
     <Link href={`/teachers/${teacher.id}`}>
@@ -19,12 +30,20 @@ export function TeacherPreviewCard({ teacher }: TeacherPreviewCardProps) {
         <CardContent className="p-4 sm:p-5">
           <div className="flex items-start gap-4">
             {/* Avatar */}
-            <img
-              src={avatarUrl}
-              alt={teacher.name}
-              className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-muted object-cover flex-shrink-0"
-              loading="lazy"
-            />
+            {isUrl ? (
+              <img
+                src={teacher.avatarUrl}
+                alt={teacher.name}
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-muted object-cover flex-shrink-0"
+                loading="lazy"
+              />
+            ) : (
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-muted bg-muted flex items-center justify-center flex-shrink-0">
+                <span className="text-xl sm:text-2xl font-semibold text-muted-foreground">
+                  {initials}
+                </span>
+              </div>
+            )}
 
             {/* Teacher Info */}
             <div className="flex-1 min-w-0">

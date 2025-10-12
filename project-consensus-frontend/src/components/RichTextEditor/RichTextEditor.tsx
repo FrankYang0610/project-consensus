@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import styles from './RichTextEditor.module.css';
 import {
@@ -27,10 +27,11 @@ import {
   ImageResize,
   ImageUpload,
   PictureEditing,
-  Base64UploadAdapter
+  SimpleUploadAdapter,
 } from 'ckeditor5';
 import type { EditorConfig } from 'ckeditor5';
 import { cn } from '@/lib/utils';
+import { getAPIBaseUrl, getCookie, ensureCSRFCookie } from '@/lib/api/api-utils';
 
 // CKEditor 5 styles (required for proper UI rendering)
 // NOTE: Global CSS must be imported in a root layout. See `src/app/layout.tsx`.
@@ -40,10 +41,20 @@ type RichTextEditorProps = {
   onChange: (html: string) => void;
   placeholder?: string;
   className?: string;
-  // TODO: If switching to server upload later, add `uploadUrl` and SimpleUploadAdapter
 };
 
 export default function RichTextEditor({ value, onChange, placeholder, className }: RichTextEditorProps) {
+  const [csrfToken, setCSRFToken] = useState<string>('');
+
+  // Ensure CSRF token is available before mounting the editor
+  useEffect(() => {
+    const initCSRF = async () => {
+      await ensureCSRFCookie();
+      const token = getCookie('csrftoken') || '';
+      setCSRFToken(token);
+    };
+    initCSRF();
+  }, []);
   const plugins: NonNullable<EditorConfig['plugins']> = [
     Essentials,
     Paragraph,
@@ -67,7 +78,7 @@ export default function RichTextEditor({ value, onChange, placeholder, className
     ImageResize,
     ImageUpload,
     PictureEditing,
-    Base64UploadAdapter
+    SimpleUploadAdapter,
   ];
 
   const toolbar: string[] = [
@@ -97,11 +108,22 @@ export default function RichTextEditor({ value, onChange, placeholder, className
         'resizeImage'
       ]
     },
-    table: { contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells'] }
-    // NOTE: Using Base64UploadAdapter by default. This inlines images as data URI.
-    // TODO[Optional]: Switch to SimpleUploadAdapter with an `uploadUrl` when backend 
-    // is ready to persist files and return a public URL: { url: 'https://...' }.
+    table: { contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells'] },
+    // SimpleUploadAdapter configuration for R2 image upload
+    // CKEditor sends images with field name 'upload'
+    simpleUpload: {
+      uploadUrl: `${getAPIBaseUrl()}/api/upload/image/`,
+      withCredentials: true,
+      headers: {
+        'X-CSRFToken': csrfToken,
+      },
+    },
   };
+
+  // Don't render editor until CSRF token is retrieved
+  if (!csrfToken) {
+    return <div className={cn(className, styles.container)}>Loading editor...</div>;
+  }
 
   return (
     <div className={cn(className, styles.container)}>

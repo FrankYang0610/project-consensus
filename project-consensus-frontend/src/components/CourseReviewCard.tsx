@@ -44,7 +44,7 @@ export interface CourseReviewCardProps {
 }
 
 /**
- * User avatar component with fallback to initials
+ * User avatar component with fallback to single initial
  */
 function UserAvatar({ name, avatarUrl, userId, isAnonymous }: { name: string; avatarUrl?: string; userId?: string; isAnonymous?: boolean }) {
   const initials = React.useMemo(() => {
@@ -52,9 +52,8 @@ function UserAvatar({ name, avatarUrl, userId, isAnonymous }: { name: string; av
     const trimmedName = name.trim();
     if (!trimmedName) return '?';
 
-    const parts = trimmedName.split(/\s+/).filter(Boolean);
-    const initialsText = parts.slice(0, 2).map(p => p[0]?.toUpperCase() ?? "").join("");
-    return initialsText || trimmedName[0]?.toUpperCase() || "?";
+    // Use single letter initial (first character of name)
+    return trimmedName[0]?.toUpperCase() || "?";
   }, [name]);
 
   const avatarContent = (
