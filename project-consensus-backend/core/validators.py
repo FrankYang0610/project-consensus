@@ -42,7 +42,7 @@ def validate_https_url_in_allowed_hosts(value: str) -> str:
     Returns the normalized, original value if valid (no rewriting performed).
     """
     if value is None:
-        return value
+        raise serializers.ValidationError("Invalid URL.")
     v = value.strip()
     if v == "":
         return v
