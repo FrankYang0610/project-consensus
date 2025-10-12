@@ -56,7 +56,8 @@ class TeacherSerializer(serializers.ModelSerializer):
         
         Frontend can check if the value is a URL or initials:
         - URL: starts with "http://" or "https://"
-        - Initials: short string of uppercase letters (typically 1-3 characters)
+        - Initials: uppercase letters generated from the first letter of each name part
+          (typically 1-3 characters for most names, e.g., "JS" for "John Smith")
         
         """
         if obj.avatar_url:
