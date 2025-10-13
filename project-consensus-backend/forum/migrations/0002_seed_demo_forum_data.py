@@ -545,7 +545,7 @@ def seed_forum_data(apps, schema_editor):
         },
     ]
 
-    # Create replies object
+    # Create replies object (include a couple of soft-deleted placeholders)
     created_replies = []
     for reply_data in replies_data:
         author = User.objects.get(email=reply_data["author"])
@@ -558,6 +558,15 @@ def seed_forum_data(apps, schema_editor):
             is_anonymous=reply_data.get("is_anonymous", False),
         )
         created_replies.append(c)
+
+    # Soft-delete two replies to demonstrate placeholders
+    if created_replies:
+        # Mark first reply soft-deleted with cleared content
+        first = created_replies[0]
+        ForumPostComment.objects.filter(pk=first.pk).update(is_deleted=True, content="")
+    if len(created_replies) > 5:
+        another = created_replies[5]
+        ForumPostComment.objects.filter(pk=another.pk).update(is_deleted=True, content="")
 
     # Create some nested replies (replies to replies)
     nested_replies_data = [
@@ -637,6 +646,10 @@ def seed_forum_data(apps, schema_editor):
             is_anonymous=nested_data.get("is_anonymous", False),
         )
         created_nested_replies.append(c)
+
+    # Soft-delete one nested reply as well
+    if created_nested_replies:
+        ForumPostComment.objects.filter(pk=created_nested_replies[-1].pk).update(is_deleted=True, content="")
 
 
 def unseed_forum_data(apps, schema_editor):

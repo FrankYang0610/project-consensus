@@ -40,6 +40,21 @@ export async function ensureCSRFCookie(): Promise<void> {
   }
 }
 
+// HTTP error with status and response details for better downstream handling
+export class HttpError extends Error {
+  status: number;
+  url: string;
+  body: string;
+
+  constructor(method: string, url: string, status: number, body: string) {
+    super(`${method} ${url} failed: ${status} ${body}`);
+    this.name = 'HttpError';
+    this.status = status;
+    this.url = url;
+    this.body = body;
+  }
+}
+
 export async function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
   const base = getAPIBaseUrl();
   const url = `${base}${path}`;
@@ -53,7 +68,7 @@ export async function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`GET ${url} failed: ${res.status} ${text}`);
+    throw new HttpError('GET', url, res.status, text);
   }
   return res.json();
 }
@@ -79,7 +94,7 @@ export async function apiPost<T>(path: string, body: unknown, init?: RequestInit
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`POST ${url} failed: ${res.status} ${text}`);
+    throw new HttpError('POST', url, res.status, text);
   }
   return res.json();
 }
@@ -104,7 +119,7 @@ export async function apiDeleteVoid(path: string, init?: RequestInit): Promise<v
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`DELETE ${url} failed: ${res.status} ${text}`);
+    throw new HttpError('DELETE', url, res.status, text);
   }
 }
 
@@ -130,7 +145,7 @@ export async function apiPatch<T>(path: string, body: unknown, init?: RequestIni
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`PATCH ${url} failed: ${res.status} ${text}`);
+    throw new HttpError('PATCH', url, res.status, text);
   }
   return res.json();
 }
@@ -156,7 +171,7 @@ export async function apiUpload<T>(path: string, formData: FormData, init?: Requ
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`UPLOAD ${url} failed: ${res.status} ${text}`);
+    throw new HttpError('UPLOAD', url, res.status, text);
   }
   return res.json();
 }

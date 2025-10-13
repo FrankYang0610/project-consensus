@@ -6,6 +6,7 @@ import uuid
 from django.conf import settings
 from django.contrib.postgres.indexes import GinIndex
 from django.db import migrations, models
+from django.db.models import Q
 
 
 class Migration(migrations.Migration):
@@ -68,6 +69,7 @@ class Migration(migrations.Migration):
                 ('is_anonymous', models.BooleanField(default=False)),
                 ('only_text', models.BooleanField(default=False, help_text='如果为真，则仅文本评价（不含星级/维度）')),
                 ('likes_count', models.PositiveIntegerField(default=0)),
+                ('is_edited', models.BooleanField(default=False)),
                 ('created_at', models.DateTimeField(db_index=True, default=django.utils.timezone.now)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('term_year', models.PositiveIntegerField(blank=True, null=True)),
@@ -170,6 +172,24 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name='coursereview',
             index=GinIndex(fields=['content'], name='coursereview_content_trgm_idx', opclasses=['gin_trgm_ops']),
+        ),
+        # Optimize queries: order by newest
+        migrations.AddIndex(
+            model_name='coursereview',
+            index=models.Index(name='coursereview_created_idx', fields=['created_at']),
+        ),
+        # Replies list filters on is_deleted and created_at
+        migrations.AddIndex(
+            model_name='coursereviewreply',
+            index=models.Index(name='coursereviewreply_deleted_created_idx', fields=['is_deleted', 'created_at']),
+        ),
+        # Enforce soft-delete contract: deleted replies must have empty content
+        migrations.AddConstraint(
+            model_name='coursereviewreply',
+            constraint=models.CheckConstraint(
+                check=Q(is_deleted=False) | Q(content=''),
+                name='coursereviewreply_deleted_content_empty',
+            ),
         ),
         migrations.AddIndex(
             model_name='coursereviewlike',

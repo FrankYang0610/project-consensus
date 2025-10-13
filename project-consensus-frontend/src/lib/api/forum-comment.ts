@@ -8,7 +8,7 @@ import type {
   UpdateForumCommentPayload,
   GetForumPostCommentPositionResponse,
 } from "@/types/api";
-import { apiGet, apiPost, apiPatch, apiDeleteVoid } from "./api-utils";
+import { apiGet, apiPost, apiPatch, apiDeleteVoid, HttpError } from "./api-utils";
 
 /**
  * Fetch forum comments for a specific post
@@ -50,6 +50,9 @@ export async function fetchForumCommentById(
     );
     return data ?? null;
   } catch (error) {
+    if (error instanceof HttpError && error.status === 404) {
+      return null; // Missing comment is not an error
+    }
     console.error(`Failed to fetch forum comment ${commentId}:`, error);
     return null;
   }
