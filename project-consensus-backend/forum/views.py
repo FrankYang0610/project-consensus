@@ -75,7 +75,7 @@ class ForumPostViewSet(viewsets.ModelViewSet):
         if request.user != post.author:
             return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
         try:
-            delete_images_in_html(getattr(post, "content", ""), owner_user_id=post.author_id)
+            delete_images_in_html(post.content, owner_user_id=post.author_id)
         except Exception as e:
             logger.warning(f"Failed to delete images in forum post {post.pk}: {e}", exc_info=True)
         return super().destroy(request, *args, **kwargs)
@@ -92,7 +92,7 @@ class ForumPostViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
-        old_srcs = extract_image_srcs_from_html(getattr(instance, "content", ""))
+        old_srcs = extract_image_srcs_from_html(instance.content)
 
         # Determine if incoming data modifies any editable fields
         editable_fields = {"title", "content", "tags", "is_anonymous"}
@@ -100,7 +100,7 @@ class ForumPostViewSet(viewsets.ModelViewSet):
 
         with transaction.atomic():
             self.perform_update(serializer)
-            new_srcs = extract_image_srcs_from_html(getattr(instance, "content", ""))
+            new_srcs = extract_image_srcs_from_html(instance.content)
             removed_srcs = old_srcs - new_srcs
             author_id = instance.author_id
             post_pk = instance.pk
@@ -235,10 +235,10 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
-        old_srcs = extract_image_srcs_from_html(getattr(instance, "content", ""))
+        old_srcs = extract_image_srcs_from_html(instance.content)
         with transaction.atomic():
             self.perform_update(serializer)
-            new_srcs = extract_image_srcs_from_html(getattr(instance, "content", ""))
+            new_srcs = extract_image_srcs_from_html(instance.content)
             removed_srcs = old_srcs - new_srcs
             author_id = instance.author_id
             comment_pk = instance.pk
@@ -327,7 +327,7 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         try:
-            delete_images_in_html(getattr(comment, "content", ""), owner_user_id=comment.author_id)
+            delete_images_in_html(comment.content, owner_user_id=comment.author_id)
         except Exception as e:
             logger.warning(f"Failed to delete images in forum comment {comment.pk}: {e}", exc_info=True)
 
