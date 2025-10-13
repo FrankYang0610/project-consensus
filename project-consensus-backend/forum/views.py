@@ -117,8 +117,6 @@ class ForumPostViewSet(viewsets.ModelViewSet):
             delete_images_in_html(getattr(post, "content", ""), owner_user_id=post.author_id)
         except Exception as e:
             logger.warning(f"Failed to delete images in forum post {post.pk}: {e}", exc_info=True)
-        return super().destroy(request, *args, **kwargs)
-
         with transaction.atomic():
             # Hard-delete the post; related comments/likes cascade via FK constraints
             post.delete()
