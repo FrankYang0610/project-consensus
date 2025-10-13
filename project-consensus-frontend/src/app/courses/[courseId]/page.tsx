@@ -217,7 +217,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
       if (!repliesByReview[targetReview.id]) {
         try {
           const page = await fetchReviewReplies({ reviewId: targetReview.id, page: 1, pageSize: 20, ordering: "created_at" });
-          setRepliesByReview(prev => ({ ...prev, [targetReview!.id]: page.results }));
+          setRepliesByReview(prev => ({ ...prev, [targetReview.id]: page.results }));
         } catch (e) {
           console.error('Failed to load replies for target review', e);
         }
@@ -399,7 +399,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
     try {
       const payload: Parameters<typeof createReviewReply>[1] = {
         content: html,
-        ...(replyToUserByReview[reviewId]?.id ? { replyToUserId: replyToUserByReview[reviewId]!.id } : {}),
+        ...(replyToUserByReview[reviewId]?.id ? { replyToUserId: replyToUserByReview[reviewId]?.id } : {}),
       };
       const reply = await createReviewReply(reviewId, payload);
       setRepliesByReview(prev => ({ ...prev, [reviewId]: [ ...(prev[reviewId] || []), reply ] }));
@@ -573,7 +573,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
                               <div className="p-2 border rounded">
                                 {replyToUserByReview[review.id] && (
                                   <div className="text-xs text-muted-foreground mb-1">
-                                    {t('comment.reply')} @{replyToUserByReview[review.id]!.name}
+                                    {t('comment.reply')} @{replyToUserByReview[review.id]?.name}
                                   </div>
                                 )}
                                 <RichTextEditor
