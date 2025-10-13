@@ -101,6 +101,14 @@ def delete_storage_object_by_url(url: str, owner_user_id: int | None = None) -> 
 
 
 class _ImgSrcExtractor(HTMLParser):
+    """
+    Extracts src attributes from <img> tags in HTML.
+    
+    Security Note: This class performs NO validation or sanitization.
+    It is intentionally minimal. All security validation (hostname checking,
+    ownership verification) is performed downstream in delete_storage_object_by_url().
+
+    """
     def __init__(self):
         super().__init__()
         self.srcs: list[str] = []
@@ -112,17 +120,41 @@ class _ImgSrcExtractor(HTMLParser):
                     self.srcs.append(v)
 
 
-def delete_images_in_html(html: str, owner_user_id: int | None = None) -> int:
+def delete_images_in_html(html: str, owner_user_id: int) -> int:
+    """
+    Delete images referenced in HTML content.
+    
+    Security: Requires owner_user_id to prevent unauthorized deletions.
+    Only deletes images that:
+    1. Are hosted on allowed domains (validated by url_to_storage_path)
+    2. Belong to the specified owner (validated by _storage_path_belongs_to_user)
+    
+    Args:
+        html: HTML content containing <img> tags
+        owner_user_id: Required. User ID that owns the content/images.
+                      Images not belonging to this user will NOT be deleted.
+    
+    Returns:
+        Number of images successfully deleted
+    """
     if not html or not isinstance(html, str):
         return 0
+    if owner_user_id is None:
+        # Security: Never allow deletion without ownership verification
+        raise ValueError("owner_user_id is required for secure image deletion")
+    
     parser = _ImgSrcExtractor()
     try:
         parser.feed(html)
     except Exception:
         # Best-effort: if parsing fails, nothing is deleted
         return 0
+    
     deleted = 0
     for src in parser.srcs:
+        # Each URL is validated in delete_storage_object_by_url:
+        # - Must be from allowed host
+        # - Must belong to owner_user_id
         if delete_storage_object_by_url(src, owner_user_id=owner_user_id):
             deleted += 1
     return deleted
