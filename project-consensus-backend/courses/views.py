@@ -639,12 +639,12 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):  # type: ignore[override]
         instance: CourseReview = self.get_object()
         self._ensure_owner(instance)
-        old_srcs = extract_image_srcs_from_html(instance.content)
+        old_srcs = extract_image_srcs_from_html(getattr(instance, "content", ""))
         with transaction.atomic():
             obj = serializer.save()
             _recompute_course_aggregates(obj.course)
             _recompute_teachers_aggregates(obj.course)
-            new_srcs = extract_image_srcs_from_html(obj.content)
+            new_srcs = extract_image_srcs_from_html(getattr(obj, "content", ""))
             removed_srcs = old_srcs - new_srcs
             author_id = instance.author_id
             review_pk = instance.pk
@@ -661,7 +661,7 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
         course = instance.course
         # Best-effort: remove images referenced in this review that belong to the author
         try:
-            delete_images_in_html(instance.content, owner_user_id=instance.author_id)
+            delete_images_in_html(getattr(instance, "content", ""), owner_user_id=instance.author_id)
         except Exception as e:
             logger.warning(f"Failed to delete images in course review {instance.pk}: {e}", exc_info=True)
         with transaction.atomic():
