@@ -50,7 +50,8 @@ def upload_image_to_r2(file: UploadedFile, folder: str = 'images', user=None) ->
     
     # Generate unique filename
     unique_id = uuid.uuid4()
-    owner_segment = f"{getattr(user, 'pk', None)}/" if user is not None and getattr(user, 'pk', None) is not None else ""
+    owner_id = getattr(user, 'pk', None) if user is not None else None
+    owner_segment = f"{owner_id}/" if owner_id is not None else ""
     filename = f"{folder}/{owner_segment}{unique_id}.{extension}"
     
     # Upload to R2
@@ -167,7 +168,7 @@ def delete_images_in_html(html: str, owner_user_id: int) -> int:
         return 0
     if owner_user_id is None:
         # Security: Never allow deletion without ownership verification
-        raise ValueError("owner_user_id is required for secure image deletion")
+        raise ValidationError("owner_user_id is required for secure image deletion")
     
     parser = _ImgSrcExtractor()
     try:

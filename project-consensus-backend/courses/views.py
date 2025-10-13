@@ -13,7 +13,6 @@ from django.db.models import Exists
 from django.db.models import OuterRef, Subquery, CharField
 from rest_framework.pagination import PageNumberPagination
 
-logger = logging.getLogger(__name__)
 
 from .models import (
     Course,
@@ -28,6 +27,8 @@ from notifications import NotificationType
 from notifications.events import emit, DomainEvent
 from django.utils import timezone
 from core.utils import delete_images_in_html, extract_image_srcs_from_html, delete_storage_object_by_url
+
+logger = logging.getLogger(__name__)
 
 
 def _is_constraint_violation(e: IntegrityError, constraint_name: str) -> bool:
@@ -643,13 +644,17 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
             obj = serializer.save()
             _recompute_course_aggregates(obj.course)
             _recompute_teachers_aggregates(obj.course)
-        try:
             new_srcs = extract_image_srcs_from_html(getattr(obj, "content", ""))
             removed_srcs = old_srcs - new_srcs
-            for src in removed_srcs:
-                delete_storage_object_by_url(src, owner_user_id=instance.author_id)
-        except Exception as e:
-            logger.warning(f"Failed to delete removed images in course review {instance.pk}: {e}", exc_info=True)
+            author_id = instance.author_id
+            review_pk = instance.pk
+            def _cleanup():
+                try:
+                    for src in removed_srcs:
+                        delete_storage_object_by_url(src, owner_user_id=author_id)
+                except Exception as e:
+                    logger.warning(f"Failed to delete removed images in course review {review_pk}: {e}", exc_info=True)
+            transaction.on_commit(_cleanup)
 
     def perform_destroy(self, instance):  # type: ignore[override]
         self._ensure_owner(instance)

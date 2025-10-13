@@ -10,13 +10,14 @@ from rest_framework.request import Request
 from django.db import transaction, models
 from django.db.models import F, Count, Q, Case, When, Value, IntegerField, Exists, OuterRef
 
-logger = logging.getLogger(__name__)
 from .models import ForumPost, ForumPostComment, ForumPostLike, ForumCommentLike
 from .serializers import ForumPostSerializer, ForumPostCommentSerializer
 from notifications import NotificationType
 from notifications.events import emit, DomainEvent
 from django.utils import timezone
 from core.utils import delete_images_in_html, extract_image_srcs_from_html, delete_storage_object_by_url
+
+logger = logging.getLogger(__name__)
 
 
 class DefaultPageNumberPagination(PageNumberPagination):
@@ -97,20 +98,24 @@ class ForumPostViewSet(viewsets.ModelViewSet):
         editable_fields = {"title", "content", "tags", "is_anonymous"}
         incoming_keys = set(serializer.validated_data.keys())
 
-        self.perform_update(serializer)
-
-        try:
+        with transaction.atomic():
+            self.perform_update(serializer)
             new_srcs = extract_image_srcs_from_html(getattr(instance, "content", ""))
             removed_srcs = old_srcs - new_srcs
-            for src in removed_srcs:
-                delete_storage_object_by_url(src, owner_user_id=instance.author_id)
-        except Exception as e:
-            logger.warning(f"Failed to delete removed images in forum post {instance.pk}: {e}", exc_info=True)
+            author_id = instance.author_id
+            post_pk = instance.pk
+            def _cleanup():
+                try:
+                    for src in removed_srcs:
+                        delete_storage_object_by_url(src, owner_user_id=author_id)
+                except Exception as e:
+                    logger.warning(f"Failed to delete removed images in forum post {post_pk}: {e}", exc_info=True)
+            transaction.on_commit(_cleanup)
 
-        # Mark as edited if client attempted to update any editable fields
-        if incoming_keys & editable_fields:
-            ForumPost.objects.filter(pk=instance.pk).update(is_edited=True)
-            instance.refresh_from_db(fields=["is_edited"])  # keep instance in sync
+            # Mark as edited if client attempted to update any editable fields
+            if incoming_keys & editable_fields:
+                ForumPost.objects.filter(pk=instance.pk).update(is_edited=True)
+                instance.refresh_from_db(fields=["is_edited"])  # keep instance in sync
 
         return Response(serializer.data)
 
@@ -231,14 +236,19 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         old_srcs = extract_image_srcs_from_html(getattr(instance, "content", ""))
-        self.perform_update(serializer)
-        try:
+        with transaction.atomic():
+            self.perform_update(serializer)
             new_srcs = extract_image_srcs_from_html(getattr(instance, "content", ""))
             removed_srcs = old_srcs - new_srcs
-            for src in removed_srcs:
-                delete_storage_object_by_url(src, owner_user_id=instance.author_id)
-        except Exception as e:
-            logger.warning(f"Failed to delete removed images in forum comment {instance.pk}: {e}", exc_info=True)
+            author_id = instance.author_id
+            comment_pk = instance.pk
+            def _cleanup():
+                try:
+                    for src in removed_srcs:
+                        delete_storage_object_by_url(src, owner_user_id=author_id)
+                except Exception as e:
+                    logger.warning(f"Failed to delete removed images in forum comment {comment_pk}: {e}", exc_info=True)
+            transaction.on_commit(_cleanup)
         return Response(serializer.data)
 
     def partial_update(self, request: Request, *args, **kwargs):  # type: ignore[override]
