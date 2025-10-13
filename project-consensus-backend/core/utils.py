@@ -75,7 +75,7 @@ def url_to_storage_path(url: str) -> str | None:
         return None
 
 
-def _storage_path_belongs_to_user(path: str, user_id) -> bool:
+def _storage_path_belongs_to_user(path: str, user_id: int | None) -> bool:
     try:
         if not path or user_id is None:
             return False
@@ -87,7 +87,7 @@ def _storage_path_belongs_to_user(path: str, user_id) -> bool:
         return False
 
 
-def delete_storage_object_by_url(url: str, owner_user_id=None) -> bool:
+def delete_storage_object_by_url(url: str, owner_user_id: int | None = None) -> bool:
     try:
         path = url_to_storage_path(url)
         if not path:
@@ -112,7 +112,7 @@ class _ImgSrcExtractor(HTMLParser):
                     self.srcs.append(v)
 
 
-def delete_images_in_html(html: str, owner_user_id=None) -> int:
+def delete_images_in_html(html: str, owner_user_id: int | None = None) -> int:
     if not html or not isinstance(html, str):
         return 0
     parser = _ImgSrcExtractor()
