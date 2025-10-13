@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from rest_framework import viewsets, permissions, filters, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -8,6 +9,8 @@ from rest_framework.request import Request
 
 from django.db import transaction, models
 from django.db.models import F, Count, Q, Case, When, Value, IntegerField, Exists, OuterRef
+
+logger = logging.getLogger(__name__)
 from .models import ForumPost, ForumPostComment, ForumPostLike, ForumCommentLike
 from .serializers import ForumPostSerializer, ForumPostCommentSerializer
 from notifications import NotificationType
@@ -71,8 +74,8 @@ class ForumPostViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
         try:
             delete_images_in_html(getattr(post, "content", ""), owner_user_id=post.author_id)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to delete images in forum post {post.pk}: {e}", exc_info=True)
         return super().destroy(request, *args, **kwargs)
 
     def update(self, request: Request, *args, **kwargs):  # type: ignore[override]
@@ -283,8 +286,8 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
 
         try:
             delete_images_in_html(getattr(comment, "content", ""), owner_user_id=comment.author_id)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to delete images in forum comment {comment.pk}: {e}", exc_info=True)
 
         with transaction.atomic():
             # Soft delete and clear content

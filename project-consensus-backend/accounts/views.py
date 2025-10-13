@@ -325,8 +325,8 @@ def update_profile(request):
         new_avatar_url = getattr(profile, 'avatar_url', '')
         if old_avatar_url and old_avatar_url != new_avatar_url:
             delete_storage_object_by_url(old_avatar_url, owner_user_id=request.user.pk)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"Failed to delete old avatar for user {request.user.pk}: {e}", exc_info=True)
     
     # Update last_nickname_updated_at if nickname was actually changed
     # 如果昵称确实被修改了，更新最后修改时间

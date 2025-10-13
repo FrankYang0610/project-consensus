@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -11,6 +12,8 @@ from django.db.models import F
 from django.db.models import Exists
 from django.db.models import OuterRef, Subquery, CharField
 from rest_framework.pagination import PageNumberPagination
+
+logger = logging.getLogger(__name__)
 
 from .models import (
     Course,
@@ -646,8 +649,8 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
         # Best-effort: remove images referenced in this review that belong to the author
         try:
             delete_images_in_html(getattr(instance, "content", ""), owner_user_id=instance.author_id)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to delete images in course review {instance.pk}: {e}", exc_info=True)
         with transaction.atomic():
             instance.delete()
             _recompute_course_aggregates(course)
