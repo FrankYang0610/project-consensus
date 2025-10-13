@@ -676,7 +676,14 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
         kwargs["partial"] = True
         return self.update(request, *args, **kwargs)
 
-    def perform_destroy(self, instance):  # type: ignore[override]
+    def destroy(self, request, *args, **kwargs):  # type: ignore[override]
+        """Hard delete a course review: only the author may delete.
+
+        Behavior:
+        - Hard-delete the review row; database CASCADE removes all related replies and likes
+        - Recompute course and teacher aggregates after deletion
+        """
+        instance: CourseReview = self.get_object()
         self._ensure_owner(instance)
         course = instance.course
         # Best-effort: remove images referenced in this review that belong to the author
@@ -689,6 +696,7 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
             instance.delete()
             _recompute_course_aggregates(course)
             _recompute_teachers_aggregates(course)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class CourseReviewReplyViewSet(viewsets.ModelViewSet):
@@ -796,13 +804,28 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
     def partial_update(self, request, *args, **kwargs):  # type: ignore[override]
         return Response({"detail": "Reply editing is not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def perform_destroy(self, instance):  # type: ignore[override]
+    def destroy(self, request, *args, **kwargs):  # type: ignore[override]
+        """Soft delete a course review reply: only the author may delete.
+
+        Behavior:
+        - Mark is_deleted=True
+        - Clear content (set to empty string)
+        - Keep the row to preserve thread structure
+        - Recompute reply count for the parent review
+        """
+        instance: CourseReviewReply = self.get_object()
         self._ensure_owner(instance)
         review = instance.review
+        
+        # If already soft-deleted, respond with 204 No Content (idempotent)
+        if getattr(instance, "is_deleted", False):
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        
         with transaction.atomic():
             # Soft delete: mark as deleted and clear content
             CourseReviewReply.objects.filter(pk=instance.pk).update(is_deleted=True, content="")
             _recompute_replies_count(review)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
     def toggle_like(self, request, pk: str | None = None):
