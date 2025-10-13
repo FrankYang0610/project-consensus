@@ -162,6 +162,10 @@ class ForumPostSerializer(serializers.ModelSerializer):
         return _author_payload_for(obj.author)
 
     def get_comments(self, obj: ForumPost) -> int:
+        # Prefer DB-annotated comments_count when available to avoid extra queries
+        annotated = getattr(obj, "comments_count", None)
+        if isinstance(annotated, int):
+            return annotated
         return obj.comments.count()
 
     def get_isLiked(self, obj: ForumPost) -> bool:
@@ -174,6 +178,8 @@ class ForumPostSerializer(serializers.ModelSerializer):
         if annotated is not None:
             return bool(annotated)
         return obj.likes.filter(user=user).exists()
+
+    
     
     def validate(self, attrs):  # type: ignore[override]
         """Validate and sanitize content."""
@@ -255,7 +261,6 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
     isDeleted = serializers.BooleanField(source="is_deleted", read_only=True)
     replies = serializers.IntegerField(source="replies_count", read_only=True)
     isAnonymous = serializers.BooleanField(source="is_anonymous", required=False)
-    canDelete = serializers.SerializerMethodField()
 
     class Meta:
         model = ForumPostComment
@@ -271,7 +276,6 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
             "postId",
             "replies",
             "isAnonymous",
-            "canDelete",
         ]
         extra_kwargs = {}
         read_only_fields = ["id", "createdAt", "author", "isDeleted", "likes", "isLiked"]
@@ -307,13 +311,6 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
                     "avatar": None,
                 }
         return _author_payload_for(obj.author)
-
-    def get_canDelete(self, obj: ForumPostComment) -> bool:
-        request = self.context.get("request")
-        user = getattr(request, "user", None)
-        if user is not None and getattr(user, "is_authenticated", False):
-            return user.pk == obj.author_id
-        return False
 
     def get_isLiked(self, obj: ForumPostComment) -> bool:
         request = self.context.get("request")
@@ -361,6 +358,9 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
                 post = ForumPost.objects.get(pk=post_id)
             except ForumPost.DoesNotExist:
                 raise serializers.ValidationError({"postId": "invalid post id"})
+        # Block creating comments on deleted posts (industry standard)
+        if post is not None and getattr(post, "is_deleted", False):
+            raise serializers.ValidationError({"postId": "post has been deleted"})
         
         # Handle reply_to_id from payload
         if reply_to is None and "reply_to_id" in validated_data:
@@ -370,6 +370,9 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
                     reply_to = ForumPostComment.objects.get(pk=reply_to_id)
                 except ForumPostComment.DoesNotExist:
                     raise serializers.ValidationError({"replyTo": "invalid reply target id"})
+        # Disallow replying to a deleted comment (industry standard: cannot reply to deleted content)
+        if reply_to is not None and getattr(reply_to, "is_deleted", False):
+            raise serializers.ValidationError({"replyTo": "reply target has been deleted"})
         
         if post is None:
             raise serializers.ValidationError("post must be provided")
@@ -382,11 +385,3 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
         )
         return instance
     
-    def update(self, instance: ForumPostComment, validated_data):  # type: ignore[override]
-        """Update comment with sanitized content."""
-        # Sanitize and update content if provided
-        if "content" in validated_data:
-            instance.content = _sanitize_html(validated_data["content"])
-        
-        instance.save()
-        return instance

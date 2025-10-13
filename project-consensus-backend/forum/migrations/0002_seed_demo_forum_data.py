@@ -79,6 +79,105 @@ def seed_forum_data(apps, schema_editor):
         likes_count=0,
     )
 
+    # Create ~20 topical posts across CS, Economics, Math, Literature, Classical Musicology
+    # Don't create comments and notifications, only create example posts for homepage and filtering
+    topics = [
+        {
+            "category": "Computer Science",
+            "tags": ["computer-science", "programming", "algorithms", "cs"],
+            "titles": [
+                "Operating Systems study notes",
+                "Compiler theory tricky parts",
+                "Algorithms & Data Structures review pack",
+                "Distributed systems paper picks",
+                "Computer networking exam checklist",
+            ],
+            "paras": [
+                "Study notes with curated resources and takeaways.",
+                "Concept map and must-know topics for both exams and engineering practice.",
+                "Selected problems with solution sketches for quick revision.",
+            ],
+        },
+        {
+            "category": "Economics",
+            "tags": ["economics", "macro", "micro", "finance"],
+            "titles": [
+                "Business cycle and policy discussion",
+                "Game theory essentials summary",
+                "Revisiting market efficiency hypothesis",
+                "Behavioral economics reading notes",
+                "Supply-side view of industrial structure",
+            ],
+            "paras": [
+                "Outline stitched from lectures and readings; includes classic references.",
+                "Simple models to illustrate assumptions, mechanisms, and limits.",
+            ],
+        },
+        {
+            "category": "Mathematics",
+            "tags": ["math", "algebra", "analysis", "topology", "probability"],
+            "titles": [
+                "Real analysis exam checklist",
+                "Abstract algebra problem session",
+                "Topology learning roadmap",
+                "Probability & statistics quick notes",
+                "Linear algebra intuition and geometry",
+            ],
+            "paras": [
+                "Key theorems, counterexamples, and proof skeletons for rapid review.",
+                "Common pitfalls and the key steps in typical proofs.",
+            ],
+        },
+        {
+            "category": "Literature",
+            "tags": ["literature", "poetry", "novel", "drama"],
+            "titles": [
+                "Modern poetry picks and close reading",
+                "Narrative perspective & the unreliable narrator",
+                "Shakespearean rhetoric and structure",
+                "Dream of the Red Chamber character analysis",
+                "Feminist literature reading primer",
+            ],
+            "paras": [
+                "Close reading notes with concise historical context and references.",
+                "Glossary cards and a starter bibliography.",
+            ],
+        },
+        {
+            "category": "Classical Musicology",
+            "tags": ["classical-music", "musicology", "opera", "baroque", "romanticism"],
+            "titles": [
+                "Late Beethoven string quartets: a gentle start",
+                "Mozart operas: form and structure",
+                "Bach's fugue technique at a glance",
+                "Chamber music listening routes",
+                "Romantic orchestration and color",
+            ],
+            "paras": [
+                "Listening guides and structural cues for first-time listeners.",
+                "Selected recordings for study (non-commercial pointers only).",
+            ],
+        },
+    ]
+
+    extra_posts_count = 20
+    for i in range(extra_posts_count):
+        topic = topics[i % len(topics)]
+        title = f"[{topic['category']}] {random.choice(topic['titles'])}"
+        para = random.choice(topic["paras"]) if topic.get("paras") else ""
+        content = f"<p>{para}</p>"
+        author = random.choice(authors)
+        created_shift_days = random.randint(1, 28)
+        created_shift_hours = random.randint(0, 23)
+        ForumPost.objects.create(
+            title=title,
+            content=content,
+            author=author,
+            created_at=now - timezone.timedelta(days=created_shift_days, hours=created_shift_hours),
+            tags=topic["tags"],
+            likes_count=random.randint(0, 24),
+        )
+
     # Create discussion with nested replies
     comments_data = [
         # Main comments
@@ -446,7 +545,7 @@ def seed_forum_data(apps, schema_editor):
         },
     ]
 
-    # Create replies object
+    # Create replies object (include a couple of soft-deleted placeholders)
     created_replies = []
     for reply_data in replies_data:
         author = User.objects.get(email=reply_data["author"])
@@ -459,6 +558,15 @@ def seed_forum_data(apps, schema_editor):
             is_anonymous=reply_data.get("is_anonymous", False),
         )
         created_replies.append(c)
+
+    # Soft-delete two replies to demonstrate placeholders
+    if created_replies:
+        # Mark first reply soft-deleted with cleared content
+        first = created_replies[0]
+        ForumPostComment.objects.filter(pk=first.pk).update(is_deleted=True, content="")
+    if len(created_replies) > 5:
+        another = created_replies[5]
+        ForumPostComment.objects.filter(pk=another.pk).update(is_deleted=True, content="")
 
     # Create some nested replies (replies to replies)
     nested_replies_data = [
@@ -538,6 +646,10 @@ def seed_forum_data(apps, schema_editor):
             is_anonymous=nested_data.get("is_anonymous", False),
         )
         created_nested_replies.append(c)
+
+    # Soft-delete one nested reply as well
+    if created_nested_replies:
+        ForumPostComment.objects.filter(pk=created_nested_replies[-1].pk).update(is_deleted=True, content="")
 
 
 def unseed_forum_data(apps, schema_editor):

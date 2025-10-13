@@ -38,6 +38,7 @@ import { stripHtmlTags, truncateHtmlContent } from "@/lib/html-utils";
 import { ForumPost } from "@/types";
 import { useI18n } from "@/hooks/use-i18n";
 import { useApp } from "@/contexts/AppContext";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import ClientOnlyTime from "./ClientOnlyTime";
 
@@ -62,6 +63,9 @@ export function ForumPostPreviewCard({
   // i18n translation
   const { t } = useI18n();
   const { isLoggedIn, openLoginModal } = useApp();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const [showDialog, setShowDialog] = React.useState(false);
   const [dialogMessage, setDialogMessage] = React.useState("");
@@ -188,21 +192,38 @@ export function ForumPostPreviewCard({
           <p className="text-muted-foreground text-sm leading-relaxed mb-1 break-words overflow-wrap-anywhere line-clamp-2 min-h-[3.25em]">
             {isTranslated ? t('post.translateUnavailable') : truncateHtmlContent(post.content)}
           </p>
-
-          {post.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1">
-              {post.tags.map(tag => (
-                <span
-                  key={tag}
-                  className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[11px] font-medium bg-secondary text-secondary-foreground"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          )}
         </CardContent>
       </Link>
+
+      {post.tags.length > 0 && (
+        <div className="px-4 mt-1">
+          <div className="flex flex-wrap gap-1">
+            {post.tags.map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  // Merge current URL params and append tag
+                  const params = new URLSearchParams(searchParams.toString());
+                  // prevent duplicating the same tag
+                  const existing = params.getAll('tags');
+                  if (!existing.includes(tag)) {
+                    params.append('tags', tag);
+                  }
+                  router.push(`${pathname}?${params.toString()}`);
+                }}
+                className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[11px] font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-transform duration-150 hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
+                title={`#${tag}`}
+                aria-label={`Filter by tag ${tag}`}
+              >
+                #{tag}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <CardFooter className="pt-0 px-4 mt-auto">
         <div className="flex items-center justify-between w-full">

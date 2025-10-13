@@ -347,7 +347,7 @@ export default function PublicUserPage() {
                         {reviews.slice(0, 5).map((review) => (
                           <Link 
                             key={review.id} 
-                            href={`/courses/${review.courseId}/review`}
+                            href={`/courses/${review.courseId}#review-${review.id}`}
                             className="block p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors border border-gray-100 dark:border-slate-700"
                           >
                             <div className="flex items-start justify-between gap-3">

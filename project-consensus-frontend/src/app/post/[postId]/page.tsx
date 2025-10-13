@@ -52,13 +52,22 @@ export default function PostPage() {
     let mounted = true;
     fetchForumPostById(postId)
       .then((data) => {
-        if (mounted && data) setPost(data);
+        if (!mounted) return;
+        if (!data || data.isDeleted) {
+          // Redirect to dedicated not-found page for posts
+          router.replace("/post/not-found");
+          return;
+        }
+        setPost(data);
       })
-      .catch((e) => console.error(e));
+      .catch((e) => {
+        console.error(e);
+        if (mounted) router.replace("/post/not-found");
+      });
     return () => {
       mounted = false;
     };
-  }, [postId]);
+  }, [postId, router]);
 
   const { user } = useApp();
   const currentUserId = user?.id;
@@ -162,26 +171,7 @@ export default function PostPage() {
     }
   };
 
-  if (!post) {
-    return (
-      <>
-        <SiteNavigation showBackButton={true} onBackClick={handleBackClick} />
-        <div className="min-h-screen bg-background">
-          <main className="w-full py-8">
-            <div className="container mx-auto px-4 max-w-4xl">
-              <Card>
-                <CardContent className="pt-6">
-                  <p className="text-muted-foreground text-center">
-                    Post not found
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </main>
-        </div>
-      </>
-    );
-  }
+  if (!post) return null;
 
   return (
     <>

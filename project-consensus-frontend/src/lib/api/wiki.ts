@@ -1,4 +1,4 @@
-import { apiGet } from './api-utils';
+import { apiGet, HttpError } from './api-utils';
 import type { LanguageCode, WikiCategory, WikiCategoryQuery, WikiPageDetail, WikiPageListItem, WikiPageQuery } from '@/types/wiki';
 
 function qs(params: Record<string, unknown>): string {
@@ -23,7 +23,12 @@ export async function fetchWikiPages(params: WikiPageQuery = {}): Promise<WikiPa
   return apiGet(`/api/wiki/pages/${q}`, { cache: 'no-store' });
 }
 
-export async function fetchWikiPageDetail(slug: string, language?: LanguageCode): Promise<WikiPageDetail> {
+export async function fetchWikiPageDetail(slug: string, language?: LanguageCode): Promise<WikiPageDetail | null> {
   const q = qs({ language });
-  return apiGet(`/api/wiki/pages/${encodeURIComponent(slug)}/${q}`, { cache: 'no-store' });
+  try {
+    return await apiGet(`/api/wiki/pages/${encodeURIComponent(slug)}/${q}`, { cache: 'no-store' });
+  } catch (e) {
+    if (e instanceof HttpError && e.status === 404) return null;
+    throw e;
+  }
 }

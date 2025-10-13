@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
+from rest_framework.exceptions import NotFound
 
 from django.db import transaction, models
 from django.db.models import F, Count, Q, Case, When, Value, IntegerField, Exists, OuterRef
@@ -46,6 +47,10 @@ class ForumPostViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):  # type: ignore[override]
         qs = super().get_queryset()
+        # Annotate derived fields used by serializer and ordering
+        # - comments_count: total number of comments on the post
+        qs = qs.annotate(comments_count=Count("comments"))
+
         # Annotate is_liked for authenticated users to avoid N+1 queries
         if self.request.user.is_authenticated:
             qs = qs.annotate(
@@ -58,6 +63,29 @@ class ForumPostViewSet(viewsets.ModelViewSet):
             )
         else:
             qs = qs.annotate(is_liked=Value(False))
+
+        # Filters
+        params = self.request.query_params
+        author_id = params.get("author")
+        if author_id:
+            qs = qs.filter(author_id=author_id)
+
+        mine = params.get("mine")
+        if mine and self.request.user.is_authenticated:
+            qs = qs.filter(author_id=self.request.user.pk)
+
+        # Tag filtering: accepts repeated ?tags=foo&tags=bar and matches posts containing ALL selected tags
+        # Industry practice: tag filters usually narrow results; "all-of" semantics provide predictable filtering.
+        tags = params.getlist("tags")
+        if tags:
+            # Normalize and deduplicate incoming tags while preserving order
+            normalized_tags = [stripped for t in tags if (stripped := t.strip())]
+            if normalized_tags:
+                # Apply AND semantics by requiring all selected tags to be contained
+                # Use a single JSON contains condition with the full unique tag list
+                unique_tags = list(dict.fromkeys(normalized_tags))
+                qs = qs.filter(tags__contains=unique_tags)
+
         return qs
 
 
@@ -65,13 +93,24 @@ class ForumPostViewSet(viewsets.ModelViewSet):
         # Force the author to the current user
         serializer.save(author=self.request.user)
 
-    filter_backends = [filters.SearchFilter]
+    # Enable search and ordering
+    # - Search: title, content, tags
+    # - Ordering: by created_at (time), likes_count (likes), comments_count (computed)
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["title", "content", "tags"]
+    ordering_fields = ["created_at", "likes_count", "comments_count", "id"]
+    # Sensible default ordering for feeds without ML: newest first, break ties by engagement
+    ordering = ["-created_at", "-likes_count", "-id"]
     pagination_class = DefaultPageNumberPagination
 
     def destroy(self, request: Request, *args, **kwargs):  # type: ignore[override]
-        """Only the author can delete their own post."""
-        post = self.get_object()
+        """Hard delete a forum post: only the author may delete.
+
+        Behavior:
+        - Hard-delete the post row; database CASCADE removes all related comments and likes
+        - Notifications are unaffected because they are decoupled and snapshot-based
+        """
+        post: ForumPost = self.get_object()
         if request.user != post.author:
             return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
         try:
@@ -79,6 +118,11 @@ class ForumPostViewSet(viewsets.ModelViewSet):
         except Exception as e:
             logger.warning(f"Failed to delete images in forum post {post.pk}: {e}", exc_info=True)
         return super().destroy(request, *args, **kwargs)
+
+        with transaction.atomic():
+            # Hard-delete the post; related comments/likes cascade via FK constraints
+            post.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def update(self, request: Request, *args, **kwargs):  # type: ignore[override]
         """Allow only the author to update their post.
@@ -207,6 +251,9 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
         post_id = self.request.query_params.get("postId")
         reply_to_id = self.request.query_params.get("replyTo")
         if post_id:
+            # Return 404 if the parent post is missing
+            if not ForumPost.objects.filter(pk=post_id).exists():
+                raise NotFound("Post not found")
             qs = qs.filter(post_id=post_id)
         if reply_to_id:
             qs = qs.filter(reply_to_id=reply_to_id)
@@ -229,31 +276,10 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
         return qs
 
     def update(self, request: Request, *args, **kwargs):  # type: ignore[override]
-        partial = kwargs.pop("partial", False)
-        instance: ForumPostComment = self.get_object()
-        if request.user != instance.author:
-            return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        old_srcs = extract_image_srcs_from_html(getattr(instance, "content", ""))
-        with transaction.atomic():
-            self.perform_update(serializer)
-            new_srcs = extract_image_srcs_from_html(getattr(instance, "content", ""))
-            removed_srcs = old_srcs - new_srcs
-            author_id = instance.author_id
-            comment_pk = instance.pk
-            def _cleanup():
-                try:
-                    for src in removed_srcs:
-                        delete_storage_object_by_url(src, owner_user_id=author_id)
-                except Exception as e:
-                    logger.warning(f"Failed to delete removed images in forum comment {comment_pk}: {e}", exc_info=True)
-            transaction.on_commit(_cleanup)
-        return Response(serializer.data)
+        return Response({"detail": "Comment editing is not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def partial_update(self, request: Request, *args, **kwargs):  # type: ignore[override]
-        kwargs["partial"] = True
-        return self.update(request, *args, **kwargs)
+        return Response({"detail": "Comment editing is not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def perform_create(self, serializer):  # type: ignore[override]
         # Always set the author to current user; no main thread tracking in flat model
@@ -321,10 +347,9 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
         if request.user != comment.author:
             return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
 
-        # If already soft-deleted, return current state
+        # If already soft-deleted, respond with 204 No Content (idempotent)
         if getattr(comment, "is_deleted", False):
-            serializer = self.get_serializer(comment, context={"request": request})
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
         try:
             delete_images_in_html(getattr(comment, "content", ""), owner_user_id=comment.author_id)
@@ -334,10 +359,8 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
         with transaction.atomic():
             # Soft delete and clear content
             ForumPostComment.objects.filter(pk=comment.pk).update(is_deleted=True, content="")
-        comment.refresh_from_db(fields=["is_deleted", "content"]) 
-        serializer = self.get_serializer(comment, context={"request": request})
-        # 200 with updated payload helps clients update state; DELETE 204 would also be acceptable
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        # No payload on DELETE by convention
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=["GET"], url_path="position", permission_classes=[permissions.AllowAny])
     def position(self, request: Request):
@@ -368,6 +391,10 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
             return Response(
                 {"detail": "commentId does not belong to the given postId"}, status=status.HTTP_400_BAD_REQUEST
             )
+
+        # Ensure the parent post exists
+        if not ForumPost.objects.filter(pk=post_id).exists():
+            return Response({"detail": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
 
         base_qs = ForumPostComment.objects.filter(post_id=post_id)
         # Count of items strictly before the target by ordering (created_at asc, id asc)
@@ -411,6 +438,9 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
         """Current user likes the comment. Idempotent: multiple calls have no additional effect."""
         assert pk is not None
         comment = self.get_object()
+        # Disallow liking a deleted comment
+        if getattr(comment, "is_deleted", False):
+            return Response({"detail": "Cannot like a deleted comment"}, status=status.HTTP_400_BAD_REQUEST)
         user = request.user
         try:
             with transaction.atomic():
@@ -447,6 +477,10 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
         """Current user unlikes the comment. Idempotent: if not liked, no change."""
         assert pk is not None
         comment = self.get_object()
+        # Disallow unliking a deleted comment (no-op)
+        if getattr(comment, "is_deleted", False):
+            serializer = self.get_serializer(comment, context={"request": request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
         user = request.user
         try:
             with transaction.atomic():

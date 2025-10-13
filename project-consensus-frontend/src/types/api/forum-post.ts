@@ -4,7 +4,12 @@
 export interface FetchForumPostsParams {
   page?: number;
   pageSize?: number;
-  ordering?: string; // created_at, -likes, -comments
+  // Ordering tokens follow standard DRF ordering conventions:
+  // - "-created_at": newest first
+  // - "-likes_count": most liked first
+  // - "-comments_count": most commented first
+  // If omitted, server uses its default ordering (newest first with sensible tie-breakers).
+  ordering?: string;
   search?: string; // search in title and content
   tags?: string[]; // filter by tags
   author?: string; // filter by author ID

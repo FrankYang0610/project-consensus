@@ -87,7 +87,7 @@ def _recompute_course_aggregates(course: Course) -> None:
 
 
 def _recompute_replies_count(review: CourseReview) -> None:
-    cnt = review.replies.count()
+    cnt = review.replies.filter(is_deleted=False).count()
     CourseReview.objects.filter(pk=review.pk).update(replies_count=cnt)
 
 
@@ -603,7 +603,7 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
 
     def _ensure_owner(self, obj: CourseReview) -> None:
         user = self.request.user
-        if not user or (not getattr(user, "is_staff", False) and obj.author_id != user.pk):
+        if not user or obj.author_id != user.pk:
             raise PermissionDenied("You do not have permission to modify this review.")
 
     def perform_create(self, serializer):  # type: ignore[override]
@@ -642,6 +642,8 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
         old_srcs = extract_image_srcs_from_html(getattr(instance, "content", ""))
         with transaction.atomic():
             obj = serializer.save()
+            # Mark as edited on any successful update
+            CourseReview.objects.filter(pk=obj.pk).update(is_edited=True)
             _recompute_course_aggregates(obj.course)
             _recompute_teachers_aggregates(obj.course)
             new_srcs = extract_image_srcs_from_html(getattr(obj, "content", ""))
@@ -665,6 +667,7 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
         except Exception as e:
             logger.warning(f"Failed to delete images in course review {instance.pk}: {e}", exc_info=True)
         with transaction.atomic():
+            # Hard-delete the review; related replies/likes cascade via FK
             instance.delete()
             _recompute_course_aggregates(course)
             _recompute_teachers_aggregates(course)
@@ -698,7 +701,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
     pagination_class = DefaultPageNumberPagination
 
     def get_queryset(self):  # type: ignore[override]
-        qs = super().get_queryset()
+        qs = super().get_queryset().filter(is_deleted=False, review__is_deleted=False)
         review_id = self.request.query_params.get("review")
         if review_id:
             qs = qs.filter(review_id=review_id)
@@ -711,7 +714,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
 
     def _ensure_owner(self, obj: CourseReviewReply) -> None:
         user = self.request.user
-        if not user or (not getattr(user, "is_staff", False) and obj.author_id != user.pk):
+        if not user or obj.author_id != user.pk:
             raise PermissionDenied("You do not have permission to modify this reply.")
 
     def perform_create(self, serializer):  # type: ignore[override]
@@ -774,11 +777,18 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
         self._ensure_owner(instance)
         serializer.save()
 
+    def update(self, request, *args, **kwargs):  # type: ignore[override]
+        return Response({"detail": "Reply editing is not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def partial_update(self, request, *args, **kwargs):  # type: ignore[override]
+        return Response({"detail": "Reply editing is not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
     def perform_destroy(self, instance):  # type: ignore[override]
         self._ensure_owner(instance)
         review = instance.review
         with transaction.atomic():
-            instance.delete()
+            # Soft delete: mark as deleted and clear content
+            CourseReviewReply.objects.filter(pk=instance.pk).update(is_deleted=True, content="")
             _recompute_replies_count(review)
 
     @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
@@ -909,7 +919,8 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
             reply = (
                 CourseReviewReply.objects
                 .select_related("review__course")
-                .get(pk=reply_id)
+                .filter(pk=reply_id, is_deleted=False)
+                .get()
             )
             return Response(
                 {
