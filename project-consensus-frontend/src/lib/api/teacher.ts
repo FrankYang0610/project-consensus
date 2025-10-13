@@ -4,7 +4,7 @@ import type {
   PaginatedResponse,
   FetchTeachersParams,
 } from "@/types";
-import { apiGet } from "./api-utils";
+import { apiGet, HttpError } from "./api-utils";
 
 /**
  * Fetch a single teacher by ID
@@ -23,6 +23,9 @@ export async function fetchTeacherById(
     );
     return data ?? null;
   } catch (error) {
+    if (error instanceof HttpError && error.status === 404) {
+      return null; // Missing teacher is not an error
+    }
     console.error(`Failed to fetch teacher ${teacherId}:`, error);
     return null;
   }
@@ -45,6 +48,9 @@ export async function fetchTeacherCourses(
     );
     return Array.isArray(data) ? data : [];
   } catch (error) {
+    if (error instanceof HttpError && error.status === 404) {
+      return []; // Missing teacher courses is not an error
+    }
     console.error(`Failed to fetch courses for teacher ${teacherId}:`, error);
     return [];
   }

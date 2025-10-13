@@ -17,6 +17,7 @@ import {
   unlikeForumComment,
   deleteForumComment
 } from "@/lib/api/forum-comment";
+import { HttpError } from "@/lib/api/api-utils";
 import { isContentEmpty } from "@/lib/utils";
 import { useInfiniteList } from "@/hooks/use-infinite-list";
 
@@ -169,8 +170,13 @@ export function ForumPostCommentList({
           setTimeout(() => scrollToComment(targetCommentId), 100);
         });
       } catch (e) {
-        console.error(e);
-        setLoadError(true);
+        if (e instanceof HttpError && e.status === 404) {
+          // Target comment no longer exists; mark as load error but avoid console noise
+          setLoadError(true);
+        } else {
+          console.error(e);
+          setLoadError(true);
+        }
       } finally {
         setIsJumpLoading(false);
       }

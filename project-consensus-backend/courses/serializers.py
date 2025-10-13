@@ -275,6 +275,7 @@ class CourseReviewSerializer(serializers.ModelSerializer):
     updatedAt = serializers.DateTimeField(source="updated_at", read_only=True)
     term = serializers.SerializerMethodField()
     repliesCount = serializers.IntegerField(source="replies_count", read_only=True)
+    isEdited = serializers.BooleanField(source="is_edited", read_only=True)
     isLiked = serializers.SerializerMethodField()
 
     isAnonymous = serializers.BooleanField(source="is_anonymous", required=False)
@@ -297,8 +298,9 @@ class CourseReviewSerializer(serializers.ModelSerializer):
             "isLiked",
             "isAnonymous",
             "onlyText",
+            "isEdited",
         ]
-        read_only_fields = ["id", "courseId", "likesCount", "createdAt", "updatedAt", "repliesCount"]
+        read_only_fields = ["id", "courseId", "likesCount", "createdAt", "updatedAt", "repliesCount", "isEdited"]
     
     def to_representation(self, instance):
         """Override to_representation to sanitize HTML content on output.
@@ -507,6 +509,7 @@ class CourseReviewSerializer(serializers.ModelSerializer):
                 if key == "overall_rating" and only_text:
                     continue
                 setattr(instance, key, val)
+        instance.is_edited = True
         instance.save()
         return instance
 
@@ -595,6 +598,10 @@ class CourseReviewReplySerializer(serializers.ModelSerializer):
         if review is None or author is None:
             raise serializers.ValidationError("review and author must be provided")
 
+        # Do not allow replying to a deleted review
+        if getattr(review, "is_deleted", False):
+            raise serializers.ValidationError({"reviewId": "review has been deleted"})
+
         # Sanitize content
         if "content" in validated_data:
             validated_data["content"] = _sanitize_html(validated_data.get("content", ""))
@@ -603,7 +610,4 @@ class CourseReviewReplySerializer(serializers.ModelSerializer):
         return instance
 
     def update(self, instance: CourseReviewReply, validated_data):  # type: ignore[override]
-        if "content" in validated_data:
-            instance.content = _sanitize_html(validated_data.get("content", ""))
-        instance.save(update_fields=["content"])
-        return instance
+        raise serializers.ValidationError({"detail": "reply editing is not allowed"})

@@ -39,5 +39,4 @@ export interface ForumPostComment {
   isDeleted?: boolean; // 是否已删除 / Whether comment is deleted
   replies?: number; // 直接回复数量 / Count of direct replies
   isAnonymous?: boolean; // 是否匿名评论 / Whether author is anonymous
-  canDelete?: boolean; // 当前用户是否可删除 / Whether current user can delete
 }

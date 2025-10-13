@@ -341,6 +341,12 @@ def _generate_replies(apps, reviews):
             is_deleted=False,
         )
         out.append(reply)
+    # Soft-delete a subset (e.g., ~5%) to simulate placeholders
+    if out:
+        k = max(1, len(out) // 20)
+        for r in random.sample(out, k=k):
+            # Clear content and mark as deleted to match soft-delete contract
+            CourseReviewReply.objects.filter(pk=r.pk).update(is_deleted=True, content="")
     return out
 
 
@@ -361,7 +367,8 @@ def _recompute_replies_count(apps, reviews):
     from django.db.models import Count
     CourseReview = apps.get_model("courses", "CourseReview")
     CourseReviewReply = apps.get_model("courses", "CourseReviewReply")
-    counts = CourseReviewReply.objects.values("review_id").annotate(cnt=Count("id"))
+    # Only count non-deleted replies for UI display
+    counts = CourseReviewReply.objects.filter(is_deleted=False).values("review_id").annotate(cnt=Count("id"))
     mapping = {row["review_id"]: row["cnt"] for row in counts}
     for r in reviews:
         CourseReview.objects.filter(pk=r.pk).update(replies_count=mapping.get(r.pk, 0))

@@ -175,7 +175,7 @@ export function ForumPostCommentCard({
     }
   };
 
-  const canDelete = comment.canDelete === true;
+  const canDelete = Boolean(currentUserId && comment.author.id === currentUserId);
 
   const toRelative = React.useCallback((url: string | null): string | null => {
     if (!url) return null;

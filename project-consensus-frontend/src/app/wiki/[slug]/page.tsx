@@ -1,5 +1,6 @@
 import React from 'react';
 import { fetchWikiPageDetail } from '@/lib/api/wiki';
+import { notFound } from 'next/navigation';
 import type { LanguageCode } from '@/types/wiki';
 import WikiPageHeader from '@/components/wiki/WikiPageHeader';
 import WikiLanguageSwitcher from '@/components/wiki/WikiLanguageSwitcher';
@@ -12,6 +13,7 @@ export default async function WikiDetailPage({ params, searchParams }: { params:
   const slug = params.slug;
   const language = (searchParams?.language as LanguageCode | undefined) ?? undefined;
   const page = await fetchWikiPageDetail(slug, language);
+  if (!page) return notFound();
 
   return (
     <div className="grid grid-cols-12 gap-6">

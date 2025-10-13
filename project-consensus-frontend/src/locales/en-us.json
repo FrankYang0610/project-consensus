@@ -108,6 +108,7 @@
     "translateUnavailable": "Translation feature is not available yet",
     "shareUnavailable": "Share feature is temporarily unavailable. Stay tuned!",
     "copyFailed": "Failed to copy text to clipboard",
+    "notExist": "This post does not exist",
     "newTitle": "Create a new forum post",
     "titlePlaceholder": "Enter a title",
     "contentPlaceholder": "Enter post content...",
@@ -347,7 +348,11 @@
           "min": "Min rating",
           "max": "Max rating"
         },
-        "apply": "Apply"
+        "apply": "Apply",
+        "missing": {
+          "reviewNotExist": "This course review does not exist",
+          "replyNotExist": "This course review reply does not exist"
+        }
       }
     },
     "review": {

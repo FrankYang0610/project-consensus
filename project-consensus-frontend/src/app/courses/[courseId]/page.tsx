@@ -4,6 +4,7 @@ import * as React from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { SiteNavigation } from "@/components/SiteNavigation";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import CourseDetailCard from "@/components/CourseDetailCard";
 import CourseReviewCard from "@/components/CourseReviewCard";
 import CourseReviewReplyCard from "@/components/CourseReviewReplyCard";
@@ -17,6 +18,7 @@ import {
     fetchCourseReviewById,
   findReviewByReplyId,
 } from "@/lib/api/course";
+import { HttpError } from "@/lib/api/api-utils";
 import { useI18n } from "@/hooks/use-i18n";
 import { fetchCourseById } from "@/lib/api/course";
 import type { Course, TeacherInfo, CourseReview, FetchCourseReviewsParams, CourseReviewReply } from "@/types";
@@ -43,6 +45,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
   const { courseId } = resolvedParams;
 
   const [course, setCourse] = React.useState<Course | null>(null);
+  const [missingDialog, setMissingDialog] = React.useState<{ open: boolean; message: string }>(() => ({ open: false, message: "" }));
 
   // Fetch from backend when courseId changes
   React.useEffect(() => {
@@ -204,7 +207,14 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
             targetReview = fetched;
           }
         } catch (e) {
-          console.error('Failed to fetch target review', e);
+          if (e instanceof HttpError && e.status === 404) {
+            // Missing review: show friendly dialog, no console noise
+            setMissingDialog({ open: true, message: t('courses.detail.reviews.missing.reviewNotExist') });
+          } else {
+            console.error('Failed to fetch target review', e);
+            setMissingDialog({ open: true, message: t('courses.detail.reviews.missing.reviewNotExist') });
+          }
+          setTargetReviewId(undefined);
         }
       }
 
@@ -328,7 +338,13 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
             }, 400);
           });
         } catch (e) {
-          console.error('Failed to find review for reply', e);
+          if (e instanceof HttpError && e.status === 404) {
+            // Reply doesn't exist: show dialog quietly
+            setMissingDialog({ open: true, message: t('courses.detail.reviews.missing.replyNotExist') });
+          } else {
+            console.error('Failed to find review for reply', e);
+            setMissingDialog({ open: true, message: t('courses.detail.reviews.missing.replyNotExist') });
+          }
           setTargetReplyId(undefined);
         }
       })();
@@ -654,6 +670,16 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
           </div>
         </div>
       </main>
+      <Dialog open={missingDialog.open} onOpenChange={(open) => setMissingDialog(prev => ({ ...prev, open }))}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('common.note')}</DialogTitle>
+            <DialogDescription>
+              {missingDialog.message}
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

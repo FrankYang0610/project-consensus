@@ -7,7 +7,7 @@ import type {
   CreateForumPostPayload,
   UpdateForumPostPayload,
 } from "@/types/api";
-import { apiGet, apiPost, apiPatch, apiDeleteVoid } from "./api-utils";
+import { apiGet, apiPost, apiPatch, apiDeleteVoid, HttpError } from "./api-utils";
 
 /**
  * Fetch a single forum post by ID
@@ -26,6 +26,9 @@ export async function fetchForumPostById(
     );
     return data ?? null;
   } catch (error) {
+    if (error instanceof HttpError && error.status === 404) {
+      return null; // Missing post is not an error
+    }
     console.error(`Failed to fetch forum post ${postId}:`, error);
     return null;
   }
