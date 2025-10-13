@@ -16,6 +16,9 @@ if TYPE_CHECKING:
     from django.core.files.uploadedfile import UploadedFile
 
 
+_ALLOWED_FOLDERS = {'images', 'avatars', 'posts', 'wiki'}
+
+
 def upload_image_to_r2(file: UploadedFile, folder: str = 'images', user=None) -> str:
     """
     Upload an image to Cloudflare R2 and return the public URL.
@@ -38,6 +41,9 @@ def upload_image_to_r2(file: UploadedFile, folder: str = 'images', user=None) ->
     Raises:
         ValidationError: If upload fails
     """
+    folder = str(folder).strip() if folder is not None else 'images'
+    if folder not in _ALLOWED_FOLDERS:
+        raise ValidationError("Invalid folder")
     # Extract file extension
     original_name = file.name or 'image'
     extension = original_name.rsplit('.', 1)[-1].lower() if '.' in original_name else 'jpg'
@@ -64,12 +70,19 @@ def url_to_storage_path(url: str) -> str | None:
         parsed = urlparse(str(url).strip())
         if not parsed.scheme or not parsed.netloc:
             return None
+        if str(parsed.scheme).lower() != 'https':
+            return None
         allowed_hosts = get_allowed_image_hosts()
         if not is_host_in_allowed(parsed.hostname, allowed_hosts):
             return None
         path = parsed.path.lstrip('/')
         if not path:
             return None
+        # Reject ambiguous or traversal-like segments
+        parts = path.split('/')
+        for seg in parts:
+            if seg in ('.', '..', ''):
+                return None
         return path
     except Exception:
         return None
@@ -81,6 +94,8 @@ def _storage_path_belongs_to_user(path: str, user_id: int | None) -> bool:
             return False
         parts = path.split('/')
         if len(parts) < 3:
+            return False
+        if parts[0] not in _ALLOWED_FOLDERS:
             return False
         return parts[1] == str(user_id)
     except Exception:
@@ -118,6 +133,17 @@ class _ImgSrcExtractor(HTMLParser):
             for (k, v) in attrs:
                 if k and k.lower() == 'src' and v:
                     self.srcs.append(v)
+
+
+def extract_image_srcs_from_html(html: str) -> set[str]:
+    try:
+        if not html or not isinstance(html, str):
+            return set()
+        parser = _ImgSrcExtractor()
+        parser.feed(html)
+        return set(parser.srcs)
+    except Exception:
+        return set()
 
 
 def delete_images_in_html(html: str, owner_user_id: int) -> int:

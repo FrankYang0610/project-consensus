@@ -27,7 +27,7 @@ from .serializers import CourseSerializer, CourseReviewSerializer, CourseReviewR
 from notifications import NotificationType
 from notifications.events import emit, DomainEvent
 from django.utils import timezone
-from core.utils import delete_images_in_html
+from core.utils import delete_images_in_html, extract_image_srcs_from_html, delete_storage_object_by_url
 
 
 def _is_constraint_violation(e: IntegrityError, constraint_name: str) -> bool:
@@ -638,10 +638,18 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):  # type: ignore[override]
         instance: CourseReview = self.get_object()
         self._ensure_owner(instance)
+        old_srcs = extract_image_srcs_from_html(getattr(instance, "content", ""))
         with transaction.atomic():
             obj = serializer.save()
             _recompute_course_aggregates(obj.course)
             _recompute_teachers_aggregates(obj.course)
+        try:
+            new_srcs = extract_image_srcs_from_html(getattr(obj, "content", ""))
+            removed_srcs = old_srcs - new_srcs
+            for src in removed_srcs:
+                delete_storage_object_by_url(src, owner_user_id=instance.author_id)
+        except Exception as e:
+            logger.warning(f"Failed to delete removed images in course review {instance.pk}: {e}", exc_info=True)
 
     def perform_destroy(self, instance):  # type: ignore[override]
         self._ensure_owner(instance)

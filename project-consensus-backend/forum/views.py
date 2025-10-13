@@ -16,7 +16,7 @@ from .serializers import ForumPostSerializer, ForumPostCommentSerializer
 from notifications import NotificationType
 from notifications.events import emit, DomainEvent
 from django.utils import timezone
-from core.utils import delete_images_in_html
+from core.utils import delete_images_in_html, extract_image_srcs_from_html, delete_storage_object_by_url
 
 
 class DefaultPageNumberPagination(PageNumberPagination):
@@ -59,6 +59,7 @@ class ForumPostViewSet(viewsets.ModelViewSet):
             qs = qs.annotate(is_liked=Value(False))
         return qs
 
+
     def perform_create(self, serializer):  # type: ignore[override]
         # Force the author to the current user
         serializer.save(author=self.request.user)
@@ -90,12 +91,21 @@ class ForumPostViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
+        old_srcs = extract_image_srcs_from_html(getattr(instance, "content", ""))
 
         # Determine if incoming data modifies any editable fields
         editable_fields = {"title", "content", "tags", "is_anonymous"}
         incoming_keys = set(serializer.validated_data.keys())
 
         self.perform_update(serializer)
+
+        try:
+            new_srcs = extract_image_srcs_from_html(getattr(instance, "content", ""))
+            removed_srcs = old_srcs - new_srcs
+            for src in removed_srcs:
+                delete_storage_object_by_url(src, owner_user_id=instance.author_id)
+        except Exception as e:
+            logger.warning(f"Failed to delete removed images in forum post {instance.pk}: {e}", exc_info=True)
 
         # Mark as edited if client attempted to update any editable fields
         if incoming_keys & editable_fields:
@@ -212,6 +222,28 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
         else:
             qs = qs.annotate(is_liked=Value(False))
         return qs
+
+    def update(self, request: Request, *args, **kwargs):  # type: ignore[override]
+        partial = kwargs.pop("partial", False)
+        instance: ForumPostComment = self.get_object()
+        if request.user != instance.author:
+            return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        old_srcs = extract_image_srcs_from_html(getattr(instance, "content", ""))
+        self.perform_update(serializer)
+        try:
+            new_srcs = extract_image_srcs_from_html(getattr(instance, "content", ""))
+            removed_srcs = old_srcs - new_srcs
+            for src in removed_srcs:
+                delete_storage_object_by_url(src, owner_user_id=instance.author_id)
+        except Exception as e:
+            logger.warning(f"Failed to delete removed images in forum comment {instance.pk}: {e}", exc_info=True)
+        return Response(serializer.data)
+
+    def partial_update(self, request: Request, *args, **kwargs):  # type: ignore[override]
+        kwargs["partial"] = True
+        return self.update(request, *args, **kwargs)
 
     def perform_create(self, serializer):  # type: ignore[override]
         # Always set the author to current user; no main thread tracking in flat model

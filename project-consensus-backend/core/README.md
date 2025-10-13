@@ -13,7 +13,8 @@ core/
 ├── views.py               # Search and health check views
 ├── views_upload.py        # Image upload API (class-based view)
 ├── serializers.py         # Data validation serializers
-├── utils.py               # Image processing utility functions
+├── validators.py          # Shared URL/host validators for uploads
+├── utils.py               # Image upload/delete utility functions
 └── README.md             # This document
 ```
 
@@ -46,6 +47,17 @@ Returns server status for monitoring and load balancer detection.
 **Endpoint**: `POST /api/upload/image/`
 
 Secure image upload service that uploads to Cloudflare R2 storage.
+
+Request (multipart/form-data):
+
+- `image` (file, required) or `upload` (file, CKEditor-compatible)
+- `folder` (string, optional): one of `images | avatars | posts | wiki`
+
+Response:
+
+- 200: `{ "url": "https://..." }`
+- 400: `{ "error": "Invalid upload request", "detail": {...} }`
+- 429: `{ "detail": "Request was throttled..." }`
 
 ---
 
@@ -81,33 +93,45 @@ Return public URL
 class ImageUploadSerializer(serializers.Serializer):
     image = serializers.ImageField(
         required=True,
-        # DRF's ImageField automatically validates:
-        # - Whether file can be opened by Pillow
-        # - Whether it's a valid image format
+        help_text="Image file to upload (JPEG/PNG/GIF/WebP)",
+        # DRF's ImageField already validates via Pillow
         validators=[
-            # Django built-in validator: extension whitelist
             FileExtensionValidator(
-                allowed_extensions=['jpg', 'jpeg', 'png', 'gif', 'webp']
+                allowed_extensions=settings.ALLOWED_IMAGE_EXTENSIONS
             )
         ]
     )
     folder = serializers.ChoiceField(
-        # Restrict folder selection to prevent path traversal attacks
-        choices=['images', 'avatars', 'posts', 'wiki']
+        choices=['images', 'avatars', 'posts', 'wiki'],
+        default='images',
+        required=False,
+        help_text="Target folder in storage"
     )
 
     def validate_image(self, value):
-        """Custom validation logic"""
-        # File size check
-        if value.size < 100:  # Minimum
-            raise ValidationError(...)
-        if value.size > MAX_IMAGE_SIZE:  # Maximum
-            raise ValidationError(...)
+        """Custom validation for image file (size and dimensions)."""
+        # Min size
+        if value.size < 100:
+            raise serializers.ValidationError(
+                "File too small. Minimum size: 100 bytes"
+            )
 
-        # Pixel dimension check (prevent decompression bomb)
-        img = Image.open(value)
-        if img.width * img.height > 50_000_000:
-            raise ValidationError(...)
+        # Max size
+        max_size = getattr(settings, 'MAX_IMAGE_SIZE', 5 * 1024 * 1024)
+        if value.size > max_size:
+            raise serializers.ValidationError("File too large.")
+
+        # Dimension check (decompression bomb protection)
+        try:
+            img = Image.open(value)
+            max_pixels = getattr(settings, 'MAX_IMAGE_PIXELS', 50_000_000)
+            if img.width * img.height > max_pixels:
+                raise serializers.ValidationError("Image resolution too high.")
+            value.seek(0)  # Reset file pointer for later use
+        except serializers.ValidationError:
+            raise
+        except Exception as e:
+            raise serializers.ValidationError(f"Invalid image: {str(e)}")
 
         return value
 ```
@@ -167,6 +191,22 @@ def upload_image_to_r2(file, folder='images'):
     """
     ...
 ```
+
+#### 4. Image Deletion and Ownership (`utils.py`)
+
+- `delete_images_in_html(html, owner_user_id)` extracts `<img src>` from HTML and attempts to delete only those images that:
+  - map to HTTPS URLs on allowed hosts, and
+  - resolve to storage keys under allowed folders (`images/`, `avatars/`, `posts/`, `wiki/`), and
+  - belong to the specified `owner_user_id` (path prefix `<folder>/<userId>/...`).
+- `delete_storage_object_by_url(url, owner_user_id)` performs the same checks for a single URL.
+- Path safety: dot segments (`.`/`..`) are rejected when parsing storage keys.
+
+Call sites (best-effort cleanup):
+
+- `accounts/views.py::update_profile()` – delete old avatar after change
+- `courses/views.py::CourseReviewViewSet.perform_destroy()` – delete images in a review on delete
+- `forum/views.py::ForumPostViewSet.destroy()` – delete images in a post on delete
+- `forum/views.py::ForumPostCommentViewSet.destroy()` – delete images in a comment on delete
 
 ---
 
@@ -301,15 +341,18 @@ class ImageUploadView(APIView):
 
 ## 🔒 Security Features Summary
 
-| Level      | Validation Content | Implementation Method         |
-| ---------- | ------------------ | ----------------------------- |
-| **Auth**   | User must login    | `IsAuthenticated`             |
-| **Rate**   | 100 times/hour     | `UserRateThrottle`            |
-| **Ext**    | jpg/png/gif/webp   | `FileExtensionValidator`      |
-| **Format** | Real image file    | DRF `ImageField` (Pillow)     |
-| **Size**   | 100 bytes - 5MB    | Serializer `validate_image()` |
-| **Pixels** | Max 50MP           | Serializer `validate_image()` |
-| **Path**   | Limited folders    | `ChoiceField`                 |
+| Level      | Validation Content | Implementation Method            |
+| ---------- | ------------------ | -------------------------------- |
+| **Auth**   | User must login    | `IsAuthenticated`                |
+| **Rate**   | 100 times/hour     | `UserRateThrottle`               |
+| **Ext**    | jpg/png/gif/webp   | `FileExtensionValidator`         |
+| **Format** | Real image file    | DRF `ImageField` (Pillow)        |
+| **Size**   | 100 bytes - 5MB    | Serializer `validate_image()`    |
+| **Pixels** | Max 50MP           | Serializer `validate_image()`    |
+| **Path**   | Limited folders    | `ChoiceField` + server allowlist |
+| **Scheme** | HTTPS only         | URL parsing + validators         |
+| **Host**   | Allowed domains    | `ALLOWED_IMAGE_HOSTS`            |
+| **Delete** | Owner-only cleanup | Path ownership check             |
 
 ---
 
@@ -318,32 +361,36 @@ class ImageUploadView(APIView):
 All configurable parameters (in `settings.py`):
 
 ```python
-# Allowed image extensions
-ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp']
+# Image upload validation
+ALLOWED_IMAGE_EXTENSIONS = [
+    ext.strip().lower()
+    for ext in env("ALLOWED_IMAGE_TYPES", default="jpg,jpeg,png,gif,webp").split(",")
+]
+MAX_IMAGE_SIZE = env.int("MAX_IMAGE_SIZE_MB", default=5) * 1024 * 1024
+MAX_IMAGE_PIXELS = env.int("MAX_IMAGE_PIXELS", default=50_000_000)
 
-# Maximum file size (bytes)
-MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5MB
+# Allowed public image hosts (rendering and deletion safety)
+ALLOWED_IMAGE_HOSTS = [
+    h.strip().lower() for h in env("ALLOWED_IMAGE_HOSTS", default="image.polyu.life").split(",") if h.strip()
+]
 
-# Maximum pixels (prevent decompression bomb)
-MAX_IMAGE_PIXELS = 50_000_000  # 50 megapixels
+# DRF throttling
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["image_upload"] = "100/hour"
 
-# Rate limiting
-REST_FRAMEWORK = {
-    "DEFAULT_THROTTLE_RATES": {
-        "image_upload": "100/hour",
-    },
-}
-
-# Cloudflare R2 configuration
+# Cloudflare R2 (django-storages S3 backend)
 STORAGES = {
     "default": {
         "BACKEND": "storages.backends.s3.S3Storage",
         "OPTIONS": {
+            "bucket_name": env("R2_BUCKET_NAME"),
             "access_key": env("R2_ACCESS_KEY_ID"),
             "secret_key": env("R2_SECRET_ACCESS_KEY"),
-            "bucket_name": env("R2_BUCKET_NAME"),
-            "endpoint_url": env("R2_ENDPOINT_URL"),
+            "endpoint_url": f'https://{env("R2_ACCOUNT_ID")}.r2.cloudflarestorage.com',
+            "region_name": "auto",
             "custom_domain": env("R2_PUBLIC_DOMAIN"),
+            "default_acl": None,
+            "file_overwrite": False,
+            "object_parameters": {"CacheControl": "max-age=86400"},
         },
     },
 }
