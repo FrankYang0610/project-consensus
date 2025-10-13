@@ -636,17 +636,27 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
             # Re-raise other integrity errors
             raise
 
-    def perform_update(self, serializer):  # type: ignore[override]
+    def update(self, request, *args, **kwargs):  # type: ignore[override]
+        """Allow only the author to update their review.
+
+        On successful update, mark the review as edited and recompute aggregates.
+        """
+        partial = kwargs.pop("partial", False)
         instance: CourseReview = self.get_object()
         self._ensure_owner(instance)
+
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
         old_srcs = extract_image_srcs_from_html(getattr(instance, "content", ""))
+
         with transaction.atomic():
-            obj = serializer.save()
+            self.perform_update(serializer)
             # Mark as edited on any successful update
-            CourseReview.objects.filter(pk=obj.pk).update(is_edited=True)
-            _recompute_course_aggregates(obj.course)
-            _recompute_teachers_aggregates(obj.course)
-            new_srcs = extract_image_srcs_from_html(getattr(obj, "content", ""))
+            CourseReview.objects.filter(pk=instance.pk).update(is_edited=True)
+            _recompute_course_aggregates(instance.course)
+            _recompute_teachers_aggregates(instance.course)
+            
+            new_srcs = extract_image_srcs_from_html(getattr(instance, "content", ""))
             removed_srcs = old_srcs - new_srcs
             author_id = instance.author_id
             review_pk = instance.pk
@@ -657,6 +667,14 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     logger.warning(f"Failed to delete removed images in course review {review_pk}: {e}", exc_info=True)
             transaction.on_commit(_cleanup)
+            
+            instance.refresh_from_db(fields=["is_edited"])  # keep instance in sync
+
+        return Response(serializer.data)
+
+    def partial_update(self, request, *args, **kwargs):  # type: ignore[override]
+        kwargs["partial"] = True
+        return self.update(request, *args, **kwargs)
 
     def perform_destroy(self, instance):  # type: ignore[override]
         self._ensure_owner(instance)
@@ -771,11 +789,6 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
                     ))
             except Exception:
                 pass
-
-    def perform_update(self, serializer):  # type: ignore[override]
-        instance: CourseReviewReply = self.get_object()
-        self._ensure_owner(instance)
-        serializer.save()
 
     def update(self, request, *args, **kwargs):  # type: ignore[override]
         return Response({"detail": "Reply editing is not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
