@@ -168,6 +168,23 @@ class Migration(migrations.Migration):
             model_name='coursereview',
             constraint=models.UniqueConstraint(fields=('author', 'course'), name='unique_course_review_per_user'),
         ),
+        # Enforce rating rules at DB level:
+        # - Text-only reviews must have rating = 0
+        migrations.AddConstraint(
+            model_name='coursereview',
+            constraint=models.CheckConstraint(
+                check=Q(only_text=False) | Q(overall_rating=0),
+                name='coursereview_only_text_zero_rating',
+            ),
+        ),
+        # - Rated reviews (only_text=false) must have rating in [1, 10]
+        migrations.AddConstraint(
+            model_name='coursereview',
+            constraint=models.CheckConstraint(
+                check=Q(only_text=True) | (Q(overall_rating__gte=1) & Q(overall_rating__lte=10)),
+                name='coursereview_rated_rating_range_1_10',
+            ),
+        ),
         # Add trigram index for course review content search
         migrations.AddIndex(
             model_name='coursereview',

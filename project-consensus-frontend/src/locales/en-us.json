@@ -393,7 +393,7 @@
       "updating": "Saving...",
       "cancel": "Cancel",
       "validation": {
-        "ratingRequired": "Please provide a 1–5 star rating",
+        "ratingRequired": "Please provide a 1–10 score rating",
         "dimensionsRequired": "Please select all four dimensions",
         "contentRequired": "Review content is required",
         "contentTooShort": "Review content must be at least 10 characters"

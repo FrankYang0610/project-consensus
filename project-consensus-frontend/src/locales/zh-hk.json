@@ -381,7 +381,7 @@
       "updating": "儲存中...",
       "cancel": "取消",
       "validation": {
-        "ratingRequired": "請給出 1-5 星評分",
+        "ratingRequired": "請給出 1-10 分評分",
         "dimensionsRequired": "請選擇全部四個維度",
         "contentRequired": "點評內容不能為空",
         "contentTooShort": "點評內容至少需要 10 個字"

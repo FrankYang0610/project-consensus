@@ -390,7 +390,7 @@
       "updating": "保存中...",
       "cancel": "取消",
       "validation": {
-        "ratingRequired": "请给出 1-5 星评分",
+        "ratingRequired": "请给出 1-10 分评分",
         "dimensionsRequired": "请选择全部四个维度",
         "contentRequired": "点评内容不能为空",
         "contentTooShort": "点评内容至少需要 10 个字符"
