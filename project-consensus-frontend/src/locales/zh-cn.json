@@ -52,7 +52,10 @@
     "loadMore": "加载更多",
     "loadFailedRetry": "加载失败，点击重试",
     "likes": "赞",
-    "views": "浏览"
+    "views": "浏览",
+    "resultTitle": {
+      "userStats": "帖子：{{posts}} | 课程点评：{{reviews}}"
+    }
   },
   "auth": {
     "login": "登录",

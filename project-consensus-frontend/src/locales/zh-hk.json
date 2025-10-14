@@ -43,7 +43,19 @@
     "reviewOn": "點評於",
     "resultsFor": "搜尋結果：{{query}}",
     "totalResults": "共 {{count}} 條結果",
-    "filterByType": "按類型篩選"
+    "filterByType": "按類型篩選",
+    "enterSearchQuery": "請輸入搜尋關鍵字",
+    "backToHome": "返回首頁",
+    "searchFailed": "搜索失敗，請重試",
+    "retry": "重試",
+    "noResultsForQuery": "未找到與 \"{{query}}\" 相關的內容",
+    "loadMore": "載入更多",
+    "loadFailedRetry": "載入失敗，點擊重試",
+    "likes": "讚",
+    "views": "瀏覽",
+    "resultTitle": {
+      "userStats": "帖子：{{posts}} | 課程點評：{{reviews}}"
+    }
   },
   "auth": {
     "login": "登入",
@@ -405,32 +417,9 @@
       "courses": "課程列表",
       "advancedSearch": "進階搜索",
       "search": "搜索"
-    },
-    "byLevel": {
-      "title": "按層級瀏覽課程",
-      "subtitle": "從基礎到進階，按學術層級探索課程",
-      "loading": "載入中...",
-      "loadingCourses": "載入課程中...",
-      "errorDesc": "請檢查網絡連接後重試",
-      "courses": "門課程",
-      "noCourses": "暫無課程",
-      "noCoursesDesc": "請稍後查看新課程",
-      "level1": "Level 1 - 基礎",
-      "level1Desc": "大一基礎入門課程",
-      "level2": "Level 2 - 核心",
-      "level2Desc": "建立基礎知識的核心課程",
-      "level3": "Level 3 - 中級",
-      "level3Desc": "深入理解的中級課程",
-      "level4": "Level 4 - 進階",
-      "level4Desc": "高年級本科及研究生入門課程",
-      "level5": "Level 5 - 專業",
-      "level5Desc": "專業研究生課程及研討會",
-      "level6": "Level 6 - 專家",
-      "level6Desc": "專家級課程及博士研究",
-      "other": "其他層級",
-      "otherDesc": "未指定或特殊層級的課程"
     }
-  },
+  }
+,
   "about": {
     "title": "關於",
     "subtitle": "了解更多關於項目的資訊、其目的以及背後的團隊。",
