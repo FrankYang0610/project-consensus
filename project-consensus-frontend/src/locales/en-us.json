@@ -2,6 +2,10 @@
   "navigation": {
     "forum": "Forum",
     "courseReview": "Course Review",
+    "browseCourses": "Browse Courses",
+    "browseCoursesDesc": "Explore courses organized by academic departments",
+    "advancedSearch": "Advanced Search",
+    "advancedSearchDesc": "Search and filter courses with advanced options",
     "more": "More",
     "about": "About",
     "language": "Language"
@@ -391,6 +395,25 @@
         "contentRequired": "Review content is required",
         "contentTooShort": "Review content must be at least 10 characters"
       }
+    },
+    "byDepartment": {
+      "title": "Courses by Department",
+      "subtitle": "Browse courses organized by academic departments",
+      "loading": "Loading departments...",
+      "loadingCourses": "Loading courses...",
+      "loadError": "Failed to load courses",
+      "courseCount": "{{count}} courses",
+      "noCourses": "No courses available",
+      "noCoursesDesc": "Check back later for course updates",
+      "noDepartment": "No Department",
+      "levelLabel": "Level {{level}}",
+      "selectDepartment": "Departments",
+      "selectLevel": "Levels",
+      "selectDepartmentFirst": "Select a department first",
+      "selectLevelFirst": "Select a level to view courses",
+      "courses": "Courses",
+      "advancedSearch": "Advanced Search",
+      "search": "Search"
     }
   },
   "about": {

@@ -1,7 +1,11 @@
 {
   "navigation": {
     "forum": "论坛",
-    "courseReview": "课程评价",
+    "courseReview": "课程点评",
+    "browseCourses": "浏览课程",
+    "browseCoursesDesc": "按学术部门分类探索课程",
+    "advancedSearch": "高级搜索",
+    "advancedSearchDesc": "使用高级选项搜索和筛选课程",
     "more": "更多",
     "about": "关于",
     "language": "语言"
@@ -388,6 +392,25 @@
         "contentRequired": "点评内容不能为空",
         "contentTooShort": "点评内容至少需要 10 个字符"
       }
+    },
+    "byDepartment": {
+      "title": "按部门浏览课程",
+      "subtitle": "按学术部门分类浏览课程",
+      "loading": "加载部门列表...",
+      "loadingCourses": "加载课程中...",
+      "loadError": "课程加载失败",
+      "courseCount": "{{count}} 门课程",
+      "noCourses": "暂无课程",
+      "noCoursesDesc": "请稍后查看课程更新",
+      "noDepartment": "未分类部门",
+      "levelLabel": "等级 {{level}}",
+      "selectDepartment": "部门列表",
+      "selectLevel": "课程等级",
+      "selectDepartmentFirst": "请先选择部门",
+      "selectLevelFirst": "请选择等级以查看课程",
+      "courses": "课程列表",
+      "advancedSearch": "高级搜索",
+      "search": "搜索"
     }
   },
   "about": {

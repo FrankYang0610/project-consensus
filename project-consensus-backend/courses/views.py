@@ -276,6 +276,53 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
         departments = sorted(seen.values(), key=lambda s: s.lower())
         return Response({"departments": departments}, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=["get"], url_path="departments-with-counts")
+    def departments_with_counts(self, request):
+        """Return distinct department names with course counts (optimized for browse page).
+
+        This endpoint is optimized for the course browse by department page.
+        It performs a single aggregated query to get department names and counts,
+        reducing N+1 queries significantly.
+
+        Response shape: { 
+            "departments": [
+                {"name": "Computer Science", "count": 42},
+                {"name": "Mathematics", "count": 28},
+                ...
+            ] 
+        }
+        """
+        from django.db.models import Count
+        
+        # Get distinct departments with their course counts in a single query
+        # Group by department (case-insensitive), count courses per department
+        # Note: Course model uses 'course_id' as primary key, not 'id'
+        departments_qs = (
+            Course.objects
+            .exclude(department="")
+            .values("department")
+            .annotate(count=Count("course_id"))
+            .order_by("department")
+        )
+        
+        # Deduplicate case-insensitive and preserve original casing
+        seen: dict[str, dict] = {}
+        for item in departments_qs:
+            name = str(item["department"]).strip()
+            if not name:
+                continue
+            key = name.lower()
+            if key not in seen:
+                seen[key] = {"name": name, "count": item["count"]}
+            else:
+                # If duplicate (different case), sum counts
+                seen[key]["count"] += item["count"]
+        
+        # Sort alphabetically by name (case-insensitive)
+        departments = sorted(seen.values(), key=lambda d: d["name"].lower())
+        
+        return Response({"departments": departments}, status=status.HTTP_200_OK)
+
     @action(detail=True, methods=["get", "post"], url_path="reviews")
     def reviews(self, request, course_id=None):
         """Nested reviews for a course identified by course_id.

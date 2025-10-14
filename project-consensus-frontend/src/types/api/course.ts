@@ -69,3 +69,18 @@ export interface VoteCourseResponse {
   rating: { recommendCount: number; notRecommendCount: number };
   userVote: CourseUserVote;
 }
+
+// GET /api/courses/departments-with-counts/ response item
+export interface CourseDepartmentWithCount {
+  name: string;
+  count: number;
+}
+
+// Course browse page department data (UI state)
+export interface CourseDepartmentData {
+  name: string;
+  count: number;
+  courses?: import('@/types').Course[];
+  loading?: boolean;
+  error?: boolean;
+}

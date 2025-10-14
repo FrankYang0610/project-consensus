@@ -1,7 +1,11 @@
 {
   "navigation": {
     "forum": "論壇",
-    "courseReview": "課程評價",
+    "courseReview": "課程點評",
+    "browseCourses": "瀏覽課程",
+    "browseCoursesDesc": "按學術部門分類探索課程",
+    "advancedSearch": "進階搜索",
+    "advancedSearchDesc": "使用進階選項搜尋和篩選課程",
     "more": "更多",
     "about": "關於",
     "language": "語言"
@@ -379,6 +383,49 @@
         "contentRequired": "點評內容不能為空",
         "contentTooShort": "點評內容至少需要 10 個字"
       }
+    },
+    "byDepartment": {
+      "title": "按部門瀏覽課程",
+      "subtitle": "按學術部門分類瀏覽課程",
+      "loading": "載入部門列表...",
+      "loadingCourses": "載入課程中...",
+      "loadError": "課程載入失敗",
+      "courseCount": "{{count}} 門課程",
+      "noCourses": "暫無課程",
+      "noCoursesDesc": "請稍後查看課程更新",
+      "noDepartment": "未分類部門",
+      "levelLabel": "等級 {{level}}",
+      "selectDepartment": "部門列表",
+      "selectLevel": "課程等級",
+      "selectDepartmentFirst": "請先選擇部門",
+      "selectLevelFirst": "請選擇等級以查看課程",
+      "courses": "課程列表",
+      "advancedSearch": "進階搜索",
+      "search": "搜索"
+    },
+    "byLevel": {
+      "title": "按層級瀏覽課程",
+      "subtitle": "從基礎到進階，按學術層級探索課程",
+      "loading": "載入中...",
+      "loadingCourses": "載入課程中...",
+      "errorDesc": "請檢查網絡連接後重試",
+      "courses": "門課程",
+      "noCourses": "暫無課程",
+      "noCoursesDesc": "請稍後查看新課程",
+      "level1": "Level 1 - 基礎",
+      "level1Desc": "大一基礎入門課程",
+      "level2": "Level 2 - 核心",
+      "level2Desc": "建立基礎知識的核心課程",
+      "level3": "Level 3 - 中級",
+      "level3Desc": "深入理解的中級課程",
+      "level4": "Level 4 - 進階",
+      "level4Desc": "高年級本科及研究生入門課程",
+      "level5": "Level 5 - 專業",
+      "level5Desc": "專業研究生課程及研討會",
+      "level6": "Level 6 - 專家",
+      "level6Desc": "專家級課程及博士研究",
+      "other": "其他層級",
+      "otherDesc": "未指定或特殊層級的課程"
     }
   },
   "about": {

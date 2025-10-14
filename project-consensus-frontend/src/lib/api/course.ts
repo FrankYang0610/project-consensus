@@ -10,6 +10,7 @@ import type {
   FetchReviewRepliesParams,
   CreateReplyPayload,
   VoteCourseResponse,
+  CourseDepartmentWithCount,
 } from "@/types";
 import { apiGet, apiPost, apiPatch, apiDeleteVoid } from "./api-utils";
 
@@ -131,5 +132,11 @@ export async function updateCourseReview(reviewId: string, payload: UpdateCourse
 // ---------------- Meta: departments list (for filters) ----------------
 export async function fetchCourseDepartments(): Promise<string[]> {
   const res = await apiGet<{ departments: string[] }>(`/api/courses/departments/`);
+  return Array.isArray(res?.departments) ? res.departments : [];
+}
+
+// ---------------- Optimized: departments with counts (for browse page) ----------------
+export async function fetchCourseDepartmentsWithCounts(): Promise<CourseDepartmentWithCount[]> {
+  const res = await apiGet<{ departments: CourseDepartmentWithCount[] }>(`/api/courses/departments-with-counts/`);
   return Array.isArray(res?.departments) ? res.departments : [];
 }

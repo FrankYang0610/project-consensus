@@ -67,6 +67,8 @@ export type {
   CreateReplyPayload,
   CourseUserVote,
   VoteCourseResponse,
+  CourseDepartmentWithCount,
+  CourseDepartmentData,
   // Teacher API types
   FetchTeachersParams,
   // Forum API types

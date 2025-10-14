@@ -3,107 +3,347 @@
 import * as React from "react";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useI18n } from "@/hooks/use-i18n";
 import { CourseBackgroundCard } from "@/components/CourseBackgroundCard";
-import { CourseFilterBar } from "@/components/CourseFilterBar";
 import { CoursePreviewCard } from "@/components/CoursePreviewCard";
-import type { Course } from "@/types";
-import { useInfiniteList } from "@/hooks/use-infinite-list";
-import { fetchCourses } from "@/lib/api/course";
+import { useI18n } from "@/hooks/use-i18n";
+import type { Course, CourseDepartmentData } from "@/types";
+import { fetchCourses, fetchCourseDepartmentsWithCounts } from "@/lib/api/course";
+import { Building2, Loader2, Search } from "lucide-react";
+import { cn } from "@/lib/utils";
+import Link from "next/link";
 
-export default function CoursesPage() {
-  const { t } = useI18n();
-  const {
-    items: courses,
-    setItems: setCourses,
-    loaderRef,
-    hasMore,
-    error: loadError,
-    setError: setLoadError,
-    loadMore,
-    reset,
-  } = useInfiniteList<Course, import("@/types").FetchCoursesParams>({
-    pageFetcher: fetchCourses,
-    initialParams: { page: 1, pageSize: 20, ordering: '-last_updated' },
-    pageSize: 20,
-    dedupeKey: (c) => c.courseId,
+// Helper function to group courses by level
+function groupCoursesByLevel(courses: Course[]) {
+  const grouped: Record<string, Course[]> = {};
+  
+  courses.forEach((course) => {
+    const level = course.level || "Other";
+    if (!grouped[level]) {
+      grouped[level] = [];
+    }
+    grouped[level].push(course);
   });
+
+  // Sort levels: 1, 2, 3, 4, 5, 6, Other
+  const sortedLevels = Object.keys(grouped).sort((a, b) => {
+    if (a === "Other") return 1;
+    if (b === "Other") return -1;
+    return a.localeCompare(b);
+  });
+
+  return sortedLevels.map((level) => ({
+    level,
+    courses: grouped[level],
+  }));
+}
+
+export default function CourseBrowsePage() {
+  const { t } = useI18n();
+  const [departments, setDepartments] = React.useState<CourseDepartmentData[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  
+  // Selection state for three-column layout
+  const [selectedDepartment, setSelectedDepartment] = React.useState<string | null>(null);
+  const [selectedLevel, setSelectedLevel] = React.useState<string | null>(null);
+
+  // Initial load: fetch department list with counts
+  React.useEffect(() => {
+    const abortController = new AbortController();
+    
+    const loadDepartmentList = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Fetch departments with counts in a single optimized request
+        const deptInfos = await fetchCourseDepartmentsWithCounts();
+        
+        // Check if component is unmounted
+        if (abortController.signal.aborted) return;
+        
+        // Data is already sorted by backend
+        
+        setDepartments(deptInfos);
+      } catch (err) {
+        if (abortController.signal.aborted) return;
+        console.error("Failed to load departments:", err);
+        setError(t("common.loadFailedRetry"));
+      } finally {
+        if (!abortController.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadDepartmentList();
+    
+    // Cleanup function to abort requests on unmount
+    return () => {
+      abortController.abort();
+    };
+  }, [t]);
+
+  // Load courses for a specific department when expanded
+  const loadDepartmentCourses = React.useCallback(async (deptName: string) => {
+    setDepartments((prev) =>
+      prev.map((dept) =>
+        dept.name === deptName ? { ...dept, loading: true, error: false } : dept
+      )
+    );
+
+    try {
+      // Fetch with reasonable limit, sorted by rating
+      const response = await fetchCourses({
+        page: 1,
+        pageSize: 200, // Reduced from 1000 to improve performance
+        department: [deptName],
+        ordering: "-rating_score",
+      });
+
+      setDepartments((prev) =>
+        prev.map((dept) =>
+          dept.name === deptName
+            ? { ...dept, courses: response.results, loading: false }
+            : dept
+        )
+      );
+    } catch (err) {
+      console.error(`Failed to load courses for ${deptName}:`, err);
+      setDepartments((prev) =>
+        prev.map((dept) =>
+          dept.name === deptName ? { ...dept, loading: false, error: true } : dept
+        )
+      );
+    }
+  }, []);
+
+  // Handle department selection
+  const handleDepartmentClick = React.useCallback(
+    (deptName: string) => {
+      setSelectedDepartment(deptName);
+      setSelectedLevel(null); // Reset level selection
+      
+      // Load courses if not already loaded
+      const dept = departments.find((d) => d.name === deptName);
+      if (dept && !dept.courses && !dept.loading) {
+        loadDepartmentCourses(deptName);
+      }
+    },
+    [departments, loadDepartmentCourses]
+  );
+
+  // Get levels for selected department
+  const selectedDeptLevels = React.useMemo(() => {
+    if (!selectedDepartment) return [];
+    const dept = departments.find((d) => d.name === selectedDepartment);
+    if (!dept?.courses) return [];
+    return groupCoursesByLevel(dept.courses);
+  }, [selectedDepartment, departments]);
+
+  // Get courses for selected level
+  const selectedLevelCourses = React.useMemo(() => {
+    if (!selectedLevel) return [];
+    const levelGroup = selectedDeptLevels.find((l) => l.level === selectedLevel);
+    return levelGroup?.courses || [];
+  }, [selectedLevel, selectedDeptLevels]);
 
   return (
     <>
       <SiteNavigation />
       <div className="min-h-screen bg-background">
-        <main className="w-full py-8">
-          <div className="w-full p-6">
-            <div className="max-w-7xl mx-auto mb-1">
+        <main className="w-full py-6 sm:py-8">
+          <div className="w-full px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto mb-6">
               <Alert>
-                <AlertTitle>{t('common.note')}</AlertTitle>
+                <AlertTitle>{t("common.note")}</AlertTitle>
                 <AlertDescription>
-                  {t('common.developmentNotice')}
+                  {t("common.developmentNotice")}
                 </AlertDescription>
               </Alert>
             </div>
-            <div className="max-w-7xl mx-auto grid grid-cols-1 gap-6 pt-4">
-              <CourseBackgroundCard>
-                <div className="space-y-4">
-                  <CourseFilterBar
-                    onApply={(filters) => {
-                      const sort = String(filters.sort ?? 'composite');
-                      const ordering = sort === 'rating' ? '-rating_score' : sort === 'reviews' ? '-rating_reviews_count' : '-last_updated';
-                      const subjectCode = String(filters.subjectCode || '').trim() || undefined;
-                      const departments = (Array.isArray(filters.departments) ? (filters.departments as string[]) : []).filter(Boolean);
-                      const category = String(filters.category || '').trim();
-                      const categories = (Array.isArray(filters.categories) ? (filters.categories as string[]) : []).filter(Boolean);
-                      const levels = (Array.isArray(filters.levels) ? (filters.levels as string[]) : []).filter((lv) => lv && lv !== '0');
-                      const subjectTitle = String(filters.subjectTitle || '').trim();
-                      const teacherName = String(filters.teacherName || '').trim();
-                      const search = [subjectTitle, teacherName].filter(Boolean).join(' ') || undefined;
 
-                      reset({
-                        page: 1,
-                        pageSize: 20,
-                        ordering,
-                        ...(subjectCode ? { subjectCode } : {}),
-                        ...(departments.length ? { department: departments } : {}),
-                        ...(category && category !== 'all' ? { category } : {}),
-                        ...(categories.length ? { categories } : {}),
-                        ...(levels.length ? { level: levels } : {}),
-                        ...(search ? { search } : {}),
-                      });
-                    }}
-                  />
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {courses.map(course => (
-                      <CoursePreviewCard
-                        key={course.courseId}
-                        courseId={course.courseId}
-                        subjectCode={course.subjectCode}
-                        title={course.title}
-                        term={course.term}
-                        terms={course.terms}
-                        rating={course.rating}
-                        attributes={course.attributes}
-                        teachers={course.teachers}
-                        department={course.department}
-                        lastUpdated={course.lastUpdated}
-                      />
-                    ))}
-                  </div>
-                  {/* Infinite scroll sentinel + retry (handled by useInfiniteList) */}
-                  <div className="flex justify-center">
-                    <div ref={loaderRef} className="h-8 w-full" aria-hidden="true" />
-                  </div>
-                  {loadError && (hasMore || courses.length === 0) && (
-                    <div className="flex justify-center">
-                      <button
-                        className="mt-2 bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
-                        onClick={() => { setLoadError(false); loadMore(); }}
-                      >
-                        {t('common.loadFailedRetry')}
-                      </button>
+            <div className="max-w-7xl mx-auto">
+              <CourseBackgroundCard>
+                {/* Page Header */}
+                <div className="flex items-start justify-between gap-4 pb-5 mb-6 border-b">
+                  <div className="flex items-start gap-4 flex-1 min-w-0">
+                    <div className="flex-shrink-0 p-2.5 rounded-lg bg-primary/10">
+                      <Building2 className="w-5 h-5 text-primary" />
                     </div>
-                  )}
+                    <div className="flex-1 min-w-0">
+                      <h1 className="text-2xl font-bold text-foreground">
+                        {t("courses.byDepartment.title")}
+                      </h1>
+                      <p className="text-sm text-muted-foreground mt-1.5">
+                        {t("courses.byDepartment.subtitle")}
+                      </p>
+                    </div>
+                  </div>
+                  {/* Guide Link to Advanced Search */}
+                  <Link
+                    href="/courses/advanced-search"
+                    className="flex-shrink-0 flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary hover:text-primary/80 border border-primary/20 rounded-md hover:bg-primary/5 transition-colors"
+                  >
+                    <Search className="w-4 h-4" />
+                    <span className="hidden sm:inline">{t("courses.byDepartment.advancedSearch")}</span>
+                    <span className="sm:hidden">{t("courses.byDepartment.search")}</span>
+                  </Link>
                 </div>
+
+                {/* Loading State */}
+                {loading && (
+                  <div className="flex flex-col items-center justify-center py-12 gap-3">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    <span className="text-sm text-muted-foreground">
+                      {t("courses.byDepartment.loading")}
+                    </span>
+                  </div>
+                )}
+
+                {/* Error State */}
+                {error && !loading && (
+                  <div className="flex flex-col items-center justify-center py-12 gap-4">
+                    <p className="text-destructive">{error}</p>
+                    <button
+                      onClick={() => {
+                        setError(null);
+                        setLoading(true);
+                        // Retry by re-running the effect
+                        window.location.href = window.location.pathname;
+                      }}
+                      className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                    >
+                      {t("search.retry")}
+                    </button>
+                  </div>
+                )}
+
+                {/* Three-Column Layout */}
+                {!loading && !error && departments.length > 0 && (
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-[600px]">
+                    {/* Left Column: Departments */}
+                    <div className="lg:col-span-3 space-y-2">
+                      <div className="text-sm font-medium text-muted-foreground mb-3 px-1">
+                        {t("courses.byDepartment.selectDepartment")}
+                      </div>
+                      <div className="space-y-1 max-h-[600px] overflow-y-auto pr-2">
+                        {departments.map((dept) => (
+                          <button
+                            key={dept.name}
+                            onClick={() => handleDepartmentClick(dept.name)}
+                            className={cn(
+                              "w-full text-left px-3 py-2.5 rounded-md transition-colors",
+                              "flex items-center justify-between gap-2",
+                              selectedDepartment === dept.name
+                                ? "bg-primary text-primary-foreground"
+                                : "hover:bg-accent"
+                            )}
+                          >
+                            <span className="text-sm font-medium truncate">{dept.name}</span>
+                            <span className={cn(
+                              "text-xs px-2 py-0.5 rounded-full flex-shrink-0",
+                              selectedDepartment === dept.name
+                                ? "bg-primary-foreground/20 text-primary-foreground"
+                                : "bg-secondary text-muted-foreground"
+                            )}>
+                              {dept.count}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Middle Column: Levels */}
+                    <div className="lg:col-span-3 space-y-2">
+                      <div className="text-sm font-medium text-muted-foreground mb-3 px-1">
+                        {t("courses.byDepartment.selectLevel")}
+                      </div>
+                      {!selectedDepartment ? (
+                        <div className="flex items-center justify-center py-12 text-center">
+                          <p className="text-sm text-muted-foreground">
+                            {t("courses.byDepartment.selectDepartmentFirst")}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-1 max-h-[600px] overflow-y-auto pr-2">
+                          {departments.find(d => d.name === selectedDepartment)?.loading && (
+                            <div className="flex items-center justify-center py-8">
+                              <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                            </div>
+                          )}
+                          {selectedDeptLevels.map(({ level, courses }) => (
+                            <button
+                              key={level}
+                              onClick={() => setSelectedLevel(level)}
+                              className={cn(
+                                "w-full text-left px-3 py-2.5 rounded-md transition-colors",
+                                "flex items-center justify-between gap-2",
+                                selectedLevel === level
+                                  ? "bg-primary text-primary-foreground"
+                                  : "hover:bg-accent"
+                              )}
+                            >
+                              <span className="text-sm font-medium">
+                                {t("courses.byDepartment.levelLabel", { level })}
+                              </span>
+                              <span className={cn(
+                                "text-xs px-2 py-0.5 rounded-full flex-shrink-0",
+                                selectedLevel === level
+                                  ? "bg-primary-foreground/20 text-primary-foreground"
+                                  : "bg-secondary text-muted-foreground"
+                              )}>
+                                {courses.length}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Right Column: Courses */}
+                    <div className="lg:col-span-6">
+                      <div className="text-sm font-medium text-muted-foreground mb-3 px-1">
+                        {t("courses.byDepartment.courses")}
+                      </div>
+                      {!selectedLevel ? (
+                        <div className="flex items-center justify-center py-12 text-center">
+                          <p className="text-sm text-muted-foreground">
+                            {t("courses.byDepartment.selectLevelFirst")}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                          {selectedLevelCourses.map((course) => (
+                            <CoursePreviewCard
+                              key={course.courseId}
+                              courseId={course.courseId}
+                              subjectCode={course.subjectCode}
+                              title={course.title}
+                              term={course.term}
+                              terms={course.terms}
+                              rating={course.rating}
+                              attributes={course.attributes}
+                              teachers={course.teachers}
+                              department={course.department}
+                              lastUpdated={course.lastUpdated}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Empty State */}
+                {!loading && !error && departments.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <Building2 className="w-12 h-12 text-muted-foreground mb-4" />
+                    <p className="text-lg font-medium text-muted-foreground">
+                      {t("courses.byDepartment.noCourses")}
+                    </p>
+                  </div>
+                )}
               </CourseBackgroundCard>
             </div>
           </div>
