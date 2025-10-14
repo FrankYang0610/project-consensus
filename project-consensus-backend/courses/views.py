@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import logging
+from typing import TypedDict
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from django.db.models import Avg, Count, Q
+from django.db.models import Avg, Count, Q, Case, When, Value, IntegerField
 from django.db import transaction, IntegrityError
 from django.db.models import F
 from django.db.models import Exists
@@ -109,13 +110,15 @@ def _recompute_course_aggregates(course: Course) -> None:
     }
     GAIN_REVERSE = {1: "low", 2: "decent", 3: "high"}
     
-    # Count all reviews (including text-only) for reviewsCount
-    total_reviews_count = CourseReview.objects.filter(course=locked_course).count()
-    
-    # Only use reviews with ratings for score calculation and attribute aggregation
-    qs = CourseReview.objects.filter(course=locked_course, only_text=False)
-    agg = qs.aggregate(avg=Avg("overall_rating"), cnt=Count("id"))
-    rated_count = int(agg.get("cnt") or 0)
+    # Optimize: count total and rated reviews in a single query using conditional aggregation
+    qs = CourseReview.objects.filter(course=locked_course)
+    agg = qs.aggregate(
+        total_count=Count("id"),
+        rated_count=Count(Case(When(only_text=False, then=Value(1)), output_field=IntegerField())),
+        avg=Avg(Case(When(only_text=False, then=F("overall_rating"))))
+    )
+    total_reviews_count = int(agg.get("total_count") or 0)
+    rated_count = int(agg.get("rated_count") or 0)
     avg = float(agg.get("avg") or 0.0)
     # Keep one decimal place as agreed
     score = round(avg, 1) if rated_count > 0 else 0.0
@@ -126,8 +129,8 @@ def _recompute_course_aggregates(course: Course) -> None:
     
     # Compute weighted averages for attributes if we have rated reviews
     if rated_count > 0:
-        # Fetch all attribute values from reviews
-        reviews = list(qs.values("attr_difficulty", "attr_workload", "attr_grading", "attr_gain"))
+        # Fetch all attribute values from non-text-only reviews
+        reviews = list(qs.filter(only_text=False).values("attr_difficulty", "attr_workload", "attr_grading", "attr_gain"))
         
         # Calculate difficulty average
         difficulty_values = [DIFFICULTY_MAP.get(r["attr_difficulty"]) for r in reviews]
@@ -406,7 +409,11 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
         )
         
         # Deduplicate case-insensitive and preserve original casing
-        seen: dict[str, dict] = {}
+        class DepartmentInfo(TypedDict):
+            name: str
+            count: int
+        
+        seen: dict[str, DepartmentInfo] = {}
         for item in departments_qs:
             name = str(item["department"]).strip()
             if not name:
