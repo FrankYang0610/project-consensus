@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from django.core.files.uploadedfile import UploadedFile
 
 
-def upload_image_to_r2(file: UploadedFile, folder: str = 'images', user=None) -> str:
+def upload_image_to_r2(file: UploadedFile, folder: str, user=None) -> str:
     """
     Upload an image to Cloudflare R2 and return the public URL.
     
@@ -30,18 +30,28 @@ def upload_image_to_r2(file: UploadedFile, folder: str = 'images', user=None) ->
     
     Args:
         file: Uploaded image file (already validated)
-        folder: Folder/prefix in R2 bucket (e.g., 'avatars', 'posts')
+        folder: Required. Folder/prefix in R2 bucket (e.g., 'avatars', 'posts', 'wiki')
         user: Optional user object to include owner id in the path
     
     Returns:
         Public URL of uploaded image
     
     Raises:
-        ValidationError: If upload fails
+        ValidationError: If upload fails or folder is not specified
     """
-    folder = str(folder).strip() if folder is not None else 'images'
-    if folder not in settings.ALLOWED_UPLOAD_FOLDERS:
-        raise ValidationError("Invalid folder")
+    # Validate and normalize folder parameter
+    if folder is None:
+        raise ValidationError("Folder parameter is required")
+    elif not isinstance(folder, str):
+        raise ValidationError("Folder must be a string")
+    else:
+        folder = folder.strip()
+    
+    if not folder or folder not in settings.ALLOWED_UPLOAD_FOLDERS:
+        raise ValidationError(
+            f"Invalid folder. Must be one of: {', '.join(sorted(settings.ALLOWED_UPLOAD_FOLDERS))}"
+        )
+    
     # Extract file extension
     original_name = file.name or 'image'
     extension = original_name.rsplit('.', 1)[-1].lower() if '.' in original_name else 'jpg'

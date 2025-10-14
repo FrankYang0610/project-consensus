@@ -34,7 +34,7 @@ class ImageUploadView(APIView):
     
     **Request** (multipart/form-data):
     - `image` (file, required): Image file (JPEG/PNG/GIF/WebP)
-    - `folder` (string, optional): Target folder ('images', 'avatars', 'posts', 'wiki')
+    - `folder` (string, required): Target folder ('images', 'avatars', 'posts', 'wiki')
     
     **Response**:
     - 200: `{"url": "https://..."}`
@@ -93,7 +93,7 @@ class ImageUploadView(APIView):
         
         try:
             image_file = serializer.validated_data['image']
-            folder = serializer.validated_data.get('folder', 'images')
+            folder = serializer.validated_data['folder']  # Required field
             
             url = upload_image_to_r2(image_file, folder=folder, user=request.user)
             
