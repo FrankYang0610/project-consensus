@@ -661,12 +661,12 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
             removed_srcs = old_srcs - new_srcs
             author_id = instance.author_id
             review_pk = instance.pk
-            def _cleanup():
+            def _cleanup(srcs=removed_srcs, uid=author_id, rid=review_pk):
                 try:
-                    for src in removed_srcs:
-                        delete_storage_object_by_url(src, owner_user_id=author_id)
+                    for src in srcs:
+                        delete_storage_object_by_url(src, owner_user_id=uid)
                 except Exception as e:
-                    logger.warning(f"Failed to delete removed images in course review {review_pk}: {e}", exc_info=True)
+                    logger.warning(f"Failed to delete removed images in course review {rid}: {e}", exc_info=True)
             transaction.on_commit(_cleanup)
 
         return Response(serializer.data)

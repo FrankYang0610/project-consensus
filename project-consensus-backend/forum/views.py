@@ -147,12 +147,13 @@ class ForumPostViewSet(viewsets.ModelViewSet):
             removed_srcs = old_srcs - new_srcs
             author_id = instance.author_id
             post_pk = instance.pk
-            def _cleanup():
+            # Capture variables explicitly using default arguments to avoid closure issues
+            def _cleanup(srcs=removed_srcs, owner_id=author_id, pk=post_pk):
                 try:
-                    for src in removed_srcs:
-                        delete_storage_object_by_url(src, owner_user_id=author_id)
+                    for src in srcs:
+                        delete_storage_object_by_url(src, owner_user_id=owner_id)
                 except Exception as e:
-                    logger.warning(f"Failed to delete removed images in forum post {post_pk}: {e}", exc_info=True)
+                    logger.warning(f"Failed to delete removed images in forum post {pk}: {e}", exc_info=True)
             transaction.on_commit(_cleanup)
 
             # Mark as edited if client attempted to update any editable fields
