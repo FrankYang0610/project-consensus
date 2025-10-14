@@ -6,13 +6,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CourseBackgroundCard } from "@/components/CourseBackgroundCard";
 import { CoursePreviewCard } from "@/components/CoursePreviewCard";
 import { useI18n } from "@/hooks/use-i18n";
-import type { Course, CourseDepartmentData } from "@/types";
+import type { CourseDepartmentData } from "@/types";
 import { fetchCourses, fetchCourseDepartmentsWithCounts, fetchDepartmentLevels } from "@/lib/api/course";
 import { Building2, Loader2, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-
-// No longer needed - levels are loaded from backend
 
 export default function CourseBrowsePage() {
   const { t } = useI18n();
@@ -55,13 +53,13 @@ export default function CourseBrowsePage() {
         // Check if component is unmounted
         if (abortController.signal.aborted) return;
         
-        // Data is already sorted by backend
-        
         setDepartments(deptInfos);
       } catch (err) {
         if (abortController.signal.aborted) return;
         console.error("Failed to load departments:", err);
-        setError(t("common.loadFailedRetry"));
+        // Store the translation key instead of translated text
+        // to avoid t function dependency causing re-runs on language change
+        setError("common.loadFailedRetry");
       } finally {
         if (!abortController.signal.aborted) {
           setLoading(false);
@@ -75,7 +73,8 @@ export default function CourseBrowsePage() {
     return () => {
       abortController.abort();
     };
-  }, [t]);
+    // Empty dependency array - only run once on mount
+  }, []);
 
   // Load levels for a specific department
   const loadDepartmentLevels = React.useCallback(async (deptName: string) => {
@@ -95,7 +94,7 @@ export default function CourseBrowsePage() {
       // Fetch level distribution (lightweight query)
       const levels = await fetchDepartmentLevels(deptName);
       
-      if (abortController.signal.aborted) return;
+      if (abortController.signal.aborted) return undefined;
 
       setDepartments((prev) =>
         prev.map((dept) =>
@@ -104,14 +103,17 @@ export default function CourseBrowsePage() {
             : dept
         )
       );
+      
+      return levels; // Return the loaded levels for use by caller
     } catch (err) {
-      if (abortController.signal.aborted) return;
+      if (abortController.signal.aborted) return undefined;
       console.error(`Failed to load levels for ${deptName}:`, err);
       setDepartments((prev) =>
         prev.map((dept) =>
           dept.name === deptName ? { ...dept, loading: false, error: true } : dept
         )
       );
+      return undefined;
     } finally {
       abortControllersRef.current.delete(key);
     }
@@ -177,30 +179,17 @@ export default function CourseBrowsePage() {
     // Async function to handle the restoration sequence
     const restoreSelection = async () => {
       try {
+        let levelsToCheck = dept.levels;
+        
         // Step 1: Load levels if needed
         if (!dept.levels && !dept.loading) {
-          await loadDepartmentLevels(selectedDepartment);
-          
-          // Step 2: After levels are loaded, load courses if there's a selected level
-          // Use a small delay to allow React to process the state update
-          if (selectedLevel) {
-            await new Promise(resolve => setTimeout(resolve, 50));
-            // Re-check departments state via a callback-based approach
-            setDepartments((currentDepts) => {
-              const updatedDept = currentDepts.find((d) => d.name === selectedDepartment);
-              if (updatedDept?.levels && selectedLevel) {
-                const levelExists = updatedDept.levels.some(l => l.level === selectedLevel);
-                if (levelExists) {
-                  // Trigger course loading outside state setter
-                  Promise.resolve().then(() => loadLevelCourses(selectedDepartment, selectedLevel));
-                }
-              }
-              return currentDepts; // No state change
-            });
-          }
-        } else if (dept.levels && selectedLevel) {
-          // Levels already exist, just load courses
-          const levelExists = dept.levels.some(l => l.level === selectedLevel);
+          const loadedLevels = await loadDepartmentLevels(selectedDepartment);
+          levelsToCheck = loadedLevels;
+        }
+        
+        // Step 2: Load courses if there's a selected level and it exists in the loaded levels
+        if (selectedLevel && levelsToCheck) {
+          const levelExists = levelsToCheck.some(l => l.level === selectedLevel);
           if (levelExists) {
             loadLevelCourses(selectedDepartment, selectedLevel);
           }
@@ -264,6 +253,21 @@ export default function CourseBrowsePage() {
     return dept?.courses || [];
   }, [selectedDepartment, selectedLevel, departments]);
 
+  // Handle retry after error
+  const handleRetry = React.useCallback(async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      const deptInfos = await fetchCourseDepartmentsWithCounts();
+      setDepartments(deptInfos);
+    } catch (err) {
+      console.error("Retry failed:", err);
+      setError("common.loadFailedRetry");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return (
     <>
       <SiteNavigation />
@@ -320,21 +324,9 @@ export default function CourseBrowsePage() {
                 {/* Error State */}
                 {error && !loading && (
                   <div className="flex flex-col items-center justify-center py-12 gap-4">
-                    <p className="text-destructive">{error}</p>
+                    <p className="text-destructive">{t(error)}</p>
                     <button
-                      onClick={async () => {
-                        setError(null);
-                        setLoading(true);
-                        try {
-                          const deptInfos = await fetchCourseDepartmentsWithCounts();
-                          setDepartments(deptInfos);
-                        } catch (err) {
-                          console.error("Retry failed:", err);
-                          setError(t("common.loadFailedRetry"));
-                        } finally {
-                          setLoading(false);
-                        }
-                      }}
+                      onClick={handleRetry}
                       className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
                     >
                       {t("search.retry")}
@@ -433,6 +425,16 @@ export default function CourseBrowsePage() {
                         <div className="flex items-center justify-center py-12 text-center">
                           <p className="text-sm text-muted-foreground">
                             {t("courses.byDepartment.selectLevelFirst")}
+                          </p>
+                        </div>
+                      ) : departments.find(d => d.name === selectedDepartment)?.loading ? (
+                        <div className="flex items-center justify-center py-12">
+                          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                        </div>
+                      ) : selectedLevelCourses.length === 0 ? (
+                        <div className="flex items-center justify-center py-12 text-center">
+                          <p className="text-sm text-muted-foreground">
+                            {t("courses.byDepartment.noCourses")}
                           </p>
                         </div>
                       ) : (
