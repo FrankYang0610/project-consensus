@@ -386,7 +386,7 @@ def my_comments(request):
     # Get user's comments with related data
     comments = (
         ForumPostComment.objects
-        .filter(author=request.user)
+        .filter(author=request.user, is_deleted=False)
         .select_related("author", "author__profile", "post")
         .prefetch_related("likes")
         .annotate(
@@ -509,7 +509,7 @@ def public_user_comments(request, user_id):
         
         comments = (
             ForumPostComment.objects
-            .filter(author=user, is_anonymous=False)
+            .filter(author=user, is_anonymous=False, is_deleted=False)
             .select_related("author", "author__profile", "post")
             .prefetch_related("likes")
             .annotate(replies_count=Count("replies", distinct=True))
