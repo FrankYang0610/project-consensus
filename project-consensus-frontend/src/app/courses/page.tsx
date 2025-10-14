@@ -212,7 +212,8 @@ export default function CourseBrowsePage() {
     
     restoreSelection();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, departments.length]); // Intentionally minimal dependencies
+  }, [loading, departments.length, loadDepartmentLevels, loadLevelCourses]); 
+  // Intentionally excludes departments/selectedDepartment/selectedLevel - this effect should only run once after initial load
 
   // Handle department selection
   const handleDepartmentClick = React.useCallback(
