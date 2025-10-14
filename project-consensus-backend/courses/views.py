@@ -32,6 +32,12 @@ from core.utils import delete_images_in_html, extract_image_srcs_from_html, dele
 logger = logging.getLogger(__name__)
 
 
+class DepartmentInfo(TypedDict):
+    """Type definition for department information with count."""
+    name: str
+    count: int
+
+
 def _is_constraint_violation(e: IntegrityError, constraint_name: str) -> bool:
     """Check if an IntegrityError is caused by a specific constraint violation.
     
@@ -409,10 +415,6 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
         )
         
         # Deduplicate case-insensitive and preserve original casing
-        class DepartmentInfo(TypedDict):
-            name: str
-            count: int
-        
         seen: dict[str, DepartmentInfo] = {}
         for item in departments_qs:
             name = str(item["department"]).strip()
