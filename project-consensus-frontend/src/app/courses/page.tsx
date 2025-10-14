@@ -19,24 +19,24 @@ export default function CourseBrowsePage() {
   const [error, setError] = React.useState<string | null>(null);
   
   // Selection state for three-column layout (with persistence)
-  const [selectedDepartment, setSelectedDepartment] = React.useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
-      return sessionStorage.getItem('courses_selectedDepartment') || null;
-    }
-    return null;
-  });
-  const [selectedLevel, setSelectedLevel] = React.useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
-      return sessionStorage.getItem('courses_selectedLevel') || null;
-    }
-    return null;
-  });
-  
-  // Track if we've already restored the selection to prevent infinite loops
-  const hasRestoredRef = React.useRef(false);
+  const [selectedDepartment, setSelectedDepartment] = React.useState<string | null>(null);
+  const [selectedLevel, setSelectedLevel] = React.useState<string | null>(null);
   
   // Track active requests for cancellation
   const abortControllersRef = React.useRef<Map<string, AbortController>>(new Map());
+
+  // Restore selection from sessionStorage after hydration (client-side only)
+  React.useEffect(() => {
+    const savedDepartment = sessionStorage.getItem('courses_selectedDepartment');
+    const savedLevel = sessionStorage.getItem('courses_selectedLevel');
+    
+    if (savedDepartment) {
+      setSelectedDepartment(savedDepartment);
+    }
+    if (savedLevel) {
+      setSelectedLevel(savedLevel);
+    }
+  }, []);
 
   // Initial load: fetch department list with counts
   React.useEffect(() => {
@@ -165,44 +165,33 @@ export default function CourseBrowsePage() {
     }
   }, []);
 
-  // Restore previous selection after departments are loaded
+  // Auto-load levels when a department is selected
   React.useEffect(() => {
-    // Only restore once and only after initial load completes
-    if (loading || departments.length === 0 || hasRestoredRef.current) return;
-    if (!selectedDepartment) return;
-    
-    hasRestoredRef.current = true; // Mark as restored to prevent re-runs
+    if (!selectedDepartment || loading || departments.length === 0) return;
     
     const dept = departments.find((d) => d.name === selectedDepartment);
     if (!dept) return;
     
-    // Async function to handle the restoration sequence
-    const restoreSelection = async () => {
-      try {
-        let levelsToCheck = dept.levels;
-        
-        // Step 1: Load levels if needed
-        if (!dept.levels && !dept.loading) {
-          const loadedLevels = await loadDepartmentLevels(selectedDepartment);
-          levelsToCheck = loadedLevels;
-        }
-        
-        // Step 2: Load courses if there's a selected level and it exists in the loaded levels
-        if (selectedLevel && levelsToCheck) {
-          const levelExists = levelsToCheck.some(l => l.level === selectedLevel);
-          if (levelExists) {
-            loadLevelCourses(selectedDepartment, selectedLevel);
-          }
-        }
-      } catch (err) {
-        console.error('Failed to restore selection:', err);
-      }
-    };
+    // Load levels if not already loaded or loading
+    if (!dept.levels && !dept.loading) {
+      loadDepartmentLevels(selectedDepartment);
+    }
+  }, [selectedDepartment, loading, departments, loadDepartmentLevels]);
+
+  // Auto-load courses when a level is selected and levels are available
+  React.useEffect(() => {
+    if (!selectedDepartment || !selectedLevel || loading || departments.length === 0) return;
     
-    restoreSelection();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, departments.length, loadDepartmentLevels, loadLevelCourses]); 
-  // Intentionally excludes departments/selectedDepartment/selectedLevel - this effect should only run once after initial load
+    const dept = departments.find((d) => d.name === selectedDepartment);
+    if (!dept?.levels || dept.loading) return;
+    
+    // Check if the selected level exists in the loaded levels
+    const levelExists = dept.levels.some(l => l.level === selectedLevel);
+    if (!levelExists) return;
+    
+    // Load courses for the selected level
+    loadLevelCourses(selectedDepartment, selectedLevel);
+  }, [selectedDepartment, selectedLevel, loading, departments, loadLevelCourses]);
 
   // Handle department selection
   const handleDepartmentClick = React.useCallback(
@@ -210,17 +199,13 @@ export default function CourseBrowsePage() {
       setSelectedDepartment(deptName);
       setSelectedLevel(null); // Reset level selection
       
-      // Save to session storage (client-side only, but these callbacks only run client-side)
+      // Save to session storage
       sessionStorage.setItem('courses_selectedDepartment', deptName);
       sessionStorage.removeItem('courses_selectedLevel');
       
-      // Load levels if not already loaded
-      const dept = departments.find((d) => d.name === deptName);
-      if (dept && !dept.levels && !dept.loading) {
-        loadDepartmentLevels(deptName);
-      }
+      // Note: levels will be auto-loaded by the effect above
     },
-    [departments, loadDepartmentLevels]
+    []
   );
 
   // Handle level selection
@@ -230,13 +215,12 @@ export default function CourseBrowsePage() {
       
       setSelectedLevel(level);
       
-      // Save to session storage (client-side only, but these callbacks only run client-side)
+      // Save to session storage
       sessionStorage.setItem('courses_selectedLevel', level);
       
-      // Load courses for this specific level
-      loadLevelCourses(selectedDepartment, level);
+      // Note: courses will be auto-loaded by the effect above
     },
-    [selectedDepartment, loadLevelCourses]
+    [selectedDepartment]
   );
 
   // Get levels for selected department (from loaded data)
