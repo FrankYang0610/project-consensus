@@ -656,6 +656,7 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
             _recompute_course_aggregates(instance.course)
             _recompute_teachers_aggregates(instance.course)
             
+            instance.refresh_from_db(fields=["is_edited", "content"])
             new_srcs = extract_image_srcs_from_html(getattr(instance, "content", ""))
             removed_srcs = old_srcs - new_srcs
             author_id = instance.author_id
@@ -667,8 +668,6 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     logger.warning(f"Failed to delete removed images in course review {review_pk}: {e}", exc_info=True)
             transaction.on_commit(_cleanup)
-            
-            instance.refresh_from_db(fields=["is_edited"])  # keep instance in sync
 
         return Response(serializer.data)
 

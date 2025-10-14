@@ -142,6 +142,7 @@ class ForumPostViewSet(viewsets.ModelViewSet):
 
         with transaction.atomic():
             self.perform_update(serializer)
+            instance.refresh_from_db(fields=["content"])
             new_srcs = extract_image_srcs_from_html(getattr(instance, "content", ""))
             removed_srcs = old_srcs - new_srcs
             author_id = instance.author_id
