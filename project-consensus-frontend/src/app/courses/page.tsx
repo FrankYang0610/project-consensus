@@ -20,9 +20,25 @@ export default function CourseBrowsePage() {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   
-  // Selection state for three-column layout
-  const [selectedDepartment, setSelectedDepartment] = React.useState<string | null>(null);
-  const [selectedLevel, setSelectedLevel] = React.useState<string | null>(null);
+  // Selection state for three-column layout (with persistence)
+  const [selectedDepartment, setSelectedDepartment] = React.useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('courses_selectedDepartment') || null;
+    }
+    return null;
+  });
+  const [selectedLevel, setSelectedLevel] = React.useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('courses_selectedLevel') || null;
+    }
+    return null;
+  });
+  
+  // Track if we've already restored the selection to prevent infinite loops
+  const hasRestoredRef = React.useRef(false);
+  
+  // Track active requests for cancellation
+  const abortControllersRef = React.useRef<Map<string, AbortController>>(new Map());
 
   // Initial load: fetch department list with counts
   React.useEffect(() => {
@@ -63,6 +79,12 @@ export default function CourseBrowsePage() {
 
   // Load levels for a specific department
   const loadDepartmentLevels = React.useCallback(async (deptName: string) => {
+    // Cancel previous request for this department
+    const key = `levels-${deptName}`;
+    abortControllersRef.current.get(key)?.abort();
+    const abortController = new AbortController();
+    abortControllersRef.current.set(key, abortController);
+
     setDepartments((prev) =>
       prev.map((dept) =>
         dept.name === deptName ? { ...dept, loading: true, error: false } : dept
@@ -72,6 +94,8 @@ export default function CourseBrowsePage() {
     try {
       // Fetch level distribution (lightweight query)
       const levels = await fetchDepartmentLevels(deptName);
+      
+      if (abortController.signal.aborted) return;
 
       setDepartments((prev) =>
         prev.map((dept) =>
@@ -81,17 +105,26 @@ export default function CourseBrowsePage() {
         )
       );
     } catch (err) {
+      if (abortController.signal.aborted) return;
       console.error(`Failed to load levels for ${deptName}:`, err);
       setDepartments((prev) =>
         prev.map((dept) =>
           dept.name === deptName ? { ...dept, loading: false, error: true } : dept
         )
       );
+    } finally {
+      abortControllersRef.current.delete(key);
     }
   }, []);
 
   // Load courses for a specific department and level
   const loadLevelCourses = React.useCallback(async (deptName: string, level: string) => {
+    // Cancel previous request for this department-level combination
+    const key = `courses-${deptName}-${level}`;
+    abortControllersRef.current.get(key)?.abort();
+    const abortController = new AbortController();
+    abortControllersRef.current.set(key, abortController);
+
     setDepartments((prev) =>
       prev.map((dept) =>
         dept.name === deptName ? { ...dept, loading: true, error: false } : dept
@@ -107,6 +140,8 @@ export default function CourseBrowsePage() {
         level: [level === "Other" ? "" : level], // Handle "Other" case
         ordering: "-rating_score",
       });
+      
+      if (abortController.signal.aborted) return;
 
       setDepartments((prev) =>
         prev.map((dept) =>
@@ -116,20 +151,78 @@ export default function CourseBrowsePage() {
         )
       );
     } catch (err) {
+      if (abortController.signal.aborted) return;
       console.error(`Failed to load courses for ${deptName} level ${level}:`, err);
       setDepartments((prev) =>
         prev.map((dept) =>
           dept.name === deptName ? { ...dept, loading: false, error: true } : dept
         )
       );
+    } finally {
+      abortControllersRef.current.delete(key);
     }
   }, []);
+
+  // Restore previous selection after departments are loaded
+  React.useEffect(() => {
+    // Only restore once and only after initial load completes
+    if (loading || departments.length === 0 || hasRestoredRef.current) return;
+    if (!selectedDepartment) return;
+    
+    hasRestoredRef.current = true; // Mark as restored to prevent re-runs
+    
+    const dept = departments.find((d) => d.name === selectedDepartment);
+    if (!dept) return;
+    
+    // Async function to handle the restoration sequence
+    const restoreSelection = async () => {
+      try {
+        // Step 1: Load levels if needed
+        if (!dept.levels && !dept.loading) {
+          await loadDepartmentLevels(selectedDepartment);
+          
+          // Step 2: After levels are loaded, load courses if there's a selected level
+          // Use a small delay to allow React to process the state update
+          if (selectedLevel) {
+            await new Promise(resolve => setTimeout(resolve, 50));
+            // Re-check departments state via a callback-based approach
+            setDepartments((currentDepts) => {
+              const updatedDept = currentDepts.find((d) => d.name === selectedDepartment);
+              if (updatedDept?.levels && selectedLevel) {
+                const levelExists = updatedDept.levels.some(l => l.level === selectedLevel);
+                if (levelExists) {
+                  // Trigger course loading outside state setter
+                  Promise.resolve().then(() => loadLevelCourses(selectedDepartment, selectedLevel));
+                }
+              }
+              return currentDepts; // No state change
+            });
+          }
+        } else if (dept.levels && selectedLevel) {
+          // Levels already exist, just load courses
+          const levelExists = dept.levels.some(l => l.level === selectedLevel);
+          if (levelExists) {
+            loadLevelCourses(selectedDepartment, selectedLevel);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to restore selection:', err);
+      }
+    };
+    
+    restoreSelection();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, departments.length]); // Intentionally minimal dependencies
 
   // Handle department selection
   const handleDepartmentClick = React.useCallback(
     (deptName: string) => {
       setSelectedDepartment(deptName);
       setSelectedLevel(null); // Reset level selection
+      
+      // Save to session storage (client-side only, but these callbacks only run client-side)
+      sessionStorage.setItem('courses_selectedDepartment', deptName);
+      sessionStorage.removeItem('courses_selectedLevel');
       
       // Load levels if not already loaded
       const dept = departments.find((d) => d.name === deptName);
@@ -146,6 +239,9 @@ export default function CourseBrowsePage() {
       if (!selectedDepartment) return;
       
       setSelectedLevel(level);
+      
+      // Save to session storage (client-side only, but these callbacks only run client-side)
+      sessionStorage.setItem('courses_selectedLevel', level);
       
       // Load courses for this specific level
       loadLevelCourses(selectedDepartment, level);
@@ -225,11 +321,18 @@ export default function CourseBrowsePage() {
                   <div className="flex flex-col items-center justify-center py-12 gap-4">
                     <p className="text-destructive">{error}</p>
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         setError(null);
                         setLoading(true);
-                        // Retry by re-running the effect
-                        window.location.href = window.location.pathname;
+                        try {
+                          const deptInfos = await fetchCourseDepartmentsWithCounts();
+                          setDepartments(deptInfos);
+                        } catch (err) {
+                          console.error("Retry failed:", err);
+                          setError(t("common.loadFailedRetry"));
+                        } finally {
+                          setLoading(false);
+                        }
                       }}
                       className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
                     >
