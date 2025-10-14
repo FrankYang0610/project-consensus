@@ -10,13 +10,11 @@ from html.parser import HTMLParser
 
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
+from django.conf import settings
 from core.validators import get_allowed_image_hosts, is_host_in_allowed
 
 if TYPE_CHECKING:
     from django.core.files.uploadedfile import UploadedFile
-
-
-_ALLOWED_FOLDERS = {'images', 'avatars', 'posts', 'wiki'}
 
 
 def upload_image_to_r2(file: UploadedFile, folder: str = 'images', user=None) -> str:
@@ -42,7 +40,7 @@ def upload_image_to_r2(file: UploadedFile, folder: str = 'images', user=None) ->
         ValidationError: If upload fails
     """
     folder = str(folder).strip() if folder is not None else 'images'
-    if folder not in _ALLOWED_FOLDERS:
+    if folder not in settings.ALLOWED_UPLOAD_FOLDERS:
         raise ValidationError("Invalid folder")
     # Extract file extension
     original_name = file.name or 'image'
@@ -96,7 +94,7 @@ def _storage_path_belongs_to_user(path: str, user_id: int | None) -> bool:
         parts = path.split('/')
         if len(parts) < 3:
             return False
-        if parts[0] not in _ALLOWED_FOLDERS:
+        if parts[0] not in settings.ALLOWED_UPLOAD_FOLDERS:
             return False
         return parts[1] == str(user_id)
     except Exception:
@@ -120,7 +118,7 @@ class _ImgSrcExtractor(HTMLParser):
     """
     Extracts src attributes from <img> tags in HTML.
     
-    Security Note: This class performs NO validation or sanitization.
+    SECURITY WARNING: This class performs NO validation or sanitization.
     It is intentionally minimal. All security validation (hostname checking,
     ownership verification) is performed downstream in delete_storage_object_by_url().
 
