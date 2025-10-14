@@ -88,6 +88,23 @@ def url_to_storage_path(url: str) -> str | None:
 
 
 def _storage_path_belongs_to_user(path: str, user_id: int | None) -> bool:
+    """
+    Check if a storage path belongs to a specific user.
+    
+    Expected path format: 'folder/user_id/filename.ext'
+    Examples:
+        - 'avatars/123/abc123.jpg' → belongs to user 123
+        - 'posts/456/def456.png' → belongs to user 456
+        - 'images/789.jpg' → invalid (missing user_id segment)
+    
+    Args:
+        path: Storage path to validate (e.g., 'avatars/123/uuid.jpg')
+        user_id: User ID to check ownership against
+    
+    Returns:
+        True if the path follows the expected format and belongs to user_id,
+        False otherwise (invalid format, wrong user, or any error)
+    """
     try:
         if not path or user_id is None:
             return False
