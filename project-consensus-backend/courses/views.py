@@ -29,14 +29,12 @@ from notifications.events import emit, DomainEvent
 from django.utils import timezone
 from core.utils import delete_images_in_html, extract_image_srcs_from_html, delete_storage_object_by_url
 
-logger = logging.getLogger(__name__)
-
-
 class DepartmentInfo(TypedDict):
     """Type definition for department information with count."""
     name: str
     count: int
 
+logger = logging.getLogger(__name__)
 
 def _is_constraint_violation(e: IntegrityError, constraint_name: str) -> bool:
     """Check if an IntegrityError is caused by a specific constraint violation.
