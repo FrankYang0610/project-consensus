@@ -61,7 +61,10 @@ def _is_constraint_violation(e: IntegrityError, constraint_name: str) -> bool:
 
 
 def _recompute_course_aggregates(course: Course) -> None:
-    """Recompute course rating aggregates with row-level locking to prevent race conditions.
+    """Recompute course rating and attribute aggregates with row-level locking to prevent race conditions.
+    
+    Computes weighted averages for difficulty, workload, grading, and gain attributes
+    based on all non-text-only reviews for this course.
     
     Args:
         course: The course instance to recompute aggregates for.
@@ -73,17 +76,114 @@ def _recompute_course_aggregates(course: Course) -> None:
     # Lock the course row to prevent race conditions during concurrent review operations
     locked_course = Course.objects.select_for_update().get(pk=course.pk)
     
+    # Attribute value to numeric mappings for weighted averaging
+    DIFFICULTY_MAP = {
+        "veryEasy": 1,
+        "easy": 2,
+        "medium": 3,
+        "hard": 4,
+        "veryHard": 5,
+    }
+    DIFFICULTY_REVERSE = {1: "veryEasy", 2: "easy", 3: "medium", 4: "hard", 5: "veryHard"}
+    
+    WORKLOAD_MAP = {
+        "light": 1,
+        "moderate": 2,
+        "heavy": 3,
+        "veryHeavy": 4,
+    }
+    WORKLOAD_REVERSE = {1: "light", 2: "moderate", 3: "heavy", 4: "veryHeavy"}
+    
+    GRADING_MAP = {
+        "lenient": 1,
+        "balanced": 2,
+        "strict": 3,
+        "killer": 4,
+    }
+    GRADING_REVERSE = {1: "lenient", 2: "balanced", 3: "strict", 4: "killer"}
+    
+    GAIN_MAP = {
+        "low": 1,
+        "decent": 2,
+        "high": 3,
+    }
+    GAIN_REVERSE = {1: "low", 2: "decent", 3: "high"}
+    
+    # Count all reviews (including text-only) for reviewsCount
+    total_reviews_count = CourseReview.objects.filter(course=locked_course).count()
+    
+    # Only use reviews with ratings for score calculation and attribute aggregation
     qs = CourseReview.objects.filter(course=locked_course, only_text=False)
     agg = qs.aggregate(avg=Avg("overall_rating"), cnt=Count("id"))
-    count = int(agg.get("cnt") or 0)
+    rated_count = int(agg.get("cnt") or 0)
     avg = float(agg.get("avg") or 0.0)
     # Keep one decimal place as agreed
-    score = round(avg, 1) if count > 0 else 0.0
+    score = round(avg, 1) if rated_count > 0 else 0.0
     
-    # Update the locked course instance
-    locked_course.rating_reviews_count = count
+    # Update rating fields: count all reviews, but score only from rated reviews
+    locked_course.rating_reviews_count = total_reviews_count
     locked_course.rating_score = score
-    locked_course.save(update_fields=["rating_reviews_count", "rating_score"])
+    
+    # Compute weighted averages for attributes if we have rated reviews
+    if rated_count > 0:
+        # Fetch all attribute values from reviews
+        reviews = list(qs.values("attr_difficulty", "attr_workload", "attr_grading", "attr_gain"))
+        
+        # Calculate difficulty average
+        difficulty_values = [DIFFICULTY_MAP.get(r["attr_difficulty"]) for r in reviews]
+        difficulty_values = [v for v in difficulty_values if v is not None]
+        if difficulty_values:
+            avg_difficulty = sum(difficulty_values) / len(difficulty_values)
+            rounded_difficulty = round(avg_difficulty)
+            # Clamp to valid range [1, 5]
+            rounded_difficulty = max(1, min(5, rounded_difficulty))
+            locked_course.attr_difficulty = DIFFICULTY_REVERSE[rounded_difficulty]
+        
+        # Calculate workload average
+        workload_values = [WORKLOAD_MAP.get(r["attr_workload"]) for r in reviews]
+        workload_values = [v for v in workload_values if v is not None]
+        if workload_values:
+            avg_workload = sum(workload_values) / len(workload_values)
+            rounded_workload = round(avg_workload)
+            # Clamp to valid range [1, 4]
+            rounded_workload = max(1, min(4, rounded_workload))
+            locked_course.attr_workload = WORKLOAD_REVERSE[rounded_workload]
+        
+        # Calculate grading average
+        grading_values = [GRADING_MAP.get(r["attr_grading"]) for r in reviews]
+        grading_values = [v for v in grading_values if v is not None]
+        if grading_values:
+            avg_grading = sum(grading_values) / len(grading_values)
+            rounded_grading = round(avg_grading)
+            # Clamp to valid range [1, 4]
+            rounded_grading = max(1, min(4, rounded_grading))
+            locked_course.attr_grading = GRADING_REVERSE[rounded_grading]
+        
+        # Calculate gain average
+        gain_values = [GAIN_MAP.get(r["attr_gain"]) for r in reviews]
+        gain_values = [v for v in gain_values if v is not None]
+        if gain_values:
+            avg_gain = sum(gain_values) / len(gain_values)
+            rounded_gain = round(avg_gain)
+            # Clamp to valid range [1, 3]
+            rounded_gain = max(1, min(3, rounded_gain))
+            locked_course.attr_gain = GAIN_REVERSE[rounded_gain]
+    else:
+        # No rated reviews: set all attributes to None to indicate unknown
+        locked_course.attr_difficulty = None
+        locked_course.attr_workload = None
+        locked_course.attr_grading = None
+        locked_course.attr_gain = None
+    
+    # Save all updated fields
+    locked_course.save(update_fields=[
+        "rating_reviews_count",
+        "rating_score",
+        "attr_difficulty",
+        "attr_workload",
+        "attr_grading",
+        "attr_gain",
+    ])
 
 
 def _recompute_replies_count(review: CourseReview) -> None:

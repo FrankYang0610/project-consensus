@@ -233,7 +233,8 @@
       "rating": {
         "score": "評分",
         "outOf": "共10分",
-        "reviews": "{{count}} 人評價"
+        "reviews": "{{count}} 人評價",
+        "noRating": "暫無評分"
       },
       "attributes": {
         "difficulty": "課程難度",
@@ -254,9 +255,11 @@
         "lenient": "寬鬆",
         "balanced": "中等",
         "strict": "嚴格",
+        "killer": "殺手",
         "low": "較少",
         "decent": "不錯",
-        "high": "很多"
+        "high": "很多",
+        "unknown": "未知"
       },
       "teachers": "老師：{{names}}",
       "lastUpdated": "最近更新：{{date}}",

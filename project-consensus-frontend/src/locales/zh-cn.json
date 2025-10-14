@@ -241,8 +241,9 @@
       },
       "rating": {
         "score": "评分",
-        "outOf": "共10分",
-        "reviews": "{{count}} 人评价"
+        "outOf": "满分10分",
+        "reviews": "{{count}}条评价",
+        "noRating": "暂无评分"
       },
       "attributes": {
         "difficulty": "课程难度",
@@ -263,9 +264,11 @@
         "lenient": "宽松",
         "balanced": "中等",
         "strict": "严格",
+        "killer": "杀手",
         "low": "较少",
         "decent": "不错",
-        "high": "很多"
+        "high": "很多",
+        "unknown": "未知"
       },
       "teachers": "老师：{{names}}",
       "lastUpdated": "最近更新：{{date}}",

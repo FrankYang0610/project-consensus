@@ -42,7 +42,7 @@ export interface SampleCoursePreview {
   attributes: {
     difficulty: "veryEasy" | "easy" | "medium" | "hard" | "veryHard";
     workload: "light" | "moderate" | "heavy" | "veryHeavy";
-    grading: "lenient" | "balanced" | "strict";
+    grading: "lenient" | "balanced" | "strict" | "killer";
     gain: "low" | "decent" | "high";
   };
   teachers?: TeacherInfo[];

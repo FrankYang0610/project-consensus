@@ -246,7 +246,8 @@
       "rating": {
         "score": "Rating",
         "outOf": "out of 10",
-        "reviews": "{{count}} reviews"
+        "reviews": "{{count}} reviews",
+        "noRating": "No rating yet"
       },
       "attributes": {
         "difficulty": "Difficulty",
@@ -267,9 +268,11 @@
         "lenient": "Lenient",
         "balanced": "Balanced",
         "strict": "Strict",
+        "killer": "Killer",
         "low": "Low",
         "decent": "Decent",
-        "high": "High"
+        "high": "High",
+        "unknown": "Unknown"
       },
       "teachers": "Teachers: {{names}}",
       "lastUpdated": "Last updated: {{date}}",

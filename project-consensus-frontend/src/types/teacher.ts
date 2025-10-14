@@ -10,7 +10,7 @@ export interface TeacherRating {
   difficulty?: number;
   friendliness?: number;
   clarity?: number;
-  grading?: 'lenient' | 'balanced' | 'strict';
+  grading?: 'lenient' | 'balanced' | 'strict' | 'killer';
   reviewsCount: number;
 }
 

@@ -166,11 +166,13 @@ class CourseSerializer(serializers.ModelSerializer):
         }
 
     def get_attributes(self, obj: Course):
+        # Return null for each attribute if no reviews exist
+        # This allows frontend to display "unknown" instead of misleading defaults
         return {
-            "difficulty": obj.attr_difficulty,
-            "workload": obj.attr_workload,
-            "grading": obj.attr_grading,
-            "gain": obj.attr_gain,
+            "difficulty": obj.attr_difficulty or None,
+            "workload": obj.attr_workload or None,
+            "grading": obj.attr_grading or None,
+            "gain": obj.attr_gain or None,
         }
 
     def get_teachers(self, obj: Course):
