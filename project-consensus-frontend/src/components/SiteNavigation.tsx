@@ -135,7 +135,7 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
 
   /**
    * Toggle specific mobile dropdown open/close state
-   * @param {string} key - Dropdown identifier ('courses', 'more')
+   * @param {'courses' | 'more'} key - Dropdown identifier ('courses', 'more')
    */
   const toggleMobileDropdown = (key: 'courses' | 'more') => {
     setMobileDropdowns(prev => ({
