@@ -10,6 +10,8 @@ import type {
   FetchReviewRepliesParams,
   CreateReplyPayload,
   VoteCourseResponse,
+  CourseDepartmentWithCount,
+  CourseLevelWithCount,
 } from "@/types";
 import { apiGet, apiPost, apiPatch, apiDeleteVoid } from "./api-utils";
 
@@ -132,4 +134,18 @@ export async function updateCourseReview(reviewId: string, payload: UpdateCourse
 export async function fetchCourseDepartments(): Promise<string[]> {
   const res = await apiGet<{ departments: string[] }>(`/api/courses/departments/`);
   return Array.isArray(res?.departments) ? res.departments : [];
+}
+
+// ---------------- Optimized: departments with counts (for browse page) ----------------
+export async function fetchCourseDepartmentsWithCounts(init?: RequestInit): Promise<CourseDepartmentWithCount[]> {
+  const res = await apiGet<{ departments: CourseDepartmentWithCount[] }>(`/api/courses/departments-with-counts/`, init);
+  return Array.isArray(res?.departments) ? res.departments : [];
+}
+
+// ---------------- Optimized: department levels with counts (for browse page) ----------------
+export async function fetchDepartmentLevels(department: string, init?: RequestInit): Promise<CourseLevelWithCount[]> {
+  const q = new URLSearchParams();
+  q.set('department', department);
+  const res = await apiGet<{ levels: CourseLevelWithCount[] }>(`/api/courses/department-levels/?${q.toString()}`, init);
+  return Array.isArray(res?.levels) ? res.levels : [];
 }

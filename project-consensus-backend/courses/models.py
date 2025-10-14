@@ -40,6 +40,7 @@ class Course(models.Model):
         LENIENT = "lenient", "lenient"
         BALANCED = "balanced", "balanced"
         STRICT = "strict", "strict"
+        KILLER = "killer", "killer"
 
     class Gain(models.TextChoices):
         LOW = "low", "low"
@@ -59,10 +60,10 @@ class Course(models.Model):
     rating_recommend_count = models.PositiveIntegerField(default=0)
     rating_not_recommend_count = models.PositiveIntegerField(default=0)
 
-    attr_difficulty = models.CharField(max_length=10, choices=Difficulty.choices, default=Difficulty.MEDIUM)
-    attr_workload = models.CharField(max_length=10, choices=Workload.choices, default=Workload.MODERATE)
-    attr_grading = models.CharField(max_length=10, choices=Grading.choices, default=Grading.BALANCED)
-    attr_gain = models.CharField(max_length=10, choices=Gain.choices, default=Gain.DECENT)
+    attr_difficulty = models.CharField(max_length=10, choices=Difficulty.choices, null=True, blank=True)
+    attr_workload = models.CharField(max_length=10, choices=Workload.choices, null=True, blank=True)
+    attr_grading = models.CharField(max_length=10, choices=Grading.choices, null=True, blank=True)
+    attr_gain = models.CharField(max_length=10, choices=Gain.choices, null=True, blank=True)
 
     # Terms history: list of {year:int, semester:"spring|summer|fall"}
     terms = models.JSONField(default=list, blank=True, help_text="List of offered terms")

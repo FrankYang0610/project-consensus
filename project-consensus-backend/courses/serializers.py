@@ -166,11 +166,13 @@ class CourseSerializer(serializers.ModelSerializer):
         }
 
     def get_attributes(self, obj: Course):
+        # Return None for each attribute if no reviews exist
+        # This allows frontend to display "unknown" instead of misleading defaults
         return {
-            "difficulty": obj.attr_difficulty,
-            "workload": obj.attr_workload,
-            "grading": obj.attr_grading,
-            "gain": obj.attr_gain,
+            "difficulty": obj.attr_difficulty or None,
+            "workload": obj.attr_workload or None,
+            "grading": obj.attr_grading or None,
+            "gain": obj.attr_gain or None,
         }
 
     def get_teachers(self, obj: Course):
@@ -428,15 +430,25 @@ class CourseReviewSerializer(serializers.ModelSerializer):
                     value = float(data.get("overallRating"))
                 except Exception:
                     raise serializers.ValidationError({"overallRating": "must be a number"})
-            if is_create and value is None and not getattr(instance, "overall_rating", None):
+            # Require rating when creating, or when toggling from onlyText->rated without existing valid rating
+            prior_rating = getattr(instance, "overall_rating", None)
+            prior_only_text = getattr(instance, "only_text", False)
+            if (
+                (is_create and value is None)
+                or (
+                    (not is_create)
+                    and (value is None)
+                    and (prior_only_text or prior_rating in (None, 0))
+                )
+            ):
                 raise serializers.ValidationError({"overallRating": "required when onlyText is false"})
             if value is not None:
                 try:
                     fv = float(value)
                 except Exception:
                     raise serializers.ValidationError({"overallRating": "must be a number"})
-                if fv < 0 or fv > 10:
-                    raise serializers.ValidationError({"overallRating": "must be between 0 and 10"})
+                if fv < 1 or fv > 10:
+                    raise serializers.ValidationError({"overallRating": "must be between 1 and 10"})
                 # ensure normalized back into attrs for create/update
                 attrs["overall_rating"] = fv
             # attributes: required on create; optional on partial update but validate shape if provided
@@ -452,6 +464,27 @@ class CourseReviewSerializer(serializers.ModelSerializer):
                 for k in ("difficulty", "workload", "grading", "gain"):
                     if k in attrs_dict and not isinstance(attrs_dict[k], str):
                         raise serializers.ValidationError({"attributes": f"{k} must be a string"})
+            # Validate enum values when attributes are provided
+            if isinstance(attrs_dict, dict):
+                valid_difficulty = {c[0] for c in Course.Difficulty.choices}
+                valid_workload = {c[0] for c in Course.Workload.choices}
+                valid_grading = {c[0] for c in Course.Grading.choices}
+                valid_gain = {c[0] for c in Course.Gain.choices}
+                for key, valid in (
+                    ("difficulty", valid_difficulty),
+                    ("workload", valid_workload),
+                    ("grading", valid_grading),
+                    ("gain", valid_gain),
+                ):
+                    if key in attrs_dict and attrs_dict[key] not in valid:
+                        raise serializers.ValidationError({"attributes": f"{key} must be one of: {', '.join(sorted(valid))}"})
+        else:
+            # For text-only reviews, disallow rating/attributes in payload
+            if "overallRating" in data and data.get("overallRating") not in (None, ""):
+                raise serializers.ValidationError({"overallRating": "must be omitted when onlyText is true"})
+            attrs_dict = data.get("attributes")
+            if isinstance(attrs_dict, dict) and attrs_dict:
+                raise serializers.ValidationError({"attributes": "must be omitted when onlyText is true"})
 
         # Sanitize content (always sanitize if provided)
         if "content" in attrs:

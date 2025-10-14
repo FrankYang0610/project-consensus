@@ -53,10 +53,10 @@ export interface OtherTeacherCourse {
     reviewsCount: number;
   };
   attributes: {
-    difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard';
-    workload: 'light' | 'moderate' | 'heavy' | 'veryHeavy';
-    grading: 'lenient' | 'balanced' | 'strict';
-    gain: 'low' | 'decent' | 'high';
+    difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard' | null;
+    workload: 'light' | 'moderate' | 'heavy' | 'veryHeavy' | null;
+    grading: 'lenient' | 'balanced' | 'strict' | 'killer' | null;
+    gain: 'low' | 'decent' | 'high' | null;
   };
 }
 
@@ -85,7 +85,7 @@ export interface CourseReview {
   attributes?: {
     difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard';
     workload: 'light' | 'moderate' | 'heavy' | 'veryHeavy';
-    grading: 'lenient' | 'balanced' | 'strict';
+    grading: 'lenient' | 'balanced' | 'strict' | 'killer';
     gain: 'low' | 'decent' | 'high';
   } | null;
   content: string; // 评价正文 / Review content
@@ -122,10 +122,10 @@ export interface Course {
     notRecommendCount?: number;
   };
   attributes: {
-    difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard';
-    workload: 'light' | 'moderate' | 'heavy' | 'veryHeavy';
-    grading: 'lenient' | 'balanced' | 'strict';
-    gain: 'low' | 'decent' | 'high';
+    difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard' | null;
+    workload: 'light' | 'moderate' | 'heavy' | 'veryHeavy' | null;
+    grading: 'lenient' | 'balanced' | 'strict' | 'killer' | null;
+    gain: 'low' | 'decent' | 'high' | null;
   };
   // Backend should return teachers with both id and name for display and routing
   // Note: transitional `teacherIds` has been removed; use `teachers[].id` instead

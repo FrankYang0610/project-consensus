@@ -108,10 +108,10 @@ export interface CourseDetailCardProps {
     notRecommendCount?: number;
   };
   attributes: {
-    difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard';
-    workload: 'light' | 'moderate' | 'heavy' | 'veryHeavy';
-    grading: 'lenient' | 'balanced' | 'strict';
-    gain: 'low' | 'decent' | 'high';
+    difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard' | null;
+    workload: 'light' | 'moderate' | 'heavy' | 'veryHeavy' | null;
+    grading: 'lenient' | 'balanced' | 'strict' | 'killer' | null;
+    gain: 'low' | 'decent' | 'high' | null;
   };
   teachers: TeacherInfo[];
   department?: string;
@@ -975,11 +975,17 @@ export function CourseDetailCard({
           {/* Rating and Voting Section */}
           <div className="flex items-center justify-between border-t pt-3">
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <StarRating score10={rating.score} />
-                <span className="text-2xl font-bold">{safeRating.toFixed(1)}</span>
-                <span className="text-sm text-muted-foreground">/ 10</span>
-              </div>
+              {safeRating > 0 ? (
+                <div className="flex items-center gap-2">
+                  <StarRating score10={rating.score} />
+                  <span className="text-2xl font-bold">{safeRating.toFixed(1)}</span>
+                  <span className="text-sm text-muted-foreground">/ 10</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-medium text-muted-foreground">{t("courses.card.rating.noRating")}</span>
+                </div>
+              )}
               <div className="text-sm text-muted-foreground">
                 <Users className="w-4 h-4 inline mr-1" />
                 {t("courses.card.rating.reviews", { count: filteredReviewsCount })}
@@ -1031,7 +1037,7 @@ export function CourseDetailCard({
                 {t(`courses.card.attributes.${attr}`)}
               </div>
               <div className="font-semibold text-sm">
-                {t(`courses.card.adjectives.${attributes[attr]}`)}
+                {t(`courses.card.adjectives.${attributes[attr] || 'unknown'}`)}
               </div>
             </div>
           ))}
@@ -1081,10 +1087,14 @@ export function CourseDetailCard({
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium">{course.teacherName}</div>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                            <span className="flex items-center gap-1">
-                              <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
-                              {course.rating.score.toFixed(1)}
-                            </span>
+                            {course.rating.score > 0 ? (
+                              <span className="flex items-center gap-1">
+                                <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
+                                {course.rating.score.toFixed(1)}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground/70">{t("courses.card.rating.noRating")}</span>
+                            )}
                             <span>•</span>
                             <span>{t("courses.card.rating.reviews", { count: course.rating.reviewsCount })}</span>
                           </div>
@@ -1093,13 +1103,13 @@ export function CourseDetailCard({
                           <div className="flex items-center gap-1.5">
                             <span className="text-muted-foreground/80">{t("courses.detail.otherTeachers.gain")}:</span>
                             <span className="px-2 py-1 rounded bg-muted/50 font-medium">
-                              {t(`courses.card.adjectives.${course.attributes.gain}`)}
+                              {t(`courses.card.adjectives.${course.attributes.gain || 'unknown'}`)}
                             </span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <span className="text-muted-foreground/80">{t("courses.detail.otherTeachers.grading")}:</span>
                             <span className="px-2 py-1 rounded bg-muted/50 font-medium">
-                              {t(`courses.card.adjectives.${course.attributes.grading}`)}
+                              {t(`courses.card.adjectives.${course.attributes.grading || 'unknown'}`)}
                             </span>
                           </div>
                         </div>

@@ -32,10 +32,10 @@ class Migration(migrations.Migration):
                 ('rating_reviews_count', models.PositiveIntegerField(default=0)),
                 ('rating_recommend_count', models.PositiveIntegerField(default=0)),
                 ('rating_not_recommend_count', models.PositiveIntegerField(default=0)),
-                ('attr_difficulty', models.CharField(choices=[('veryEasy', 'veryEasy'), ('easy', 'easy'), ('medium', 'medium'), ('hard', 'hard'), ('veryHard', 'veryHard')], default='medium', max_length=10)),
-                ('attr_workload', models.CharField(choices=[('light', 'light'), ('moderate', 'moderate'), ('heavy', 'heavy'), ('veryHeavy', 'veryHeavy')], default='moderate', max_length=10)),
-                ('attr_grading', models.CharField(choices=[('lenient', 'lenient'), ('balanced', 'balanced'), ('strict', 'strict')], default='balanced', max_length=10)),
-                ('attr_gain', models.CharField(choices=[('low', 'low'), ('decent', 'decent'), ('high', 'high')], default='decent', max_length=10)),
+                ('attr_difficulty', models.CharField(blank=True, choices=[('veryEasy', 'veryEasy'), ('easy', 'easy'), ('medium', 'medium'), ('hard', 'hard'), ('veryHard', 'veryHard')], max_length=10, null=True)),
+                ('attr_workload', models.CharField(blank=True, choices=[('light', 'light'), ('moderate', 'moderate'), ('heavy', 'heavy'), ('veryHeavy', 'veryHeavy')], max_length=10, null=True)),
+                ('attr_grading', models.CharField(blank=True, choices=[('lenient', 'lenient'), ('balanced', 'balanced'), ('strict', 'strict'), ('killer', 'killer')], max_length=10, null=True)),
+                ('attr_gain', models.CharField(blank=True, choices=[('low', 'low'), ('decent', 'decent'), ('high', 'high')], max_length=10, null=True)),
                 ('terms', models.JSONField(blank=True, default=list, help_text='List of offered terms')),
                 ('department', models.CharField(blank=True, max_length=200)),
                 ('last_updated', models.DateTimeField(default=django.utils.timezone.now)),
@@ -63,7 +63,7 @@ class Migration(migrations.Migration):
                 ('overall_rating', models.FloatField(default=0)),
                 ('attr_difficulty', models.CharField(choices=[('veryEasy', 'veryEasy'), ('easy', 'easy'), ('medium', 'medium'), ('hard', 'hard'), ('veryHard', 'veryHard')], default='medium', max_length=10)),
                 ('attr_workload', models.CharField(choices=[('light', 'light'), ('moderate', 'moderate'), ('heavy', 'heavy'), ('veryHeavy', 'veryHeavy')], default='moderate', max_length=10)),
-                ('attr_grading', models.CharField(choices=[('lenient', 'lenient'), ('balanced', 'balanced'), ('strict', 'strict')], default='balanced', max_length=10)),
+                ('attr_grading', models.CharField(choices=[('lenient', 'lenient'), ('balanced', 'balanced'), ('strict', 'strict'), ('killer', 'killer')], default='balanced', max_length=10)),
                 ('attr_gain', models.CharField(choices=[('low', 'low'), ('decent', 'decent'), ('high', 'high')], default='decent', max_length=10)),
                 ('content', models.TextField()),
                 ('is_anonymous', models.BooleanField(default=False)),
@@ -167,6 +167,23 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name='coursereview',
             constraint=models.UniqueConstraint(fields=('author', 'course'), name='unique_course_review_per_user'),
+        ),
+        # Enforce rating rules at DB level:
+        # - Text-only reviews must have rating = 0
+        migrations.AddConstraint(
+            model_name='coursereview',
+            constraint=models.CheckConstraint(
+                check=Q(only_text=False) | Q(overall_rating=0),
+                name='coursereview_only_text_zero_rating',
+            ),
+        ),
+        # - Rated reviews (only_text=false) must have rating in [1, 10]
+        migrations.AddConstraint(
+            model_name='coursereview',
+            constraint=models.CheckConstraint(
+                check=Q(only_text=True) | (Q(overall_rating__gte=1) & Q(overall_rating__lte=10)),
+                name='coursereview_rated_rating_range_1_10',
+            ),
         ),
         # Add trigram index for course review content search
         migrations.AddIndex(

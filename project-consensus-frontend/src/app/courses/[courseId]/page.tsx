@@ -80,7 +80,6 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
     setError: setReviewsLoadError,
     loadMore: loadMoreReviews,
     reset: resetReviews,
-    totalCount: reviewsTotalCount,
   } = useInfiniteList<CourseReview, FetchCourseReviewsParams>({
     pageFetcher: fetchCourseReviews,
     initialParams: { courseId, page: 1, pageSize: 10, ordering: '-created_at' },
@@ -481,14 +480,10 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
 
   // Inline reply is handled by the earlier handleCreateReply
 
-  // Use backend rating counts, override reviewsCount with filtered count from hook
-  const derivedRating = React.useMemo(() => {
-    const baseRating = course?.rating ?? { score: 0, reviewsCount: 0, recommendCount: 0, notRecommendCount: 0 };
-    return {
-      ...baseRating,
-      reviewsCount: (typeof reviewsTotalCount === 'number' ? reviewsTotalCount : reviews.length),
-    };
-  }, [course?.rating, reviewsTotalCount, reviews.length]);
+  // Backend returns total reviews count (including text-only) in rating.reviewsCount
+  const displayRating = React.useMemo(() => {
+    return course?.rating ?? { score: 0, reviewsCount: 0, recommendCount: 0, notRecommendCount: 0 };
+  }, [course?.rating]);
 
 
   if (!course) {
@@ -519,7 +514,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
                 title={course.title}
                 term={course.term}
                 terms={course.terms}
-                rating={derivedRating}
+                rating={displayRating}
                 attributes={course.attributes}
                 teachers={teachers}
                 department={course.department}

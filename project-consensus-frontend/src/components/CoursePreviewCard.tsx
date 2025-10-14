@@ -36,10 +36,10 @@ export interface CoursePreviewCardProps {
     reviewsCount: number;
   };
   attributes: {
-    difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard';
-    workload: 'light' | 'moderate' | 'heavy' | 'veryHeavy';
-    grading: 'lenient' | 'balanced' | 'strict';
-    gain: 'low' | 'decent' | 'high';
+    difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard' | null;
+    workload: 'light' | 'moderate' | 'heavy' | 'veryHeavy' | null;
+    grading: 'lenient' | 'balanced' | 'strict' | 'killer' | null;
+    gain: 'low' | 'decent' | 'high' | null;
   };
   // Updated to align with backend: [{ id, name, avatarUrl? }]
   teachers?: TeacherInfo[];
@@ -165,11 +165,17 @@ export function CoursePreviewCard({
       <div className="flex flex-col gap-3">
         {/* Rating Row */}
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <StarRating score10={rating.score} />
-            <span className="text-sm font-medium">{safeRating.toFixed(1)}</span>
-            <span className="text-xs text-muted-foreground">/ 10</span>
-          </div>
+          {safeRating > 0 ? (
+            <div className="flex items-center gap-2">
+              <StarRating score10={rating.score} />
+              <span className="text-sm font-medium">{safeRating.toFixed(1)}</span>
+              <span className="text-xs text-muted-foreground">/ 10</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">{t("courses.card.rating.noRating")}</span>
+            </div>
+          )}
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Users className="w-3.5 h-3.5" />
             <span>{reviewsText}</span>
@@ -181,21 +187,21 @@ export function CoursePreviewCard({
           <div className="space-y-3">
             <AttributeItem
               label={t("courses.card.attributes.difficulty")}
-              value={t(`courses.card.adjectives.${attributes.difficulty}`)}
+              value={t(`courses.card.adjectives.${attributes.difficulty || 'unknown'}`)}
             />
             <AttributeItem
               label={t("courses.card.attributes.workload")}
-              value={t(`courses.card.adjectives.${attributes.workload}`)}
+              value={t(`courses.card.adjectives.${attributes.workload || 'unknown'}`)}
             />
           </div>
           <div className="space-y-3">
             <AttributeItem
               label={t("courses.card.attributes.grading")}
-              value={t(`courses.card.adjectives.${attributes.grading}`)}
+              value={t(`courses.card.adjectives.${attributes.grading || 'unknown'}`)}
             />
             <AttributeItem
               label={t("courses.card.attributes.gain")}
-              value={t(`courses.card.adjectives.${attributes.gain}`)}
+              value={t(`courses.card.adjectives.${attributes.gain || 'unknown'}`)}
             />
           </div>
           <div className="space-y-3">

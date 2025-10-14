@@ -192,7 +192,7 @@ def _generate_courses(apps):
             rating_not_recommend_count=random.randint(0, 10),
             attr_difficulty=random.choice(["veryEasy", "easy", "medium", "hard", "veryHard"]),
             attr_workload=random.choice(["light", "moderate", "heavy", "veryHeavy"]),
-            attr_grading=random.choice(["lenient", "balanced", "strict"]),
+            attr_grading=random.choice(["lenient", "balanced", "strict", "killer"]),
             attr_gain=random.choice(["low", "decent", "high"]),
             terms=terms,
             department=dept_name,
@@ -284,7 +284,7 @@ def _generate_reviews(apps, courses):
             ("veryHard", 0.6 if rating <= 5.0 else 0.3),
         ])
         workload = random.choice(["light", "moderate", "heavy", "veryHeavy"])
-        grading = random.choice(["lenient", "balanced", "strict"])
+        grading = random.choice(["lenient", "balanced", "strict", "killer"])
         gain = _rand_choice_weighted([
             ("low", 0.4 if rating <= 5.0 else 0.2),
             ("decent", 2.0),
@@ -355,12 +355,15 @@ def _recompute_course_aggregates(apps, courses):
     Course = apps.get_model("courses", "Course")
     CourseReview = apps.get_model("courses", "CourseReview")
     for c in courses:
+        # Count all reviews (including text-only) for reviewsCount
+        total_count = CourseReview.objects.filter(course=c).count()
+        # Only use reviews with ratings for score calculation
         qs = CourseReview.objects.filter(course=c, only_text=False)
         res = qs.aggregate(avg=Avg("overall_rating"), cnt=Count("id"))
-        cnt = int(res.get("cnt") or 0)
+        rated_cnt = int(res.get("cnt") or 0)
         avg = float(res.get("avg") or 0.0)
-        score = round(avg, 1) if cnt > 0 else 0.0
-        Course.objects.filter(pk=c.pk).update(rating_reviews_count=cnt, rating_score=score)
+        score = round(avg, 1) if rated_cnt > 0 else 0.0
+        Course.objects.filter(pk=c.pk).update(rating_reviews_count=total_count, rating_score=score)
 
 
 def _recompute_replies_count(apps, reviews):

@@ -69,3 +69,29 @@ export interface VoteCourseResponse {
   rating: { recommendCount: number; notRecommendCount: number };
   userVote: CourseUserVote;
 }
+
+// GET /api/courses/departments-with-counts/ response item
+export interface CourseDepartmentWithCount {
+  name: string;
+  count: number;
+}
+
+// GET /api/courses/department-levels/ response item
+export interface CourseLevelWithCount {
+  level: string;
+  count: number;
+}
+
+// Course browse page department data (UI state)
+export interface CourseDepartmentData {
+  name: string;
+  count: number;
+  levels?: CourseLevelWithCount[]; // Level distribution (lazy loaded)
+  coursesByLevel?: Record<string, {
+    courses: import('@/types').Course[];
+    loading?: boolean;
+    error?: boolean;
+  }>; // Courses cached per level (lazy loaded)
+  loading?: boolean; // Loading state for levels
+  error?: boolean; // Error state for levels
+}

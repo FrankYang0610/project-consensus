@@ -31,7 +31,7 @@ const RichTextEditor = dynamic(() => import("@/components/RichTextEditor"), { ss
 
 type Difficulty = 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard';
 type Workload = 'light' | 'moderate' | 'heavy' | 'veryHeavy';
-type Grading = 'lenient' | 'balanced' | 'strict';
+type Grading = 'lenient' | 'balanced' | 'strict' | 'killer';
 type Gain = 'low' | 'decent' | 'high';
 
 export default function CourseReviewCreatePage({ params }: { params: Promise<{ courseId: string }> }) {
@@ -295,6 +295,7 @@ export default function CourseReviewCreatePage({ params }: { params: Promise<{ c
     { value: 'lenient', label: t('courses.card.adjectives.lenient') },
     { value: 'balanced', label: t('courses.card.adjectives.balanced') },
     { value: 'strict', label: t('courses.card.adjectives.strict') },
+    { value: 'killer', label: t('courses.card.adjectives.killer') },
   ];
   const gainOptions: Array<{ value: Gain; label: string }> = [
     { value: 'low', label: t('courses.card.adjectives.low') },

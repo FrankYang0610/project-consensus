@@ -1,7 +1,11 @@
 {
   "navigation": {
     "forum": "論壇",
-    "courseReview": "課程評價",
+    "courseReview": "課程點評",
+    "browseCourses": "瀏覽課程",
+    "browseCoursesDesc": "按學術部門分類探索課程",
+    "advancedSearch": "進階搜索",
+    "advancedSearchDesc": "使用進階選項搜尋和篩選課程",
     "more": "更多",
     "about": "關於",
     "language": "語言"
@@ -39,7 +43,19 @@
     "reviewOn": "點評於",
     "resultsFor": "搜尋結果：{{query}}",
     "totalResults": "共 {{count}} 條結果",
-    "filterByType": "按類型篩選"
+    "filterByType": "按類型篩選",
+    "enterSearchQuery": "請輸入搜尋關鍵字",
+    "backToHome": "返回首頁",
+    "searchFailed": "搜索失敗，請重試",
+    "retry": "重試",
+    "noResultsForQuery": "未找到與 \"{{query}}\" 相關的內容",
+    "loadMore": "載入更多",
+    "loadFailedRetry": "載入失敗，點擊重試",
+    "likes": "讚",
+    "views": "瀏覽",
+    "resultTitle": {
+      "userStats": "帖子：{{posts}} | 課程點評：{{reviews}}"
+    }
   },
   "auth": {
     "login": "登入",
@@ -229,7 +245,8 @@
       "rating": {
         "score": "評分",
         "outOf": "共10分",
-        "reviews": "{{count}} 人評價"
+        "reviews": "{{count}} 人評價",
+        "noRating": "暫無評分"
       },
       "attributes": {
         "difficulty": "課程難度",
@@ -250,9 +267,11 @@
         "lenient": "寬鬆",
         "balanced": "中等",
         "strict": "嚴格",
+        "killer": "殺手",
         "low": "較少",
         "decent": "不錯",
-        "high": "很多"
+        "high": "很多",
+        "unknown": "未知"
       },
       "teachers": "老師：{{names}}",
       "lastUpdated": "最近更新：{{date}}",
@@ -374,13 +393,33 @@
       "updating": "儲存中...",
       "cancel": "取消",
       "validation": {
-        "ratingRequired": "請給出 1-5 星評分",
+        "ratingRequired": "請給出 1-10 分評分",
         "dimensionsRequired": "請選擇全部四個維度",
         "contentRequired": "點評內容不能為空",
         "contentTooShort": "點評內容至少需要 10 個字"
       }
+    },
+    "byDepartment": {
+      "title": "按部門瀏覽課程",
+      "subtitle": "按學術部門分類瀏覽課程",
+      "loading": "載入部門列表...",
+      "loadingCourses": "載入課程中...",
+      "loadError": "課程載入失敗",
+      "courseCount": "{{count}} 門課程",
+      "noCourses": "暫無課程",
+      "noCoursesDesc": "請稍後查看課程更新",
+      "noDepartment": "未分類部門",
+      "levelLabel": "等級 {{level}}",
+      "selectDepartment": "部門列表",
+      "selectLevel": "課程等級",
+      "selectDepartmentFirst": "請先選擇部門",
+      "selectLevelFirst": "請選擇等級以查看課程",
+      "courses": "課程列表",
+      "advancedSearch": "進階搜索",
+      "search": "搜索"
     }
-  },
+  }
+,
   "about": {
     "title": "關於",
     "subtitle": "了解更多關於項目的資訊、其目的以及背後的團隊。",

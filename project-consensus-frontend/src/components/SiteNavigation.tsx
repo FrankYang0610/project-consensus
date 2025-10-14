@@ -127,6 +127,7 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
   // Controls mobile dropdown expansion states
   // Uses object to store multiple dropdown states
   const [mobileDropdowns, setMobileDropdowns] = useState({
+    courses: false,
     more: false,
   });
 
@@ -134,9 +135,9 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
 
   /**
    * Toggle specific mobile dropdown open/close state
-   * @param {string} key - Dropdown identifier ('forum')
+   * @param {'courses' | 'more'} key - Dropdown identifier ('courses', 'more')
    */
-  const toggleMobileDropdown = (key: 'more') => {
+  const toggleMobileDropdown = (key: 'courses' | 'more') => {
     setMobileDropdowns(prev => ({
       ...prev,
       [key]: !prev[key],
@@ -260,14 +261,27 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                 </NavigationMenuLink>
               </NavigationMenuItem>
 
-              {/* Course Review navigation item - simple link without dropdown */}
+              {/* Course Review navigation item - dropdown with browse options */}
               <NavigationMenuItem>
-                <NavigationMenuLink
-                  href="/courses"
-                  className={customNavigationMenuTriggerStyle()}
-                >
+                <NavigationMenuTrigger className="h-12 px-6 text-base font-medium">
                   {t('navigation.courseReview')}
-                </NavigationMenuLink>
+                </NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="grid w-[400px] gap-3 p-6">
+                    <ListItem
+                      title={t('navigation.browseCourses')}
+                      href="/courses"
+                    >
+                      {t('navigation.browseCoursesDesc')}
+                    </ListItem>
+                    <ListItem
+                      title={t('navigation.advancedSearch')}
+                      href="/courses/advanced-search"
+                    >
+                      {t('navigation.advancedSearchDesc')}
+                    </ListItem>
+                  </ul>
+                </NavigationMenuContent>
               </NavigationMenuItem>
 
               {/* [More] navigation item - includes dropdown menu */}
@@ -414,14 +428,49 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
               {t('navigation.forum')}
             </Link>
 
-            {/* Course Review link - mobile simple link */}
-            <Link
-              href="/courses"
-              className="block py-3 px-2 text-sm font-medium hover:bg-accent rounded-md transition-colors"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              {t('navigation.courseReview')}
-            </Link>
+            {/* Course Review collapsible section */}
+            <div>
+              {/* Course Review collapse button */}
+              <button
+                className="flex items-center justify-between w-full py-3 px-2 text-sm font-medium hover:bg-accent rounded-md transition-colors"
+                onClick={() => toggleMobileDropdown('courses')}
+              >
+                <span>{t('navigation.courseReview')}</span>
+                {/* Arrow icon - rotates 180 degrees when expanded */}
+                <ChevronDown
+                  size={16}
+                  className={cn(
+                    "transition-transform duration-200",
+                    mobileDropdowns.courses && "rotate-180"
+                  )}
+                />
+              </button>
+              {/* Course Review submenu - only visible when expanded */}
+              {mobileDropdowns.courses && (
+                <div className="ml-4 mt-1 space-y-1">
+                  <Link
+                    href="/courses"
+                    className="block py-2 px-3 text-sm hover:bg-accent rounded-md transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <div className="font-medium">{t('navigation.browseCourses')}</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {t('navigation.browseCoursesDesc')}
+                    </div>
+                  </Link>
+                  <Link
+                    href="/courses/advanced-search"
+                    className="block py-2 px-3 text-sm hover:bg-accent rounded-md transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <div className="font-medium">{t('navigation.advancedSearch')}</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {t('navigation.advancedSearchDesc')}
+                    </div>
+                  </Link>
+                </div>
+              )}
+            </div>
 
             {/* More collapsible section */}
             <div>
