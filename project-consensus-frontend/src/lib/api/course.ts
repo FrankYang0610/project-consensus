@@ -137,15 +137,15 @@ export async function fetchCourseDepartments(): Promise<string[]> {
 }
 
 // ---------------- Optimized: departments with counts (for browse page) ----------------
-export async function fetchCourseDepartmentsWithCounts(): Promise<CourseDepartmentWithCount[]> {
-  const res = await apiGet<{ departments: CourseDepartmentWithCount[] }>(`/api/courses/departments-with-counts/`);
+export async function fetchCourseDepartmentsWithCounts(init?: RequestInit): Promise<CourseDepartmentWithCount[]> {
+  const res = await apiGet<{ departments: CourseDepartmentWithCount[] }>(`/api/courses/departments-with-counts/`, init);
   return Array.isArray(res?.departments) ? res.departments : [];
 }
 
 // ---------------- Optimized: department levels with counts (for browse page) ----------------
-export async function fetchDepartmentLevels(department: string): Promise<CourseLevelWithCount[]> {
+export async function fetchDepartmentLevels(department: string, init?: RequestInit): Promise<CourseLevelWithCount[]> {
   const q = new URLSearchParams();
   q.set('department', department);
-  const res = await apiGet<{ levels: CourseLevelWithCount[] }>(`/api/courses/department-levels/?${q.toString()}`);
+  const res = await apiGet<{ levels: CourseLevelWithCount[] }>(`/api/courses/department-levels/?${q.toString()}`, init);
   return Array.isArray(res?.levels) ? res.levels : [];
 }

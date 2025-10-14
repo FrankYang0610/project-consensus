@@ -48,7 +48,7 @@ export default function CourseBrowsePage() {
         setError(null);
 
         // Fetch departments with counts in a single optimized request
-        const deptInfos = await fetchCourseDepartmentsWithCounts();
+        const deptInfos = await fetchCourseDepartmentsWithCounts({ signal: abortController.signal });
         
         // Check if component is unmounted
         if (abortController.signal.aborted) return;
@@ -92,7 +92,7 @@ export default function CourseBrowsePage() {
 
     try {
       // Fetch level distribution (lightweight query)
-      const levels = await fetchDepartmentLevels(deptName);
+      const levels = await fetchDepartmentLevels(deptName, { signal: abortController.signal });
       
       if (abortController.signal.aborted) return undefined;
 
@@ -115,7 +115,18 @@ export default function CourseBrowsePage() {
       );
       return undefined;
     } finally {
-      abortControllersRef.current.delete(key);
+      const current = abortControllersRef.current.get(key);
+      if (current === abortController) {
+        abortControllersRef.current.delete(key);
+        if (abortController.signal.aborted) {
+          // Reset loading to false if this request was aborted and is still the latest for this key
+          setDepartments((prev) =>
+            prev.map((dept) =>
+              dept.name === deptName ? { ...dept, loading: false } : dept
+            )
+          );
+        }
+      }
     }
   }, []);
 
@@ -155,7 +166,7 @@ export default function CourseBrowsePage() {
         department: [deptName],
         level: [level === "Other" ? "" : level], // Handle "Other" case
         ordering: "-rating_score",
-      });
+      }, { signal: abortController.signal });
       
       if (abortController.signal.aborted) return;
 
@@ -202,7 +213,30 @@ export default function CourseBrowsePage() {
         })
       );
     } finally {
-      abortControllersRef.current.delete(key);
+      const current = abortControllersRef.current.get(key);
+      if (current === abortController) {
+        abortControllersRef.current.delete(key);
+        if (abortController.signal.aborted) {
+          // Reset level-specific loading to false if this request was aborted and is still the latest for this key
+          setDepartments((prev) =>
+            prev.map((dept) => {
+              if (dept.name !== deptName) return dept;
+              const coursesByLevel = dept.coursesByLevel || {};
+              const prevLevel = coursesByLevel[level] || { courses: [] };
+              return {
+                ...dept,
+                coursesByLevel: {
+                  ...coursesByLevel,
+                  [level]: {
+                    ...prevLevel,
+                    loading: false,
+                  },
+                },
+              };
+            })
+          );
+        }
+      }
     }
   }, []);
 
