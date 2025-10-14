@@ -34,7 +34,7 @@ class ImageUploadView(APIView):
     
     **Request** (multipart/form-data):
     - `image` (file, required): Image file (JPEG/PNG/GIF/WebP)
-    - `folder` (string, optional): Target folder ('images', 'avatars', 'posts', 'wiki')
+    - `folder` (string, required): Target folder ('images', 'avatars', 'posts', 'wiki')
     
     **Response**:
     - 200: `{"url": "https://..."}`
@@ -93,13 +93,21 @@ class ImageUploadView(APIView):
         
         try:
             image_file = serializer.validated_data['image']
-            folder = serializer.validated_data.get('folder', 'images')
+            folder = serializer.validated_data['folder']  # Required field
             
-            url = upload_image_to_r2(image_file, folder=folder)
+            url = upload_image_to_r2(image_file, folder=folder, user=request.user)
             
             logger.info(f"Image uploaded successfully: user={request.user.id}, size={image_file.size}, folder={folder}")
             return Response({"url": url}, status=status.HTTP_200_OK)
-            
+        except DjangoValidationError as e:
+            logger.warning(f"Upload validation error: user={request.user.id}, errors={getattr(e, 'messages', str(e))}")
+            return Response(
+                {
+                    "error": "Invalid upload request",
+                    "detail": getattr(e, 'messages', [str(e)])
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
         except Exception as e:
             logger.error(f"Image upload failed: user={request.user.id}, error={str(e)}", exc_info=True)
             return Response(

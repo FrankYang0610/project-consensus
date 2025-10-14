@@ -241,6 +241,10 @@ ALLOWED_IMAGE_EXTENSIONS = [
     for ext in env("ALLOWED_IMAGE_TYPES", default="jpg,jpeg,png,gif,webp").split(",")
 ]
 
+# Allowed folders for image uploads in R2 storage
+# These are used as path prefixes when organizing uploaded files
+ALLOWED_UPLOAD_FOLDERS = {'images', 'avatars', 'posts', 'wiki'}
+
 # Allowed public image hosts for rendering and profile avatar URLs
 # Comma-separated. Example: "image.polyu.life,cdn.example.com"
 ALLOWED_IMAGE_HOSTS = [

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -11,6 +12,7 @@ from django.db.models import F
 from django.db.models import Exists
 from django.db.models import OuterRef, Subquery, CharField
 from rest_framework.pagination import PageNumberPagination
+
 
 from .models import (
     Course,
@@ -24,6 +26,9 @@ from .serializers import CourseSerializer, CourseReviewSerializer, CourseReviewR
 from notifications import NotificationType
 from notifications.events import emit, DomainEvent
 from django.utils import timezone
+from core.utils import delete_images_in_html, extract_image_srcs_from_html, delete_storage_object_by_url
+
+logger = logging.getLogger(__name__)
 
 
 def _is_constraint_violation(e: IntegrityError, constraint_name: str) -> bool:
@@ -631,24 +636,66 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
             # Re-raise other integrity errors
             raise
 
-    def perform_update(self, serializer):  # type: ignore[override]
+    def update(self, request, *args, **kwargs):  # type: ignore[override]
+        """Allow only the author to update their review.
+
+        On successful update, mark the review as edited and recompute aggregates.
+        """
+        partial = kwargs.pop("partial", False)
         instance: CourseReview = self.get_object()
         self._ensure_owner(instance)
-        with transaction.atomic():
-            obj = serializer.save()
-            # Mark as edited on any successful update
-            CourseReview.objects.filter(pk=obj.pk).update(is_edited=True)
-            _recompute_course_aggregates(obj.course)
-            _recompute_teachers_aggregates(obj.course)
 
-    def perform_destroy(self, instance):  # type: ignore[override]
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        old_srcs = extract_image_srcs_from_html(getattr(instance, "content", ""))
+
+        with transaction.atomic():
+            self.perform_update(serializer)
+            # Mark as edited on any successful update
+            CourseReview.objects.filter(pk=instance.pk).update(is_edited=True)
+            _recompute_course_aggregates(instance.course)
+            _recompute_teachers_aggregates(instance.course)
+            
+            instance.refresh_from_db(fields=["is_edited", "content"])
+            new_srcs = extract_image_srcs_from_html(getattr(instance, "content", ""))
+            removed_srcs = old_srcs - new_srcs
+            author_id = instance.author_id
+            review_pk = instance.pk
+            def _cleanup(srcs=removed_srcs, uid=author_id, rid=review_pk):
+                try:
+                    for src in srcs:
+                        delete_storage_object_by_url(src, owner_user_id=uid)
+                except Exception as e:
+                    logger.warning(f"Failed to delete removed images in course review {rid}: {e}", exc_info=True)
+            transaction.on_commit(_cleanup)
+
+        return Response(serializer.data)
+
+    def partial_update(self, request, *args, **kwargs):  # type: ignore[override]
+        kwargs["partial"] = True
+        return self.update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):  # type: ignore[override]
+        """Hard delete a course review: only the author may delete.
+
+        Behavior:
+        - Hard-delete the review row; database CASCADE removes all related replies and likes
+        - Recompute course and teacher aggregates after deletion
+        """
+        instance: CourseReview = self.get_object()
         self._ensure_owner(instance)
         course = instance.course
+        # Best-effort: remove images referenced in this review that belong to the author
+        try:
+            delete_images_in_html(getattr(instance, "content", ""), owner_user_id=instance.author_id)
+        except Exception as e:
+            logger.warning(f"Failed to delete images in course review {instance.pk}: {e}", exc_info=True)
         with transaction.atomic():
             # Hard-delete the review; related replies/likes cascade via FK
             instance.delete()
             _recompute_course_aggregates(course)
             _recompute_teachers_aggregates(course)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class CourseReviewReplyViewSet(viewsets.ModelViewSet):
@@ -750,24 +797,34 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
             except Exception:
                 pass
 
-    def perform_update(self, serializer):  # type: ignore[override]
-        instance: CourseReviewReply = self.get_object()
-        self._ensure_owner(instance)
-        serializer.save()
-
     def update(self, request, *args, **kwargs):  # type: ignore[override]
         return Response({"detail": "Reply editing is not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def partial_update(self, request, *args, **kwargs):  # type: ignore[override]
         return Response({"detail": "Reply editing is not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def perform_destroy(self, instance):  # type: ignore[override]
+    def destroy(self, request, *args, **kwargs):  # type: ignore[override]
+        """Soft delete a course review reply: only the author may delete.
+
+        Behavior:
+        - Mark is_deleted=True
+        - Clear content (set to empty string)
+        - Keep the row to preserve thread structure
+        - Recompute reply count for the parent review
+        """
+        instance: CourseReviewReply = self.get_object()
         self._ensure_owner(instance)
         review = instance.review
+        
+        # If already soft-deleted, respond with 204 No Content (idempotent)
+        if getattr(instance, "is_deleted", False):
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        
         with transaction.atomic():
             # Soft delete: mark as deleted and clear content
             CourseReviewReply.objects.filter(pk=instance.pk).update(is_deleted=True, content="")
             _recompute_replies_count(review)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
     def toggle_like(self, request, pk: str | None = None):

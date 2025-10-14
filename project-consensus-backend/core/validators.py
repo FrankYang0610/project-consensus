@@ -29,9 +29,51 @@ def get_allowed_image_hosts() -> Set[str]:
             hosts.update(h.strip().lower() for h in configured if h and isinstance(h, str))
     except Exception:
         pass
+
+    # Also include storage custom_domain (e.g., image.polyu.life) when configured
+    try:
+        storages = getattr(settings, "STORAGES", {}) or {}
+        default_storage = storages.get("default", {}) or {}
+        options = default_storage.get("OPTIONS", {}) or {}
+        custom_domain = options.get("custom_domain")
+        if custom_domain and isinstance(custom_domain, str):
+            parsed = urlparse(custom_domain if custom_domain.startswith("http") else f"https://{custom_domain}")
+            host = parsed.hostname
+            if host:
+                hosts.add(host.strip().lower())
+    except Exception:
+        pass
     if not hosts:
         hosts = set(DEFAULT_ALLOWED_IMAGE_HOSTS)
     return hosts
+
+
+def _normalize_host(host: str | None) -> str | None:
+    if not host:
+        return None
+    try:
+        return host.strip().lower().rstrip('.')
+    except Exception:
+        return None
+
+
+def is_host_in_allowed(host: str | None, allowed_hosts: Set[str]) -> bool:
+    h = _normalize_host(host)
+    if not h:
+        return False
+    # Exact match first
+    if h in allowed_hosts:
+        return True
+    # wildcard patterns: entries starting with '*.' allow any subdomain
+    for entry in allowed_hosts:
+        e = _normalize_host(entry)
+        if not e:
+            continue
+        if e.startswith('*.'):
+            base = e[2:]
+            if h.endswith('.' + base) and h != base:
+                return True
+    return False
 
 
 def validate_https_url_in_allowed_hosts(value: str) -> str:
@@ -42,7 +84,7 @@ def validate_https_url_in_allowed_hosts(value: str) -> str:
     Returns the normalized, original value if valid (no rewriting performed).
     """
     if value is None:
-        return value
+        raise serializers.ValidationError("Invalid URL.")
     v = value.strip()
     if v == "":
         return v
@@ -55,9 +97,9 @@ def validate_https_url_in_allowed_hosts(value: str) -> str:
 
     # Parse to check the host allowlist
     parsed = urlparse(v)
-
+    hostname = _normalize_host(parsed.hostname)
     allowed_hosts = get_allowed_image_hosts()
-    if parsed.netloc.lower() not in allowed_hosts:
+    if not is_host_in_allowed(hostname, allowed_hosts):
         raise serializers.ValidationError("URL host is not allowed.")
 
     return v

@@ -25,27 +25,12 @@ def validate_and_sanitize_nickname(value: str) -> str:
     - Max length: 15 characters
     - No HTML tags allowed (bleach removes them)
     - At least 1 non-whitespace character
-    
-    校验和消毒昵称（使用 bleach）。
-    
-    此函数通过以下方式防御 XSS 攻击：
-    1. 去除所有 HTML 标签（昵称应为纯文本）
-    2. 移除控制字符
-    3. 验证长度限制
-    
-    规则：
-    - 去除首尾空格
-    - 最长15个字符
-    - 不允许HTML标签（bleach会移除）
-    - 至少包含1个非空字符
     """
     if not value:
         raise serializers.ValidationError("Nickname cannot be empty.")
     
     # First, use bleach to remove all HTML tags and sanitize
-    # 首先，使用 bleach 移除所有 HTML 标签并消毒
     # Nicknames should be plain text, so no tags are allowed
-    # 昵称应为纯文本，因此不允许任何标签
     sanitized = bleach.clean(
         value,
         tags=[],  # No HTML tags allowed / 不允许任何 HTML 标签
