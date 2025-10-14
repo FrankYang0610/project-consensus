@@ -66,12 +66,12 @@ export default function HomePage() {
     postLikeInFlightRef.current.add(id);
 
     const wasLiked = target.isLiked ?? false;
-    const prevLikes = target.likes ?? 0;
+    const prevLikes = target.likesCount ?? 0;
     const willLike = !wasLiked;
 
     // Optimistic UI update
     setPosts(prev => prev.map(p => p.id === id
-      ? { ...p, isLiked: willLike, likes: Math.max(0, p.likes + (willLike ? 1 : -1)) }
+      ? { ...p, isLiked: willLike, likesCount: Math.max(0, (p.likesCount ?? 0) + (willLike ? 1 : -1)) }
       : p
     ));
 
@@ -79,14 +79,14 @@ export default function HomePage() {
     likeAction
       .then((data) => {
         setPosts(prev => prev.map(p => p.id === id
-          ? { ...p, isLiked: !!data.isLiked, likes: Math.max(0, data.likes) }
+          ? { ...p, isLiked: !!data.isLiked, likesCount: Math.max(0, data.likesCount) }
           : p
         ));
         postLikeInFlightRef.current.delete(id);
       })
       .catch(() => {
         setPosts(prev => prev.map(p => p.id === id
-          ? { ...p, isLiked: wasLiked, likes: Math.max(0, prevLikes) }
+          ? { ...p, isLiked: wasLiked, likesCount: Math.max(0, prevLikes) }
           : p
         ));
         postLikeInFlightRef.current.delete(id);

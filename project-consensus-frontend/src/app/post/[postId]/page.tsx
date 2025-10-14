@@ -53,7 +53,7 @@ export default function PostPage() {
     fetchForumPostById(postId)
       .then((data) => {
         if (!mounted) return;
-        if (!data || data.isDeleted) {
+        if (!data) {
           // Redirect to dedicated not-found page for posts
           router.replace("/post/not-found");
           return;
@@ -153,7 +153,7 @@ export default function PostPage() {
         isAnonymous: commentIsAnonymous,
       });
       // Optimistically bump post comment count
-      setPost(prev => prev ? { ...prev, comments: Math.max(0, (prev.comments ?? 0) + 1) } : prev);
+      setPost(prev => prev ? { ...prev, commentsCount: Math.max(0, (prev.commentsCount ?? 0) + 1) } : prev);
       setCommentContent("");
       setCommentIsAnonymous(false);
       setReplyToId(undefined);
@@ -186,20 +186,20 @@ export default function PostPage() {
                 if (postLikeInFlightRef.current.has(id)) return;
                 postLikeInFlightRef.current.add(id);
                 const wasLiked = post.isLiked ?? false;
-                const prevLikes = post.likes ?? 0;
+                const prevLikes = post.likesCount ?? 0;
                 const willLike = !wasLiked;
                 // optimistic
-                setPost(prev => prev ? { ...prev, isLiked: willLike, likes: Math.max(0, prev.likes + (willLike ? 1 : -1)) } : prev);
+                setPost(prev => prev ? { ...prev, isLiked: willLike, likesCount: Math.max(0, (prev.likesCount ?? 0) + (willLike ? 1 : -1)) } : prev);
 
                 const likeAction = willLike ? likeForumPost(id) : unlikeForumPost(id);
                 likeAction
                   .then((data) => {
                     // reconcile with server response
-                    setPost(prev => prev ? { ...prev, isLiked: !!data.isLiked, likes: Math.max(0, data.likes) } : prev);
+                    setPost(prev => prev ? { ...prev, isLiked: !!data.isLiked, likesCount: Math.max(0, data.likesCount) } : prev);
                     postLikeInFlightRef.current.delete(id);
                   })
                   .catch(() => {
-                    setPost(prev => prev ? { ...prev, isLiked: wasLiked, likes: Math.max(0, prevLikes) } : prev);
+                    setPost(prev => prev ? { ...prev, isLiked: wasLiked, likesCount: Math.max(0, prevLikes) } : prev);
                     postLikeInFlightRef.current.delete(id);
                   });
               }}
@@ -213,7 +213,7 @@ export default function PostPage() {
               onAddComment={handleAddComment}
               currentUserId={currentUserId}
               postId={postId}
-              totalCount={post.comments ?? 0}
+              totalCount={post.commentsCount ?? 0}
               isComposerOpen={isComposerOpen}
               replyToId={replyToId}
               composerValue={commentContent}

@@ -218,15 +218,15 @@ export default function ProfilePage() {
                               <div className="flex items-center gap-3 text-xs">
                                 <ClientOnlyTime dateString={post.createdAt} className="text-gray-500 dark:text-gray-400" />
                                 <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                                  <MessageSquare className="w-3 h-3" />
-                                  {post.comments}
+                                <MessageSquare className="w-3 h-3" />
+                                {post.commentsCount}
                                 </span>
                                 <span className={cn(
                                   "flex items-center gap-1",
                                   post.isLiked ? "text-red-500 font-medium" : "text-gray-500 dark:text-gray-400"
                                 )}>
-                                  <Heart className={cn("w-3 h-3", post.isLiked && "fill-current")} />
-                                  {post.likes}
+                                <Heart className={cn("w-3 h-3", post.isLiked && "fill-current")} />
+                                {post.likesCount}
                                 </span>
                                 {post.isAnonymous && (
                                   <Badge variant="secondary" className="text-xs">
@@ -273,7 +273,7 @@ export default function ProfilePage() {
                                 comment.isLiked ? "text-red-500 font-medium" : "text-gray-500 dark:text-gray-400"
                               )}>
                                 <Heart className={cn("w-3 h-3", comment.isLiked && "fill-current")} />
-                                {comment.likes}
+                                {comment.likesCount}
                               </span>
                               {comment.replyTo && <span className="text-gray-500 dark:text-gray-400">{t('profile.activity.myComments.inReplyTo')}</span>}
                               {comment.isAnonymous && (

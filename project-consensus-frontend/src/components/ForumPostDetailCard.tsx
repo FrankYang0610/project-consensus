@@ -84,7 +84,7 @@ export function ForumPostDetailCard({
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
   // Controlled: derive from props
   const isLiked = post.isLiked || false;
-  const likesCount = post.likes;
+  const likesCount = post.likesCount;
   const [isTranslated, setIsTranslated] = React.useState(false);
   const [isCopySuccess, setIsCopySuccess] = React.useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);

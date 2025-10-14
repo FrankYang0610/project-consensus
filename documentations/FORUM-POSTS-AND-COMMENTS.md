@@ -3,12 +3,12 @@
 This document describes the initial backend/frontend behavior for forum posts and comments.
 
 ## Data model
-- Post: `id`, `title`, `content` (HTML), `author`, `createdAt`, `tags`, `likesCount`, `isAnonymous`, `isEdited`
-- Comment: `id`, `postId`, `replyTo` (optional comment id), `content` (HTML), `author`, `createdAt`, `likes`, `isDeleted`, `isAnonymous`, `replies` (count)
+- Post: `id`, `title`, `content` (HTML), `author`, `createdAt`, `tags`, `likesCount`, `commentsCount`, `isLiked`, `isAnonymous`, `isEdited`
+- Comment: `id`, `postId`, `replyTo` (optional comment id), `content` (HTML), `author`, `createdAt`, `likesCount`, `isLiked`, `isDeleted`, `isAnonymous`, `repliesCount`
 
 ## Create
-- Post: authenticated users can create; HTML is sanitized.
-- Comment: authenticated users can create on non-deleted posts; replies require a valid non-deleted target comment; HTML is sanitized.
+- Post: authenticated users can create; HTML is sanitized (forum-specific allowlist; links/images allowed with limited attributes).
+- Comment: authenticated users can create on non-deleted posts; replies require a valid non-deleted target comment; invalid `postId` returns 400 `{ postId: "invalid post id" }`; HTML is sanitized.
 
 ## Update
 - Post: author can update title/content/tags/isAnonymous. When updated, `isEdited` is set to true.
@@ -29,16 +29,49 @@ This document describes the initial backend/frontend behavior for forum posts an
 - Use list/retrieve APIs to display posts (hard-deleted posts are not returned).
 - Render deleted comments as placeholders without interactive actions.
 
+### Anonymous author/comment behavior
+- When `isAnonymous=true`:
+  - For other users, the author is masked as `{ id: anonymous_<random>, name: "Anonymous", avatar: null }`.
+  - For the author themselves (authenticated, same `author_id`), the real profile is returned.
+
+### `isLiked` semantics
+- Returned as a computed, user-scoped flag for both posts and comments.
+- Efficiently annotated in list/detail responses for authenticated users to avoid N+1 queries; otherwise `false`.
+
 ## Notifications & navigation
 - Notifications are decoupled from forum tables (no FKs) and store `content_preview`/`referenced_content_preview` snapshots plus `metadata`.
 - Deleting a post or any comment does NOT delete notifications.
 - Clicking a notification targeting a deleted post should show a clear message that the item no longer exists and navigate to a Not Found page for posts.
 
+## Endpoints
+
+### Posts
+- List: `GET /api/forum/posts/` (supports `search`, `ordering`, `tags`, `author`, `mine`)
+- Retrieve: `GET /api/forum/posts/{id}/`
+- Create: `POST /api/forum/posts/`
+- Update: `PATCH /api/forum/posts/{id}/` (author only; sets `isEdited=true` on field changes)
+- Delete: `DELETE /api/forum/posts/{id}/` (hard delete; cleans up embedded images owned by the author)
+- Like: `POST /api/forum/posts/{id}/like/` (idempotent)
+- Unlike: `POST /api/forum/posts/{id}/unlike/` (idempotent)
+
+### Comments
+- List by post: `GET /api/forum/comments/?postId=<uuid>` (404 if post missing)
+- List replies of a comment: `GET /api/forum/comments/?replyTo=<uuid>`
+- Create: `POST /api/forum/comments/` (requires `postId`; optional `replyTo`)
+- Delete: `DELETE /api/forum/comments/{id}/` (soft delete; clears content, keeps placeholder)
+- Edit: not allowed → `PUT/PATCH` return 405
+- Like: `POST /api/forum/comments/{id}/like/` (idempotent; not allowed on deleted comments)
+- Unlike: `POST /api/forum/comments/{id}/unlike/` (idempotent)
+
+### Comment position helper
+- `GET /api/forum/comments/position/?postId=<uuid>&commentId=<uuid>&page_size=<int>`
+  - Returns the zero-based index, page number, page size, total count, and convenience page URLs to load up to the anchor.
+
 ## Edit & Delete Logic Summary
 
 | Type | Edit Permission | Edit Method | Delete Permission | Delete Method | Special Handling |
 |------|----------------|-------------|------------------|---------------|------------------|
-| Forum Post | Author | Allowed | Author | Hard Delete | Set `is_edited=True` |
+| Forum Post | Author | Allowed | Author | Hard Delete | Set `is_edited=true`; clean removed images |
 | Forum Post Comment | None | Forbidden | Author | Soft Delete | Clear content, preserve structure |
 
 ### Key Design Principles:

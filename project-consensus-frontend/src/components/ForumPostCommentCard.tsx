@@ -87,7 +87,7 @@ export function ForumPostCommentCard({
   // Stores the original state of replies before deletion to support rollback functionality for delete operations
   const prevRepliesByIdRef = React.useRef<Map<string, ForumPostComment>>(new Map());
 
-  const repliesCount = (typeof comment.replies === 'number' ? comment.replies : undefined) ?? (replies?.length ?? 0);
+  const repliesCount = (typeof comment.repliesCount === 'number' ? comment.repliesCount : undefined) ?? (replies?.length ?? 0);
 
 
   const handleLike = () => {
@@ -452,7 +452,7 @@ export function ForumPostCommentCard({
                 "w-3 h-3 mr-1 flex-shrink-0",
                 comment.isLiked && "fill-current"
               )} />
-              <span className="truncate">{comment.likes > 0 && comment.likes}</span>
+              <span className="truncate">{comment.likesCount > 0 && comment.likesCount}</span>
             </Button>
 
             <Button
@@ -582,7 +582,7 @@ export function ForumPostCommentCard({
                   <div className="flex items-center gap-3 mt-2">
                     {(() => {
                       const loaded = replies?.length ?? 0;
-                      const total = typeof comment.replies === 'number' ? comment.replies : 0;
+                      const total = typeof comment.repliesCount === 'number' ? comment.repliesCount : 0;
                       const remaining = Math.max(total - loaded, 0);
                       return remaining > 0 && repliesNextUrl ? (
                         <button
