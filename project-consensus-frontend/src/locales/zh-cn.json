@@ -242,7 +242,7 @@
       "rating": {
         "score": "评分",
         "outOf": "满分10分",
-        "reviews": "{{count}}条评价",
+        "reviews": "{{count}} 人评价",
         "noRating": "暂无评分"
       },
       "attributes": {
