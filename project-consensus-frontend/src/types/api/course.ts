@@ -76,11 +76,18 @@ export interface CourseDepartmentWithCount {
   count: number;
 }
 
+// GET /api/courses/department-levels/ response item
+export interface CourseLevelWithCount {
+  level: string;
+  count: number;
+}
+
 // Course browse page department data (UI state)
 export interface CourseDepartmentData {
   name: string;
   count: number;
-  courses?: import('@/types').Course[];
+  levels?: CourseLevelWithCount[]; // Level distribution (lazy loaded)
+  courses?: import('@/types').Course[]; // Courses for a specific level (lazy loaded)
   loading?: boolean;
   error?: boolean;
 }

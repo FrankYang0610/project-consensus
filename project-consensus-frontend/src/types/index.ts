@@ -68,6 +68,7 @@ export type {
   CourseUserVote,
   VoteCourseResponse,
   CourseDepartmentWithCount,
+  CourseLevelWithCount,
   CourseDepartmentData,
   // Teacher API types
   FetchTeachersParams,

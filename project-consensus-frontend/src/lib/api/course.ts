@@ -11,6 +11,7 @@ import type {
   CreateReplyPayload,
   VoteCourseResponse,
   CourseDepartmentWithCount,
+  CourseLevelWithCount,
 } from "@/types";
 import { apiGet, apiPost, apiPatch, apiDeleteVoid } from "./api-utils";
 
@@ -139,4 +140,12 @@ export async function fetchCourseDepartments(): Promise<string[]> {
 export async function fetchCourseDepartmentsWithCounts(): Promise<CourseDepartmentWithCount[]> {
   const res = await apiGet<{ departments: CourseDepartmentWithCount[] }>(`/api/courses/departments-with-counts/`);
   return Array.isArray(res?.departments) ? res.departments : [];
+}
+
+// ---------------- Optimized: department levels with counts (for browse page) ----------------
+export async function fetchDepartmentLevels(department: string): Promise<CourseLevelWithCount[]> {
+  const q = new URLSearchParams();
+  q.set('department', department);
+  const res = await apiGet<{ levels: CourseLevelWithCount[] }>(`/api/courses/department-levels/?${q.toString()}`);
+  return Array.isArray(res?.levels) ? res.levels : [];
 }

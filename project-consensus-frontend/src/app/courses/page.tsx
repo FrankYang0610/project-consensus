@@ -7,35 +7,12 @@ import { CourseBackgroundCard } from "@/components/CourseBackgroundCard";
 import { CoursePreviewCard } from "@/components/CoursePreviewCard";
 import { useI18n } from "@/hooks/use-i18n";
 import type { Course, CourseDepartmentData } from "@/types";
-import { fetchCourses, fetchCourseDepartmentsWithCounts } from "@/lib/api/course";
+import { fetchCourses, fetchCourseDepartmentsWithCounts, fetchDepartmentLevels } from "@/lib/api/course";
 import { Building2, Loader2, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
-// Helper function to group courses by level
-function groupCoursesByLevel(courses: Course[]) {
-  const grouped: Record<string, Course[]> = {};
-  
-  courses.forEach((course) => {
-    const level = course.level || "Other";
-    if (!grouped[level]) {
-      grouped[level] = [];
-    }
-    grouped[level].push(course);
-  });
-
-  // Sort levels: 1, 2, 3, 4, 5, 6, Other
-  const sortedLevels = Object.keys(grouped).sort((a, b) => {
-    if (a === "Other") return 1;
-    if (b === "Other") return -1;
-    return a.localeCompare(b);
-  });
-
-  return sortedLevels.map((level) => ({
-    level,
-    courses: grouped[level],
-  }));
-}
+// No longer needed - levels are loaded from backend
 
 export default function CourseBrowsePage() {
   const { t } = useI18n();
@@ -84,8 +61,8 @@ export default function CourseBrowsePage() {
     };
   }, [t]);
 
-  // Load courses for a specific department when expanded
-  const loadDepartmentCourses = React.useCallback(async (deptName: string) => {
+  // Load levels for a specific department
+  const loadDepartmentLevels = React.useCallback(async (deptName: string) => {
     setDepartments((prev) =>
       prev.map((dept) =>
         dept.name === deptName ? { ...dept, loading: true, error: false } : dept
@@ -93,11 +70,41 @@ export default function CourseBrowsePage() {
     );
 
     try {
-      // Fetch with reasonable limit, sorted by rating
+      // Fetch level distribution (lightweight query)
+      const levels = await fetchDepartmentLevels(deptName);
+
+      setDepartments((prev) =>
+        prev.map((dept) =>
+          dept.name === deptName
+            ? { ...dept, levels, loading: false }
+            : dept
+        )
+      );
+    } catch (err) {
+      console.error(`Failed to load levels for ${deptName}:`, err);
+      setDepartments((prev) =>
+        prev.map((dept) =>
+          dept.name === deptName ? { ...dept, loading: false, error: true } : dept
+        )
+      );
+    }
+  }, []);
+
+  // Load courses for a specific department and level
+  const loadLevelCourses = React.useCallback(async (deptName: string, level: string) => {
+    setDepartments((prev) =>
+      prev.map((dept) =>
+        dept.name === deptName ? { ...dept, loading: true, error: false } : dept
+      )
+    );
+
+    try {
+      // Fetch courses for specific department + level (precise query)
       const response = await fetchCourses({
         page: 1,
-        pageSize: 200, // Reduced from 1000 to improve performance
+        pageSize: 100, // Should be enough for one level
         department: [deptName],
+        level: [level === "Other" ? "" : level], // Handle "Other" case
         ordering: "-rating_score",
       });
 
@@ -109,7 +116,7 @@ export default function CourseBrowsePage() {
         )
       );
     } catch (err) {
-      console.error(`Failed to load courses for ${deptName}:`, err);
+      console.error(`Failed to load courses for ${deptName} level ${level}:`, err);
       setDepartments((prev) =>
         prev.map((dept) =>
           dept.name === deptName ? { ...dept, loading: false, error: true } : dept
@@ -124,29 +131,41 @@ export default function CourseBrowsePage() {
       setSelectedDepartment(deptName);
       setSelectedLevel(null); // Reset level selection
       
-      // Load courses if not already loaded
+      // Load levels if not already loaded
       const dept = departments.find((d) => d.name === deptName);
-      if (dept && !dept.courses && !dept.loading) {
-        loadDepartmentCourses(deptName);
+      if (dept && !dept.levels && !dept.loading) {
+        loadDepartmentLevels(deptName);
       }
     },
-    [departments, loadDepartmentCourses]
+    [departments, loadDepartmentLevels]
   );
 
-  // Get levels for selected department
+  // Handle level selection
+  const handleLevelClick = React.useCallback(
+    (level: string) => {
+      if (!selectedDepartment) return;
+      
+      setSelectedLevel(level);
+      
+      // Load courses for this specific level
+      loadLevelCourses(selectedDepartment, level);
+    },
+    [selectedDepartment, loadLevelCourses]
+  );
+
+  // Get levels for selected department (from loaded data)
   const selectedDeptLevels = React.useMemo(() => {
     if (!selectedDepartment) return [];
     const dept = departments.find((d) => d.name === selectedDepartment);
-    if (!dept?.courses) return [];
-    return groupCoursesByLevel(dept.courses);
+    return dept?.levels || [];
   }, [selectedDepartment, departments]);
 
-  // Get courses for selected level
+  // Get courses for selected level (from loaded data)
   const selectedLevelCourses = React.useMemo(() => {
-    if (!selectedLevel) return [];
-    const levelGroup = selectedDeptLevels.find((l) => l.level === selectedLevel);
-    return levelGroup?.courses || [];
-  }, [selectedLevel, selectedDeptLevels]);
+    if (!selectedDepartment || !selectedLevel) return [];
+    const dept = departments.find((d) => d.name === selectedDepartment);
+    return dept?.courses || [];
+  }, [selectedDepartment, selectedLevel, departments]);
 
   return (
     <>
@@ -272,10 +291,10 @@ export default function CourseBrowsePage() {
                               <Loader2 className="w-5 h-5 animate-spin text-primary" />
                             </div>
                           )}
-                          {selectedDeptLevels.map(({ level, courses }) => (
+                          {selectedDeptLevels.map(({ level, count }) => (
                             <button
                               key={level}
-                              onClick={() => setSelectedLevel(level)}
+                              onClick={() => handleLevelClick(level)}
                               className={cn(
                                 "w-full text-left px-3 py-2.5 rounded-md transition-colors",
                                 "flex items-center justify-between gap-2",
@@ -293,7 +312,7 @@ export default function CourseBrowsePage() {
                                   ? "bg-primary-foreground/20 text-primary-foreground"
                                   : "bg-secondary text-muted-foreground"
                               )}>
-                                {courses.length}
+                                {count}
                               </span>
                             </button>
                           ))}

@@ -323,6 +323,64 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
         
         return Response({"departments": departments}, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=["get"], url_path="department-levels")
+    def department_levels(self, request):
+        """Return level distribution for a specific department (optimized for browse page).
+
+        Query params:
+        - department: Department name (required)
+
+        This endpoint is optimized to get level counts for a single department
+        without fetching all course data, enabling efficient lazy loading.
+
+        Response shape: { 
+            "levels": [
+                {"level": "1", "count": 8},
+                {"level": "2", "count": 6},
+                ...
+            ] 
+        }
+        """
+        from django.db.models import Count
+        
+        department = request.query_params.get("department")
+        if not department:
+            return Response(
+                {"detail": "department parameter is required"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get level distribution for the specified department
+        levels_qs = (
+            Course.objects
+            .filter(department__iexact=department.strip())
+            .exclude(level="")
+            .values("level")
+            .annotate(count=Count("course_id"))
+            .order_by("level")
+        )
+        
+        # Format and sort levels (1, 2, 3, 4, 5, 6, Other)
+        levels_data = []
+        other_count = 0
+        
+        for item in levels_qs:
+            level = str(item["level"]).strip()
+            count = item["count"]
+            if level in {"1", "2", "3", "4", "5", "6"}:
+                levels_data.append({"level": level, "count": count})
+            else:
+                other_count += count
+        
+        # Sort numeric levels
+        levels_data.sort(key=lambda x: int(x["level"]))
+        
+        # Add "Other" at the end if exists
+        if other_count > 0:
+            levels_data.append({"level": "Other", "count": other_count})
+        
+        return Response({"levels": levels_data}, status=status.HTTP_200_OK)
+
     @action(detail=True, methods=["get", "post"], url_path="reviews")
     def reviews(self, request, course_id=None):
         """Nested reviews for a course identified by course_id.
