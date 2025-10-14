@@ -16,7 +16,7 @@ export const sampleComments: ForumPostComment[] = [
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alex'
     },
     createdAt: '2024-01-15T10:30:00Z',
-    likes: 12,
+    likesCount: 12,
     isLiked: false,
     postId: 'a7f3b2c1'
   },
@@ -29,7 +29,7 @@ export const sampleComments: ForumPostComment[] = [
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=david'
     },
     createdAt: '2024-01-15T16:45:00Z',
-    likes: 7,
+    likesCount: 7,
     isLiked: false,
     postId: 'a7f3b2c1'
   },
@@ -42,7 +42,7 @@ export const sampleComments: ForumPostComment[] = [
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=sarah'
     },
     createdAt: '2024-01-16T09:20:00Z',
-    likes: 15,
+    likesCount: 15,
     isLiked: true,
     postId: 'a7f3b2c1'
   },
@@ -55,7 +55,7 @@ export const sampleComments: ForumPostComment[] = [
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=michael'
     },
     createdAt: '2024-01-16T14:30:00Z',
-    likes: 9,
+    likesCount: 9,
     isLiked: false,
     postId: 'a7f3b2c1'
   },
@@ -69,7 +69,7 @@ export const sampleComments: ForumPostComment[] = [
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=emma'
     },
     createdAt: '2024-01-15T11:15:00Z',
-    likes: 5,
+    likesCount: 5,
     isLiked: true,
     replyTo: 'comment-1',
     postId: 'a7f3b2c1'
@@ -83,7 +83,7 @@ export const sampleComments: ForumPostComment[] = [
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=james'
     },
     createdAt: '2024-01-15T14:20:00Z',
-    likes: 3,
+    likesCount: 3,
     isLiked: false,
     replyTo: 'comment-1',
     postId: 'a7f3b2c1'
@@ -97,7 +97,7 @@ export const sampleComments: ForumPostComment[] = [
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=alex'
     },
     createdAt: '2024-01-15T15:30:00Z',
-    likes: 8,
+    likesCount: 8,
     isLiked: false,
     replyTo: 'comment-1-2',
     postId: 'a7f3b2c1'
@@ -111,7 +111,7 @@ export const sampleComments: ForumPostComment[] = [
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=jennifer'
     },
     createdAt: '2024-01-16T10:15:00Z',
-    likes: 4,
+    likesCount: 4,
     isLiked: false,
     replyTo: 'comment-3',
     postId: 'a7f3b2c1'
@@ -126,7 +126,7 @@ export const sampleComments: ForumPostComment[] = [
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=tom'
     },
     createdAt: '2024-01-16T11:30:00Z',
-    likes: 2,
+    likesCount: 2,
     isLiked: false,
     replyTo: 'comment-1',
     postId: 'a7f3b2c1'
@@ -140,7 +140,7 @@ export const sampleComments: ForumPostComment[] = [
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=lisa'
     },
     createdAt: '2024-01-16T12:00:00Z',
-    likes: 6,
+    likesCount: 6,
     isLiked: true,
     replyTo: 'comment-1',
     postId: 'a7f3b2c1'
@@ -154,7 +154,7 @@ export const sampleComments: ForumPostComment[] = [
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=kevin'
     },
     createdAt: '2024-01-16T12:30:00Z',
-    likes: 3,
+    likesCount: 3,
     isLiked: false,
     replyTo: 'comment-1',
     postId: 'a7f3b2c1'
@@ -168,7 +168,7 @@ export const sampleComments: ForumPostComment[] = [
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=amy'
     },
     createdAt: '2024-01-16T13:00:00Z',
-    likes: 1,
+    likesCount: 1,
     isLiked: false,
     replyTo: 'comment-1',
     postId: 'a7f3b2c1'
@@ -182,7 +182,7 @@ export const sampleComments: ForumPostComment[] = [
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=bob'
     },
     createdAt: '2024-01-16T13:30:00Z',
-    likes: 4,
+    likesCount: 4,
     isLiked: false,
     replyTo: 'comment-1',
     postId: 'a7f3b2c1'
@@ -196,7 +196,7 @@ export const sampleComments: ForumPostComment[] = [
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=grace'
     },
     createdAt: '2024-01-16T14:00:00Z',
-    likes: 8,
+    likesCount: 8,
     isLiked: true,
     replyTo: 'comment-1',
     postId: 'a7f3b2c1'
@@ -215,7 +215,7 @@ for (let i = 1; i <= 40; i++) {
       avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=bulk${i}`
     },
     createdAt: new Date(Date.now() - (i + 1) * 60 * 60 * 1000).toISOString(),
-    likes: (i * 7) % 29,
+    likesCount: (i * 7) % 29,
     isLiked: false,
     postId: 'a7f3b2c1'
   });
@@ -283,7 +283,8 @@ export function toggleCommentLike(commentId: string): ForumPostComment | null {
   
   const comment = sampleComments[commentIndex];
   comment.isLiked = !comment.isLiked;
-  comment.likes = comment.likes + (comment.isLiked ? 1 : -1);
+  const currentLikes = typeof comment.likesCount === 'number' ? comment.likesCount : 0;
+  comment.likesCount = currentLikes + (comment.isLiked ? 1 : -1);
   
   return comment;
 }

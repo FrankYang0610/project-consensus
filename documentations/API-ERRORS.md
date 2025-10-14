@@ -61,14 +61,17 @@ Rationale: A missing resource is an expected state (tombstone), not an applicati
   - Course page: show a friendly dialog (e.g., “This item no longer exists”) without console noise.
   - Forum: for deleted posts, route to the dedicated Not Found page; for deleted comments/replies, render the placeholder row (`isDeleted=true`, empty content) if it still exists, otherwise show a friendly message.
 
-### Forum comments under deleted posts
+### Forum posts and comments
 
-- Backend now enforces industry-standard behavior:
-  - `GET /api/forum/comments/?postId=<uuid>` returns 404 if the post is missing or deleted.
-  - `GET /api/forum/comments/position/?postId=<uuid>&commentId=<uuid>` returns 404 if the post is missing or deleted.
-  - Creating a comment on a deleted post is blocked with 400 validation: `{ postId: "post has been deleted" }`.
-  - Deleting a post will remove all its comments; notifications remain visible due to snapshots.
-  - Rationale: Comments should not be discoverable for deleted posts; keeps semantics consistent with post detail 404 and avoids leaking tombstoned threads.
+- Missing or deleted post (posts are hard-deleted):
+  - `GET /api/forum/comments/?postId=<uuid>` → 404
+  - `GET /api/forum/comments/position/?postId=<uuid>&commentId=<uuid>` → 404
+  - Creating a comment with a non-existent `postId` → 400 validation: `{ postId: "invalid post id" }`
+  - Deleting a post removes all its comments; notifications remain due to snapshots.
+- Deleted comment:
+  - `POST /api/forum/comments/{id}/like/` on a deleted comment → 400: `{ detail: "Cannot like a deleted comment" }`
+  - `POST /api/forum/comments/{id}/unlike/` on a deleted comment → 200 with current state (no-op)
+  - `PUT/PATCH /api/forum/comments/{id}/` → 405: `{ detail: "Comment editing is not allowed" }`
 
 ### Wiki pages
 

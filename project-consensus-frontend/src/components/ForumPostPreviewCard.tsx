@@ -72,7 +72,7 @@ export function ForumPostPreviewCard({
   const [dialogTitle, setDialogTitle] = React.useState("");
   // Controlled: derive from props
   const isLiked = post.isLiked || false;
-  const likesCount = post.likes;
+  const likesCount = post.likesCount;
   const [isTranslated, setIsTranslated] = React.useState(false);
   const [isCopySuccess, setIsCopySuccess] = React.useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
@@ -246,12 +246,12 @@ export function ForumPostPreviewCard({
                 buttonVariants({ variant: "ghost", size: "sm" }),
                 "h-7 px-2 text-xs min-w-0 cursor-default select-none pointer-events-none"
               )}
-              aria-label={t('comment.title', { count: post.comments })}
+              aria-label={t('comment.title', { count: post.commentsCount })}
               role="status"
               tabIndex={-1}
             >
               <MessageSquare className="w-3 h-3 mr-1 flex-shrink-0" />
-              <span className="truncate">{post.comments}</span>
+              <span className="truncate">{post.commentsCount}</span>
             </span>
 
             <Button

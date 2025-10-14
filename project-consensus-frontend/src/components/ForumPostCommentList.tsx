@@ -237,12 +237,12 @@ export function ForumPostCommentList({
       // Compute the intended next like state once using the current snapshot
       const current = idToComment.current.get(id);
       const prevLiked = !!current?.isLiked;
-      const prevLikes = typeof current?.likes === 'number' ? current.likes : 0;
+      const prevLikes = typeof current?.likesCount === 'number' ? current.likesCount : 0;
       const willLike = !prevLiked;
       setComments(prev => {
         const next = prev.map(c => {
           if (c.id !== id) return c;
-          return { ...c, isLiked: willLike, likes: Math.max(0, c.likes + (willLike ? 1 : -1)) };
+          return { ...c, isLiked: willLike, likesCount: Math.max(0, (c.likesCount ?? 0) + (willLike ? 1 : -1)) };
         });
         return next;
       });
@@ -254,7 +254,7 @@ export function ForumPostCommentList({
           // Reconcile with server truth
           setComments(prev => prev.map(c => {
             if (c.id !== id) return c;
-            return { ...c, isLiked: !!data.isLiked, likes: Math.max(0, data.likes) };
+            return { ...c, isLiked: !!data.isLiked, likesCount: Math.max(0, data.likesCount) };
           }));
           likeInFlightRef.current.delete(id);  // Remove from in-flight lock
         })
@@ -262,7 +262,7 @@ export function ForumPostCommentList({
           // revert on error
           setComments(prev => prev.map(c => {
             if (c.id !== id) return c;
-            return { ...c, isLiked: prevLiked, likes: Math.max(0, prevLikes) };
+            return { ...c, isLiked: prevLiked, likesCount: Math.max(0, prevLikes) };
           }));
           likeInFlightRef.current.delete(id);  // Remove from in-flight lock
         });
@@ -316,7 +316,7 @@ export function ForumPostCommentList({
       if (!created) return;
       const parentId = created.replyTo;
       if (!parentId) return; // only bump for replies to a comment
-      setComments(prev => prev.map(c => c.id === parentId ? { ...c, replies: (typeof c.replies === 'number' ? c.replies : (0)) + 1 } : c));
+      setComments(prev => prev.map(c => c.id === parentId ? { ...c, repliesCount: (typeof c.repliesCount === 'number' ? c.repliesCount : (0)) + 1 } : c));
     };
     window.addEventListener('pc:comment-created', handler as EventListener);
     return () => window.removeEventListener('pc:comment-created', handler as EventListener);

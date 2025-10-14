@@ -1,15 +1,12 @@
 from __future__ import annotations
 
 import uuid
-from django.contrib.auth import get_user_model
 import bleach
 from rest_framework import serializers
+from typing import override
 
 from accounts.models import Profile
 from .models import ForumPost, ForumPostComment
-
-
-User = get_user_model()
 
 
 # Forum-specific allowlist: more permissive than courses to support richer content
@@ -105,8 +102,8 @@ class ForumPostSerializer(serializers.ModelSerializer):
     """
 
     author = serializers.SerializerMethodField()
-    likes = serializers.IntegerField(source="likes_count", read_only=True)
-    comments = serializers.SerializerMethodField()
+    likesCount = serializers.IntegerField(source="likes_count", read_only=True)
+    commentsCount = serializers.SerializerMethodField()
     isLiked = serializers.SerializerMethodField()
     createdAt = serializers.DateTimeField(source="created_at", read_only=True)
     isAnonymous = serializers.BooleanField(source="is_anonymous", required=False)
@@ -121,14 +118,15 @@ class ForumPostSerializer(serializers.ModelSerializer):
             "author",
             "createdAt",
             "tags",
-            "likes",
-            "comments",
+            "likesCount",
+            "commentsCount",
             "isLiked",
             "isAnonymous",
             "isEdited",
         ]
         read_only_fields = ["id", "createdAt", "author", "isEdited"]
     
+    @override
     def to_representation(self, instance):
         """Override to_representation to sanitize HTML content on output.
         
@@ -161,7 +159,7 @@ class ForumPostSerializer(serializers.ModelSerializer):
                 }
         return _author_payload_for(obj.author)
 
-    def get_comments(self, obj: ForumPost) -> int:
+    def get_commentsCount(self, obj: ForumPost) -> int:
         # Prefer DB-annotated comments_count when available to avoid extra queries
         annotated = getattr(obj, "comments_count", None)
         if isinstance(annotated, int):
@@ -179,8 +177,7 @@ class ForumPostSerializer(serializers.ModelSerializer):
             return bool(annotated)
         return obj.likes.filter(user=user).exists()
 
-    
-    
+    @override
     def validate(self, attrs):  # type: ignore[override]
         """Validate and sanitize content."""
         # Sanitize content (always sanitize if provided)
@@ -188,59 +185,6 @@ class ForumPostSerializer(serializers.ModelSerializer):
             raw = attrs.get("content")
             attrs["content"] = _sanitize_html(raw)
         return attrs
-    
-    def create(self, validated_data):  # type: ignore[override]
-        """Create a new forum post with sanitized content."""
-        # Extract author from context if not provided
-        author = validated_data.pop("author", None)
-        if author is None:
-            request = self.context.get("request")
-            if request and hasattr(request, "user") and request.user.is_authenticated:
-                author = request.user
-        
-        if author is None:
-            raise serializers.ValidationError("author must be provided or user must be authenticated")
-        
-        # Sanitize HTML content (defense-in-depth)
-        if "content" in validated_data:
-            validated_data["content"] = _sanitize_html(validated_data.get("content", ""))
-        
-        instance = ForumPost.objects.create(author=author, **validated_data)
-        return instance
-    
-    def update(self, instance: ForumPost, validated_data):  # type: ignore[override]
-        """Update forum post with sanitized content and set is_edited flag."""
-        # Track if any content-related fields changed
-        content_changed = False
-        
-        # Update and sanitize content if provided
-        if "content" in validated_data:
-            new_content = _sanitize_html(validated_data["content"])
-            if instance.content != new_content:
-                instance.content = new_content
-                content_changed = True
-        
-        # Update title if provided
-        if "title" in validated_data:
-            new_title = validated_data["title"]
-            if instance.title != new_title:
-                instance.title = new_title
-                content_changed = True
-        
-        # Update tags if provided
-        if "tags" in validated_data:
-            instance.tags = validated_data["tags"]
-        
-        # Update is_anonymous if provided
-        if "is_anonymous" in validated_data:
-            instance.is_anonymous = validated_data["is_anonymous"]
-        
-        # Mark as edited if content or title changed
-        if content_changed:
-            instance.is_edited = True
-        
-        instance.save()
-        return instance
 
 
 class ForumPostCommentSerializer(serializers.ModelSerializer):
@@ -253,13 +197,13 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
     """
 
     author = serializers.SerializerMethodField()
-    likes = serializers.IntegerField(source="likes_count", read_only=True)
+    likesCount = serializers.IntegerField(source="likes_count", read_only=True)
     isLiked = serializers.SerializerMethodField()
     createdAt = serializers.DateTimeField(source="created_at", read_only=True)
     replyTo = serializers.UUIDField(source="reply_to_id", allow_null=True, required=False)
     postId = serializers.UUIDField(source="post_id")
     isDeleted = serializers.BooleanField(source="is_deleted", read_only=True)
-    replies = serializers.IntegerField(source="replies_count", read_only=True)
+    repliesCount = serializers.IntegerField(source="replies_count", read_only=True)
     isAnonymous = serializers.BooleanField(source="is_anonymous", required=False)
 
     class Meta:
@@ -269,17 +213,18 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
             "content",
             "author",
             "createdAt",
-            "likes",
+            "likesCount",
             "isLiked",
             "isDeleted",
             "replyTo",
             "postId",
-            "replies",
+            "repliesCount",
             "isAnonymous",
         ]
         extra_kwargs = {}
-        read_only_fields = ["id", "createdAt", "author", "isDeleted", "likes", "isLiked"]
+        read_only_fields = ["id", "createdAt", "author", "isDeleted", "likesCount", "isLiked"]
     
+    @override
     def to_representation(self, instance):
         """Override to_representation to sanitize HTML content on output.
         
@@ -323,65 +268,41 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
             return bool(annotated)
         return obj.likes.filter(user=user).exists()
     
+    @override
     def validate(self, attrs):  # type: ignore[override]
-        """Validate and sanitize content."""
-        # Sanitize content (always sanitize if provided)
+        """Validate content, resolve relations from PK fields, and enforce rules."""
+        # Sanitize content
         if "content" in attrs:
             raw = attrs.get("content")
             attrs["content"] = _sanitize_html(raw)
-        return attrs
-    
-    def create(self, validated_data):  # type: ignore[override]
-        """Create a new comment with sanitized content."""
-        # Extract author from context if not provided
-        author = validated_data.pop("author", None)
-        if author is None:
-            request = self.context.get("request")
-            if request and hasattr(request, "user") and request.user.is_authenticated:
-                author = request.user
-        
-        if author is None:
-            raise serializers.ValidationError("author must be provided or user must be authenticated")
-        
-        # Sanitize HTML content (defense-in-depth)
-        if "content" in validated_data:
-            validated_data["content"] = _sanitize_html(validated_data.get("content", ""))
-        
-        # Extract post and reply_to if needed
-        post = validated_data.pop("post", None)
-        reply_to = validated_data.pop("reply_to", None)
-        
-        # Handle post_id from payload
-        if post is None and "post_id" in validated_data:
-            post_id = validated_data.pop("post_id")
+
+        # Resolve post from post_id if provided
+        post = attrs.get("post")
+        if post is None and "post_id" in attrs:
+            post_id = attrs.pop("post_id")
             try:
                 post = ForumPost.objects.get(pk=post_id)
             except ForumPost.DoesNotExist:
                 raise serializers.ValidationError({"postId": "invalid post id"})
-        # Block creating comments on deleted posts (industry standard)
-        if post is not None and getattr(post, "is_deleted", False):
-            raise serializers.ValidationError({"postId": "post has been deleted"})
-        
-        # Handle reply_to_id from payload
-        if reply_to is None and "reply_to_id" in validated_data:
-            reply_to_id = validated_data.pop("reply_to_id")
+            attrs["post"] = post
+
+        # Resolve reply_to from reply_to_id if provided
+        reply_to = attrs.get("reply_to")
+        if reply_to is None and "reply_to_id" in attrs:
+            reply_to_id = attrs.pop("reply_to_id")
             if reply_to_id is not None:
                 try:
                     reply_to = ForumPostComment.objects.get(pk=reply_to_id)
                 except ForumPostComment.DoesNotExist:
                     raise serializers.ValidationError({"replyTo": "invalid reply target id"})
-        # Disallow replying to a deleted comment (industry standard: cannot reply to deleted content)
+                attrs["reply_to"] = reply_to
+
+        # Disallow replying to a deleted comment
         if reply_to is not None and getattr(reply_to, "is_deleted", False):
             raise serializers.ValidationError({"replyTo": "reply target has been deleted"})
-        
-        if post is None:
-            raise serializers.ValidationError("post must be provided")
-        
-        instance = ForumPostComment.objects.create(
-            post=post,
-            author=author,
-            reply_to=reply_to,
-            **validated_data
-        )
-        return instance
+
+        if attrs.get("post") is None:
+            raise serializers.ValidationError({"postId": "post must be provided"})
+
+        return attrs
     

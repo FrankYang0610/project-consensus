@@ -1,22 +1,23 @@
 from __future__ import annotations
 
 import logging
-from rest_framework import viewsets, permissions, filters, status
-from rest_framework.response import Response
+from django.db import transaction
+from django.db.models import Case, Count, Exists, F, IntegerField, OuterRef, Q, Value, When
+from django.utils import timezone
+from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
-from rest_framework.exceptions import NotFound
+from rest_framework.response import Response
+from typing import override
 
-from django.db import transaction, models
-from django.db.models import F, Count, Q, Case, When, Value, IntegerField, Exists, OuterRef
-
-from .models import ForumPost, ForumPostComment, ForumPostLike, ForumCommentLike
-from .serializers import ForumPostSerializer, ForumPostCommentSerializer
+from core.permissions import IsAuthorOrReadOnly
+from core.utils import delete_images_in_html, delete_storage_object_by_url, extract_image_srcs_from_html
 from notifications import NotificationType
-from notifications.events import emit, DomainEvent
-from django.utils import timezone
-from core.utils import delete_images_in_html, extract_image_srcs_from_html, delete_storage_object_by_url
+from notifications.events import DomainEvent, emit
+from .models import ForumCommentLike, ForumPost, ForumPostComment, ForumPostLike
+from .serializers import ForumPostCommentSerializer, ForumPostSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -39,12 +40,19 @@ class ForumPostViewSet(viewsets.ModelViewSet):
 
     queryset = ForumPost.objects.select_related("author").prefetch_related("comments")
     serializer_class = ForumPostSerializer
-    # Read-only for anonymous, write requires auth
-    def get_permissions(self):  # type: ignore[override]
-        if self.action in ["list", "retrieve"]:
-            return [permissions.AllowAny()]
-        return [permissions.IsAuthenticated()]
-    
+    permission_classes = [IsAuthorOrReadOnly]
+
+    # Enable search and ordering
+    # - Search: title, content, tags
+    # - Ordering: by created_at (time), likes_count (likes), comments_count (computed)
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["title", "content", "tags"]
+    ordering_fields = ["created_at", "likes_count", "comments_count", "id"]
+    # Sensible default ordering for feeds without ML: newest first, break ties by engagement
+    ordering = ["-created_at", "-likes_count", "-id"]
+    pagination_class = DefaultPageNumberPagination
+
+    @override
     def get_queryset(self):  # type: ignore[override]
         qs = super().get_queryset()
         # Annotate derived fields used by serializer and ordering
@@ -88,84 +96,53 @@ class ForumPostViewSet(viewsets.ModelViewSet):
 
         return qs
 
-
+    # DRF flow note:
+    # ModelViewSet.create() calls perform_create(serializer).
+    # serializer.save(author=...) invokes ModelSerializer.create(...) when no instance exists,
+    # whose default implementation is Model.objects.create(**validated_data),
+    # thus performing the actual INSERT. Passing author here enforces the current user.
+    @override
     def perform_create(self, serializer):  # type: ignore[override]
         # Force the author to the current user
         serializer.save(author=self.request.user)
 
-    # Enable search and ordering
-    # - Search: title, content, tags
-    # - Ordering: by created_at (time), likes_count (likes), comments_count (computed)
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ["title", "content", "tags"]
-    ordering_fields = ["created_at", "likes_count", "comments_count", "id"]
-    # Sensible default ordering for feeds without ML: newest first, break ties by engagement
-    ordering = ["-created_at", "-likes_count", "-id"]
-    pagination_class = DefaultPageNumberPagination
-
-    def destroy(self, request: Request, *args, **kwargs):  # type: ignore[override]
-        """Hard delete a forum post: only the author may delete.
-
-        Behavior:
-        - Hard-delete the post row; database CASCADE removes all related comments and likes
-        - Notifications are unaffected because they are decoupled and snapshot-based
-        """
-        post: ForumPost = self.get_object()
-        if request.user != post.author:
-            return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+    @override
+    def perform_destroy(self, instance: ForumPost):  # type: ignore[override]
+        """Hard delete a forum post and cleanup related images."""
         try:
-            delete_images_in_html(getattr(post, "content", ""), owner_user_id=post.author_id)
+            delete_images_in_html(getattr(instance, "content", ""), owner_user_id=instance.author_id)
         except Exception as e:
-            logger.warning(f"Failed to delete images in forum post {post.pk}: {e}", exc_info=True)
+            logger.warning(f"Failed to delete images in forum post {instance.pk}: {e}", exc_info=True)
         with transaction.atomic():
-            # Hard-delete the post; related comments/likes cascade via FK constraints
-            post.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+            instance.delete()
 
-    def update(self, request: Request, *args, **kwargs):  # type: ignore[override]
-        """Allow only the author to update their post.
-
-        On successful update, mark the post as edited when any editable field is present.
-        """
-        partial = kwargs.pop("partial", False)
-        instance: ForumPost = self.get_object()
-        if request.user != instance.author:
-            return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
-
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
+    @override
+    def perform_update(self, serializer):  # type: ignore[override]
+        """Update a post, cleanup removed images, and mark as edited when fields change."""
+        instance: ForumPost = serializer.instance
         old_srcs = extract_image_srcs_from_html(getattr(instance, "content", ""))
-
-        # Determine if incoming data modifies any editable fields
         editable_fields = {"title", "content", "tags", "is_anonymous"}
         incoming_keys = set(serializer.validated_data.keys())
 
         with transaction.atomic():
-            self.perform_update(serializer)
+            super().perform_update(serializer)
             instance.refresh_from_db(fields=["content"])
             new_srcs = extract_image_srcs_from_html(getattr(instance, "content", ""))
             removed_srcs = old_srcs - new_srcs
             author_id = instance.author_id
             post_pk = instance.pk
             # Capture variables explicitly using default arguments to avoid closure issues
-            def _cleanup(srcs=removed_srcs, owner_id=author_id, pk=post_pk):
+            def _cleanup(removed_srcs=removed_srcs, owner_id=author_id, pk=post_pk):
                 try:
-                    for src in srcs:
+                    for src in removed_srcs:
                         delete_storage_object_by_url(src, owner_user_id=owner_id)
                 except Exception as e:
                     logger.warning(f"Failed to delete removed images in forum post {pk}: {e}", exc_info=True)
             transaction.on_commit(_cleanup)
 
-            # Mark as edited if client attempted to update any editable fields
             if incoming_keys & editable_fields:
                 ForumPost.objects.filter(pk=instance.pk).update(is_edited=True)
                 instance.refresh_from_db(fields=["is_edited"])  # keep instance in sync
-
-        return Response(serializer.data)
-
-    def partial_update(self, request: Request, *args, **kwargs):  # type: ignore[override]
-        kwargs["partial"] = True
-        return self.update(request, *args, **kwargs)
 
     @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
     def like(self, request: Request, pk: str | None = None):
@@ -239,13 +216,10 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
 
     queryset = ForumPostComment.objects.select_related("author", "post", "reply_to")
     serializer_class = ForumPostCommentSerializer
-    # Read-only for anonymous, write requires auth
-    def get_permissions(self):  # type: ignore[override]
-        if self.action in ["list", "retrieve", "position"]:
-            return [permissions.AllowAny()]
-        return [permissions.IsAuthenticated()]
+    permission_classes = [IsAuthorOrReadOnly]
     pagination_class = DefaultPageNumberPagination
 
+    @override
     def get_queryset(self):  # type: ignore[override]
         qs = super().get_queryset()
         post_id = self.request.query_params.get("postId")
@@ -275,12 +249,17 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
             qs = qs.annotate(is_liked=Value(False))
         return qs
 
+    # Because forum post comments are not editable, we don't need to implement `perform_update`
+    @override
     def update(self, request: Request, *args, **kwargs):  # type: ignore[override]
         return Response({"detail": "Comment editing is not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    # Because forum post comments are not editable, we don't need to implement `partial_update`
+    @override
     def partial_update(self, request: Request, *args, **kwargs):  # type: ignore[override]
         return Response({"detail": "Comment editing is not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    @override
     def perform_create(self, serializer):  # type: ignore[override]
         # Always set the author to current user; no main thread tracking in flat model
         comment: ForumPostComment = serializer.save(author=self.request.user)
@@ -335,32 +314,17 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
             # Best-effort; don't block comment creation on notification errors
             pass
 
-    def destroy(self, request: Request, *args, **kwargs):  # type: ignore[override]
-        """Soft delete a comment: only the author may delete.
-
-        Behavior:
-        - Mark is_deleted=True
-        - Clear content (set to empty string)
-        - Keep the row to preserve thread structure
-        """
-        comment = self.get_object()
-        if request.user != comment.author:
-            return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
-
-        # If already soft-deleted, respond with 204 No Content (idempotent)
-        if getattr(comment, "is_deleted", False):
-            return Response(status=status.HTTP_204_NO_CONTENT)
-
+    @override
+    def perform_destroy(self, instance: ForumPostComment):  # type: ignore[override]
+        """Soft delete a comment and cleanup embedded images."""
+        if getattr(instance, "is_deleted", False):
+            return
         try:
-            delete_images_in_html(getattr(comment, "content", ""), owner_user_id=comment.author_id)
+            delete_images_in_html(getattr(instance, "content", ""), owner_user_id=instance.author_id)
         except Exception as e:
-            logger.warning(f"Failed to delete images in forum comment {comment.pk}: {e}", exc_info=True)
-
+            logger.warning(f"Failed to delete images in forum comment {instance.pk}: {e}", exc_info=True)
         with transaction.atomic():
-            # Soft delete and clear content
-            ForumPostComment.objects.filter(pk=comment.pk).update(is_deleted=True, content="")
-        # No payload on DELETE by convention
-        return Response(status=status.HTTP_204_NO_CONTENT)
+            ForumPostComment.objects.filter(pk=instance.pk).update(is_deleted=True, content="")
 
     @action(detail=False, methods=["GET"], url_path="position", permission_classes=[permissions.AllowAny])
     def position(self, request: Request):
