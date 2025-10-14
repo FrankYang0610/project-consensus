@@ -127,10 +127,24 @@ export default function CourseBrowsePage() {
     const abortController = new AbortController();
     abortControllersRef.current.set(key, abortController);
 
+    // Set loading state for this specific level
     setDepartments((prev) =>
-      prev.map((dept) =>
-        dept.name === deptName ? { ...dept, loading: true, error: false } : dept
-      )
+      prev.map((dept) => {
+        if (dept.name !== deptName) return dept;
+        
+        const coursesByLevel = dept.coursesByLevel || {};
+        return {
+          ...dept,
+          coursesByLevel: {
+            ...coursesByLevel,
+            [level]: {
+              courses: coursesByLevel[level]?.courses || [],
+              loading: true,
+              error: false,
+            }
+          }
+        };
+      })
     );
 
     try {
@@ -145,20 +159,47 @@ export default function CourseBrowsePage() {
       
       if (abortController.signal.aborted) return;
 
+      // Store courses in per-level cache
       setDepartments((prev) =>
-        prev.map((dept) =>
-          dept.name === deptName
-            ? { ...dept, courses: response.results, loading: false }
-            : dept
-        )
+        prev.map((dept) => {
+          if (dept.name !== deptName) return dept;
+          
+          const coursesByLevel = dept.coursesByLevel || {};
+          return {
+            ...dept,
+            coursesByLevel: {
+              ...coursesByLevel,
+              [level]: {
+                courses: response.results,
+                loading: false,
+                error: false,
+              }
+            }
+          };
+        })
       );
     } catch (err) {
       if (abortController.signal.aborted) return;
       console.error(`Failed to load courses for ${deptName} level ${level}:`, err);
+      
+      // Set error state for this specific level
       setDepartments((prev) =>
-        prev.map((dept) =>
-          dept.name === deptName ? { ...dept, loading: false, error: true } : dept
-        )
+        prev.map((dept) => {
+          if (dept.name !== deptName) return dept;
+          
+          const coursesByLevel = dept.coursesByLevel || {};
+          return {
+            ...dept,
+            coursesByLevel: {
+              ...coursesByLevel,
+              [level]: {
+                courses: coursesByLevel[level]?.courses || [],
+                loading: false,
+                error: true,
+              }
+            }
+          };
+        })
       );
     } finally {
       abortControllersRef.current.delete(key);
@@ -188,6 +229,18 @@ export default function CourseBrowsePage() {
     // Check if the selected level exists in the loaded levels
     const levelExists = dept.levels.some(l => l.level === selectedLevel);
     if (!levelExists) return;
+    
+    // Check if courses for this level are already cached
+    const levelCache = dept.coursesByLevel?.[selectedLevel];
+    if (levelCache?.courses && levelCache.courses.length > 0) {
+      // Already have data for this level, no need to reload
+      return;
+    }
+    
+    // Check if already loading for this level
+    if (levelCache?.loading) {
+      return;
+    }
     
     // Load courses for the selected level
     loadLevelCourses(selectedDepartment, selectedLevel);
@@ -230,11 +283,24 @@ export default function CourseBrowsePage() {
     return dept?.levels || [];
   }, [selectedDepartment, departments]);
 
-  // Get courses for selected level (from loaded data)
+  // Get courses for selected level (from per-level cache)
   const selectedLevelCourses = React.useMemo(() => {
     if (!selectedDepartment || !selectedLevel) return [];
     const dept = departments.find((d) => d.name === selectedDepartment);
-    return dept?.courses || [];
+    return dept?.coursesByLevel?.[selectedLevel]?.courses || [];
+  }, [selectedDepartment, selectedLevel, departments]);
+  
+  // Get loading/error state for selected level
+  const selectedLevelLoading = React.useMemo(() => {
+    if (!selectedDepartment || !selectedLevel) return false;
+    const dept = departments.find((d) => d.name === selectedDepartment);
+    return dept?.coursesByLevel?.[selectedLevel]?.loading || false;
+  }, [selectedDepartment, selectedLevel, departments]);
+  
+  const selectedLevelError = React.useMemo(() => {
+    if (!selectedDepartment || !selectedLevel) return false;
+    const dept = departments.find((d) => d.name === selectedDepartment);
+    return dept?.coursesByLevel?.[selectedLevel]?.error || false;
   }, [selectedDepartment, selectedLevel, departments]);
 
   // Handle retry after error
@@ -411,9 +477,15 @@ export default function CourseBrowsePage() {
                             {t("courses.byDepartment.selectLevelFirst")}
                           </p>
                         </div>
-                      ) : departments.find(d => d.name === selectedDepartment)?.loading ? (
+                      ) : selectedLevelLoading ? (
                         <div className="flex items-center justify-center py-12">
                           <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                        </div>
+                      ) : selectedLevelError ? (
+                        <div className="flex items-center justify-center py-12 text-center">
+                          <p className="text-sm text-destructive">
+                            {t("common.loadFailedRetry")}
+                          </p>
                         </div>
                       ) : selectedLevelCourses.length === 0 ? (
                         <div className="flex items-center justify-center py-12 text-center">

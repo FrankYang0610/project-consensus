@@ -87,7 +87,11 @@ export interface CourseDepartmentData {
   name: string;
   count: number;
   levels?: CourseLevelWithCount[]; // Level distribution (lazy loaded)
-  courses?: import('@/types').Course[]; // Courses for a specific level (lazy loaded)
-  loading?: boolean;
-  error?: boolean;
+  coursesByLevel?: Record<string, {
+    courses: import('@/types').Course[];
+    loading?: boolean;
+    error?: boolean;
+  }>; // Courses cached per level (lazy loaded)
+  loading?: boolean; // Loading state for levels
+  error?: boolean; // Error state for levels
 }
