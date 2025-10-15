@@ -53,12 +53,6 @@ class ForumPost(models.Model):
             )
         )
 
-    def mark_edited(self) -> None:
-        """Mark the post as edited if it has not been marked yet."""
-        if not getattr(self, "is_edited", False):
-            ForumPost.objects.filter(pk=self.pk, is_edited=False).update(is_edited=True)
-            self.is_edited = True
-
 
 class ForumPostComment(models.Model):
     """Forum comment model (flat with optional reply target).

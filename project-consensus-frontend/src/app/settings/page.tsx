@@ -156,7 +156,7 @@ export default function SettingsPage() {
         name: resp.user.name, 
         avatar: resp.user.avatar, 
         pronouns: resp.user.pronouns,
-        lastNicknameUpdatedAt: resp.user.lastProfileUpdatedAt,
+        lastProfileUpdatedAt: resp.user.lastProfileUpdatedAt,
         daysUntilNextUpdate: resp.user.daysUntilNextUpdate
       });
       setProfileMsg(t('settings.profile.saved'));

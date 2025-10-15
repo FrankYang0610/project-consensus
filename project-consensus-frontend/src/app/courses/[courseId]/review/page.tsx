@@ -174,10 +174,11 @@ export default function CourseReviewCreatePage({ params }: { params: Promise<{ c
       }
       if (isEditMode && editingReviewId) {
         await updateCourseReview(editingReviewId, payload);
+        router.push(`/courses/${courseId}#review-${editingReviewId}`);
       } else {
-        await createCourseReview(courseId, payload);
+        const createdReview = await createCourseReview(courseId, payload);
+        router.push(`/courses/${courseId}#review-${createdReview.id}`);
       }
-      router.push(`/courses/${courseId}`);
     } catch (e) {
       console.error("Failed to submit review", e);
     } finally {

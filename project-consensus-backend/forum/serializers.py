@@ -1,83 +1,12 @@
 from __future__ import annotations
 
-import bleach
 from rest_framework import serializers
 from typing import override
 
-from accounts.models import Profile
 from .models import ForumPost, ForumPostComment
 from .utils import generate_anonymous_id
-
-
-# Forum-specific allowlist: more permissive than courses to support richer content
-# 论坛专用白名单：比课程评论更宽松，支持更丰富的内容
-ALLOWED_TAGS = [
-    # Basic formatting (same as courses)
-    'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'br',
-    'strong', 'em', 'code', 'pre', 'blockquote',
-    # Tables
-    'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th',
-    # Additional formatting for forum posts
-    'div', 'span', 'hr', 'del', 'ins', 'u', 's', 'sub', 'sup',
-    # Links and images (forum-specific)
-    'a', 'img',
-]
-
-ALLOWED_ATTRS: dict[str, list[str]] = {
-    # Table attributes
-    'td': ['colspan', 'rowspan', 'align'],
-    'th': ['colspan', 'rowspan', 'align'],
-    # Code syntax highlighting
-    'code': ['class'],
-    'pre': ['class'],
-    # Ordered list
-    'ol': ['start'],
-    # Links (forum-specific)
-    'a': ['href', 'title', 'target', 'rel'],
-    # Images (forum-specific)
-    'img': ['src', 'alt', 'title', 'width', 'height'],
-    # Alignment and styling (limited)
-    'div': ['class'],
-    'span': ['class'],
-}
-
-ALLOWED_PROTOCOLS = ['http', 'https', 'mailto']
-
-
-def _sanitize_html(html: str) -> str:
-    """Sanitize HTML content using bleach with forum-specific allowlist.
-    
-    This function provides defense against XSS attacks by only allowing
-    safe HTML tags and attributes defined in the allowlist above.
-    
-    Args:
-        html: Raw HTML string from user input
-        
-    Returns:
-        Sanitized HTML string safe for rendering
-    """
-    if not isinstance(html, str):
-        return ""
-    return bleach.clean(
-        html,
-        tags=ALLOWED_TAGS,
-        attributes=ALLOWED_ATTRS,
-        protocols=ALLOWED_PROTOCOLS,
-        strip=True
-    )
-
-
-def _author_payload_for(user) -> dict:
-    """Build an Author dict compatible with the frontend type.
-
-    Prefer Profile.nickname / avatar_url; fallback to username.
-    """
-
-    try:
-        profile: Profile = user.profile  # type: ignore[attr-defined]
-        return profile.author_payload
-    except Profile.DoesNotExist:  # pragma: no cover - 正常线上用户会携带 Profile
-        return {"id": str(user.pk), "name": user.get_username(), "avatar": None}
+from forum.security.html import sanitize_forum_html
+from forum.presentation.author import build_forum_author_payload
 
 
 def _generate_anonymous_id() -> str:
@@ -133,7 +62,7 @@ class ForumPostSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         # Sanitize content field on output for security
         if 'content' in data and data['content']:
-            data['content'] = _sanitize_html(data['content'])
+            data['content'] = sanitize_forum_html(data['content'])
         return data
 
     def get_author(self, obj: ForumPost) -> dict:
@@ -143,7 +72,7 @@ class ForumPostSerializer(serializers.ModelSerializer):
             user = getattr(request, "user", None)
             if user is not None and getattr(user, "is_authenticated", False) and user.pk == obj.author_id:
                 # Current user is the author of this anonymous post, show real author info
-                real_author = _author_payload_for(obj.author)
+                real_author = build_forum_author_payload(obj.author)
                 return {
                     **real_author,
                 }
@@ -154,7 +83,7 @@ class ForumPostSerializer(serializers.ModelSerializer):
                     "name": "Anonymous", 
                     "avatar": None,
                 }
-        return _author_payload_for(obj.author)
+        return build_forum_author_payload(obj.author)
 
     def get_commentsCount(self, obj: ForumPost) -> int:
         # Prefer DB-annotated comments_count when available to avoid extra queries
@@ -180,7 +109,7 @@ class ForumPostSerializer(serializers.ModelSerializer):
         # Sanitize content (always sanitize if provided)
         if "content" in attrs:
             raw = attrs.get("content")
-            attrs["content"] = _sanitize_html(raw)
+            attrs["content"] = sanitize_forum_html(raw)
         return attrs
 
     @override
@@ -236,7 +165,7 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         # Sanitize content field on output for security
         if 'content' in data and data['content']:
-            data['content'] = _sanitize_html(data['content'])
+            data['content'] = sanitize_forum_html(data['content'])
         return data
 
     def get_author(self, obj: ForumPostComment) -> dict:
@@ -246,7 +175,7 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
             user = getattr(request, "user", None)
             if user is not None and getattr(user, "is_authenticated", False) and user.pk == obj.author_id:
                 # Current user is the author of this anonymous comment, show real author info
-                real_author = _author_payload_for(obj.author)
+                real_author = build_forum_author_payload(obj.author)
                 return {
                     **real_author,
                 }
@@ -257,7 +186,7 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
                     "name": "Anonymous",
                     "avatar": None,
                 }
-        return _author_payload_for(obj.author)
+        return build_forum_author_payload(obj.author)
 
     def get_isLiked(self, obj: ForumPostComment) -> bool:
         request = self.context.get("request")
@@ -276,7 +205,7 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
         # Sanitize content (always sanitize if provided)
         if "content" in attrs:
             raw = attrs.get("content")
-            attrs["content"] = _sanitize_html(raw)
+            attrs["content"] = sanitize_forum_html(raw)
 
         # Validate parent post existence when provided (required at field level on create)
         post_id = attrs.get("post_id")
