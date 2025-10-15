@@ -164,7 +164,6 @@ class CourseReviewSerializer(serializers.ModelSerializer):
     
     Context keys expected:
         - authorByReviewId: dict[UUID, dict] - Precomputed author display data by review ID
-        - likedReviewIds: Set[UUID] - Set of review IDs that current user has liked
     """
 
     courseId = serializers.CharField(source="course.course_id", read_only=True)
@@ -258,16 +257,16 @@ class CourseReviewSerializer(serializers.ModelSerializer):
         """
         Check if current user has liked this review.
         
-        Priority: 1) Annotated data, 2) Context set lookup
+        Priority: 1) Annotated flag, 2) Fallback exists() by current user
         """
+        request = getattr(self, "context", {}).get("request")
+        user = getattr(request, "user", None)
+        if not user or not getattr(user, "is_authenticated", False):
+            return False
         annotated = getattr(obj, "is_liked", None)
         if annotated is not None:
             return bool(annotated)
-        liked_ids = (self.context.get("likedReviewIds") or set()) if hasattr(self, "context") else set()
-        try:
-            return obj.id in liked_ids  # supports set or list
-        except TypeError:
-            return False
+        return obj.likes.filter(user=user).exists()
 
     def validate(self, attrs):  # type: ignore[override]
         """
@@ -286,7 +285,6 @@ class CourseReviewReplySerializer(serializers.ModelSerializer):
     Context keys expected:
         - authorByReplyId: dict[UUID, dict] - Precomputed author display data by reply ID
         - replyToUserByReplyId: dict[UUID, dict] - Precomputed reply-to-user display data by reply ID
-        - likedReplyIds: Set[UUID] - Set of reply IDs that current user has liked
     """
 
     reviewId = serializers.CharField(source="review_id", read_only=True)
@@ -373,16 +371,16 @@ class CourseReviewReplySerializer(serializers.ModelSerializer):
         """
         Check if current user has liked this reply.
         
-        Priority: 1) Annotated data, 2) Context set lookup
+        Priority: 1) Annotated flag, 2) Fallback exists() by current user
         """
+        request = getattr(self, "context", {}).get("request")
+        user = getattr(request, "user", None)
+        if not user or not getattr(user, "is_authenticated", False):
+            return False
         annotated = getattr(obj, "is_liked", None)
         if annotated is not None:
             return bool(annotated)
-        liked_ids = (self.context.get("likedReplyIds") or set()) if hasattr(self, "context") else set()
-        try:
-            return obj.id in liked_ids
-        except TypeError:
-            return False
+        return obj.likes.filter(user=user).exists()
 
     def validate(self, attrs):  # type: ignore[override]
         """
