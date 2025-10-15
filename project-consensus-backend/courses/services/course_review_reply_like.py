@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 from django.db import transaction
-from django.db.models import F
 
 from .course_notification import emit_notification_for_reply_like
 
@@ -25,15 +24,11 @@ def toggle_course_review_reply_like(*, user, reply: CourseReviewReply) -> bool:
         existing = CourseReviewReplyLike.objects.filter(reply=reply, user=user).first()
         if existing:
             existing.delete()
-            CourseReviewReply.objects.filter(pk=reply.pk, likes_count__gt=0).update(
-                likes_count=F("likes_count") - 1
-            )
+            reply.decrement_like()
             return False
 
         like = CourseReviewReplyLike.objects.create(reply=reply, user=user)
-        CourseReviewReply.objects.filter(pk=reply.pk).update(
-            likes_count=F("likes_count") + 1
-        )
+        reply.increment_like()
 
         emit_notification_for_reply_like(reply=reply, user=user, like=like)
         return True

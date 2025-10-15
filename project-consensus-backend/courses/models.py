@@ -250,6 +250,20 @@ class CourseReview(models.Model):
         cnt = self.replies.filter(is_deleted=False).count()
         CourseReview.objects.filter(pk=self.pk).update(replies_count=cnt)
 
+    def increment_like(self) -> None:
+        """Atomically increment likes_count for this review."""
+        CourseReview.objects.filter(pk=self.pk).update(likes_count=F("likes_count") + 1)
+
+    def decrement_like(self) -> None:
+        """Atomically decrement likes_count for this review without going below zero."""
+        CourseReview.objects.filter(pk=self.pk).update(
+            likes_count=Case(
+                When(likes_count__gt=0, then=F("likes_count") - 1),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        )
+
 
 class CourseReviewReply(models.Model):
     """Single-level course review reply model."""
@@ -267,6 +281,20 @@ class CourseReviewReply(models.Model):
         ordering = ["created_at"]
         verbose_name = "Course review reply"
         verbose_name_plural = "Course review replies"
+
+    def increment_like(self) -> None:
+        """Atomically increment likes_count for this reply."""
+        CourseReviewReply.objects.filter(pk=self.pk).update(likes_count=F("likes_count") + 1)
+
+    def decrement_like(self) -> None:
+        """Atomically decrement likes_count for this reply without going below zero."""
+        CourseReviewReply.objects.filter(pk=self.pk).update(
+            likes_count=Case(
+                When(likes_count__gt=0, then=F("likes_count") - 1),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        )
 
 
 class CourseReviewLike(models.Model):
