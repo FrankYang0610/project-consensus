@@ -417,6 +417,17 @@
       "courses": "Courses",
       "advancedSearch": "Advanced Search",
       "search": "Search"
+    },
+    "latestReviews": {
+      "title": "Latest Reviews",
+      "subtitle": "Browse the latest course reviews from the community",
+      "loading": "Loading reviews...",
+      "noReviews": "No reviews yet",
+      "noReviewsDesc": "Be the first to post a review!",
+      "loadMore": "Load More",
+      "course": "Course",
+      "viewCourse": "View Course Details",
+      "totalReviews": "{{count}} reviews in total"
     }
   },
   "about": {

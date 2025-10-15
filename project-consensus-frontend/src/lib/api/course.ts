@@ -44,7 +44,8 @@ export async function fetchCourseById(courseId: string, init?: RequestInit): Pro
 
 export async function fetchCourseReviews(params: FetchCourseReviewsParams, init?: RequestInit): Promise<PaginatedResponse<CourseReview>> {
   const q = new URLSearchParams();
-  q.set('courseId', params.courseId);
+  // courseId is optional - when not provided, returns all reviews
+  if (params.courseId) q.set('courseId', params.courseId);
   if (params.page) q.set('page', String(params.page));
   if (params.pageSize) q.set('page_size', String(params.pageSize));
   if (params.ordering) q.set('ordering', params.ordering);

@@ -15,7 +15,7 @@ export interface FetchCoursesParams {
 
 // GET /api/reviews/ query parameters
 export interface FetchCourseReviewsParams {
-  courseId: string;
+  courseId?: string; // Optional - when not provided, returns all reviews
   page?: number;
   pageSize?: number;
   ordering?: string; // created_at, -likes_count, overall_rating, etc.

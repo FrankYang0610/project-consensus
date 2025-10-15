@@ -280,6 +280,12 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                     >
                       {t('navigation.advancedSearchDesc')}
                     </ListItem>
+                    <ListItem
+                      title={t('courses.latestReviews.title')}
+                      href="/courses/latest-reviews"
+                    >
+                      {t('courses.latestReviews.subtitle')}
+                    </ListItem>
                   </ul>
                 </NavigationMenuContent>
               </NavigationMenuItem>
@@ -466,6 +472,16 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                     <div className="font-medium">{t('navigation.advancedSearch')}</div>
                     <div className="text-xs text-muted-foreground mt-1">
                       {t('navigation.advancedSearchDesc')}
+                    </div>
+                  </Link>
+                  <Link
+                    href="/courses/latest-reviews"
+                    className="block py-2 px-3 text-sm hover:bg-accent rounded-md transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <div className="font-medium">{t('courses.latestReviews.title')}</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {t('courses.latestReviews.subtitle')}
                     </div>
                   </Link>
                 </div>

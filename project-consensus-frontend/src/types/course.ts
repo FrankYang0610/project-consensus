@@ -66,6 +66,8 @@ export interface OtherTeacherCourse {
 export interface CourseReview {
   id: string; // 评价唯一标识符（UUID） / Review unique identifier (UUID)
   courseId: string; // 课程ID（后端为 UUID 字符串） / Course ID (UUID string)
+  courseSubjectCode?: string; // 课程代码 / Course subject code (e.g., APSS1A01)
+  courseTitle?: string; // 课程标题 / Course title
   author: {
     id: string; // 作者ID / Author ID
     name: string; // 作者姓名 / Author name  
