@@ -291,6 +291,8 @@ class CourseReviewSerializer(serializers.ModelSerializer):
     """
 
     courseId = serializers.CharField(source="course.course_id", read_only=True)
+    courseSubjectCode = serializers.CharField(source="course.subject_code", read_only=True)
+    courseTitle = serializers.CharField(source="course.title", read_only=True)
     author = serializers.SerializerMethodField()
     attributes = serializers.SerializerMethodField()
     # Not required when onlyText=true; range validated in validate()
@@ -311,6 +313,8 @@ class CourseReviewSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "courseId",
+            "courseSubjectCode",
+            "courseTitle",
             "author",
             "overallRating",
             "attributes",
@@ -325,7 +329,7 @@ class CourseReviewSerializer(serializers.ModelSerializer):
             "onlyText",
             "isEdited",
         ]
-        read_only_fields = ["id", "courseId", "likesCount", "createdAt", "updatedAt", "repliesCount", "isEdited"]
+        read_only_fields = ["id", "courseId", "courseSubjectCode", "courseTitle", "likesCount", "createdAt", "updatedAt", "repliesCount", "isEdited"]
     
     def to_representation(self, instance):
         """Override to_representation to sanitize HTML content on output.

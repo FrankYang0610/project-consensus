@@ -417,6 +417,17 @@
       "courses": "课程列表",
       "advancedSearch": "高级搜索",
       "search": "搜索"
+    },
+    "latestReviews": {
+      "title": "最新点评",
+      "subtitle": "浏览社区最新的课程点评",
+      "loading": "加载点评中...",
+      "noReviews": "暂无点评",
+      "noReviewsDesc": "还没有任何点评，快来发布第一条吧！",
+      "loadMore": "加载更多",
+      "course": "课程",
+      "viewCourse": "查看课程详情",
+      "totalReviews": "共 {{count}} 条点评"
     }
   },
   "about": {

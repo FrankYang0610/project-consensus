@@ -938,7 +938,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
     pagination_class = DefaultPageNumberPagination
 
     def get_queryset(self):  # type: ignore[override]
-        qs = super().get_queryset().filter(is_deleted=False, review__is_deleted=False)
+        qs = super().get_queryset().filter(is_deleted=False)
         review_id = self.request.query_params.get("review")
         if review_id:
             qs = qs.filter(review_id=review_id)

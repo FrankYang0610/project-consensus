@@ -417,6 +417,17 @@
       "courses": "課程列表",
       "advancedSearch": "進階搜索",
       "search": "搜索"
+    },
+    "latestReviews": {
+      "title": "最新點評",
+      "subtitle": "瀏覽社區最新的課程點評",
+      "loading": "載入點評中...",
+      "noReviews": "暫無點評",
+      "noReviewsDesc": "還沒有任何點評，快來發佈第一條吧！",
+      "loadMore": "載入更多",
+      "course": "課程",
+      "viewCourse": "查看課程詳情",
+      "totalReviews": "共 {{count}} 條點評"
     }
   }
 ,
