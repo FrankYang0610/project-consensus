@@ -35,7 +35,9 @@ def mark_review_edited_if_fields_changed(*, review: CourseReview, incoming_keys:
         "term_semester",
     }
     if incoming_keys & editable_fields:
-        CourseReview.objects.filter(pk=review.pk).update(is_edited=True)
+        # Set on the instance so a subsequent save() persists it without
+        # being overwritten by instance state.
+        review.is_edited = True
 
 
 def update_course_review(user: User, review: CourseReview, payload: dict) -> CourseReview:
@@ -63,8 +65,9 @@ def update_course_review(user: User, review: CourseReview, payload: dict) -> Cou
         # Update fields
         for key, value in payload.items():
             setattr(review, key, value)
-        
-        review.is_edited = True
+
+        # Mark as edited only when editable fields are present in the payload
+        mark_review_edited_if_fields_changed(review=review, incoming_keys=set(payload.keys()))
         review.save()
         
         # Handle side effects
