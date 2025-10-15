@@ -1,10 +1,10 @@
-"""Utility functions for teacher-related operations."""
+"""Teacher aggregate computation services."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .models import Teacher
+    from ..models import Teacher
 
 
 def recompute_teacher_aggregates(teacher: Teacher) -> None:
@@ -43,9 +43,8 @@ def recompute_teacher_aggregates(teacher: Teacher) -> None:
     score = round(avg, 1) if count > 0 else None
     
     # Update teacher record atomically
-    from .models import Teacher
+    from ..models import Teacher
     Teacher.objects.filter(pk=teacher.pk).update(
         rating_overall=score,
         rating_reviews_count=count,
     )
-

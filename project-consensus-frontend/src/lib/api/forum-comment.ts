@@ -102,45 +102,10 @@ export async function deleteForumComment(
   return apiDeleteVoid(`/api/forum/comments/${encodeURIComponent(commentId)}/`, init);
 }
 
-/**
- * Like a forum comment
- * @param commentId - Comment UUID
- * @param init - Optional fetch init options
- * @returns Updated forum comment with like status
- */
-export async function likeForumComment(
-  commentId: string,
-  init?: RequestInit
-): Promise<ForumPostComment> {
-  return apiPost<ForumPostComment>(
-    `/api/forum/comments/${encodeURIComponent(commentId)}/like/`,
-    {},
-    init
-  );
-}
 
 /**
- * Unlike a forum comment
- * @param commentId - Comment UUID
- * @param init - Optional fetch init options
- * @returns Updated forum comment with like status
- */
-export async function unlikeForumComment(
-  commentId: string,
-  init?: RequestInit
-): Promise<ForumPostComment> {
-  return apiPost<ForumPostComment>(
-    `/api/forum/comments/${encodeURIComponent(commentId)}/unlike/`,
-    {},
-    init
-  );
-}
-
-/**
- * Toggle like status of a forum comment
- * @param commentId - Comment UUID
- * @param init - Optional fetch init options
- * @returns Updated forum comment with like status
+ * Toggle like status for a forum comment.
+ * If not liked, creates like; if already liked, removes like.
  */
 export async function toggleLikeForumComment(
   commentId: string,

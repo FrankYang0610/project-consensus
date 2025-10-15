@@ -62,13 +62,6 @@ export async function toggleLikeReview(reviewId: string): Promise<CourseReview> 
   return apiPost<CourseReview>(`/api/reviews/${encodeURIComponent(reviewId)}/toggle_like/`, {});
 }
 
-export async function likeReview(reviewId: string): Promise<CourseReview> {
-  return apiPost<CourseReview>(`/api/reviews/${encodeURIComponent(reviewId)}/like/`, {});
-}
-
-export async function unlikeReview(reviewId: string): Promise<CourseReview> {
-  return apiPost<CourseReview>(`/api/reviews/${encodeURIComponent(reviewId)}/unlike/`, {});
-}
 
 export async function createCourseReview(courseId: string, payload: CreateCourseReviewPayload): Promise<CourseReview> {
   return apiPost<CourseReview>(`/api/courses/${encodeURIComponent(courseId)}/reviews/`, payload);
@@ -89,13 +82,6 @@ export async function toggleLikeReply(replyId: string): Promise<CourseReviewRepl
   return apiPost<CourseReviewReply>(`/api/replies/${encodeURIComponent(replyId)}/toggle_like/`, {});
 }
 
-export async function likeReply(replyId: string): Promise<CourseReviewReply> {
-  return apiPost<CourseReviewReply>(`/api/replies/${encodeURIComponent(replyId)}/like/`, {});
-}
-
-export async function unlikeReply(replyId: string): Promise<CourseReviewReply> {
-  return apiPost<CourseReviewReply>(`/api/replies/${encodeURIComponent(replyId)}/unlike/`, {});
-}
 
 export async function createReviewReply(reviewId: string, payload: CreateReplyPayload): Promise<CourseReviewReply> {
   return apiPost<CourseReviewReply>(`/api/replies/`, { reviewId, ...payload });

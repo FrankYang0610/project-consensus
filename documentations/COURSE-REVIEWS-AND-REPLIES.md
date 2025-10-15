@@ -16,7 +16,20 @@ This document describes the initial behavior for course reviews and replies.
 
 ## Delete
 - Review: author can hard-delete. Behavior: remove the review row; all related replies/likes are deleted via DB CASCADE. Course/teacher aggregates are recomputed.
-- Reply: author can soft-delete. Behavior: set `isDeleted=true`, clear `content`, keep the row; the parent review’s `repliesCount` is recomputed.
+- Reply: author can soft-delete. Behavior: set `isDeleted=true`, clear `content`, keep the row; the parent review's `repliesCount` is recomputed.
+
+## Toggle Like
+- **Toggle Like**: `POST /api/reviews/{id}/toggle_like/` or `POST /api/replies/{id}/toggle_like/` - Smart toggle: if not liked, creates like; if already liked, removes like. Returns updated object with current `isLiked` and `likesCount`.
+
+### Toggle Like Benefits:
+- **Frontend UI**: Single button that toggles between "like" and "unlike" states without tracking the current state client-side.
+- **Simplified Logic**: Avoids the need to check `isLiked` before deciding whether to call `like` or `unlike`.
+- **Consistent UX**: Provides predictable behavior regardless of the current like state.
+- **Reduced API Surface**: Only one endpoint needed instead of separate like/unlike endpoints.
+
+### Notification Behavior:
+- Like operations (including toggle that results in a like) send notifications to the content author (excluding self-notifications).
+- Unlike operations (including toggle that results in an unlike) do not send notifications.
 
 ## Cascading behavior and operations on deleted content
 - When a review is deleted, all of its replies are removed entirely.

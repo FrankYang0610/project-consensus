@@ -427,6 +427,9 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
       setReplyToUserByReview(prev => ({ ...prev, [reviewId]: null }));
       // bump repliesCount on review
       setReviews(prev => prev.map(r => r.id === reviewId ? { ...r, repliesCount: (r.repliesCount || 0) + 1 } : r));
+      
+      // Navigate to the newly created reply
+      window.location.hash = `#reply-${reply.id}`;
     } catch (e) {
       console.error('Failed to create reply', e);
     }
