@@ -1,9 +1,15 @@
 from __future__ import annotations
 
 from ..models import Course
+from typing import TypedDict
 
 
-def get_departments_with_counts() -> list[dict[str, int | str]]:
+class DepartmentCount(TypedDict):
+    name: str
+    count: int
+
+
+def get_departments_with_counts() -> list[DepartmentCount]:
     """Return list of departments with course counts.
 
     Performs a single aggregation grouped by `department`, then merges
@@ -19,7 +25,7 @@ def get_departments_with_counts() -> list[dict[str, int | str]]:
         .order_by("department")
     )
 
-    seen: dict[str, dict[str, int | str]] = {}
+    seen: dict[str, DepartmentCount] = {}
     for item in departments_qs:
         name = str(item["department"]).strip()
         if not name:
@@ -29,7 +35,7 @@ def get_departments_with_counts() -> list[dict[str, int | str]]:
             seen[key] = {"name": name, "count": int(item["count"])}
         else:
             # merge counts for case-insensitive duplicates
-            seen[key]["count"] = int(seen[key]["count"]) + int(item["count"])  # type: ignore[index]
+            seen[key]["count"] = int(seen[key]["count"]) + int(item["count"]) 
 
     return sorted(seen.values(), key=lambda d: str(d["name"]).lower())
 
