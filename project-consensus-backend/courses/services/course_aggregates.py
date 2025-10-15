@@ -3,8 +3,6 @@ from __future__ import annotations
 import logging
 from django.db import transaction
 
-from core.utils import delete_images_in_html
-
 from ..models import CourseReview, CourseReviewReply, Course
 
 logger = logging.getLogger(__name__)
