@@ -11,7 +11,7 @@ This directory contains service layer functions for course-related business logi
 - `recompute_course_aggregates_after_review_change()` - Updates course ratings after review changes
 - `recompute_teachers_aggregates()` - Updates teacher ratings when course reviews change
 - `recompute_review_replies_count()` - Updates reply counts for reviews
-- `delete_review_and_cleanup_images()` - Hard deletes reviews with image cleanup
+- `delete_review_and_cleanup_images_and_recompute_aggregates()` - Hard deletes reviews with image cleanup and recomputes aggregates
 - `soft_delete_reply_and_recompute_counts()` - Soft deletes replies and updates counts
 
 ### `course_utils.py`

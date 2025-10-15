@@ -44,7 +44,7 @@ def recompute_review_replies_count(*, review: CourseReview) -> None:
 # Review Management Functions
 # =============================================================================
 
-def delete_review_and_cleanup_images(*, review: CourseReview) -> None:
+def delete_review_and_cleanup_images_and_recompute_aggregates(*, review: CourseReview) -> None:
     """Hard delete a course review and cleanup related images.
 
     Also recomputes course and teacher aggregates inside the same transaction.

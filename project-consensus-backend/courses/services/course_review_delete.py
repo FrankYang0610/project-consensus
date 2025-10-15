@@ -3,7 +3,7 @@ from __future__ import annotations
 from django.contrib.auth import get_user_model
 
 from ..models import CourseReview
-from .course_aggregates import delete_review_and_cleanup_images
+from .course_aggregates import delete_review_and_cleanup_images_and_recompute_aggregates
 
 User = get_user_model()
 
@@ -22,6 +22,6 @@ def delete_course_review(user: User, review: CourseReview) -> None:
     if review.author != user:
         raise PermissionError("You can only delete your own reviews")
     
-    delete_review_and_cleanup_images(review=review)
+    delete_review_and_cleanup_images_and_recompute_aggregates(review=review)
 
 
