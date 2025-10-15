@@ -250,22 +250,6 @@ class CourseReview(models.Model):
         cnt = self.replies.filter(is_deleted=False).count()
         CourseReview.objects.filter(pk=self.pk).update(replies_count=cnt)
 
-    def toggle_like(self, user) -> tuple[bool, 'CourseReviewLike | None']:
-        """Toggle like for the given user.
-
-        Returns (liked_now, like_instance_if_created).
-        """
-        existing = CourseReviewLike.objects.filter(review=self, user=user).first()
-        if existing:
-            existing.delete()
-            CourseReview.objects.filter(pk=self.pk, likes_count__gt=0).update(
-                likes_count=F("likes_count") - 1
-            )
-            return False, None
-        like = CourseReviewLike.objects.create(review=self, user=user)
-        CourseReview.objects.filter(pk=self.pk).update(likes_count=F("likes_count") + 1)
-        return True, like
-
 
 class CourseReviewReply(models.Model):
     """Single-level course review reply model."""
