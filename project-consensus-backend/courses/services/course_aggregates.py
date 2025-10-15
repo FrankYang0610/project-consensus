@@ -62,7 +62,7 @@ def soft_delete_reply_and_recompute_counts(*, reply: CourseReviewReply) -> None:
 
     For parity with forum comments, we keep the row and clear content.
     """
-    if getattr(reply, "is_deleted", False):
+    if reply.is_deleted:
         return
     review = reply.review
     with transaction.atomic():
