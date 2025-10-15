@@ -62,6 +62,17 @@ jobs:
           CORS_ALLOWED_ORIGINS=http://localhost:3000
           CSRF_TRUSTED_ORIGINS=http://localhost:8000
           DATABASE_URL=postgresql://postgres:postgres@localhost:5432/appdb
+          R2_ACCOUNT_ID=your_r2_account_id
+          R2_BUCKET_NAME=your_bucket_name
+          R2_ACCESS_KEY_ID=your_access_key_id
+          R2_SECRET_ACCESS_KEY=your_secret_access_key
+          R2_PUBLIC_DOMAIN=your_public_domain.r2.dev
+
+          # Image Upload Settings
+          MAX_IMAGE_SIZE_MB=5
+          MAX_IMAGE_PIXELS=50000000
+          ALLOWED_IMAGE_TYPES=jpg,jpeg,png,gif,webp
+          ALLOWED_IMAGE_HOSTS=image.polyu.life
           ENV
 
       - name: Django system check

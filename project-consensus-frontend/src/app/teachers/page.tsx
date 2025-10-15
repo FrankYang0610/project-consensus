@@ -17,29 +17,21 @@ import { useI18n } from "@/hooks/use-i18n";
 import { useDebounce } from "@/hooks/use-debounce";
 import { TeacherPreviewCard } from "@/components/TeacherPreviewCard";
 import { fetchTeachers } from "@/lib/api/teacher";
-import type { Teacher, PaginatedResponse } from "@/types";
+import type { Teacher } from "@/types";
+import { useInfiniteList } from "@/hooks/use-infinite-list";
 
 export default function TeachersPage() {
   const { t } = useI18n();
 
   // State
-  const [teachers, setTeachers] = React.useState<Teacher[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
   const [searchInput, setSearchInput] = React.useState("");
   const [sortBy, setSortBy] = React.useState<string>("name");
-  const [currentPage, setCurrentPage] = React.useState(1);
-  const [totalCount, setTotalCount] = React.useState(0);
-  const [hasMore, setHasMore] = React.useState(false);
-  const [loadError, setLoadError] = React.useState(false);
 
   // Debounce search input (500ms delay)
   const debouncedSearchQuery = useDebounce(searchInput, 500);
 
-  const loaderRef = React.useRef<HTMLDivElement | null>(null);
-  const loadingRef = React.useRef(false);
-
-  // Map sort options to backend ordering
-  const getSortOrdering = (sort: string): string => {
+  // Map sort options to backend ordering (stable identity)
+  const getSortOrdering = React.useCallback((sort: string): string => {
     switch (sort) {
       case "rating":
         return "-rating_overall";
@@ -53,73 +45,38 @@ export default function TeachersPage() {
       default:
         return "name";
     }
-  };
+  }, []);
 
-  // Fetch teachers data
-  const loadTeachers = React.useCallback(
-    async (page: number, reset: boolean = false) => {
-      if (loadingRef.current) return;
-      loadingRef.current = true;
-      setIsLoading(true);
+  // Unified infinite list for teachers via fetcher
+  const buildTeachersParams = React.useCallback(() => ({
+    q: debouncedSearchQuery.trim() || undefined,
+    ordering: getSortOrdering(sortBy),
+  }), [debouncedSearchQuery, sortBy, getSortOrdering]);
 
-      try {
-        const response: PaginatedResponse<Teacher> = await fetchTeachers({
-          q: debouncedSearchQuery.trim() || undefined,
-          page,
-          pageSize: 20,
-          ordering: getSortOrdering(sortBy),
-        });
+  const {
+    items: teachers,
+    setItems: setTeachers,
+    loaderRef: hookLoaderRef,
+    hasMore,
+    loading,
+    error: loadError,
+    setError: setLoadError,
+    loadMore,
+    reset,
+    totalCount: teachersTotalCount,
+  } = useInfiniteList<Teacher, { q?: string; ordering?: string }>({
+    pageFetcher: fetchTeachers,
+    initialParams: buildTeachersParams(),
+    pageSize: 20,
+    dedupeKey: (t) => t.id,
+  });
 
-        if (reset) {
-          setTeachers(response.results);
-        } else {
-          setTeachers((prev) => {
-            const existing = new Set(prev.map((t) => t.id));
-            const deduped = response.results.filter((t) => !existing.has(t.id));
-            return [...prev, ...deduped];
-          });
-        }
+  const countForDisplay = teachersTotalCount ?? teachers.length;
 
-        setTotalCount(response.count);
-        setHasMore(!!response.next);
-        setLoadError(false);
-      } catch (error) {
-        console.error("Failed to load teachers:", error);
-        setLoadError(true);
-      } finally {
-        setIsLoading(false);
-        loadingRef.current = false;
-      }
-    },
-    [debouncedSearchQuery, sortBy]
-  );
-
-  // Initial load (triggered by debounced search or sort change)
+  // Reload on debounced search or sort change (fetcher mode)
   React.useEffect(() => {
-    setCurrentPage(1);
-    loadTeachers(1, true);
-  }, [debouncedSearchQuery, sortBy, loadTeachers]);
-
-  // Infinite scroll observer
-  React.useEffect(() => {
-    if (!loaderRef.current || !hasMore || isLoading) return;
-
-    const target = loaderRef.current;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (entry.isIntersecting && hasMore && !loadingRef.current) {
-          const nextPage = currentPage + 1;
-          setCurrentPage(nextPage);
-          loadTeachers(nextPage, false);
-        }
-      },
-      { root: null, rootMargin: "200px 0px", threshold: 0 }
-    );
-
-    observer.observe(target);
-    return () => observer.disconnect();
-  }, [hasMore, isLoading, currentPage, loadTeachers]);
+    reset(buildTeachersParams());
+  }, [debouncedSearchQuery, sortBy, buildTeachersParams, reset]);
 
   // Handle search form submit (optional, debounce already handles it)
   const handleSearch = (e: React.FormEvent) => {
@@ -149,7 +106,7 @@ export default function TeachersPage() {
             <div className="mb-6">
               <h1 className="text-3xl font-bold mb-2">{t("teachers.title")}</h1>
               <p className="text-muted-foreground">
-                {totalCount > 0 && t("teachers.total", { count: totalCount })}
+                {countForDisplay > 0 && t("teachers.total", { count: countForDisplay })}
               </p>
             </div>
 
@@ -219,7 +176,7 @@ export default function TeachersPage() {
             </Card>
 
             {/* Loading State (Initial) */}
-            {isLoading && teachers.length === 0 && (
+            {loading && teachers.length === 0 && (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">{t("teachers.loading")}</p>
               </div>
@@ -232,7 +189,7 @@ export default function TeachersPage() {
                   <p className="text-destructive mb-4">
                     {t("common.loadFailedRetry")}
                   </p>
-                  <Button onClick={() => loadTeachers(1, true)} variant="outline">
+                  <Button onClick={() => { setLoadError(false); loadMore(); }} variant="outline">
                     {t("teachers.retry")}
                   </Button>
                 </CardContent>
@@ -240,9 +197,9 @@ export default function TeachersPage() {
             )}
 
             {/* Teachers Grid */}
-            {!isLoading || teachers.length > 0 ? (
+            {!loading || teachers.length > 0 ? (
               <>
-                {teachers.length === 0 && !isLoading && (
+                {teachers.length === 0 && !loading && (
                   <Card>
                     <CardContent className="py-12 text-center">
                       <p className="text-muted-foreground">
@@ -265,17 +222,28 @@ export default function TeachersPage() {
                 {/* Infinite Scroll Loader */}
                 {hasMore && (
                   <div
-                    ref={loaderRef}
+                    ref={hookLoaderRef}
                     className="text-center py-8 text-muted-foreground"
                   >
                     {t("teachers.loadingMore")}
                   </div>
                 )}
 
+                {loadError && hasMore && (
+                  <div className="flex justify-center">
+                    <Button
+                      className="mt-2"
+                      onClick={() => { setLoadError(false); loadMore(); }}
+                    >
+                      {t("common.loadFailedRetry")}
+                    </Button>
+                  </div>
+                )}
+
                 {/* End of Results */}
                 {!hasMore && teachers.length > 0 && (
                   <div className="text-center py-8 text-muted-foreground text-sm">
-                    {t("teachers.endOfResults", { count: totalCount })}
+                    {t("teachers.endOfResults", { count: countForDisplay })}
                   </div>
                 )}
               </>

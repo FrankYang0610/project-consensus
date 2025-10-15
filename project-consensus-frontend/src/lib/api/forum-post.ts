@@ -7,7 +7,7 @@ import type {
   CreateForumPostPayload,
   UpdateForumPostPayload,
 } from "@/types/api";
-import { apiGet, apiPost, apiPatch, apiDeleteVoid } from "./api-utils";
+import { apiGet, apiPost, apiPatch, apiDeleteVoid, HttpError } from "./api-utils";
 
 /**
  * Fetch a single forum post by ID
@@ -26,6 +26,9 @@ export async function fetchForumPostById(
     );
     return data ?? null;
   } catch (error) {
+    if (error instanceof HttpError && error.status === 404) {
+      return null; // Missing post is not an error
+    }
     console.error(`Failed to fetch forum post ${postId}:`, error);
     return null;
   }
@@ -55,19 +58,7 @@ export async function fetchForumPosts(
 
   const queryString = queryParams.toString();
   const url = `/api/forum/posts/${queryString ? `?${queryString}` : ''}`;
-  
-  try {
-    return await apiGet<PaginatedResponse<ForumPost>>(url, init);
-  } catch (error) {
-    console.error('Failed to fetch forum posts:', error);
-    // Return empty paginated response on error
-    return {
-      count: 0,
-      next: null,
-      previous: null,
-      results: [],
-    };
-  }
+  return apiGet<PaginatedResponse<ForumPost>>(url, init);
 }
 
 /**
@@ -114,45 +105,10 @@ export async function deleteForumPost(
   return apiDeleteVoid(`/api/forum/posts/${encodeURIComponent(postId)}/`, init);
 }
 
-/**
- * Like a forum post
- * @param postId - Post UUID
- * @param init - Optional fetch init options
- * @returns Updated forum post with like status
- */
-export async function likeForumPost(
-  postId: string,
-  init?: RequestInit
-): Promise<ForumPost> {
-  return apiPost<ForumPost>(
-    `/api/forum/posts/${encodeURIComponent(postId)}/like/`,
-    {},
-    init
-  );
-}
 
 /**
- * Unlike a forum post
- * @param postId - Post UUID
- * @param init - Optional fetch init options
- * @returns Updated forum post with like status
- */
-export async function unlikeForumPost(
-  postId: string,
-  init?: RequestInit
-): Promise<ForumPost> {
-  return apiPost<ForumPost>(
-    `/api/forum/posts/${encodeURIComponent(postId)}/unlike/`,
-    {},
-    init
-  );
-}
-
-/**
- * Toggle like status of a forum post
- * @param postId - Post UUID
- * @param init - Optional fetch init options
- * @returns Updated forum post with like status
+ * Toggle like status for a forum post.
+ * If not liked, creates like; if already liked, removes like.
  */
 export async function toggleLikeForumPost(
   postId: string,

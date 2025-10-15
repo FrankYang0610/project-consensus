@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { ForumPostDetailCard } from "@/components/ForumPostDetailCard";
 import { ForumPostCommentList } from "@/components/ForumPostCommentList";
-import { fetchForumPostById, likeForumPost, unlikeForumPost, deleteForumPost } from "@/lib/api/forum-post";
+import { fetchForumPostById, toggleLikeForumPost, deleteForumPost } from "@/lib/api/forum-post";
 import { createForumComment } from "@/lib/api/forum-comment";
 import { isContentEmpty } from "@/lib/utils";
 import { useApp } from "@/contexts/AppContext";
@@ -33,6 +33,7 @@ export default function PostPage() {
   const composerRef = React.useRef<HTMLDivElement | null>(null);
   const [isComposerOpen, setIsComposerOpen] = React.useState(false);
   const [isSubmittingComment, setIsSubmittingComment] = React.useState(false);
+  const [targetCommentId, setTargetCommentId] = React.useState<string | undefined>(undefined);
 
   // 防止 "连点点赞/取消赞" 导致 UI 和后端状态打架的轻量级锁
   // Lightweight lock to prevent double-tap like/unlike causing UI/server mismatch
@@ -51,20 +52,47 @@ export default function PostPage() {
     let mounted = true;
     fetchForumPostById(postId)
       .then((data) => {
-        if (mounted && data) setPost(data);
+        if (!mounted) return;
+        if (!data) {
+          // Redirect to dedicated not-found page for posts
+          router.replace("/post/not-found");
+          return;
+        }
+        setPost(data);
       })
-      .catch((e) => console.error(e));
+      .catch((e) => {
+        console.error(e);
+        if (mounted) router.replace("/post/not-found");
+      });
     return () => {
       mounted = false;
     };
-  }, [postId]);
+  }, [postId, router]);
 
   const { user } = useApp();
   const currentUserId = user?.id;
 
-  // Scroll to top when component mounts
+  // Parse URL hash on mount and when URL changes
   React.useEffect(() => {
-    window.scrollTo(0, 0);
+    const parseHash = () => {
+      const hash = window.location.hash;
+      if (hash && hash.startsWith('#comment-')) {
+        const commentId = hash.replace('#comment-', '');
+        if (commentId) {
+          setTargetCommentId(commentId);
+          return; // Don't scroll to top if we have a target comment
+        }
+      }
+      setTargetCommentId(undefined);
+      window.scrollTo(0, 0);
+    };
+
+    // Parse on mount
+    parseHash();
+
+    // Listen for hash changes (browser back/forward, manual hash changes)
+    window.addEventListener('hashchange', parseHash);
+    return () => window.removeEventListener('hashchange', parseHash);
   }, [postId]);
 
   const handleBackClick = () => {
@@ -125,7 +153,7 @@ export default function PostPage() {
         isAnonymous: commentIsAnonymous,
       });
       // Optimistically bump post comment count
-      setPost(prev => prev ? { ...prev, comments: Math.max(0, (prev.comments ?? 0) + 1) } : prev);
+      setPost(prev => prev ? { ...prev, commentsCount: Math.max(0, (prev.commentsCount ?? 0) + 1) } : prev);
       setCommentContent("");
       setCommentIsAnonymous(false);
       setReplyToId(undefined);
@@ -143,26 +171,7 @@ export default function PostPage() {
     }
   };
 
-  if (!post) {
-    return (
-      <>
-        <SiteNavigation showBackButton={true} onBackClick={handleBackClick} />
-        <div className="min-h-screen bg-background">
-          <main className="w-full py-8">
-            <div className="container mx-auto px-4 max-w-4xl">
-              <Card>
-                <CardContent className="pt-6">
-                  <p className="text-muted-foreground text-center">
-                    Post not found
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </main>
-        </div>
-      </>
-    );
-  }
+  if (!post) return null;
 
   return (
     <>
@@ -177,24 +186,24 @@ export default function PostPage() {
                 if (postLikeInFlightRef.current.has(id)) return;
                 postLikeInFlightRef.current.add(id);
                 const wasLiked = post.isLiked ?? false;
-                const prevLikes = post.likes ?? 0;
+                const prevLikes = post.likesCount ?? 0;
                 const willLike = !wasLiked;
                 // optimistic
-                setPost(prev => prev ? { ...prev, isLiked: willLike, likes: Math.max(0, prev.likes + (willLike ? 1 : -1)) } : prev);
+                setPost(prev => prev ? { ...prev, isLiked: willLike, likesCount: Math.max(0, (prev.likesCount ?? 0) + (willLike ? 1 : -1)) } : prev);
 
-                const likeAction = willLike ? likeForumPost(id) : unlikeForumPost(id);
-                likeAction
+                toggleLikeForumPost(id)
                   .then((data) => {
                     // reconcile with server response
-                    setPost(prev => prev ? { ...prev, isLiked: !!data.isLiked, likes: Math.max(0, data.likes) } : prev);
+                    setPost(prev => prev ? { ...prev, isLiked: !!data.isLiked, likesCount: Math.max(0, data.likesCount) } : prev);
                     postLikeInFlightRef.current.delete(id);
                   })
                   .catch(() => {
-                    setPost(prev => prev ? { ...prev, isLiked: wasLiked, likes: Math.max(0, prevLikes) } : prev);
+                    setPost(prev => prev ? { ...prev, isLiked: wasLiked, likesCount: Math.max(0, prevLikes) } : prev);
                     postLikeInFlightRef.current.delete(id);
                   });
               }}
               onDelete={handleDeletePost}
+              onUpdated={(p) => setPost(p)}
             />
             <ForumPostCommentList
               onLike={handleCommentLike}
@@ -203,7 +212,7 @@ export default function PostPage() {
               onAddComment={handleAddComment}
               currentUserId={currentUserId}
               postId={postId}
-              totalCount={post.comments ?? 0}
+              totalCount={post.commentsCount ?? 0}
               isComposerOpen={isComposerOpen}
               replyToId={replyToId}
               composerValue={commentContent}
@@ -213,6 +222,7 @@ export default function PostPage() {
               onSubmitComposer={handleSubmitComment}
               isComposerSubmitting={isSubmittingComment}
               onCancelComposer={() => { setReplyToId(undefined); setIsComposerOpen(false); }}
+              targetCommentId={targetCommentId}
               key={commentsRefreshKey}
             />
           </div>

@@ -1,7 +1,11 @@
 {
   "navigation": {
     "forum": "论坛",
-    "courseReview": "课程评价",
+    "courseReview": "课程点评",
+    "browseCourses": "浏览课程",
+    "browseCoursesDesc": "按学术部门分类探索课程",
+    "advancedSearch": "高级搜索",
+    "advancedSearchDesc": "使用高级选项搜索和筛选课程",
     "more": "更多",
     "about": "关于",
     "language": "语言"
@@ -21,7 +25,37 @@
     "resourcesDesc": "有用的工具和资料"
   },
   "search": {
-    "placeholder": "输入搜索..."
+    "placeholder": "搜索课程、帖子、评论、点评...",
+    "noResults": "未找到结果",
+    "suggestions": "建议",
+    "seeAllResults": "查看全部结果",
+    "types": {
+      "all": "全部",
+      "course": "课程",
+      "forum_post": "帖子",
+      "forum_comment": "评论",
+      "course_review": "课程点评",
+      "wiki": "Wiki",
+      "teacher": "教师",
+      "user": "用户"
+    },
+    "commentOn": "评论于",
+    "reviewOn": "点评于",
+    "resultsFor": "搜索结果：{{query}}",
+    "totalResults": "共 {{count}} 条结果",
+    "filterByType": "按类型筛选",
+    "enterSearchQuery": "请输入搜索关键词",
+    "backToHome": "返回主页",
+    "searchFailed": "搜索失败，请重试",
+    "retry": "重试",
+    "noResultsForQuery": "未找到与 \"{{query}}\" 相关的内容",
+    "loadMore": "加载更多",
+    "loadFailedRetry": "加载失败，点击重试",
+    "likes": "赞",
+    "views": "浏览",
+    "resultTitle": {
+      "userStats": "帖子：{{posts}} | 课程点评：{{reviews}}"
+    }
   },
   "auth": {
     "login": "登录",
@@ -40,6 +74,7 @@
     "errorInvalidEmail": "请输入有效的邮箱地址",
     "errorNetwork": "网络错误，请重试",
     "errorGoogleFailed": "Google 登录失败",
+    "errorAccountDisabled": "此账户已被停用，请联系支持团队寻求协助。",
     "register": "注册",
     "nickname": "昵称",
     "verificationCode": "验证码",
@@ -52,7 +87,7 @@
     "codeInputDisabledHint": "请先点击发送验证码以启用",
     "errorPasswordMismatch": "两次输入的密码不一致",
     "errorPolyuEmail": "请使用有效的理大邮箱（@connect.polyu.hk）",
-    "emailPrivacyNotice": "您的电子邮件只用于关联您的 project-consensus 账户并确定您是PolyU学生。您的学校相关内容、邮箱相关内容均不会被读取。您的个人隐私信息不会被分享。",
+    "emailPrivacyNotice": "您的电子邮件只用于关联您的 polyu.life 账户并确定您是PolyU学生。您的学校相关内容、邮箱相关内容均不会被读取。您的个人隐私信息不会被分享。",
     "registerConsent": "点击注册即代表您同意我们的",
     "termsOfService": "服务条款"
   },
@@ -64,6 +99,7 @@
     "copied": "已复制！",
     "copyText": "复制文本",
     "delete": "删除帖子",
+    "edit": "编辑帖子",
     "deleting": "删除中...",
     "deleteConfirm": {
       "title": "删除帖子",
@@ -74,16 +110,23 @@
     "translateUnavailable": "翻译功能尚不可用",
     "shareUnavailable": "分享功能暂时不可用，敬请期待！",
     "copyFailed": "复制文本到剪贴板失败",
+    "notExist": "此帖子不存在",
     "newTitle": "创建新的论坛帖子",
     "titlePlaceholder": "输入标题",
     "contentPlaceholder": "输入帖子内容...",
     "create": "创建帖子",
+    "postAnonymously": "匿名发布",
     "submitting": "创建中...",
+    "update": "保存",
+    "updating": "保存中...",
     "cancel": "取消",
     "tags": "标签",
     "tagPlaceholder": "输入标签名称",
+    "tagConfirmHint": "回车以确认标签",
+    "tagPlaceholderWithHint": "{{base}}，{{hint}}",
     "removeTag": "移除标签",
     "maxTagsReached": "最多只能添加 {{max}} 个标签",
+    "edited": "已编辑",
     "validation": {
       "titleRequired": "标题不能为空",
       "titleTooShort": "标题至少需要5个字符",
@@ -110,7 +153,7 @@
     "reply": "回复",
     "delete": "删除",
     "deleting": "删除中...",
-    "deleted": "此评论已被删除",
+    "deleted": "该评论已删除",
     "deleteConfirm": {
       "title": "删除评论",
       "message": "确定要删除这条评论吗？此操作无法撤销。",
@@ -143,7 +186,8 @@
     "loadFailedRetry": "加载失败 重新加载",
     "me": "我",
     "anonymous": "匿名",
-    "anonymousWithId": "匿名（{{name}}）"
+    "anonymousWithId": "匿名（{{name}}）",
+    "noMore": "没有更多了"
   },
   "courses": {
     "topbar": {
@@ -200,8 +244,9 @@
       },
       "rating": {
         "score": "评分",
-        "outOf": "共10分",
-        "reviews": "{{count}} 人评价"
+        "outOf": "满分10分",
+        "reviews": "{{count}} 人评价",
+        "noRating": "暂无评分"
       },
       "attributes": {
         "difficulty": "课程难度",
@@ -222,9 +267,11 @@
         "lenient": "宽松",
         "balanced": "中等",
         "strict": "严格",
+        "killer": "杀手",
         "low": "较少",
         "decent": "不错",
-        "high": "很多"
+        "high": "很多",
+        "unknown": "未知"
       },
       "teachers": "老师：{{names}}",
       "lastUpdated": "最近更新：{{date}}",
@@ -308,7 +355,11 @@
           "min": "最低分",
           "max": "最高分"
         },
-        "apply": "应用"
+        "apply": "应用",
+        "missing": {
+          "reviewNotExist": "此课程点评不存在",
+          "replyNotExist": "此课程点评回复不存在"
+        }
       }
     },
     "review": {
@@ -342,19 +393,38 @@
       "updating": "保存中...",
       "cancel": "取消",
       "validation": {
-        "ratingRequired": "请给出 1-5 星评分",
+        "ratingRequired": "请给出 1-10 分评分",
         "dimensionsRequired": "请选择全部四个维度",
         "contentRequired": "点评内容不能为空",
         "contentTooShort": "点评内容至少需要 10 个字符"
       }
+    },
+    "byDepartment": {
+      "title": "按部门浏览课程",
+      "subtitle": "按学术部门分类浏览课程",
+      "loading": "加载部门列表...",
+      "loadingCourses": "加载课程中...",
+      "loadError": "课程加载失败",
+      "courseCount": "{{count}} 门课程",
+      "noCourses": "暂无课程",
+      "noCoursesDesc": "请稍后查看课程更新",
+      "noDepartment": "未分类部门",
+      "levelLabel": "等级 {{level}}",
+      "selectDepartment": "部门列表",
+      "selectLevel": "课程等级",
+      "selectDepartmentFirst": "请先选择部门",
+      "selectLevelFirst": "请选择等级以查看课程",
+      "courses": "课程列表",
+      "advancedSearch": "高级搜索",
+      "search": "搜索"
     }
   },
   "about": {
     "title": "关于",
     "subtitle": "了解更多关于项目的信息、其目的以及背后的团队。",
-    "whatIsTitle": "什么是 project-consensus？",
+    "whatIsTitle": "什么是 polyu.life？",
     "whatIsDescription": "校园论坛和课程评价社区",
-    "whatIsContent": "project-consensus 是由 Frank Yang 和 Jim Yang 设计的校园论坛和课程评价社区。它旨在帮助学生分享见解、讨论课程并建立协作社区。",
+    "whatIsContent": "polyu.life 是由 Frank Yang 和 Jim Yang 设计的校园论坛和课程评价社区。它旨在帮助学生分享见解、讨论课程并建立协作社区。",
     "goToHome": "返回首页",
     "repositoryTitle": "开源仓库",
     "repositoryDescription": "探索源代码并参与贡献",
@@ -362,7 +432,7 @@
     "githubRepository": "GitHub 仓库",
     "viewIssues": "查看问题",
     "teamTitle": "团队",
-    "teamDescription": "认识 project-consensus 背后的团队",
+    "teamDescription": "认识 polyu.life 背后的团队",
     "coCreator": "联合创始人"
   },
   "notFound": {
@@ -381,7 +451,7 @@
     "sections": {
       "acceptance": {
         "title": "1. 接受条款",
-        "content": "创建账户或使用 project-consensus 即表示你同意本服务条款及本文引用的所有适用政策。"
+        "content": "创建账户或使用 polyu.life 即表示你同意本服务条款及本文引用的所有适用政策。"
       },
       "accounts": {
         "title": "2. 账户与资格",
@@ -403,7 +473,7 @@
       },
       "intellectualProperty": {
         "title": "5. 知识产权",
-        "content": "project-consensus 的商标、标识与软件受保护。未经事先许可不得使用。"
+        "content": "polyu.life 的商标、标识与软件受保护。未经事先许可不得使用。"
       },
       "disclaimer": {
         "title": "6. 免责声明",
@@ -411,7 +481,7 @@
       },
       "limitation": {
         "title": "7. 责任限制",
-        "content": "在法律允许的最大范围内，project-consensus 不对任何间接、附带或后果性损害承担责任。"
+        "content": "在法律允许的最大范围内，polyu.life 不对任何间接、附带或后果性损害承担责任。"
       },
       "privacy": {
         "title": "8. 隐私政策",
@@ -423,7 +493,7 @@
       },
       "contact": {
         "title": "10. 联系方式",
-        "content": "如有问题，请联系：support@project-consensus.app。"
+        "content": "如有问题，请联系：support@polyu.life。"
       }
     }
   },
@@ -434,12 +504,17 @@
     "profile": {
       "title": "个人资料",
       "desc": "更新你的昵称和头像。",
-      "displayName": "昵称",
+      "nickname": "昵称",
       "avatarUrl": "头像 URL",
       "pronouns": "代词",
       "preview": "预览",
       "saved": "个人资料已更新。",
-      "saveFailed": "保存个人资料失败。"
+      "saveFailed": "保存个人资料失败。",
+      "updateRestriction": "昵称每14天只能修改一次。",
+      "lastUpdated": "昵称最后更新",
+      "canUpdateIn": "昵称还需 {{days}} 天后才能再次更新",
+      "canUpdateNow": "现在可以更新昵称",
+      "updateLimitReached": "已达到昵称修改限制，请等待 {{days}} 天后再次更新。"
     },
     "account": {
       "title": "账号安全",
@@ -453,23 +528,19 @@
     },
     "privacy": {
       "title": "隐私设置",
-      "desc": "控制他人如何查看并联系你。",
+      "desc": "控制哪些内容公开可见。",
       "items": {
-        "showEmail": {
-          "title": "在个人主页显示邮箱",
-          "desc": "允许他人查看你主页上的邮箱地址。"
+        "showForumPostsPublicly": {
+          "title": "公开展示我的论坛帖子",
+          "desc": "允许他人查看你发布的论坛帖子。"
         },
-        "allowDMs": {
-          "title": "允许私信",
-          "desc": "允许其他用户向你发送私信。"
+        "showForumPostCommentsPublicly": {
+          "title": "公开展示我的论坛评论",
+          "desc": "允许他人查看你在论坛帖子下发表的评论。"
         },
-        "showOnlineStatus": {
-          "title": "显示在线状态",
-          "desc": "允许他人看到你是否在线。"
-        },
-        "showActivity": {
-          "title": "显示活动",
-          "desc": "展示你的公开活动时间线。"
+        "showCourseReviewsPublicly": {
+          "title": "公开展示我的课程评价",
+          "desc": "允许他人查看你撰写的课程评价。"
         }
       },
       "saved": "隐私设置已保存。",
@@ -488,14 +559,61 @@
     }
   },
   "pronouns": {
-    "info": "project-consensus是重视多样性与包容性的社区，我们支持您按照自己的真实方式表达认同。如果您在预设的代词列表中没有找到合适的代词，您可以选择“custom”并设置自己的代词。"
+    "info": "polyu.life是重视多样性与包容性的社区，我们支持您按照自己的真实方式表达认同。如果您在预设的代词列表中没有找到合适的代词，您可以选择\"custom\"并设置自己的代词。",
+    "share": "在个人主页展示代词"
+  },
+  "validation": {
+    "nickname": {
+      "required": "昵称不能为空",
+      "onlyWhitespace": "昵称不能只包含空格",
+      "tooLong": "昵称必须在15个字符以内",
+      "invalidCharacters": "昵称不能包含 < 或 > 字符",
+      "invalid": "无效的昵称",
+      "characters": "字符",
+      "alreadyTaken": "此昵称已被使用，请选择其他名称。"
+    }
   },
   "profile": {
     "title": "个人资料",
-    "subtitle": "你的公开个人主页",
+    "subtitle": "资料概览与最近活动",
     "actions": {
-      "edit": "修改个人资料"
-    }
+      "edit": "修改个人资料",
+      "viewPublic": "查看公开主页",
+      "viewPrivate": "查看私人主页"
+    },
+    "stats": {
+      "title": "活动统计",
+      "posts": "发帖",
+      "comments": "评论",
+      "reviews": "点评",
+      "days": "加入天数"
+    },
+    "activity": {
+      "title": "最近活动",
+      "subtitle": "最新的社区贡献",
+      "myPosts": {
+        "title": "帖子",
+        "subtitle": "创建的论坛帖子",
+        "empty": "还没有发布帖子",
+        "viewPost": "查看帖子"
+      },
+      "myComments": {
+        "title": "帖子评论",
+        "subtitle": "在论坛帖子中的评论",
+        "empty": "还没有发表评论",
+        "inReplyTo": "回复",
+        "onPost": "在帖子："
+      },
+      "myReviews": {
+        "title": "课程评价",
+        "subtitle": "撰写的课程评价",
+        "empty": "还没有发表评价",
+        "viewCourse": "查看课程"
+      },
+      "anonymousBadge": "匿名"
+    },
+    "memberFor": "加入 {{days}} 天",
+    "privacyNotice": "该用户选择将某些活动设为私密。"
   },
   "teachers": {
     "title": "教师",
@@ -540,6 +658,24 @@
       "difficulty": "难度",
       "reviews": "评价数",
       "courses": "课程"
+    }
+  },
+  "notifications": {
+    "bell": "通知",
+    "title": "通知",
+    "markAllRead": "全部标为已读",
+    "deleteRead": "删除已读",
+    "empty": "暂时还没有通知",
+    "messages": {
+      "forumPostLiked": "{{actor}} 赞了你的帖子 {{target}}",
+      "forumPostCommented": "{{actor}} 评论了你的帖子 {{target}}",
+      "forumPostCommentLiked": "{{actor}} 赞了你在 {{target}} 的评论",
+      "forumPostCommentReplied": "{{actor}} 回复了你在 {{target}} 的评论",
+      "courseReviewLiked": "{{actor}} 赞了你对 {{target}} 的课程点评",
+      "courseReviewReplied": "{{actor}} 回复了你对 {{target}} 的课程点评",
+      "courseReviewReplyLiked": "{{actor}} 赞了你在 {{target}} 的点评回复",
+      "courseReviewReplyReplied": "{{actor}} 回复了你在 {{target}} 的点评回复",
+      "unknownType": "未知通知类型 ({{type}}) 来自 {{actor}}"
     }
   }
 }

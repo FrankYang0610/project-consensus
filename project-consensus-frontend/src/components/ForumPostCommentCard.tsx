@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { Heart, Reply, MoreHorizontal, Trash2, Languages, FileText, Check } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -86,7 +87,7 @@ export function ForumPostCommentCard({
   // Stores the original state of replies before deletion to support rollback functionality for delete operations
   const prevRepliesByIdRef = React.useRef<Map<string, ForumPostComment>>(new Map());
 
-  const repliesCount = (typeof comment.replies === 'number' ? comment.replies : undefined) ?? (replies?.length ?? 0);
+  const repliesCount = (typeof comment.repliesCount === 'number' ? comment.repliesCount : undefined) ?? (replies?.length ?? 0);
 
 
   const handleLike = () => {
@@ -174,7 +175,7 @@ export function ForumPostCommentCard({
     }
   };
 
-  const canDelete = comment.canDelete === true;
+  const canDelete = Boolean(currentUserId && comment.author.id === currentUserId);
 
   const toRelative = React.useCallback((url: string | null): string | null => {
     if (!url) return null;
@@ -333,37 +334,60 @@ export function ForumPostCommentCard({
         "py-2"
       )}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-3 group">
         {/* 头像 / Avatar */}
         <div className="flex-shrink-0">
-          {comment.author.avatar ? (
-            <img
-              src={comment.author.avatar}
-              alt={comment.author.name}
-              className="w-8 h-8 rounded-full object-cover"
-            />
-          ) : (
+          {comment.isAnonymous ? (
             <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
               <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                {comment.author.name.charAt(0)}
+                {'?'}
               </span>
             </div>
+          ) : (
+            <Link
+              href={`/user/${comment.author.id}`}
+              className="block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              {comment.author.avatar ? (
+                <img
+                  src={comment.author.avatar}
+                  alt={comment.author.name}
+                  className="w-8 h-8 rounded-full object-cover transition-transform duration-200 group-hover:scale-105 group-hover:ring-2 group-hover:ring-primary/30"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center transition-transform duration-200 group-hover:scale-105 ring-0 group-hover:ring-2 group-hover:ring-primary/30">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                    {comment.author.name.charAt(0)}
+                  </span>
+                </div>
+              )}
+            </Link>
           )}
         </div>
 
         {/* 评论内容 / Comment content */}
         <div className="flex-1 min-w-0 overflow-hidden">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className="font-medium text-sm text-foreground">
-              {comment.isAnonymous
-                ? (currentUserId && comment.author.id === currentUserId
-                    ? `${comment.author.name} (${t('common.anonymous')})`
-                    : t('common.anonymous'))
-                : comment.author.name}
-              {currentUserId && comment.author.id === currentUserId && (
-                <span className="text-muted-foreground"> ({t('common.me')})</span>
-              )}
-            </span>
+            {comment.isAnonymous ? (
+              <span className="font-medium text-sm text-foreground">
+                {currentUserId && comment.author.id === currentUserId
+                  ? `${comment.author.name} (${t('common.anonymous')})`
+                  : t('common.anonymous')}
+                {currentUserId && comment.author.id === currentUserId && (
+                  <span className="text-muted-foreground"> ({t('common.me')})</span>
+                )}
+              </span>
+            ) : (
+              <Link
+                href={`/user/${comment.author.id}`}
+                className="font-medium text-sm text-foreground group-hover:text-primary group-hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              >
+                {comment.author.name}
+                {currentUserId && comment.author.id === currentUserId && (
+                  <span className="text-muted-foreground"> ({t('common.me')})</span>
+                )}
+              </Link>
+            )}
             <ClientOnlyTime dateString={comment.createdAt} className="text-xs text-muted-foreground" />
           </div>
 
@@ -428,7 +452,7 @@ export function ForumPostCommentCard({
                 "w-3 h-3 mr-1 flex-shrink-0",
                 comment.isLiked && "fill-current"
               )} />
-              <span className="truncate">{comment.likes > 0 && comment.likes}</span>
+              <span className="truncate">{comment.likesCount > 0 && comment.likesCount}</span>
             </Button>
 
             <Button
@@ -558,7 +582,7 @@ export function ForumPostCommentCard({
                   <div className="flex items-center gap-3 mt-2">
                     {(() => {
                       const loaded = replies?.length ?? 0;
-                      const total = typeof comment.replies === 'number' ? comment.replies : 0;
+                      const total = typeof comment.repliesCount === 'number' ? comment.repliesCount : 0;
                       const remaining = Math.max(total - loaded, 0);
                       return remaining > 0 && repliesNextUrl ? (
                         <button

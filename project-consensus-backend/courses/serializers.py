@@ -11,30 +11,53 @@ from .models import Course, CourseReview, CourseReviewReply, CourseReviewLike, C
 User = get_user_model()
 
 
-# Strict allowlist: align with frontend DOMPurify settings
-ALLOWED_TAGS = [
+# Strict allowlists: review allows images, replies do not
+ALLOWED_TAGS_REVIEW = [
+    'p', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'br',
+    'strong', 'em', 'code', 'pre', 'blockquote',
+    'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th',
+    'img',
+]
+ALLOWED_ATTRS_REVIEW: dict[str, list[str]] = {
+    'td': ['colspan', 'rowspan', 'align'],
+    'th': ['colspan', 'rowspan', 'align'],
+    'code': ['class'],
+    'pre': ['class'],
+    'ol': ['start'],
+    'img': ['src', 'alt', 'title', 'width', 'height'],
+}
+
+ALLOWED_TAGS_TEXT = [
     'p', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'br',
     'strong', 'em', 'code', 'pre', 'blockquote',
     'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th',
 ]
-ALLOWED_ATTRS: dict[str, list[str]] = {
-    # Table attributes for cell merging and alignment
+ALLOWED_ATTRS_TEXT: dict[str, list[str]] = {
     'td': ['colspan', 'rowspan', 'align'],
     'th': ['colspan', 'rowspan', 'align'],
-    # Code syntax highlighting
     'code': ['class'],
     'pre': ['class'],
-    # Ordered list starting number
     'ol': ['start'],
 }
 
-def _sanitize_html(html: str) -> str:
+def _sanitize_html_review(html: str) -> str:
     if not isinstance(html, str):
         return ""
     return bleach.clean(
         html,
-        tags=ALLOWED_TAGS,
-        attributes=ALLOWED_ATTRS,
+        tags=ALLOWED_TAGS_REVIEW,
+        attributes=ALLOWED_ATTRS_REVIEW,
+        protocols=['http', 'https'],
+        strip=True
+    )
+
+def _sanitize_html_text(html: str) -> str:
+    if not isinstance(html, str):
+        return ""
+    return bleach.clean(
+        html,
+        tags=ALLOWED_TAGS_TEXT,
+        attributes=ALLOWED_ATTRS_TEXT,
         protocols=['http', 'https'],
         strip=True
     )
@@ -48,7 +71,7 @@ def _author_payload_for(user: User) -> dict:
     """
     try:
         p: Profile = user.profile  # type: ignore[attr-defined]
-        name = p.display_name or user.get_username()
+        name = p.nickname or user.get_username()
         avatar_url = p.avatar_url or None
     except Profile.DoesNotExist:  # pragma: no cover
         name = user.get_username()
@@ -59,7 +82,7 @@ def _author_payload_for(user: User) -> dict:
 class CourseSerializer(serializers.ModelSerializer):
     """Serializer aligning with the frontend Course type (camelCase output)."""
 
-    subjectId = serializers.CharField(source="subject_id")
+    courseId = serializers.CharField(source="course_id")
     subjectCode = serializers.CharField(source="subject_code")
     term = serializers.SerializerMethodField()
     terms = serializers.SerializerMethodField()
@@ -86,7 +109,7 @@ class CourseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = [
-            "subjectId",
+            "courseId",
             "subjectCode",
             "title",
             "term",
@@ -143,11 +166,13 @@ class CourseSerializer(serializers.ModelSerializer):
         }
 
     def get_attributes(self, obj: Course):
+        # Return None for each attribute if no reviews exist
+        # This allows frontend to display "unknown" instead of misleading defaults
         return {
-            "difficulty": obj.attr_difficulty,
-            "workload": obj.attr_workload,
-            "grading": obj.attr_grading,
-            "gain": obj.attr_gain,
+            "difficulty": obj.attr_difficulty or None,
+            "workload": obj.attr_workload or None,
+            "grading": obj.attr_grading or None,
+            "gain": obj.attr_gain or None,
         }
 
     def get_teachers(self, obj: Course):
@@ -158,20 +183,20 @@ class CourseSerializer(serializers.ModelSerializer):
         ]
 
     def get_otherTeacherCourses(self, obj: Course):
-        # Other courses with the same subject_code but different subject_id
+        # Other courses with the same subject_code but different course_id
         qs = (
             Course.objects
             .filter(subject_code=obj.subject_code)
-            .exclude(subject_id=obj.subject_id)
+            .exclude(course_id=obj.course_id)
             .prefetch_related("teachers")
         )
         result = []
         for c in qs:
             teacher = next(iter(c.teachers.all()), None)
             payload = {
-                "subjectId": str(c.subject_id),
+                "courseId": str(c.course_id),
                 "teacherName": getattr(teacher, "name", "Unknown"),
-                "teacherAvatarUrl": getattr(teacher, "avatar_url", None) if teacher else None,
+                "teacherAvatarUrl": (getattr(teacher, "avatar_url", None) or None) if teacher else None,
                 "rating": {
                     "score": c.rating_score,
                     "reviewsCount": c.rating_reviews_count,
@@ -265,7 +290,7 @@ class CourseReviewSerializer(serializers.ModelSerializer):
     to provide defense-in-depth against XSS attacks.
     """
 
-    subjectId = serializers.CharField(source="course.subject_id", read_only=True)
+    courseId = serializers.CharField(source="course.course_id", read_only=True)
     author = serializers.SerializerMethodField()
     attributes = serializers.SerializerMethodField()
     # Not required when onlyText=true; range validated in validate()
@@ -275,6 +300,7 @@ class CourseReviewSerializer(serializers.ModelSerializer):
     updatedAt = serializers.DateTimeField(source="updated_at", read_only=True)
     term = serializers.SerializerMethodField()
     repliesCount = serializers.IntegerField(source="replies_count", read_only=True)
+    isEdited = serializers.BooleanField(source="is_edited", read_only=True)
     isLiked = serializers.SerializerMethodField()
 
     isAnonymous = serializers.BooleanField(source="is_anonymous", required=False)
@@ -284,7 +310,7 @@ class CourseReviewSerializer(serializers.ModelSerializer):
         model = CourseReview
         fields = [
             "id",
-            "subjectId",
+            "courseId",
             "author",
             "overallRating",
             "attributes",
@@ -297,8 +323,9 @@ class CourseReviewSerializer(serializers.ModelSerializer):
             "isLiked",
             "isAnonymous",
             "onlyText",
+            "isEdited",
         ]
-        read_only_fields = ["id", "subjectId", "likesCount", "createdAt", "updatedAt", "repliesCount"]
+        read_only_fields = ["id", "courseId", "likesCount", "createdAt", "updatedAt", "repliesCount", "isEdited"]
     
     def to_representation(self, instance):
         """Override to_representation to sanitize HTML content on output.
@@ -309,7 +336,7 @@ class CourseReviewSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         # Sanitize content field on output for security
         if 'content' in data and data['content']:
-            data['content'] = _sanitize_html(data['content'])
+            data['content'] = _sanitize_html_review(data['content'])
         # For text-only reviews, omit overallRating field to match frontend optional type
         if instance.only_text and 'overallRating' in data:
             del data['overallRating']
@@ -403,15 +430,25 @@ class CourseReviewSerializer(serializers.ModelSerializer):
                     value = float(data.get("overallRating"))
                 except Exception:
                     raise serializers.ValidationError({"overallRating": "must be a number"})
-            if is_create and value is None and not getattr(instance, "overall_rating", None):
+            # Require rating when creating, or when toggling from onlyText->rated without existing valid rating
+            prior_rating = getattr(instance, "overall_rating", None)
+            prior_only_text = getattr(instance, "only_text", False)
+            if (
+                (is_create and value is None)
+                or (
+                    (not is_create)
+                    and (value is None)
+                    and (prior_only_text or prior_rating in (None, 0))
+                )
+            ):
                 raise serializers.ValidationError({"overallRating": "required when onlyText is false"})
             if value is not None:
                 try:
                     fv = float(value)
                 except Exception:
                     raise serializers.ValidationError({"overallRating": "must be a number"})
-                if fv < 0 or fv > 10:
-                    raise serializers.ValidationError({"overallRating": "must be between 0 and 10"})
+                if fv < 1 or fv > 10:
+                    raise serializers.ValidationError({"overallRating": "must be between 1 and 10"})
                 # ensure normalized back into attrs for create/update
                 attrs["overall_rating"] = fv
             # attributes: required on create; optional on partial update but validate shape if provided
@@ -427,11 +464,32 @@ class CourseReviewSerializer(serializers.ModelSerializer):
                 for k in ("difficulty", "workload", "grading", "gain"):
                     if k in attrs_dict and not isinstance(attrs_dict[k], str):
                         raise serializers.ValidationError({"attributes": f"{k} must be a string"})
+            # Validate enum values when attributes are provided
+            if isinstance(attrs_dict, dict):
+                valid_difficulty = {c[0] for c in Course.Difficulty.choices}
+                valid_workload = {c[0] for c in Course.Workload.choices}
+                valid_grading = {c[0] for c in Course.Grading.choices}
+                valid_gain = {c[0] for c in Course.Gain.choices}
+                for key, valid in (
+                    ("difficulty", valid_difficulty),
+                    ("workload", valid_workload),
+                    ("grading", valid_grading),
+                    ("gain", valid_gain),
+                ):
+                    if key in attrs_dict and attrs_dict[key] not in valid:
+                        raise serializers.ValidationError({"attributes": f"{key} must be one of: {', '.join(sorted(valid))}"})
+        else:
+            # For text-only reviews, disallow rating/attributes in payload
+            if "overallRating" in data and data.get("overallRating") not in (None, ""):
+                raise serializers.ValidationError({"overallRating": "must be omitted when onlyText is true"})
+            attrs_dict = data.get("attributes")
+            if isinstance(attrs_dict, dict) and attrs_dict:
+                raise serializers.ValidationError({"attributes": "must be omitted when onlyText is true"})
 
         # Sanitize content (always sanitize if provided)
         if "content" in attrs:
             raw = attrs.get("content")
-            attrs["content"] = _sanitize_html(raw)
+            attrs["content"] = _sanitize_html_review(raw)
         return attrs
 
     def create(self, validated_data):  # type: ignore[override]
@@ -467,7 +525,7 @@ class CourseReviewSerializer(serializers.ModelSerializer):
 
         # Sanitize HTML content
         if "content" in validated_data:
-            validated_data["content"] = _sanitize_html(validated_data.get("content", ""))
+            validated_data["content"] = _sanitize_html_review(validated_data.get("content", ""))
 
         instance = CourseReview.objects.create(course=course, author=author, **validated_data)
         return instance
@@ -502,11 +560,12 @@ class CourseReviewSerializer(serializers.ModelSerializer):
             if key in validated_data:
                 val = validated_data[key]
                 if key == "content":
-                    val = _sanitize_html(val)
+                    val = _sanitize_html_review(val)
                 # Only update overall_rating if not in onlyText mode
                 if key == "overall_rating" and only_text:
                     continue
                 setattr(instance, key, val)
+        instance.is_edited = True
         instance.save()
         return instance
 
@@ -550,7 +609,7 @@ class CourseReviewReplySerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         # Sanitize content field on output for security
         if 'content' in data and data['content']:
-            data['content'] = _sanitize_html(data['content'])
+            data['content'] = _sanitize_html_text(data['content'])
         return data
 
     def get_author(self, obj: CourseReviewReply) -> dict:
@@ -595,15 +654,16 @@ class CourseReviewReplySerializer(serializers.ModelSerializer):
         if review is None or author is None:
             raise serializers.ValidationError("review and author must be provided")
 
+        # Do not allow replying to a deleted review
+        if getattr(review, "is_deleted", False):
+            raise serializers.ValidationError({"reviewId": "review has been deleted"})
+
         # Sanitize content
         if "content" in validated_data:
-            validated_data["content"] = _sanitize_html(validated_data.get("content", ""))
+            validated_data["content"] = _sanitize_html_text(validated_data.get("content", ""))
 
         instance = CourseReviewReply.objects.create(review=review, author=author, reply_to_user=reply_to_user, **validated_data)
         return instance
 
     def update(self, instance: CourseReviewReply, validated_data):  # type: ignore[override]
-        if "content" in validated_data:
-            instance.content = _sanitize_html(validated_data.get("content", ""))
-        instance.save(update_fields=["content"])
-        return instance
+        raise serializers.ValidationError({"detail": "reply editing is not allowed"})

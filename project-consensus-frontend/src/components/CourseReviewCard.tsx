@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import {
   Star,
   ThumbsUp,
@@ -43,21 +44,23 @@ export interface CourseReviewCardProps {
 }
 
 /**
- * User avatar component with fallback to initials
+ * User avatar component with fallback to single initial
  */
-function UserAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string }) {
+function UserAvatar({ name, avatarUrl, userId, isAnonymous }: { name: string; avatarUrl?: string; userId?: string; isAnonymous?: boolean }) {
   const initials = React.useMemo(() => {
     if (!name || typeof name !== 'string') return '?';
     const trimmedName = name.trim();
     if (!trimmedName) return '?';
 
-    const parts = trimmedName.split(/\s+/).filter(Boolean);
-    const initialsText = parts.slice(0, 2).map(p => p[0]?.toUpperCase() ?? "").join("");
-    return initialsText || trimmedName[0]?.toUpperCase() || "?";
+    // Use single letter initial (first character of name)
+    return trimmedName[0]?.toUpperCase() || "?";
   }, [name]);
 
-  return (
-    <div className="h-10 w-10 rounded-full bg-muted inline-flex items-center justify-center overflow-hidden shrink-0">
+  const avatarContent = (
+    <div className={cn(
+      "h-10 w-10 rounded-full bg-muted inline-flex items-center justify-center overflow-hidden shrink-0",
+      !isAnonymous && "transition-transform duration-200 group-hover:scale-105 ring-0 group-hover:ring-2 group-hover:ring-primary/30"
+    )}>
       {avatarUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={avatarUrl} alt={name} className="h-full w-full object-cover" />
@@ -65,6 +68,21 @@ function UserAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string }) {
         <span className="text-sm text-muted-foreground font-medium">{initials}</span>
       )}
     </div>
+  );
+
+  // If anonymous or no userId, render non-clickable avatar
+  if (isAnonymous || !userId) {
+    return avatarContent;
+  }
+
+  // Otherwise, wrap in Link
+  return (
+    <Link
+      href={`/user/${userId}`}
+      className="block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+    >
+      {avatarContent}
+    </Link>
   );
 }
 
@@ -216,10 +234,24 @@ export function CourseReviewCard({
       <CardContent className="space-y-4 px-6 pt-2 pb-4">
         {/* Header: Author Info and Rating in one row */}
         <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3 flex-1 min-w-0">
-            <UserAvatar name={displayName} avatarUrl={review.author.avatarUrl} />
+          <div className="flex items-start gap-3 flex-1 min-w-0 group">
+            <UserAvatar 
+              name={displayName} 
+              avatarUrl={review.author.avatarUrl}
+              userId={review.author.id}
+              isAnonymous={review.isAnonymous}
+            />
             <div className="flex flex-col gap-1 min-w-0 flex-1">
-              <div className="font-medium text-base">{displayName}</div>
+              {review.isAnonymous ? (
+                <div className="font-medium text-base">{displayName}</div>
+              ) : (
+                <Link
+                  href={`/user/${review.author.id}`}
+                  className="font-medium text-base group-hover:text-primary group-hover:underline underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 w-fit"
+                >
+                  {displayName}
+                </Link>
+              )}
               <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
                 <Calendar className="w-4 h-4 shrink-0" />
                 <span className="shrink-0">{createdAtFormatted}</span>

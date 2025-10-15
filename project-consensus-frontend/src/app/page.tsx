@@ -8,18 +8,43 @@ import { useI18n } from "@/hooks/use-i18n";
 import CreateForumPostButton from "@/components/CreateForumPostButton";
 import { useApp } from "@/contexts/AppContext";
 import { Button } from "@/components/ui/button";
-import { fetchForumPosts, likeForumPost, unlikeForumPost } from "@/lib/api/forum-post";
+import { toggleLikeForumPost, fetchForumPosts } from "@/lib/api/forum-post";
 import { ForumPost } from "@/types";
+import { useInfiniteList } from "@/hooks/use-infinite-list";
+import { ForumFilterBar } from "@/components/ForumFilterBar";
+import { useSearchParams } from "next/navigation";
 
 export default function HomePage() {
   const { t } = useI18n();
   const { isLoggedIn, user } = useApp();
-  const [posts, setPosts] = React.useState<ForumPost[]>([]);
-  const loaderRef = React.useRef<HTMLDivElement | null>(null);
-  const loadingRef = React.useRef(false);
-  const [nextPage, setNextPage] = React.useState<number>(1);
-  const [hasNextPage, setHasNextPage] = React.useState<boolean>(true);
-  const [loadError, setLoadError] = React.useState(false);
+  const searchParams = useSearchParams();
+  
+  // URL is the single source of truth for filters
+  const orderingParam = searchParams.get("ordering") || undefined;
+  const searchQuery = searchParams.get("search") || undefined;
+  const tagParams = searchParams.getAll("tags").filter(Boolean);
+  const {
+    items: posts,
+    setItems: setPosts,
+    loaderRef,
+    hasMore,
+    error: loadError,
+    setError: setLoadError,
+    loadMore,
+    reset,
+  } = useInfiniteList<ForumPost, import("@/types").FetchForumPostsParams>({
+    pageFetcher: fetchForumPosts,
+    // Initialize from URL to avoid a redundant first reset
+    initialParams: {
+      page: 1,
+      pageSize: 12,
+      ...(orderingParam ? { ordering: orderingParam } : {}),
+      ...(searchQuery ? { search: searchQuery } : {}),
+      ...(tagParams.length ? { tags: tagParams } : {}),
+    },
+    pageSize: 12,
+    dedupeKey: (p) => p.id,
+  });
 
   // 防止 "连点点赞/取消赞" 导致 UI 和后端状态打架的轻量级锁
   // Lightweight lock to prevent double-tap like/unlike causing UI/server mismatch
@@ -41,79 +66,67 @@ export default function HomePage() {
     postLikeInFlightRef.current.add(id);
 
     const wasLiked = target.isLiked ?? false;
-    const prevLikes = target.likes ?? 0;
+    const prevLikes = target.likesCount ?? 0;
     const willLike = !wasLiked;
 
     // Optimistic UI update
     setPosts(prev => prev.map(p => p.id === id
-      ? { ...p, isLiked: willLike, likes: Math.max(0, p.likes + (willLike ? 1 : -1)) }
+      ? { ...p, isLiked: willLike, likesCount: Math.max(0, (p.likesCount ?? 0) + (willLike ? 1 : -1)) }
       : p
     ));
 
-    const likeAction = willLike ? likeForumPost(id) : unlikeForumPost(id);
-    likeAction
+    toggleLikeForumPost(id)
       .then((data) => {
         setPosts(prev => prev.map(p => p.id === id
-          ? { ...p, isLiked: !!data.isLiked, likes: Math.max(0, data.likes) }
+          ? { ...p, isLiked: !!data.isLiked, likesCount: Math.max(0, data.likesCount) }
           : p
         ));
         postLikeInFlightRef.current.delete(id);
       })
       .catch(() => {
         setPosts(prev => prev.map(p => p.id === id
-          ? { ...p, isLiked: wasLiked, likes: Math.max(0, prevLikes) }
+          ? { ...p, isLiked: wasLiked, likesCount: Math.max(0, prevLikes) }
           : p
         ));
         postLikeInFlightRef.current.delete(id);
       });
   }, [posts]);
 
-  const visiblePosts = posts; // We append pages from server; all posts are visible
-  const remaining = hasNextPage ? 1 : 0; // sentinel uses presence of next page
+  const visiblePosts = posts; // All loaded posts are shown
 
-  const fetchMore = React.useCallback(async () => {
-    if (!hasNextPage || loadingRef.current) return;
-    loadingRef.current = true;
-    try {
-      const data = await fetchForumPosts({ page: nextPage, pageSize: 12 });
-      setPosts(prev => {
-        const existing = new Set(prev.map(p => p.id));
-        const deduped = data.results.filter(p => !existing.has(p.id));
-        return [...prev, ...deduped];
-      });
-      setNextPage(prev => prev + 1);
-      setHasNextPage(!!data.next);
-      setLoadError(false);
-    } catch (err) {
-      console.error(err);
-      setLoadError(true);
-    } finally {
-      loadingRef.current = false;
+  // Helper: map ordering to sort key for UI
+  const mapOrderingToSort = (ordering?: string): string => {
+    switch (ordering) {
+      case "-created_at":
+        return "newest";
+      case "-likes_count":
+        return "likes";
+      case "-comments_count":
+        return "comments";
+      default:
+        return "default";
     }
-  }, [hasNextPage, nextPage]);
+  };
 
+  const initialSort = mapOrderingToSort(orderingParam);
+
+  // React to URL changes by resetting the list (skip initial run to avoid duplicate fetch)
+  const didInitRef = React.useRef(false);
   React.useEffect(() => {
-    // initial fetch
-    if (posts.length === 0 && hasNextPage) {
-      fetchMore();
+    const nextParams: import("@/types").FetchForumPostsParams = {
+      page: 1,
+      pageSize: 12,
+      ...(orderingParam ? { ordering: orderingParam } : {}),
+      ...(searchQuery ? { search: searchQuery } : {}),
+      ...(tagParams.length ? { tags: tagParams } : {}),
+    };
+    if (!didInitRef.current) {
+      didInitRef.current = true;
+      return;
     }
-  }, []);
-
-  React.useEffect(() => {
-    if (!loaderRef.current) return;
-    const target = loaderRef.current;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (entry.isIntersecting && remaining > 0) {
-          fetchMore();
-        }
-      },
-      { root: null, rootMargin: '200px 0px', threshold: 0 }
-    );
-    observer.observe(target);
-    return () => observer.disconnect();
-  }, [remaining, fetchMore]);
+    reset(nextParams);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderingParam, searchQuery, JSON.stringify([...tagParams].sort())]);
 
   // no-op
 
@@ -134,25 +147,32 @@ export default function HomePage() {
           </div>
 
           <div className="w-full p-6 pt-0">
+            <div className="max-w-7xl mx-auto mb-4">
+              <ForumFilterBar
+                initialSort={initialSort}
+                initialSearch={searchQuery ?? ""}
+                initialTags={tagParams}
+              />
+            </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto">
               {visiblePosts.map(post => (
                 <ForumPostPreviewCard key={post.id} post={post} onLike={handleLike} currentUserId={user?.id} />
               ))}
             </div>
 
-            {/* Infinite scroll sentinel */}
+            {/* Infinite scroll sentinel (handled by useInfiniteList) */}
             <div className="max-w-7xl mx-auto flex justify-center mt-6">
               <div ref={loaderRef} className="h-8 w-full" aria-hidden="true" />
             </div>
           </div>
         </main>
       </div>
-      {loadError && hasNextPage && (
+      {loadError && (hasMore || visiblePosts.length === 0) && (
         <Button
           className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-red-600 hover:bg-red-700 text-white"
           onClick={() => {
             setLoadError(false);
-            fetchMore();
+            loadMore();
           }}
         >
           {t('common.loadFailedRetry')}

@@ -1,57 +1,67 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { Moon, Sun, Laptop } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
+import { Laptop, Moon, Sun, ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 export function ThemeToggle() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [open, setOpen] = useState(false);
   useEffect(() => setMounted(true), []);
-  
-  // Determine current theme selection (system/light/dark)
+
   const currentTheme = (theme ?? "system") as "system" | "light" | "dark";
   const effectiveTheme = currentTheme === "system" ? resolvedTheme : currentTheme;
-  
-  const themeCycle: Record<"system" | "light" | "dark", "system" | "light" | "dark"> = {
-    system: "light",
-    light: "dark",
-    dark: "system",
-  };
-  const nextTheme = (t: "system" | "light" | "dark") => themeCycle[t];
-  
-  const ariaLabel =
-    currentTheme === "system"
-      ? "Switch to light theme"
-      : currentTheme === "light"
-      ? "Switch to dark theme"
-      : "Switch to system theme";
 
-  if (!mounted) {
-    return (
-      <Button variant="outline" size="sm" aria-label="Toggle theme" className="h-9 px-3">
-        <Laptop className="size-4" />
-      </Button>
-    );
-  }
+  const renderIcon = () => {
+    if (!mounted) return <Laptop className="size-4" />;
+    if (currentTheme === "system") return <Laptop className="size-4" />;
+    if (effectiveTheme === "dark") return <Moon className="size-4" />;
+    return <Sun className="size-4" />;
+  };
 
   return (
-    <Button
-      variant="outline"
-      size="sm"
-      aria-label={ariaLabel}
-      className="h-9 px-3"
-      onClick={() => setTheme(nextTheme(currentTheme))}
-    >
-      {currentTheme === "system" ? (
-        <Laptop className="size-4" />
-      ) : effectiveTheme === "dark" ? (
-        <Moon className="size-4" />
-      ) : (
-        <Sun className="size-4" />
-      )}
-    </Button>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" className="h-9 px-3">
+          {renderIcon()}
+          <ChevronDown
+            className={cn(
+              "size-3 transition-transform duration-200",
+              open && "rotate-180"
+            )}
+          />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-40">
+        <DropdownMenuRadioGroup
+          value={currentTheme}
+          onValueChange={(val) => setTheme(val as "system" | "light" | "dark")}
+        >
+          <DropdownMenuRadioItem value="system">
+            <span className="mr-2 inline-flex items-center justify-center"><Laptop className="size-4" /></span>
+            <span>System</span>
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="light">
+            <span className="mr-2 inline-flex items-center justify-center"><Sun className="size-4" /></span>
+            <span>Light</span>
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="dark">
+            <span className="mr-2 inline-flex items-center justify-center"><Moon className="size-4" /></span>
+            <span>Dark</span>
+          </DropdownMenuRadioItem>
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

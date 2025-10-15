@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from django.conf import settings
 from django.db import models
+from django.db.models import Case, F, IntegerField, Value, When
 from django.utils import timezone
  
 
@@ -17,7 +18,6 @@ class ForumPost(models.Model):
     - author: FK to user (frontend expects nested Author derived from Profile)
     - created_at: creation timestamp
     - tags: list of strings (JSON)
-    - language: display language label
     - likes_count: integer like count (isLiked is session-level, not stored)
     """
 
@@ -27,9 +27,9 @@ class ForumPost(models.Model):
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="forum_posts")
     created_at = models.DateTimeField(default=timezone.now, db_index=True)
     tags = models.JSONField(default=list, blank=True)
-    language = models.CharField(max_length=50, default="")
     likes_count = models.PositiveIntegerField(default=0)
     is_anonymous = models.BooleanField(default=False) # Whether the post should display the author as Anonymous on the client
+    is_edited = models.BooleanField(default=False)  # Whether the post has been edited after creation
 
     class Meta:
         ordering = ["-created_at"]
@@ -38,6 +38,26 @@ class ForumPost(models.Model):
 
     def __str__(self) -> str:  # pragma: no cover
         return f"{self.title}"
+
+    def increment_like(self) -> None:
+        """Atomically increment likes_count for this post."""
+        ForumPost.objects.filter(pk=self.pk).update(likes_count=F("likes_count") + 1)
+
+    def decrement_like(self) -> None:
+        """Atomically decrement likes_count for this post without going below zero."""
+        ForumPost.objects.filter(pk=self.pk).update(
+            likes_count=Case(
+                When(likes_count__gt=0, then=F("likes_count") - 1),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        )
+
+    def mark_edited(self) -> None:
+        """Mark the post as edited if it has not been marked yet."""
+        if not getattr(self, "is_edited", False):
+            ForumPost.objects.filter(pk=self.pk, is_edited=False).update(is_edited=True)
+            self.is_edited = True
 
 
 class ForumPostComment(models.Model):
@@ -68,6 +88,20 @@ class ForumPostComment(models.Model):
 
     def __str__(self) -> str:  # pragma: no cover
         return f"{self.author_id} -> {self.post_id}"
+
+    def increment_like(self) -> None:
+        """Atomically increment likes_count for this comment."""
+        ForumPostComment.objects.filter(pk=self.pk).update(likes_count=F("likes_count") + 1)
+
+    def decrement_like(self) -> None:
+        """Atomically decrement likes_count for this comment without going below zero."""
+        ForumPostComment.objects.filter(pk=self.pk).update(
+            likes_count=Case(
+                When(likes_count__gt=0, then=F("likes_count") - 1),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        )
 
 
 class ForumPostLike(models.Model):

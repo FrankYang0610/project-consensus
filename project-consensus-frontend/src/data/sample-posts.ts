@@ -1,18 +1,7 @@
 import { ForumPost } from "@/types";
 
-// Language options for demo posts
-const LANG_OPTIONS = [
-  "简体中文（普通话）",
-  "繁體中文（粵語）",
-  "繁體中文（國語）",
-  "English",
-  "Not Specified",
-  "Others",
-] as const;
-
-const sampleLanguage = () => LANG_OPTIONS[Math.floor(Math.random() * LANG_OPTIONS.length)];
-
 // Sample data - Computer Science course discussions
+
 const initialSamplePosts: ForumPost[] = [
   {
     id: "a7f3b2c1",
@@ -39,10 +28,9 @@ const initialSamplePosts: ForumPost[] = [
     },
     createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
     tags: ["Java", "面向對象", "編程基礎"],
-    likes: 8,
-    comments: 3,
+    likesCount: 8,
+    commentsCount: 3,
     isLiked: true,
-    language: sampleLanguage()
   },
   {
     id: "e5d8a9f4",
@@ -55,10 +43,9 @@ const initialSamplePosts: ForumPost[] = [
     },
     createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), // 5 hours ago
     tags: ["设计理论", "色彩搭配", "视觉设计"],
-    likes: 12,
-    comments: 5,
+    likesCount: 12,
+    commentsCount: 5,
     isLiked: false,
-    language: sampleLanguage()
   },
   {
     id: "b6c4e2a8",
@@ -91,10 +78,9 @@ LIMIT 10;</code></pre>
     },
     createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
     tags: ["Database", "SQL", "Performance"],
-    likes: 25,
-    comments: 12,
+    likesCount: 25,
+    commentsCount: 12,
     isLiked: false,
-    language: sampleLanguage()
   },
   {
     id: "f1a8d3c7",
@@ -122,10 +108,9 @@ LIMIT 10;</code></pre>
     },
     createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(), // 3 hours ago
     tags: ["會計學", "財務報表", "財務分析"],
-    likes: 15,
-    comments: 7,
+    likesCount: 15,
+    commentsCount: 7,
     isLiked: true,
-    language: sampleLanguage()
   },
   {
     id: "c9e6b1f5",
@@ -154,10 +139,9 @@ LIMIT 10;</code></pre>
     },
     createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), // 6 hours ago
     tags: ["中國文學", "唐詩宋詞", "意境分析"],
-    likes: 9,
-    comments: 4,
+    likesCount: 9,
+    commentsCount: 4,
     isLiked: false,
-    language: sampleLanguage()
   },
   {
     id: "d4a7f2e9",
@@ -186,16 +170,14 @@ LIMIT 10;</code></pre>
     },
     createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), // 12 hours ago
     tags: ["Civil Engineering", "Structural Analysis", "Bridge Design"],
-    likes: 18,
-    comments: 8,
+    likesCount: 18,
+    commentsCount: 8,
     isLiked: true,
-    language: sampleLanguage()
   }
 ];
 
 // Auto-extend sample posts for demo purposes
 for (let i = 1; i <= 24; i++) {
-  const language = sampleLanguage();
   const id = `demo-post-${i}`;
   initialSamplePosts.push({
     id,
@@ -208,10 +190,9 @@ for (let i = 1; i <= 24; i++) {
     },
     createdAt: new Date(Date.now() - (i + 18) * 60 * 60 * 1000).toISOString(),
     tags: i % 2 === 0 ? ["General", "Study"] : ["Project", "Help"],
-    likes: (i * 2) % 37,
-    comments: (i * 3) % 18,
+    likesCount: (i * 2) % 37,
+    commentsCount: (i * 3) % 18,
     isLiked: false,
-    language
   });
 }
 
@@ -274,11 +255,11 @@ export function toggleLikeById(postId: string): ForumPost | undefined {
   const post = samplePosts[index];
   const currentlyLiked = !!post.isLiked;
   const nextLiked = !currentlyLiked;
-  const nextLikes = Math.max(0, post.likes + (nextLiked ? 1 : -1));
+  const nextLikes = Math.max(0, (post.likesCount ?? 0) + (nextLiked ? 1 : -1));
   
   // Directly modify the original post object
   post.isLiked = nextLiked;
-  post.likes = nextLikes;
+  post.likesCount = nextLikes;
   
   // Save to localStorage
   savePostsToStorage(samplePosts);

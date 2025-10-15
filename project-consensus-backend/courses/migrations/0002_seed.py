@@ -97,7 +97,7 @@ def _ensure_min_users(apps, min_users: int):
         user.save()
         # Create profile
         try:
-            Profile.objects.create(user=user, display_name=f"User {i}")
+            Profile.objects.create(user=user, nickname=f"User {i}")
         except Exception:
             # If Profile model or relation differs in historical state, ignore
             pass
@@ -116,7 +116,7 @@ def _ensure_min_teachers(apps, min_teachers: int):
                 "Computer Science", "Mathematics", "Physics", "Chemistry", "Economics",
                 "Psychology", "Electrical Engineering", "Biology", "History", "Art",
             ]),
-            avatar_url="",
+            # avatar_url留空，将使用教师姓名首字母作为默认头像
             email=f"teacher{i}@university.edu",
             office=f"Bldg {random.randint(1,9)}-{random.randint(101, 699)}",
             office_hours=random.choice(["Mon 14:00-16:00", "Wed 10:00-12:00", "Fri 13:00-15:00"]),
@@ -192,7 +192,7 @@ def _generate_courses(apps):
             rating_not_recommend_count=random.randint(0, 10),
             attr_difficulty=random.choice(["veryEasy", "easy", "medium", "hard", "veryHard"]),
             attr_workload=random.choice(["light", "moderate", "heavy", "veryHeavy"]),
-            attr_grading=random.choice(["lenient", "balanced", "strict"]),
+            attr_grading=random.choice(["lenient", "balanced", "strict", "killer"]),
             attr_gain=random.choice(["low", "decent", "high"]),
             terms=terms,
             department=dept_name,
@@ -284,7 +284,7 @@ def _generate_reviews(apps, courses):
             ("veryHard", 0.6 if rating <= 5.0 else 0.3),
         ])
         workload = random.choice(["light", "moderate", "heavy", "veryHeavy"])
-        grading = random.choice(["lenient", "balanced", "strict"])
+        grading = random.choice(["lenient", "balanced", "strict", "killer"])
         gain = _rand_choice_weighted([
             ("low", 0.4 if rating <= 5.0 else 0.2),
             ("decent", 2.0),
@@ -341,6 +341,12 @@ def _generate_replies(apps, reviews):
             is_deleted=False,
         )
         out.append(reply)
+    # Soft-delete a subset (e.g., ~5%) to simulate placeholders
+    if out:
+        k = max(1, len(out) // 20)
+        for r in random.sample(out, k=k):
+            # Clear content and mark as deleted to match soft-delete contract
+            CourseReviewReply.objects.filter(pk=r.pk).update(is_deleted=True, content="")
     return out
 
 
@@ -349,19 +355,23 @@ def _recompute_course_aggregates(apps, courses):
     Course = apps.get_model("courses", "Course")
     CourseReview = apps.get_model("courses", "CourseReview")
     for c in courses:
+        # Count all reviews (including text-only) for reviewsCount
+        total_count = CourseReview.objects.filter(course=c).count()
+        # Only use reviews with ratings for score calculation
         qs = CourseReview.objects.filter(course=c, only_text=False)
         res = qs.aggregate(avg=Avg("overall_rating"), cnt=Count("id"))
-        cnt = int(res.get("cnt") or 0)
+        rated_cnt = int(res.get("cnt") or 0)
         avg = float(res.get("avg") or 0.0)
-        score = round(avg, 1) if cnt > 0 else 0.0
-        Course.objects.filter(pk=c.pk).update(rating_reviews_count=cnt, rating_score=score)
+        score = round(avg, 1) if rated_cnt > 0 else 0.0
+        Course.objects.filter(pk=c.pk).update(rating_reviews_count=total_count, rating_score=score)
 
 
 def _recompute_replies_count(apps, reviews):
     from django.db.models import Count
     CourseReview = apps.get_model("courses", "CourseReview")
     CourseReviewReply = apps.get_model("courses", "CourseReviewReply")
-    counts = CourseReviewReply.objects.values("review_id").annotate(cnt=Count("id"))
+    # Only count non-deleted replies for UI display
+    counts = CourseReviewReply.objects.filter(is_deleted=False).values("review_id").annotate(cnt=Count("id"))
     mapping = {row["review_id"]: row["cnt"] for row in counts}
     for r in reviews:
         CourseReview.objects.filter(pk=r.pk).update(replies_count=mapping.get(r.pk, 0))

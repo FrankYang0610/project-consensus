@@ -93,9 +93,10 @@ export function PronounsSelector({
   return (
     <div className="grid gap-2">
       {label && (
-        <div className="inline-flex items-center gap-2">
-          <Label htmlFor={id}>{label}</Label>
-          <DropdownMenu>
+        <div className="flex items-center justify-between gap-2">
+          <div className="inline-flex items-center gap-2">
+            <Label htmlFor={id}>{label}</Label>
+            <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 type="button"
@@ -112,7 +113,8 @@ export function PronounsSelector({
                 {t('pronouns.info')}
               </div>
             </DropdownMenuContent>
-          </DropdownMenu>
+            </DropdownMenu>
+          </div>
         </div>
       )}
       <div className="flex gap-2">

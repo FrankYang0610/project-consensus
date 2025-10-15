@@ -9,6 +9,46 @@ import { useI18n } from "@/hooks/use-i18n";
 import { fetchTeacherById, fetchTeacherCourses } from "@/lib/api/teacher";
 import type { Teacher, TeacherCourseRef } from "@/types";
 
+/**
+ * Teacher avatar component with fallback to 2-letter initials
+ * Handles both URL and initials from backend
+ */
+function TeacherAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string }) {
+  // Check if avatarUrl is a full URL or initials from backend
+  const isUrl = avatarUrl?.startsWith('http://') || avatarUrl?.startsWith('https://');
+  
+  const initials = React.useMemo(() => {
+    if (avatarUrl && !isUrl) {
+      // Backend already provided initials (e.g., "WYW")
+      return avatarUrl;
+    }
+    // Fallback: calculate 2-letter initials from name
+    if (!name || typeof name !== 'string') return '?';
+    const trimmedName = name.trim();
+    if (!trimmedName) return '?';
+
+    const parts = trimmedName.split(/\s+/).filter(Boolean);
+    const initialsText = parts.slice(0, 2).map(p => p[0]?.toUpperCase() ?? "").join("");
+    return initialsText || trimmedName[0]?.toUpperCase() || "?";
+  }, [name, avatarUrl, isUrl]);
+
+  return isUrl ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={avatarUrl}
+      alt={name}
+      className="w-20 h-20 rounded-full border object-cover"
+      loading="lazy"
+    />
+  ) : (
+    <div className="w-20 h-20 rounded-full border bg-muted flex items-center justify-center">
+      <span className="text-2xl font-semibold text-muted-foreground">
+        {initials}
+      </span>
+    </div>
+  );
+}
+
 export default function TeacherDetailPage() {
   const { t } = useI18n();
   const params = useParams();
@@ -107,12 +147,7 @@ export default function TeacherDetailPage() {
             <Card>
               <CardContent className="pt-6">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-                  <img
-                    src={teacher.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(teacher.name)}`}
-                    alt={teacher.name}
-                    className="w-20 h-20 rounded-full border object-cover"
-                    loading="lazy"
-                  />
+                  <TeacherAvatar name={teacher.name} avatarUrl={teacher.avatarUrl} />
                   <div className="min-w-0">
                     <h1 className="text-2xl font-semibold leading-tight truncate">{teacher.name}</h1>
                     <div className="text-sm text-muted-foreground mt-1">
@@ -217,7 +252,7 @@ export default function TeacherDetailPage() {
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {courses.map(course => (
-                      <Link key={course.subjectId} href={`/courses/${course.subjectId}?teacher=${encodeURIComponent(teacher.name)}`}>
+                      <Link key={course.courseId} href={`/courses/${course.courseId}?teacher=${encodeURIComponent(teacher.name)}`}>
                         <div className="border rounded p-3 hover:border-primary transition-colors">
                           <div className="text-sm text-muted-foreground">{course.subjectCode}</div>
                           <div className="font-medium truncate">{course.title}</div>

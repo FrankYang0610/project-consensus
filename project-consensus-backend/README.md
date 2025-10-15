@@ -18,9 +18,10 @@ Endpoints exposed by the `teachers` app (aligned to frontend types):
 
 - `GET /api/teachers/` — list teachers (search by `?q=...` over name/department).
 - `GET /api/teachers/{id}/` — teacher detail.
-- `GET /api/teachers/{id}/courses/` — courses taught by the teacher (returns `{ subjectId, subjectCode, title }`).
+- `GET /api/teachers/{id}/courses/` — courses taught by the teacher (returns `{ courseId, subjectCode, title }`).
 
 Notes:
+
 - The `courses` API now uses an explicit M2M relation to `teachers.Teacher` and returns minimal teacher refs for each course as `[{ id, name }]`. Use `/api/teachers/{id}/` to fetch full teacher profiles.
 
 ---
@@ -30,8 +31,8 @@ Notes:
 Endpoints exposed by the `courses` app:
 
 - `GET /api/courses/` — list courses (search by `subject_code`, `title`, `department`; filters `subjectCode`, `department`, `teacherId`).
-- `GET /api/courses/{subjectId}/` — course detail (lookup by `subject_id`).
-- `GET|POST /api/courses/{subjectId}/reviews/` — list/create reviews for the course.
+- `GET /api/courses/{courseId}/` — course detail (lookup by `course_id`).
+- `GET|POST /api/courses/{courseId}/reviews/` — list/create reviews for the course.
 
 Response fields align to frontend camelCase. Notable fields:
 
@@ -50,7 +51,13 @@ Response fields align to frontend camelCase. Notable fields:
             "id": "cs",
             "name": "Computer Science",
             "semesters": [
-              { "id": "cs-2024-fall", "year": 2024, "semester": "fall", "url": "/programs/eng/cs/2024-fall", "yearLevel": "y3" }
+              {
+                "id": "cs-2024-fall",
+                "year": 2024,
+                "semester": "fall",
+                "url": "/programs/eng/cs/2024-fall",
+                "yearLevel": "y3"
+              }
             ]
           }
         ]
@@ -255,6 +262,7 @@ NO_RUN=1 bash scripts/dev_reset.sh
 ```
 
 What the script does:
+
 - Create `.venv` if missing and install requirements
 - Create `.env` if missing (Postgres on localhost:5432)
 - `docker compose down -v && docker compose up -d db`

@@ -161,7 +161,7 @@ GET /api/teachers/{id}/courses/
 ```json
 [
   {
-    "subjectId": "uuid-string",
+    "courseId": "uuid-string",
     "subjectCode": "APSS1A01",
     "title": "Introduction to Social Sciences"
   }

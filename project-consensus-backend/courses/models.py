@@ -10,7 +10,7 @@ class Course(models.Model):
     """Course basic info + aggregated rating.
 
     Aligns with the frontend Course type:
-    - subject_id, subject_code, title
+    - course_id, subject_code, title
     - term: year + semester (choices)
     - rating: score (0–10) and reviews_count
     - attributes: difficulty/workload/grading/gain (choices)
@@ -40,13 +40,14 @@ class Course(models.Model):
         LENIENT = "lenient", "lenient"
         BALANCED = "balanced", "balanced"
         STRICT = "strict", "strict"
+        KILLER = "killer", "killer"
 
     class Gain(models.TextChoices):
         LOW = "low", "low"
         DECENT = "decent", "decent"
         HIGH = "high", "high"
 
-    subject_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    course_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     subject_code = models.CharField(max_length=64)
     title = models.CharField(max_length=200)
 
@@ -59,10 +60,10 @@ class Course(models.Model):
     rating_recommend_count = models.PositiveIntegerField(default=0)
     rating_not_recommend_count = models.PositiveIntegerField(default=0)
 
-    attr_difficulty = models.CharField(max_length=10, choices=Difficulty.choices, default=Difficulty.MEDIUM)
-    attr_workload = models.CharField(max_length=10, choices=Workload.choices, default=Workload.MODERATE)
-    attr_grading = models.CharField(max_length=10, choices=Grading.choices, default=Grading.BALANCED)
-    attr_gain = models.CharField(max_length=10, choices=Gain.choices, default=Gain.DECENT)
+    attr_difficulty = models.CharField(max_length=10, choices=Difficulty.choices, null=True, blank=True)
+    attr_workload = models.CharField(max_length=10, choices=Workload.choices, null=True, blank=True)
+    attr_grading = models.CharField(max_length=10, choices=Grading.choices, null=True, blank=True)
+    attr_gain = models.CharField(max_length=10, choices=Gain.choices, null=True, blank=True)
 
     # Terms history: list of {year:int, semester:"spring|summer|fall"}
     terms = models.JSONField(default=list, blank=True, help_text="List of offered terms")
@@ -100,7 +101,7 @@ class Course(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=["subject_id"]),
+            models.Index(fields=["course_id"]),
         ]
         verbose_name = "Course"
         verbose_name_plural = "Courses"
@@ -126,6 +127,7 @@ class CourseReview(models.Model):
     is_anonymous = models.BooleanField(default=False)
     only_text = models.BooleanField(default=False, help_text="如果为真，则仅文本评价（不含星级/维度）")
     likes_count = models.PositiveIntegerField(default=0)
+    is_edited = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -2,9 +2,10 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { User, AppContextType, ThemeMode } from '@/types';
-import { getCookie, getAPIBaseUrl } from '@/lib/api/api-utils';
+import { getCookie, getAPIBaseUrl, ensureCSRFCookie, apiGet } from '@/lib/api/api-utils';
 import { normalizeLanguage, defaultLanguage } from '@/lib/locale';
 import { useTranslation } from 'react-i18next';
+import '@/lib/i18n';
 
 // Create Context
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -61,21 +62,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const restoreUser = async (): Promise<User | null> => {
         try {
           // Ensure csrftoken cookie exists to satisfy Django CSRF checks on same-site
-          // (GET /csrf/ sets the cookie; GET /me/ reads session)
-          await fetch(`${getAPIBaseUrl()}/api/accounts/csrf/`, {
-            method: 'GET',
-            credentials: 'include',
-          });
-        } catch {}
-        try {
-          const res = await fetch(`${getAPIBaseUrl()}/api/accounts/me/`, {
-            method: 'GET',
-            credentials: 'include',
-          });
-          if (!res.ok) return null;
-          const data = (await res.json()) as User;
-          return data;
-        } catch {
+          await ensureCSRFCookie();
+          
+          // Fetch user data using apiGet helper for consistent error handling
+          const data = await apiGet<User>('/api/accounts/me/');
+          
+          // Validate that we received a valid User object with required fields
+          if (data && typeof data === 'object' && 'id' in data && 'email' in data) {
+            return data;
+          }
+          
+          return null;
+        } catch (error) {
+          // Log for debugging but don't crash - user is simply not authenticated
+          console.debug('Failed to restore user session:', error);
           return null;
         }
       };

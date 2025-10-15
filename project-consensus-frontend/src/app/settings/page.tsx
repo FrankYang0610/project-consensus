@@ -25,24 +25,23 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ChevronDown } from 'lucide-react';
 import { Language, User } from '@/types';
-import { apiPost } from '@/lib/api/api-utils';
+import { updateProfile, updatePrivacySettings } from '@/lib/api/user-profile';
 import { PronounsSelector } from '@/components/PronounsSelector';
+import { validateNickname } from '@/lib/utils';
+import { AvatarUpload } from '@/components/AvatarUpload';
 
 type PrivacySettings = {
-  showEmail: boolean;
-  allowDMs: boolean;
-  showOnlineStatus: boolean;
-  showActivity: boolean;
+  showForumPostsPublicly: boolean;
+  showForumPostCommentsPublicly: boolean;
+  showCourseReviewsPublicly: boolean;
 };
-
-const PRIVACY_KEY = 'privacySettings';
 
 export default function SettingsPage() {
   const { t, language, changeLanguage } = useI18n();
   const { user, isLoggedIn, updateUser } = useApp();
 
   // Profile form
-  const [displayName, setDisplayName] = useState(user?.name || '');
+  const [nickname, setNickname] = useState(user?.name || '');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar || '');
   const [pronouns, setPronouns] = useState<string>(user?.pronouns || '');
   const [profileSaving, setProfileSaving] = useState(false);
@@ -59,10 +58,9 @@ export default function SettingsPage() {
 
   // Privacy form
   const [privacy, setPrivacy] = useState<PrivacySettings>({
-    showEmail: false,
-    allowDMs: true,
-    showOnlineStatus: true,
-    showActivity: true,
+    showForumPostsPublicly: user?.showForumPostsPublicly ?? true,
+    showForumPostCommentsPublicly: user?.showForumPostCommentsPublicly ?? true,
+    showCourseReviewsPublicly: user?.showCourseReviewsPublicly ?? true,
   });
   const [privacySaving, setPrivacySaving] = useState(false);
   const [privacyMsg, setPrivacyMsg] = useState<string | null>(null);
@@ -70,29 +68,26 @@ export default function SettingsPage() {
 
   // Checkbox ids to improve a11y linking via htmlFor/aria-describedby
   const checkboxIds = {
-    showEmail: 'privacy-showEmail',
-    allowDMs: 'privacy-allowDMs',
-    showOnlineStatus: 'privacy-showOnlineStatus',
-    showActivity: 'privacy-showActivity',
+    showForumPostsPublicly: 'privacy-showForumPostsPublicly',
+    showForumPostCommentsPublicly: 'privacy-showForumPostCommentsPublicly',
+    showCourseReviewsPublicly: 'privacy-showCourseReviewsPublicly',
   } as const;
 
   useEffect(() => {
     // Initialize profile fields from user
-    setDisplayName(user?.name || '');
+    setNickname(user?.name || '');
     setAvatarUrl(user?.avatar || '');
     setPronouns(user?.pronouns || '');
+    
+    // Update privacy settings from user
+    setPrivacy((p) => ({
+      ...p,
+      showForumPostsPublicly: user?.showForumPostsPublicly ?? true,
+      showForumPostCommentsPublicly: user?.showForumPostCommentsPublicly ?? true,
+      showCourseReviewsPublicly: user?.showCourseReviewsPublicly ?? true,
+    }));
   }, [user]);
 
-  useEffect(() => {
-    // Load privacy from localStorage
-    try {
-      const raw = localStorage.getItem(PRIVACY_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as PrivacySettings;
-        setPrivacy((p) => ({ ...p, ...parsed }));
-      }
-    } catch { /* ignore */ }
-  }, []);
 
   const avatarPreview = useMemo(() => avatarUrl?.trim() || '', [avatarUrl]);
 
@@ -132,25 +127,66 @@ export default function SettingsPage() {
   const handleSaveProfile = async () => {
     setProfileErr(null);
     setProfileMsg(null);
+    
+    // Validate nickname if it's being updated
+    // 如果要更新昵称，先进行验证
+    if (nickname !== user?.name) {
+      const validation = validateNickname(nickname);
+      if (!validation.isValid) {
+        setProfileErr(t(validation.error || 'settings.profile.saveFailed'));
+        return;
+      }
+      // Use sanitized value
+      // 使用消毒后的值
+      setNickname(validation.sanitizedValue || nickname);
+    }
+    
     setProfileSaving(true);
     try {
-      // Persist to backend
-      const resp = await apiPost<{ success: boolean; user: User }>(
-        '/api/accounts/profile/',
-        {
-          display_name: displayName,
-          avatar_url: avatarUrl,
-          pronouns: pronouns,
-        },
-        { method: 'PATCH' }
-      );
+      // Persist to backend (send sanitized value)
+      const validation = validateNickname(nickname);
+      const resp = await updateProfile({
+        nickname: validation.sanitizedValue || nickname,
+        avatar_url: avatarUrl,
+        pronouns: pronouns,
+      });
 
       // Update local user from backend response
-      updateUser?.({ name: resp.user.name, avatar: resp.user.avatar, pronouns: resp.user.pronouns });
+      updateUser?.({ 
+        name: resp.user.name, 
+        avatar: resp.user.avatar, 
+        pronouns: resp.user.pronouns,
+        lastNicknameUpdatedAt: resp.user.lastProfileUpdatedAt,
+        daysUntilNextUpdate: resp.user.daysUntilNextUpdate
+      });
       setProfileMsg(t('settings.profile.saved'));
-    } catch (e) {
+    } catch (e: unknown) {
       console.error(e);
-      setProfileErr(t('settings.profile.saveFailed'));
+      
+      // Check if this is a display name rate limit error (429) or already taken error
+      // 检查是否为显示名称修改频率限制错误（429）或名称已被占用错误
+      if (e instanceof Error) {
+        const errorMessage = e.message.toLowerCase();
+        
+        // Check if display name is already taken
+        // 检查显示名称是否已被占用
+        if (errorMessage.includes('already taken') || errorMessage.includes('已被使用')) {
+          setProfileErr(t('validation.nickname.alreadyTaken'));
+        }
+        // Check if this is a rate limit error
+        // 检查是否为频率限制错误
+        else if (errorMessage.includes('display name') && (errorMessage.includes('14 days') || errorMessage.includes('wait'))) {
+          // Extract days from error message if possible
+          // 尝试从错误消息中提取天数
+          const match = errorMessage.match(/(\d+)\s*(?:more\s+)?day/i);
+          const days = match ? match[1] : user?.daysUntilNextUpdate || '?';
+          setProfileErr(t('settings.profile.updateLimitReached', { days }));
+        } else {
+          setProfileErr(e.message || t('settings.profile.saveFailed'));
+        }
+      } else {
+        setProfileErr(t('settings.profile.saveFailed'));
+      }
     } finally {
       setProfileSaving(false);
     }
@@ -191,7 +227,20 @@ export default function SettingsPage() {
     setPrivacyMsg(null);
     setPrivacySaving(true);
     try {
-      localStorage.setItem(PRIVACY_KEY, JSON.stringify(privacy));
+      // Save the new privacy settings to backend
+      const resp = await updatePrivacySettings({
+        show_forum_posts_publicly: privacy.showForumPostsPublicly,
+        show_forum_post_comments_publicly: privacy.showForumPostCommentsPublicly,
+        show_course_reviews_publicly: privacy.showCourseReviewsPublicly,
+      });
+      
+      // Update local user from backend response
+      updateUser?.({ 
+        showForumPostsPublicly: resp.user.showForumPostsPublicly, 
+        showForumPostCommentsPublicly: resp.user.showForumPostCommentsPublicly, 
+        showCourseReviewsPublicly: resp.user.showCourseReviewsPublicly 
+      });
+      
       setPrivacyMsg(t('settings.privacy.saved'));
     } catch (e) {
       console.error(e);
@@ -229,35 +278,38 @@ export default function SettingsPage() {
           )}
 
           <div className="grid gap-2">
-            <Label htmlFor="displayName">{t('settings.profile.displayName')}</Label>
+            <Label htmlFor="nickname">{t('settings.profile.nickname')}</Label>
             <Input
-              id="displayName"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
+              id="nickname"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
               placeholder="Alice"
+              maxLength={15}
+              disabled={user?.daysUntilNextUpdate !== undefined && user.daysUntilNextUpdate !== null && user.daysUntilNextUpdate > 0}
             />
+            <p className="text-sm text-muted-foreground">
+              {nickname.trim().length}/15 {t('validation.nickname.characters')}
+            </p>
+            {/* Nickname update restriction info / 昵称修改限制提示 */}
+            {user?.daysUntilNextUpdate !== undefined && user.daysUntilNextUpdate !== null && user.daysUntilNextUpdate > 0 && (
+              <p className="text-sm text-muted-foreground">
+                {t('settings.profile.canUpdateIn', { days: user.daysUntilNextUpdate })}
+              </p>
+            )}
+            {/* Last updated info / 最后更新信息 */}
+            {user?.lastProfileUpdatedAt && (
+              <p className="text-sm text-muted-foreground">
+                {t('settings.profile.lastUpdated')}: {new Date(user.lastProfileUpdatedAt).toLocaleDateString()}
+              </p>
+            )}
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="avatarUrl">{t('settings.profile.avatarUrl')}</Label>
-            <Input
-              id="avatarUrl"
-              value={avatarUrl}
-              onChange={(e) => setAvatarUrl(e.target.value)}
-              placeholder="https://..."
+            <Label>{t('settings.profile.avatarUrl')}</Label>
+            <AvatarUpload
+              currentAvatar={avatarUrl}
+              onUploadSuccess={(url) => setAvatarUrl(url)}
             />
-            TODO: validate URL to prevent XSS?
-            {avatarPreview && (
-              <div className="flex items-center gap-3 mt-1">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={avatarPreview}
-                  alt="avatar preview"
-                  className="w-12 h-12 rounded-full border object-cover"
-                />
-                <span className="text-xs text-muted-foreground">{t('settings.profile.preview')}</span>
-              </div>
-            )}
           </div>
 
           <PronounsSelector
@@ -268,7 +320,10 @@ export default function SettingsPage() {
           />
 
           <div className="pt-2">
-            <Button onClick={handleSaveProfile} disabled={profileSaving}>
+            <Button 
+              onClick={handleSaveProfile} 
+              disabled={profileSaving}
+            >
               {profileSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {t('settings.actions.saveProfile')}
             </Button>
@@ -384,80 +439,60 @@ export default function SettingsPage() {
 
           <div className="flex items-start gap-3">
             <Checkbox
-              id={checkboxIds.showEmail}
+              id={checkboxIds.showForumPostsPublicly}
               className="mt-1"
-              checked={privacy.showEmail}
-              aria-describedby={`${checkboxIds.showEmail}-desc`}
+              checked={privacy.showForumPostsPublicly}
+              aria-describedby={`${checkboxIds.showForumPostsPublicly}-desc`}
               onCheckedChange={(checked) =>
-                setPrivacy({ ...privacy, showEmail: checked === true })
+                setPrivacy({ ...privacy, showForumPostsPublicly: checked === true })
               }
             />
             <div>
-              <Label htmlFor={checkboxIds.showEmail} className="font-medium text-sm">
-                {t('settings.privacy.items.showEmail.title')}
+              <Label htmlFor={checkboxIds.showForumPostsPublicly} className="font-medium text-sm">
+                {t('settings.privacy.items.showForumPostsPublicly.title')}
               </Label>
-              <p id={`${checkboxIds.showEmail}-desc`} className="text-xs text-muted-foreground">
-                {t('settings.privacy.items.showEmail.desc')}
+              <p id={`${checkboxIds.showForumPostsPublicly}-desc`} className="text-xs text-muted-foreground">
+                {t('settings.privacy.items.showForumPostsPublicly.desc')}
               </p>
             </div>
           </div>
 
           <div className="flex items-start gap-3">
             <Checkbox
-              id={checkboxIds.allowDMs}
+              id={checkboxIds.showForumPostCommentsPublicly}
               className="mt-1"
-              checked={privacy.allowDMs}
-              aria-describedby={`${checkboxIds.allowDMs}-desc`}
+              checked={privacy.showForumPostCommentsPublicly}
+              aria-describedby={`${checkboxIds.showForumPostCommentsPublicly}-desc`}
               onCheckedChange={(checked) =>
-                setPrivacy({ ...privacy, allowDMs: checked === true })
+                setPrivacy({ ...privacy, showForumPostCommentsPublicly: checked === true })
               }
             />
             <div>
-              <Label htmlFor={checkboxIds.allowDMs} className="font-medium text-sm">
-                {t('settings.privacy.items.allowDMs.title')}
+              <Label htmlFor={checkboxIds.showForumPostCommentsPublicly} className="font-medium text-sm">
+                {t('settings.privacy.items.showForumPostCommentsPublicly.title')}
               </Label>
-              <p id={`${checkboxIds.allowDMs}-desc`} className="text-xs text-muted-foreground">
-                {t('settings.privacy.items.allowDMs.desc')}
+              <p id={`${checkboxIds.showForumPostCommentsPublicly}-desc`} className="text-xs text-muted-foreground">
+                {t('settings.privacy.items.showForumPostCommentsPublicly.desc')}
               </p>
             </div>
           </div>
 
           <div className="flex items-start gap-3">
             <Checkbox
-              id={checkboxIds.showOnlineStatus}
+              id={checkboxIds.showCourseReviewsPublicly}
               className="mt-1"
-              checked={privacy.showOnlineStatus}
-              aria-describedby={`${checkboxIds.showOnlineStatus}-desc`}
+              checked={privacy.showCourseReviewsPublicly}
+              aria-describedby={`${checkboxIds.showCourseReviewsPublicly}-desc`}
               onCheckedChange={(checked) =>
-                setPrivacy({ ...privacy, showOnlineStatus: checked === true })
+                setPrivacy({ ...privacy, showCourseReviewsPublicly: checked === true })
               }
             />
             <div>
-              <Label htmlFor={checkboxIds.showOnlineStatus} className="font-medium text-sm">
-                {t('settings.privacy.items.showOnlineStatus.title')}
+              <Label htmlFor={checkboxIds.showCourseReviewsPublicly} className="font-medium text-sm">
+                {t('settings.privacy.items.showCourseReviewsPublicly.title')}
               </Label>
-              <p id={`${checkboxIds.showOnlineStatus}-desc`} className="text-xs text-muted-foreground">
-                {t('settings.privacy.items.showOnlineStatus.desc')}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3">
-            <Checkbox
-              id={checkboxIds.showActivity}
-              className="mt-1"
-              checked={privacy.showActivity}
-              aria-describedby={`${checkboxIds.showActivity}-desc`}
-              onCheckedChange={(checked) =>
-                setPrivacy({ ...privacy, showActivity: checked === true })
-              }
-            />
-            <div>
-              <Label htmlFor={checkboxIds.showActivity} className="font-medium text-sm">
-                {t('settings.privacy.items.showActivity.title')}
-              </Label>
-              <p id={`${checkboxIds.showActivity}-desc`} className="text-xs text-muted-foreground">
-                {t('settings.privacy.items.showActivity.desc')}
+              <p id={`${checkboxIds.showCourseReviewsPublicly}-desc`} className="text-xs text-muted-foreground">
+                {t('settings.privacy.items.showCourseReviewsPublicly.desc')}
               </p>
             </div>
           </div>

@@ -10,7 +10,7 @@ export interface TeacherRating {
   difficulty?: number;
   friendliness?: number;
   clarity?: number;
-  grading?: 'lenient' | 'balanced' | 'strict';
+  grading?: 'lenient' | 'balanced' | 'strict' | 'killer';
   reviewsCount: number;
 }
 
@@ -18,7 +18,7 @@ export interface TeacherRating {
  * Lightweight course reference taught by a teacher
  */
 export interface TeacherCourseRef {
-  subjectId: string;
+  courseId: string;
   subjectCode?: string;
   title?: string;
 }
@@ -42,6 +42,6 @@ export interface Teacher {
   yearsExperience?: number;
   rating?: TeacherRating;
   courses?: TeacherCourseRef[];
-  createdAt?: string | Date;
-  updatedAt?: string | Date;
+  createdAt?: string;
+  updatedAt?: string;
 }

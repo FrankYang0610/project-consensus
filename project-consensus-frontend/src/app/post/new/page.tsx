@@ -98,7 +98,7 @@ export default function NewForumPostPage() {
         title: title.trim(),
         content: content.trim(),
         tags: tags,
-        language: "zh-hans",
+
         isAnonymous,
       };
       const created = await createForumPost(payload);

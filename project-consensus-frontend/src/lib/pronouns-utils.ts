@@ -67,3 +67,14 @@ export function formatPronounsForProfilePageDisplay(value: string | undefined): 
   if (trimmed === 'prefer_not_to_say') return 'Pronoun Prefer Not To Say';
   return trimmed;
 }
+
+/**
+ * Check if pronouns should be displayed publicly
+ * - Returns false if user chooses "prefer_not_to_say" or "not_specified"
+ * - Returns false for empty/undefined values
+ * - Otherwise returns true (show pronouns)
+ */
+export function shouldDisplayPronouns(value: string | undefined): boolean {
+  const trimmed = value?.trim();
+  return Boolean(trimmed && trimmed !== 'prefer_not_to_say' && trimmed !== 'not_specified');
+}

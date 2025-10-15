@@ -8,7 +8,8 @@ from .models import Teacher
 class TeacherSerializer(serializers.ModelSerializer):
     """Serializer mapping to frontend Teacher type (camelCase)."""
 
-    avatarUrl = serializers.URLField(source="avatar_url", required=False, allow_null=True)
+    # Coalesce empty string to None for consistent frontend handling
+    avatarUrl = serializers.SerializerMethodField()
     officeHours = serializers.CharField(source="office_hours", required=False, allow_blank=True)
     homepageUrl = serializers.URLField(source="homepage_url", required=False, allow_null=True)
     yearsExperience = serializers.IntegerField(source="years_experience", required=False, allow_null=True)
@@ -49,11 +50,25 @@ class TeacherSerializer(serializers.ModelSerializer):
             "reviewsCount": obj.rating_reviews_count,
         }
 
+    def get_avatarUrl(self, obj: Teacher):
+        """
+        Return avatar URL if available, otherwise return initials for default avatar.
+        
+        Frontend can check if the value is a URL or initials:
+        - URL: starts with "http://" or "https://"
+        - Initials: uppercase letters generated from the first letter of each name part
+          (typically 1-3 characters for most names, e.g., "JS" for "John Smith")
+        
+        """
+        if obj.avatar_url:
+            return obj.avatar_url
+        return obj.initials
+
 
 class TeacherCourseRefSerializer(serializers.Serializer):
     """Lightweight course reference taught by a teacher, for /teachers/{id}/courses/ endpoint."""
 
-    subjectId = serializers.CharField()
+    courseId = serializers.CharField()
     subjectCode = serializers.CharField(required=False, allow_blank=True)
     title = serializers.CharField(required=False, allow_blank=True)
 

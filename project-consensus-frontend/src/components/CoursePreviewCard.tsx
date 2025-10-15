@@ -20,7 +20,7 @@ import type { SemesterKey, TeacherInfo } from "@/types";
  * 课程预览卡片组件属性 / Props for CoursePreviewCard
  */
 export interface CoursePreviewCardProps {
-  subjectId: string;
+  courseId: string;
   subjectCode: string;
   title: string;
   term: {
@@ -36,16 +36,16 @@ export interface CoursePreviewCardProps {
     reviewsCount: number;
   };
   attributes: {
-    difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard';
-    workload: 'light' | 'moderate' | 'heavy' | 'veryHeavy';
-    grading: 'lenient' | 'balanced' | 'strict';
-    gain: 'low' | 'decent' | 'high';
+    difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard' | null;
+    workload: 'light' | 'moderate' | 'heavy' | 'veryHeavy' | null;
+    grading: 'lenient' | 'balanced' | 'strict' | 'killer' | null;
+    gain: 'low' | 'decent' | 'high' | null;
   };
   // Updated to align with backend: [{ id, name, avatarUrl? }]
   teachers?: TeacherInfo[];
   department?: string;
   lastUpdated?: string | Date;
-  href?: string; // optional override; otherwise computed from subjectId
+  href?: string; // optional override; otherwise computed from courseId
   className?: string;
 }
 
@@ -79,7 +79,7 @@ function MetaItem({ label, value, icon }: { label: string; value: string; icon?:
 }
 
 export function CoursePreviewCard({
-  subjectId,
+  courseId,
   subjectCode,
   title,
   term,
@@ -165,11 +165,17 @@ export function CoursePreviewCard({
       <div className="flex flex-col gap-3">
         {/* Rating Row */}
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <StarRating score10={rating.score} />
-            <span className="text-sm font-medium">{safeRating.toFixed(1)}</span>
-            <span className="text-xs text-muted-foreground">/ 10</span>
-          </div>
+          {safeRating > 0 ? (
+            <div className="flex items-center gap-2">
+              <StarRating score10={rating.score} />
+              <span className="text-sm font-medium">{safeRating.toFixed(1)}</span>
+              <span className="text-xs text-muted-foreground">/ 10</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">{t("courses.card.rating.noRating")}</span>
+            </div>
+          )}
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Users className="w-3.5 h-3.5" />
             <span>{reviewsText}</span>
@@ -181,21 +187,21 @@ export function CoursePreviewCard({
           <div className="space-y-3">
             <AttributeItem
               label={t("courses.card.attributes.difficulty")}
-              value={t(`courses.card.adjectives.${attributes.difficulty}`)}
+              value={t(`courses.card.adjectives.${attributes.difficulty || 'unknown'}`)}
             />
             <AttributeItem
               label={t("courses.card.attributes.workload")}
-              value={t(`courses.card.adjectives.${attributes.workload}`)}
+              value={t(`courses.card.adjectives.${attributes.workload || 'unknown'}`)}
             />
           </div>
           <div className="space-y-3">
             <AttributeItem
               label={t("courses.card.attributes.grading")}
-              value={t(`courses.card.adjectives.${attributes.grading}`)}
+              value={t(`courses.card.adjectives.${attributes.grading || 'unknown'}`)}
             />
             <AttributeItem
               label={t("courses.card.attributes.gain")}
-              value={t(`courses.card.adjectives.${attributes.gain}`)}
+              value={t(`courses.card.adjectives.${attributes.gain || 'unknown'}`)}
             />
           </div>
           <div className="space-y-3">
@@ -227,8 +233,8 @@ export function CoursePreviewCard({
       </div>
     </CardFooter>
   ) : null;
-  // optional override using href; otherwise computed from subjectId
-  const computedHref = href ?? (subjectId ? `/courses/${subjectId}` : undefined);
+  // optional override using href; otherwise computed from courseId
+  const computedHref = href ?? (courseId ? `/courses/${courseId}` : undefined);
 
   const CardInner = (
     <Card className={cn("hover:shadow-md transition-shadow duration-200 gap-1 py-4", computedHref && "cursor-pointer", className)}>

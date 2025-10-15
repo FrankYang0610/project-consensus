@@ -1,8 +1,21 @@
 // MARK: ============ Course API types ============
 
+// GET /api/courses/ query parameters
+export interface FetchCoursesParams {
+  page?: number;
+  pageSize?: number;
+  ordering?: string;
+  subjectCode?: string;
+  department?: string[];
+  category?: string;
+  categories?: string[];
+  level?: string[];
+  search?: string;
+}
+
 // GET /api/reviews/ query parameters
 export interface FetchCourseReviewsParams {
-  subjectId: string;
+  courseId: string;
   page?: number;
   pageSize?: number;
   ordering?: string; // created_at, -likes_count, overall_rating, etc.
@@ -52,7 +65,33 @@ export type CourseUserVote = 'recommend' | 'notRecommend' | null;
 
 // POST /api/courses/:id/vote/ response
 export interface VoteCourseResponse {
-  subjectId: string;
+  courseId: string;
   rating: { recommendCount: number; notRecommendCount: number };
   userVote: CourseUserVote;
+}
+
+// GET /api/courses/departments-with-counts/ response item
+export interface CourseDepartmentWithCount {
+  name: string;
+  count: number;
+}
+
+// GET /api/courses/department-levels/ response item
+export interface CourseLevelWithCount {
+  level: string;
+  count: number;
+}
+
+// Course browse page department data (UI state)
+export interface CourseDepartmentData {
+  name: string;
+  count: number;
+  levels?: CourseLevelWithCount[]; // Level distribution (lazy loaded)
+  coursesByLevel?: Record<string, {
+    courses: import('@/types').Course[];
+    loading?: boolean;
+    error?: boolean;
+  }>; // Courses cached per level (lazy loaded)
+  loading?: boolean; // Loading state for levels
+  error?: boolean; // Error state for levels
 }

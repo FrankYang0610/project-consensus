@@ -8,7 +8,10 @@
  */
 
 // 用户相关类型 / User-related types
-export type { User, Author } from './user';
+export type { User, PublicUser, Author, UserStats } from './user';
+
+// 验证相关类型 / Validation-related types
+export type { ValidationResult } from './validation';
 
 // 论坛相关类型 / Forum-related types
 export type { ForumPost } from './forum';
@@ -37,6 +40,15 @@ export type {
   TeacherCourseRef,
 } from './teacher';
 
+// 搜索相关类型 / Search-related types
+export type {
+  SearchResult,
+  SearchResponse,
+  SearchResultType,
+  SearchResultMetadata,
+  SearchParams,
+} from './search';
+
 // API response types
 export type {
   SendVerificationCodeResponse,
@@ -47,6 +59,7 @@ export type {
   ErrorResponse,
   PaginatedResponse,
   // Course API types
+  FetchCoursesParams,
   FetchCourseReviewsParams,
   CreateCourseReviewPayload,
   UpdateCourseReviewPayload,
@@ -54,6 +67,9 @@ export type {
   CreateReplyPayload,
   CourseUserVote,
   VoteCourseResponse,
+  CourseDepartmentWithCount,
+  CourseLevelWithCount,
+  CourseDepartmentData,
   // Teacher API types
   FetchTeachersParams,
   // Forum API types
@@ -64,4 +80,7 @@ export type {
   FetchForumCommentsParams,
   CreateForumCommentPayload,
   UpdateForumCommentPayload,
+  // Notifications API types
+  NotificationItem,
+  NotificationSSEEvent,
 } from './api';

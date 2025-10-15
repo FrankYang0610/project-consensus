@@ -8,7 +8,7 @@ import type {
   UpdateForumCommentPayload,
   GetForumPostCommentPositionResponse,
 } from "@/types/api";
-import { apiGet, apiPost, apiPatch, apiDeleteVoid } from "./api-utils";
+import { apiGet, apiPost, apiPatch, apiDeleteVoid, HttpError } from "./api-utils";
 
 /**
  * Fetch forum comments for a specific post
@@ -30,19 +30,7 @@ export async function fetchForumComments(
 
   const queryString = queryParams.toString();
   const url = `/api/forum/comments/?${queryString}`;
-  
-  try {
-    return await apiGet<PaginatedResponse<ForumPostComment>>(url, init);
-  } catch (error) {
-    console.error('Failed to fetch forum comments:', error);
-    // Return empty paginated response on error
-    return {
-      count: 0,
-      next: null,
-      previous: null,
-      results: [],
-    };
-  }
+  return apiGet<PaginatedResponse<ForumPostComment>>(url, init);
 }
 
 /**
@@ -62,6 +50,9 @@ export async function fetchForumCommentById(
     );
     return data ?? null;
   } catch (error) {
+    if (error instanceof HttpError && error.status === 404) {
+      return null; // Missing comment is not an error
+    }
     console.error(`Failed to fetch forum comment ${commentId}:`, error);
     return null;
   }
@@ -111,45 +102,10 @@ export async function deleteForumComment(
   return apiDeleteVoid(`/api/forum/comments/${encodeURIComponent(commentId)}/`, init);
 }
 
-/**
- * Like a forum comment
- * @param commentId - Comment UUID
- * @param init - Optional fetch init options
- * @returns Updated forum comment with like status
- */
-export async function likeForumComment(
-  commentId: string,
-  init?: RequestInit
-): Promise<ForumPostComment> {
-  return apiPost<ForumPostComment>(
-    `/api/forum/comments/${encodeURIComponent(commentId)}/like/`,
-    {},
-    init
-  );
-}
 
 /**
- * Unlike a forum comment
- * @param commentId - Comment UUID
- * @param init - Optional fetch init options
- * @returns Updated forum comment with like status
- */
-export async function unlikeForumComment(
-  commentId: string,
-  init?: RequestInit
-): Promise<ForumPostComment> {
-  return apiPost<ForumPostComment>(
-    `/api/forum/comments/${encodeURIComponent(commentId)}/unlike/`,
-    {},
-    init
-  );
-}
-
-/**
- * Toggle like status of a forum comment
- * @param commentId - Comment UUID
- * @param init - Optional fetch init options
- * @returns Updated forum comment with like status
+ * Toggle like status for a forum comment.
+ * If not liked, creates like; if already liked, removes like.
  */
 export async function toggleLikeForumComment(
   commentId: string,

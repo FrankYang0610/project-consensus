@@ -90,7 +90,7 @@ export interface FilterCallbacks {
  * 课程详情卡片组件属性 / Props for CourseDetailCard
  */
 export interface CourseDetailCardProps {
-  subjectId: string;
+  courseId: string;
   subjectCode: string;
   title: string;
   term: {
@@ -108,10 +108,10 @@ export interface CourseDetailCardProps {
     notRecommendCount?: number;
   };
   attributes: {
-    difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard';
-    workload: 'light' | 'moderate' | 'heavy' | 'veryHeavy';
-    grading: 'lenient' | 'balanced' | 'strict';
-    gain: 'low' | 'decent' | 'high';
+    difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard' | null;
+    workload: 'light' | 'moderate' | 'heavy' | 'veryHeavy' | null;
+    grading: 'lenient' | 'balanced' | 'strict' | 'killer' | null;
+    gain: 'low' | 'decent' | 'high' | null;
   };
   teachers: TeacherInfo[];
   department?: string;
@@ -243,9 +243,18 @@ function MetaRow({ label, value }: { label: string; value?: React.ReactNode }) {
 
 /**
  * Teacher avatar component with fallback to initials
+ * Handles both URL and initials from backend
  */
 function TeacherAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string }) {
+  // Check if avatarUrl is a full URL or initials from backend
+  const isUrl = avatarUrl?.startsWith('http://') || avatarUrl?.startsWith('https://');
+  
   const initials = React.useMemo(() => {
+    if (avatarUrl && !isUrl) {
+      // Backend already provided initials (e.g., "WYW")
+      return avatarUrl;
+    }
+    // Fallback: calculate initials from name
     if (!name || typeof name !== 'string') return '?';
     const trimmedName = name.trim();
     if (!trimmedName) return '?';
@@ -253,22 +262,22 @@ function TeacherAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string }
     const parts = trimmedName.split(/\s+/).filter(Boolean);
     const initialsText = parts.slice(0, 2).map(p => p[0]?.toUpperCase() ?? "").join("");
     return initialsText || trimmedName[0]?.toUpperCase() || "?";
-  }, [name]);
+  }, [name, avatarUrl, isUrl]);
 
   return (
     <div className="h-9 w-9 rounded-full bg-muted inline-flex items-center justify-center overflow-hidden">
-      {avatarUrl ? (
+      {isUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={avatarUrl} alt={name} className="h-full w-full object-cover" />
       ) : (
-        <span className="text-xs text-muted-foreground">{initials}</span>
+        <span className="text-xs text-muted-foreground font-medium">{initials}</span>
       )}
     </div>
   );
 }
 
 export function CourseDetailCard({
-  subjectId,
+  courseId,
   subjectCode,
   title,
   term,
@@ -465,8 +474,8 @@ export function CourseDetailCard({
     dispatchVoting({ type: 'TOGGLE_VOTE', voteType });
 
     // Debounced server request
-    sendVoteToServer(subjectId, voteType, currentRequestId);
-  }, [isLoggedIn, openLoginModal, sendVoteToServer, subjectId]);
+    sendVoteToServer(courseId, voteType, currentRequestId);
+  }, [isLoggedIn, openLoginModal, sendVoteToServer, courseId]);
 
   // Sort terms by year and semester (most recent first)
   const orderedTerms = React.useMemo(() => {
@@ -966,11 +975,17 @@ export function CourseDetailCard({
           {/* Rating and Voting Section */}
           <div className="flex items-center justify-between border-t pt-3">
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <StarRating score10={rating.score} />
-                <span className="text-2xl font-bold">{safeRating.toFixed(1)}</span>
-                <span className="text-sm text-muted-foreground">/ 10</span>
-              </div>
+              {safeRating > 0 ? (
+                <div className="flex items-center gap-2">
+                  <StarRating score10={rating.score} />
+                  <span className="text-2xl font-bold">{safeRating.toFixed(1)}</span>
+                  <span className="text-sm text-muted-foreground">/ 10</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-medium text-muted-foreground">{t("courses.card.rating.noRating")}</span>
+                </div>
+              )}
               <div className="text-sm text-muted-foreground">
                 <Users className="w-4 h-4 inline mr-1" />
                 {t("courses.card.rating.reviews", { count: filteredReviewsCount })}
@@ -1022,7 +1037,7 @@ export function CourseDetailCard({
                 {t(`courses.card.attributes.${attr}`)}
               </div>
               <div className="font-semibold text-sm">
-                {t(`courses.card.adjectives.${attributes[attr]}`)}
+                {t(`courses.card.adjectives.${attributes[attr] || 'unknown'}`)}
               </div>
             </div>
           ))}
@@ -1064,18 +1079,22 @@ export function CourseDetailCard({
                   <div className="space-y-2">
                     {otherTeacherCourses!.map((course) => (
                       <Link
-                        key={course.subjectId}
-                        href={`/courses/${course.subjectId}`}
+                        key={course.courseId}
+                        href={`/courses/${course.courseId}`}
                         className="flex items-center gap-3 p-3 rounded-lg border bg-background hover:bg-muted/50 transition-colors group"
                       >
                         <TeacherAvatar name={course.teacherName} avatarUrl={course.teacherAvatarUrl} />
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium">{course.teacherName}</div>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                            <span className="flex items-center gap-1">
-                              <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
-                              {course.rating.score.toFixed(1)}
-                            </span>
+                            {course.rating.score > 0 ? (
+                              <span className="flex items-center gap-1">
+                                <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
+                                {course.rating.score.toFixed(1)}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground/70">{t("courses.card.rating.noRating")}</span>
+                            )}
                             <span>•</span>
                             <span>{t("courses.card.rating.reviews", { count: course.rating.reviewsCount })}</span>
                           </div>
@@ -1084,13 +1103,13 @@ export function CourseDetailCard({
                           <div className="flex items-center gap-1.5">
                             <span className="text-muted-foreground/80">{t("courses.detail.otherTeachers.gain")}:</span>
                             <span className="px-2 py-1 rounded bg-muted/50 font-medium">
-                              {t(`courses.card.adjectives.${course.attributes.gain}`)}
+                              {t(`courses.card.adjectives.${course.attributes.gain || 'unknown'}`)}
                             </span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <span className="text-muted-foreground/80">{t("courses.detail.otherTeachers.grading")}:</span>
                             <span className="px-2 py-1 rounded bg-muted/50 font-medium">
-                              {t(`courses.card.adjectives.${course.attributes.grading}`)}
+                              {t(`courses.card.adjectives.${course.attributes.grading || 'unknown'}`)}
                             </span>
                           </div>
                         </div>
@@ -1154,7 +1173,7 @@ export function CourseDetailCard({
             <h3 className="text-base font-semibold">{t("courses.detail.reviews.title")}</h3>
             <Button size="sm" asChild>
               <Link
-                href={`/courses/${subjectId}/review${(userHasReview ? '?edit=1' : '')}`}
+                href={`/courses/${courseId}/review${(userHasReview ? '?edit=1' : '')}`}
                 onClick={(e) => { if (!isLoggedIn) { e.preventDefault(); openLoginModal(); } }}
               >
                 {userHasReview ? t("courses.detail.reviews.editReview") : t("courses.detail.reviews.writeReview")}

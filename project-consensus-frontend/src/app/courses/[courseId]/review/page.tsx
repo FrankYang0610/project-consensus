@@ -31,10 +31,10 @@ const RichTextEditor = dynamic(() => import("@/components/RichTextEditor"), { ss
 
 type Difficulty = 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard';
 type Workload = 'light' | 'moderate' | 'heavy' | 'veryHeavy';
-type Grading = 'lenient' | 'balanced' | 'strict';
+type Grading = 'lenient' | 'balanced' | 'strict' | 'killer';
 type Gain = 'low' | 'decent' | 'high';
 
-export default function CourseReviewCreatePage({ params }: { params: Promise<{ subjectId: string }> }) {
+export default function CourseReviewCreatePage({ params }: { params: Promise<{ courseId: string }> }) {
   const { t, language } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -42,7 +42,7 @@ export default function CourseReviewCreatePage({ params }: { params: Promise<{ s
 
   // Unwrap params for Next.js 15
   const resolvedParams = React.use(params);
-  const { subjectId } = resolvedParams;
+  const { courseId } = resolvedParams;
 
   // Form state
   const [onlyText, setOnlyText] = React.useState(false);
@@ -68,11 +68,11 @@ export default function CourseReviewCreatePage({ params }: { params: Promise<{ s
   React.useEffect(() => {
     let cancelled = false;
     (async () => {
-      const data = await fetchCourseById(subjectId);
+      const data = await fetchCourseById(courseId);
       if (!cancelled) setCourse(data);
     })();
     return () => { cancelled = true; };
-  }, [subjectId]);
+  }, [courseId]);
   const availableTerms = React.useMemo(() => {
     if (!course) return [] as Array<{ year: number; semester: SemesterKey }>;
     const source = course.terms && course.terms.length > 0 ? course.terms : [course.term];
@@ -91,7 +91,7 @@ export default function CourseReviewCreatePage({ params }: { params: Promise<{ s
     (async () => {
       if (!isEditMode) return;
       try {
-        const page = await fetchCourseReviews({ subjectId, page: 1, pageSize: 1, mine: true, ordering: '-created_at' });
+        const page = await fetchCourseReviews({ courseId, page: 1, pageSize: 1, mine: true, ordering: '-created_at' });
         const my = page.results?.[0];
         if (my && !cancelled) {
           setEditingReviewId(my.id);
@@ -112,7 +112,7 @@ export default function CourseReviewCreatePage({ params }: { params: Promise<{ s
       }
     })();
     return () => { cancelled = true; };
-  }, [isEditMode, subjectId]);
+  }, [isEditMode, courseId]);
   const [errors, setErrors] = React.useState<{
     stars?: string;
     dimensions?: string;
@@ -175,9 +175,9 @@ export default function CourseReviewCreatePage({ params }: { params: Promise<{ s
       if (isEditMode && editingReviewId) {
         await updateCourseReview(editingReviewId, payload);
       } else {
-        await createCourseReview(subjectId, payload);
+        await createCourseReview(courseId, payload);
       }
-      router.push(`/courses/${subjectId}`);
+      router.push(`/courses/${courseId}`);
     } catch (e) {
       console.error("Failed to submit review", e);
     } finally {
@@ -295,6 +295,7 @@ export default function CourseReviewCreatePage({ params }: { params: Promise<{ s
     { value: 'lenient', label: t('courses.card.adjectives.lenient') },
     { value: 'balanced', label: t('courses.card.adjectives.balanced') },
     { value: 'strict', label: t('courses.card.adjectives.strict') },
+    { value: 'killer', label: t('courses.card.adjectives.killer') },
   ];
   const gainOptions: Array<{ value: Gain; label: string }> = [
     { value: 'low', label: t('courses.card.adjectives.low') },

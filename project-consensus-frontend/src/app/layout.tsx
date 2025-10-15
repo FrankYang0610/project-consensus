@@ -22,8 +22,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "project-consensus",
-  description: "project-consensus main page",
+  title: "polyu.life",
+  description: "polyu.life main page",
 };
 
 export default function RootLayout({

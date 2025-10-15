@@ -1,15 +1,32 @@
 from __future__ import annotations
 
-from rest_framework import viewsets, permissions, filters, status
-from rest_framework.response import Response
+import logging
+from django.db import transaction
+from django.db.models import Count, Exists, OuterRef, Value
+from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
+from rest_framework.response import Response
+from typing import override
 
-from django.db import transaction
-from django.db.models import F, Count, Q, Case, When, Value, IntegerField
+from core.permissions import IsAuthorOrReadOnly
 from .models import ForumPost, ForumPostComment, ForumPostLike, ForumCommentLike
-from .serializers import ForumPostSerializer, ForumPostCommentSerializer
+from .serializers import ForumPostCommentSerializer, ForumPostSerializer
+from .services.forum_like_service import (
+    toggle_forum_post_like,
+    toggle_forum_comment_like,
+)
+from .services.forum_post_service import (
+    cleanup_removed_images_for_post,
+    delete_post_and_cleanup_images,
+    emit_notifications_for_new_comment,
+    mark_post_edited_if_fields_changed,
+    soft_delete_comment_and_cleanup_images,
+)
+
+logger = logging.getLogger(__name__)
 
 
 class DefaultPageNumberPagination(PageNumberPagination):
@@ -30,62 +47,106 @@ class ForumPostViewSet(viewsets.ModelViewSet):
 
     queryset = ForumPost.objects.select_related("author").prefetch_related("comments")
     serializer_class = ForumPostSerializer
-    # Read-only for anonymous, write requires auth
-    def get_permissions(self):  # type: ignore[override]
-        if self.action in ["list", "retrieve"]:
-            return [permissions.AllowAny()]
-        return [permissions.IsAuthenticated()]
+    permission_classes = [IsAuthorOrReadOnly]
+
+    # Enable search and ordering
+    # - Search: title, content, tags
+    # - Ordering: by created_at (time), likes_count (likes), comments_count (computed)
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["title", "content", "tags"]
+    ordering_fields = ["created_at", "likes_count", "comments_count", "id"]
+    # Sensible default ordering for feeds without ML: newest first, break ties by engagement
+    ordering = ["-created_at", "-likes_count", "-id"]
+    pagination_class = DefaultPageNumberPagination
+
+    @override
+    def get_queryset(self):  # type: ignore[override]
+        qs = super().get_queryset()
+        # Annotate derived fields used by serializer and ordering
+        # - comments_count: total number of comments on the post
+        qs = qs.annotate(comments_count=Count("comments"))
+
+        # Annotate is_liked for authenticated users to avoid N+1 queries
+        if self.request.user.is_authenticated:
+            qs = qs.annotate(
+                is_liked=Exists(
+                    ForumPostLike.objects.filter(
+                        post_id=OuterRef("id"),
+                        user=self.request.user
+                    )
+                )
+            )
+        else:
+            qs = qs.annotate(is_liked=Value(False))
+
+        # Filters
+        params = self.request.query_params
+        author_id = params.get("author")
+        if author_id:
+            qs = qs.filter(author_id=author_id)
+
+        mine = params.get("mine")
+        if mine and self.request.user.is_authenticated:
+            qs = qs.filter(author_id=self.request.user.pk)
+
+        # Tag filtering: accepts repeated ?tags=foo&tags=bar and matches posts containing ALL selected tags
+        # Industry practice: tag filters usually narrow results; "all-of" semantics provide predictable filtering.
+        tags = params.getlist("tags")
+        if tags:
+            # Normalize and deduplicate incoming tags while preserving order
+            normalized_tags = [stripped for t in tags if (stripped := t.strip())]
+            if normalized_tags:
+                # Apply AND semantics by requiring all selected tags to be contained
+                # Use a single JSON contains condition with the full unique tag list
+                unique_tags = list(dict.fromkeys(normalized_tags))
+                qs = qs.filter(tags__contains=unique_tags)
+
+        return qs
+
+    # DRF flow note:
+    # ModelViewSet.create() calls perform_create(serializer).
+    # serializer.save(author=...) invokes ModelSerializer.create(...) when no instance exists,
+    # whose default implementation is Model.objects.create(**validated_data),
+    # thus performing the actual INSERT. Passing author here enforces the current user.
+    @override
     def perform_create(self, serializer):  # type: ignore[override]
         # Force the author to the current user
         serializer.save(author=self.request.user)
 
-    filter_backends = [filters.SearchFilter]
-    search_fields = ["title", "content", "tags"]
-    pagination_class = DefaultPageNumberPagination
+    @override
+    def perform_destroy(self, instance: ForumPost):  # type: ignore[override]
+        """Hard delete a forum post and cleanup related images (delegated)."""
+        delete_post_and_cleanup_images(post=instance)
 
+    @override
     def destroy(self, request: Request, *args, **kwargs):  # type: ignore[override]
-        """Only the author can delete their own post."""
-        post = self.get_object()
-        if request.user != post.author:
-            return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
-        return super().destroy(request, *args, **kwargs)
+        """Explicitly return 204 after performing destroy for clarity and consistency."""
+        instance: ForumPost = self.get_object()
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @override
+    def perform_update(self, serializer):  # type: ignore[override]
+        """Update a post, then delegate cleanup and edited marking to services."""
+        instance: ForumPost = serializer.instance
+        before_html = getattr(instance, "content", "")
+        incoming_keys = set(serializer.validated_data.keys())
+
+        with transaction.atomic():
+            super().perform_update(serializer)
+            instance.refresh_from_db(fields=["content", "is_edited"])  # ensure latest content
+            cleanup_removed_images_for_post(before_html=before_html, post_after_update=instance)
+            mark_post_edited_if_fields_changed(post=instance, incoming_keys=incoming_keys)
 
     @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
-    def like(self, request: Request, pk: str | None = None):
-        """Current user likes the post. Idempotent: multiple calls have no additional effect."""
+    def toggle_like(self, request: Request, pk: str | None = None):
+        """Toggle like status for the post. If not liked, creates like; if already liked, removes like."""
         assert pk is not None
         post = self.get_object()
         user = request.user
         try:
-            with transaction.atomic():
-                created = False
-                like, created = ForumPostLike.objects.get_or_create(post=post, user=user)
-                if created:
-                    ForumPost.objects.filter(pk=post.pk).update(likes_count=F("likes_count") + 1)
-            post.refresh_from_db(fields=["likes_count"])
-            serializer = self.get_serializer(post, context={"request": request})
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except Exception as e:  # pragma: no cover
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
-    def unlike(self, request: Request, pk: str | None = None):
-        """Current user unlikes the post. Idempotent: if not liked, no change."""
-        assert pk is not None
-        post = self.get_object()
-        user = request.user
-        try:
-            with transaction.atomic():
-                deleted, _ = ForumPostLike.objects.filter(post=post, user=user).delete()
-                if deleted:
-                    ForumPost.objects.filter(pk=post.pk).update(
-                        likes_count=Case(
-                            When(likes_count__gt=0, then=F("likes_count") - 1),
-                            default=Value(0),
-                            output_field=IntegerField(),
-                        )
-                    )
-            post.refresh_from_db(fields=["likes_count"])
+            toggle_forum_post_like(user=user, post=post)
+            post = self.get_queryset().get(pk=pk)  # refresh annotations
             serializer = self.get_serializer(post, context={"request": request})
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:  # pragma: no cover
@@ -103,54 +164,68 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
 
     queryset = ForumPostComment.objects.select_related("author", "post", "reply_to")
     serializer_class = ForumPostCommentSerializer
-    # Read-only for anonymous, write requires auth
-    def get_permissions(self):  # type: ignore[override]
-        if self.action in ["list", "retrieve", "position"]:
-            return [permissions.AllowAny()]
-        return [permissions.IsAuthenticated()]
+    permission_classes = [IsAuthorOrReadOnly]
     pagination_class = DefaultPageNumberPagination
 
+    @override
     def get_queryset(self):  # type: ignore[override]
         qs = super().get_queryset()
         post_id = self.request.query_params.get("postId")
         reply_to_id = self.request.query_params.get("replyTo")
         if post_id:
+            # Return 404 if the parent post is missing
+            if not ForumPost.objects.filter(pk=post_id).exists():
+                raise NotFound("Post not found")
             qs = qs.filter(post_id=post_id)
         if reply_to_id:
             qs = qs.filter(reply_to_id=reply_to_id)
         # Consistent ordering: oldest first (ascending)
         qs = qs.order_by("created_at", "id")
         # Annotate direct replies count (include soft-deleted replies)
-        return qs.annotate(replies_count=Count("replies"))
+        qs = qs.annotate(replies_count=Count("replies"))
+        # Annotate is_liked for authenticated users to avoid N+1 queries
+        if self.request.user.is_authenticated:
+            qs = qs.annotate(
+                is_liked=Exists(
+                    ForumCommentLike.objects.filter(
+                        comment_id=OuterRef("id"),
+                        user=self.request.user
+                    )
+                )
+            )
+        else:
+            qs = qs.annotate(is_liked=Value(False))
+        return qs
 
+    # Because forum post comments are not editable, we don't need to implement `perform_update`
+    @override
+    def update(self, request: Request, *args, **kwargs):  # type: ignore[override]
+        return Response({"detail": "Comment editing is not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    # Because forum post comments are not editable, we don't need to implement `partial_update`
+    @override
+    def partial_update(self, request: Request, *args, **kwargs):  # type: ignore[override]
+        return Response({"detail": "Comment editing is not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    @override
     def perform_create(self, serializer):  # type: ignore[override]
-        # Always set the author to current user; no main thread tracking in flat model
-        serializer.save(author=self.request.user)
+        # Always set the author to current user; relation validation handled by serializer
+        comment: ForumPostComment = serializer.save(author=self.request.user)
+        emit_notifications_for_new_comment(comment=comment, actor=self.request.user)
 
+    @override
+    def perform_destroy(self, instance: ForumPostComment):  # type: ignore[override]
+        """Soft delete a comment and cleanup embedded images (delegated)."""
+        soft_delete_comment_and_cleanup_images(comment=instance)
+
+    @override
     def destroy(self, request: Request, *args, **kwargs):  # type: ignore[override]
-        """Soft delete a comment: only the author may delete.
-
-        Behavior:
-        - Mark is_deleted=True
-        - Clear content (set to empty string)
-        - Keep the row to preserve thread structure
-        """
-        comment = self.get_object()
-        if request.user != comment.author:
-            return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
-
-        # If already soft-deleted, return current state
-        if getattr(comment, "is_deleted", False):
-            serializer = self.get_serializer(comment, context={"request": request})
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
-        with transaction.atomic():
-            # Soft delete and clear content
-            ForumPostComment.objects.filter(pk=comment.pk).update(is_deleted=True, content="")
-        comment.refresh_from_db(fields=["is_deleted", "content"]) 
-        serializer = self.get_serializer(comment, context={"request": request})
-        # 200 with updated payload helps clients update state; DELETE 204 would also be acceptable
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        """Soft delete comments and always return 204 (idempotent)."""
+        instance: ForumPostComment = self.get_object()
+        if getattr(instance, "is_deleted", False):
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=["GET"], url_path="position", permission_classes=[permissions.AllowAny])
     def position(self, request: Request):
@@ -181,6 +256,10 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
             return Response(
                 {"detail": "commentId does not belong to the given postId"}, status=status.HTTP_400_BAD_REQUEST
             )
+
+        # Ensure the parent post exists
+        if not ForumPost.objects.filter(pk=post_id).exists():
+            return Response({"detail": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
 
         base_qs = ForumPostComment.objects.filter(post_id=post_id)
         # Count of items strictly before the target by ordering (created_at asc, id asc)
@@ -220,40 +299,17 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
         return Response(payload, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
-    def like(self, request: Request, pk: str | None = None):
-        """Current user likes the comment. Idempotent: multiple calls have no additional effect."""
+    def toggle_like(self, request: Request, pk: str | None = None):
+        """Toggle like status for the comment. If not liked, creates like; if already liked, removes like."""
         assert pk is not None
         comment = self.get_object()
+        # Disallow liking a deleted comment
+        if getattr(comment, "is_deleted", False):
+            return Response({"detail": "Cannot like a deleted comment"}, status=status.HTTP_400_BAD_REQUEST)
         user = request.user
         try:
-            with transaction.atomic():
-                _, created = ForumCommentLike.objects.get_or_create(comment=comment, user=user)
-                if created:
-                    ForumPostComment.objects.filter(pk=comment.pk).update(likes_count=F("likes_count") + 1)
-            comment.refresh_from_db(fields=["likes_count"])
-            serializer = self.get_serializer(comment, context={"request": request})
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except Exception as e:  # pragma: no cover
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
-    def unlike(self, request: Request, pk: str | None = None):
-        """Current user unlikes the comment. Idempotent: if not liked, no change."""
-        assert pk is not None
-        comment = self.get_object()
-        user = request.user
-        try:
-            with transaction.atomic():
-                deleted, _ = ForumCommentLike.objects.filter(comment=comment, user=user).delete()
-                if deleted:
-                    ForumPostComment.objects.filter(pk=comment.pk).update(
-                        likes_count=Case(
-                            When(likes_count__gt=0, then=F("likes_count") - 1),
-                            default=Value(0),
-                            output_field=IntegerField(),
-                        )
-                    )
-            comment.refresh_from_db(fields=["likes_count"])
+            toggle_forum_comment_like(user=user, comment=comment)
+            comment = self.get_queryset().get(pk=pk)
             serializer = self.get_serializer(comment, context={"request": request})
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:  # pragma: no cover

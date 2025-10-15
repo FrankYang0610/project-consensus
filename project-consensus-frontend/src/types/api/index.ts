@@ -1,7 +1,8 @@
 // Export all API types from individual files
-export * from './accounts';
+export * from './account';
 export * from './common';
-export * from './courses';
+export * from './course';
 export * from './forum-comment';
 export * from './forum-post';
-export * from './teachers';
+export * from './teacher';
+export * from './notification';

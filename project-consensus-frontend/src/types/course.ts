@@ -45,7 +45,7 @@ export interface CurriculumCollege {
  * 其他教师的同课程信息 / Other teacher's course info
  */
 export interface OtherTeacherCourse {
-  subjectId: string;
+  courseId: string;
   teacherName: string;
   teacherAvatarUrl?: string;
   rating: {
@@ -53,10 +53,10 @@ export interface OtherTeacherCourse {
     reviewsCount: number;
   };
   attributes: {
-    difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard';
-    workload: 'light' | 'moderate' | 'heavy' | 'veryHeavy';
-    grading: 'lenient' | 'balanced' | 'strict';
-    gain: 'low' | 'decent' | 'high';
+    difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard' | null;
+    workload: 'light' | 'moderate' | 'heavy' | 'veryHeavy' | null;
+    grading: 'lenient' | 'balanced' | 'strict' | 'killer' | null;
+    gain: 'low' | 'decent' | 'high' | null;
   };
 }
 
@@ -65,7 +65,7 @@ export interface OtherTeacherCourse {
  */
 export interface CourseReview {
   id: string; // 评价唯一标识符（UUID） / Review unique identifier (UUID)
-  subjectId: string; // 课程ID（后端为 UUID 字符串） / Course ID (UUID string)
+  courseId: string; // 课程ID（后端为 UUID 字符串） / Course ID (UUID string)
   author: {
     id: string; // 作者ID / Author ID
     name: string; // 作者姓名 / Author name  
@@ -85,13 +85,13 @@ export interface CourseReview {
   attributes?: {
     difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard';
     workload: 'light' | 'moderate' | 'heavy' | 'veryHeavy';
-    grading: 'lenient' | 'balanced' | 'strict';
+    grading: 'lenient' | 'balanced' | 'strict' | 'killer';
     gain: 'low' | 'decent' | 'high';
   } | null;
   content: string; // 评价正文 / Review content
   likesCount: number; // 点赞数 / Number of likes
-  createdAt: string | Date; // 发布时间 / Creation time
-  updatedAt?: string | Date; // 编辑时间 / Last updated time
+  createdAt: string; // 发布时间 / Creation time
+  updatedAt?: string; // 编辑时间 / Last updated time
   isLiked?: boolean; // 当前用户是否点赞 / Whether current user liked
   term?: {
     year: number;
@@ -104,7 +104,7 @@ export interface CourseReview {
  * 课程基础信息 / Course basic information
  */
 export interface Course {
-  subjectId: string; // 后端为 UUID 字符串 / Backend UUID string
+  courseId: string; // 后端为 UUID 字符串 / Backend UUID string
   subjectCode: string;
   title: string;
   term: {
@@ -122,10 +122,10 @@ export interface Course {
     notRecommendCount?: number;
   };
   attributes: {
-    difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard';
-    workload: 'light' | 'moderate' | 'heavy' | 'veryHeavy';
-    grading: 'lenient' | 'balanced' | 'strict';
-    gain: 'low' | 'decent' | 'high';
+    difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard' | null;
+    workload: 'light' | 'moderate' | 'heavy' | 'veryHeavy' | null;
+    grading: 'lenient' | 'balanced' | 'strict' | 'killer' | null;
+    gain: 'low' | 'decent' | 'high' | null;
   };
   // Backend should return teachers with both id and name for display and routing
   // Note: transitional `teacherIds` has been removed; use `teachers[].id` instead

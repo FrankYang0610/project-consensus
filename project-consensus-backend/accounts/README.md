@@ -6,7 +6,7 @@ The Accounts app provides user-related models and endpoints, including a user Pr
 
 - `Profile`
   - One-to-one with `AUTH_USER_MODEL`
-  - Fields: `display_name`, `avatar_url`
+  - Fields: `nickname`, `avatar_url`
   - Helper: `author_payload` returns `{ id, name, avatar }` used by the frontend "Author" type
 
 Note: Email verification codes are not stored in the database. They are
@@ -24,6 +24,7 @@ cached with a TTL for the registration flow.
 Base path: `/api/auth/`
 
 - `POST /api/auth/send_verification_code/`
+
   - Body: `{ "email": "user@connect.polyu.hk" }`
   - Behavior: Generates a numeric code and stores it in cache with TTL
 
@@ -60,4 +61,3 @@ curl -X POST http://127.0.0.1:8000/api/auth/register/ \
   -H 'Content-Type: application/json' \
   -d '{"nickname":"Alice","email":"user@connect.polyu.hk","verification_code":"123456","password":"secret"}'
 ```
-

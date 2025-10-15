@@ -32,7 +32,11 @@ def create_demo_user(apps, schema_editor):
     if user is None:
         user = User.objects.create_user(username=DEMO_EMAIL, email=DEMO_EMAIL, password=DEMO_PASSWORD)
         # Create a simple profile with default pronouns
-        Profile.objects.create(user=user, display_name=DEMO_NAME, pronouns="not_specified")
+        Profile.objects.create(
+            user=user,
+            nickname=DEMO_NAME,
+            pronouns="not_specified",
+        )
 
 # For Database Rollback
 def delete_demo_user(apps, schema_editor):

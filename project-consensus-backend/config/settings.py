@@ -49,10 +49,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.postgres',      # PostgreSQL specific features (full-text search, trigram)
 
     # Third-party apps
     'rest_framework',           # Django REST Framework for building APIs
     'corsheaders',              # CORS handling for browser cross-origin requests
+    'storages',                 # Django-storages for S3-compatible storage (R2)
 
     # Local apps
     'core',
@@ -60,6 +62,8 @@ INSTALLED_APPS = [
     'courses',
     'forum',
     'teachers',
+    'wiki',
+    'notifications',
 ]
 
 MIDDLEWARE = [
@@ -126,10 +130,14 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # Store timestamps in UTC (USE_TZ=True) and display/parse according to TIME_ZONE.
 # Make language and timezone configurable via environment variables.
-LANGUAGE_CODE = env("LANGUAGE_CODE", default="zh-hans")  # Simplified Chinese; configurable via env
-TIME_ZONE = env("TIME_ZONE", default="Asia/Shanghai")    # Configurable via env; default is Asia/Shanghai
+LANGUAGE_CODE = env("LANGUAGE_CODE", default="en")  # English; configurable via env
+TIME_ZONE = env("TIME_ZONE", default="Asia/Hong_Kong")    # Configurable via env; default is Asia/Hong_Kong
 USE_I18N = True
 USE_TZ = True
+
+# Default content language for translatable content (e.g., Wiki)
+# Frontend may request a specific language via query; when absent, use this.
+DEFAULT_CONTENT_LANGUAGE = env("DEFAULT_CONTENT_LANGUAGE", default="zh-CN")
 
 
 # Static files (CSS, JavaScript, Images)
@@ -151,7 +159,17 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Django REST Framework minimal configuration: JSON-only API by default.
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
-    "DEFAULT_PARSER_CLASSES": ["rest_framework.parsers.JSONParser"],
+    "DEFAULT_PARSER_CLASSES": [
+        "rest_framework.parsers.JSONParser",
+        "rest_framework.parsers.MultiPartParser",
+        "rest_framework.parsers.FormParser",
+    ],
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "image_upload": "100/hour",  # Image upload rate limit
+    },
 }
 
 # Cache configuration (LocMem by default; override with CACHE_URL)
@@ -188,3 +206,47 @@ CSRF_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SAMESITE = 'Lax'
 # CSRF token must be readable by JS to set X-CSRFToken header
 CSRF_COOKIE_HTTPONLY = False
+
+# ==================== File Storage Configuration ====================
+# Use Cloudflare R2 for media files via django-storages with S3 backend
+# R2 is S3-compatible with zero egress fees and built-in CDN
+
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "bucket_name": env("R2_BUCKET_NAME"),
+            "access_key": env("R2_ACCESS_KEY_ID"),
+            "secret_key": env("R2_SECRET_ACCESS_KEY"),
+            "endpoint_url": f'https://{env("R2_ACCOUNT_ID")}.r2.cloudflarestorage.com',
+            "region_name": "auto",  # R2 uses 'auto' for region
+            "custom_domain": env("R2_PUBLIC_DOMAIN"),
+            "default_acl": None,  # R2 doesn't use ACLs
+            "file_overwrite": False,  # Keep unique filenames
+            "object_parameters": {
+                "CacheControl": "max-age=86400",  # 1 day cache
+            },
+        },
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
+# Image upload settings
+MAX_IMAGE_SIZE = env.int("MAX_IMAGE_SIZE_MB", default=5) * 1024 * 1024  # Convert to bytes (default: 5MB)
+MAX_IMAGE_PIXELS = env.int("MAX_IMAGE_PIXELS", default=50_000_000)  # Max pixels to prevent decompression bombs (default: 50MP)
+ALLOWED_IMAGE_EXTENSIONS = [
+    ext.strip().lower() 
+    for ext in env("ALLOWED_IMAGE_TYPES", default="jpg,jpeg,png,gif,webp").split(",")
+]
+
+# Allowed folders for image uploads in R2 storage
+# These are used as path prefixes when organizing uploaded files
+ALLOWED_UPLOAD_FOLDERS = {'images', 'avatars', 'posts', 'wiki'}
+
+# Allowed public image hosts for rendering and profile avatar URLs
+# Comma-separated. Example: "image.polyu.life,cdn.example.com"
+ALLOWED_IMAGE_HOSTS = [
+    h.strip().lower() for h in env("ALLOWED_IMAGE_HOSTS", default="image.polyu.life").split(",") if h.strip()
+]

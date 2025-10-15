@@ -2,6 +2,10 @@
   "navigation": {
     "forum": "Forum",
     "courseReview": "Course Review",
+    "browseCourses": "Browse Courses",
+    "browseCoursesDesc": "Explore courses organized by academic departments",
+    "advancedSearch": "Advanced Search",
+    "advancedSearchDesc": "Search and filter courses with advanced options",
     "more": "More",
     "about": "About",
     "language": "Language"
@@ -21,7 +25,39 @@
     "resourcesDesc": "Useful tools and materials"
   },
   "search": {
-    "placeholder": "Type to search..."
+    "placeholder": "Search courses, posts, comments, reviews...",
+    "noResults": "No results found",
+    "suggestions": "Suggestions",
+    "seeAllResults": "See all results",
+    "types": {
+      "all": "All",
+      "course": "Course",
+      "forum_post": "Post",
+      "forum_comment": "Comment",
+      "course_review": "Course Review",
+      "wiki": "Wiki",
+      "teacher": "Teacher",
+      "user": "User"
+    },
+    "commentOn": "Comment on",
+    "reviewOn": "Review on",
+    "resultsFor": "Search results for: {{query}}",
+    "totalResults": "{{count}} results found",
+    "filterByType": "Filter by type",
+    "enterSearchQuery": "Please enter search keywords",
+    "backToHome": "Back to Home",
+    "searchFailed": "Search failed, please try again",
+    "retry": "Retry",
+    "noResultsForQuery": "No results found for \"{{query}}\"",
+    "loadMore": "Load More",
+    "loadFailedRetry": "Load failed, click to retry",
+    "likes": "likes",
+    "views": "views",
+    "resultTitle": {
+      "commentOn": "Comment on: {{title}}",
+      "reviewOn": "Review on: {{title}}",
+      "userStats": "Posts: {{posts}} | Course Reviews: {{reviews}}"
+    }
   },
   "auth": {
     "login": "Login",
@@ -40,6 +76,7 @@
     "errorInvalidEmail": "Please enter a valid email address",
     "errorNetwork": "Network error. Please try again.",
     "errorGoogleFailed": "Google login failed",
+    "errorAccountDisabled": "This account has been disabled. Please contact support for assistance.",
     "register": "Register",
     "nickname": "Nickname",
     "verificationCode": "Verification Code",
@@ -52,7 +89,7 @@
     "codeInputDisabledHint": "Click Send Code first to enable",
     "errorPasswordMismatch": "Passwords do not match",
     "errorPolyuEmail": "Please use a valid PolyU email (@connect.polyu.hk)",
-    "emailPrivacyNotice": "Your email is only used to link your project-consensus account and verify that you are a PolyU student. Your personal information will not be shared.",
+    "emailPrivacyNotice": "Your email is only used to link your polyu.life account and verify that you are a PolyU student. Your personal information will not be shared.",
     "registerConsent": "By clicking Register you agree to our",
     "termsOfService": "Terms of Service"
   },
@@ -64,6 +101,7 @@
     "copied": "Copied!",
     "copyText": "Copy text",
     "delete": "Delete post",
+    "edit": "Edit post",
     "deleting": "Deleting...",
     "deleteConfirm": {
       "title": "Delete Post",
@@ -74,16 +112,23 @@
     "translateUnavailable": "Translation feature is not available yet",
     "shareUnavailable": "Share feature is temporarily unavailable. Stay tuned!",
     "copyFailed": "Failed to copy text to clipboard",
+    "notExist": "This post does not exist",
     "newTitle": "Create a new forum post",
     "titlePlaceholder": "Enter a title",
     "contentPlaceholder": "Enter post content...",
     "create": "Create Post",
+    "postAnonymously": "Post anonymously",
     "submitting": "Creating...",
+    "update": "Save",
+    "updating": "Saving...",
     "cancel": "Cancel",
     "tags": "Tags",
     "tagPlaceholder": "Enter tag name",
+    "tagConfirmHint": "press Enter to confirm",
+    "tagPlaceholderWithHint": "{{base}}, {{hint}}",
     "removeTag": "Remove tag",
     "maxTagsReached": "Maximum {{max}} tags allowed",
+    "edited": "Edited",
     "validation": {
       "titleRequired": "Title is required",
       "titleTooShort": "Title must be at least 5 characters",
@@ -143,7 +188,8 @@
     "loadFailedRetry": "Load failed. Retry",
     "me": "Me",
     "anonymous": "Anonymous",
-    "anonymousWithId": "Anonymous ({{name}})"
+    "anonymousWithId": "Anonymous ({{name}})",
+    "noMore": "No more"
   },
   "courses": {
     "topbar": {
@@ -200,7 +246,8 @@
       "rating": {
         "score": "Rating",
         "outOf": "out of 10",
-        "reviews": "{{count}} reviews"
+        "reviews": "{{count}} reviews",
+        "noRating": "No rating yet"
       },
       "attributes": {
         "difficulty": "Difficulty",
@@ -221,9 +268,11 @@
         "lenient": "Lenient",
         "balanced": "Balanced",
         "strict": "Strict",
+        "killer": "Killer",
         "low": "Low",
         "decent": "Decent",
-        "high": "High"
+        "high": "High",
+        "unknown": "Unknown"
       },
       "teachers": "Teachers: {{names}}",
       "lastUpdated": "Last updated: {{date}}",
@@ -306,7 +355,11 @@
           "min": "Min rating",
           "max": "Max rating"
         },
-        "apply": "Apply"
+        "apply": "Apply",
+        "missing": {
+          "reviewNotExist": "This course review does not exist",
+          "replyNotExist": "This course review reply does not exist"
+        }
       }
     },
     "review": {
@@ -340,19 +393,38 @@
       "updating": "Saving...",
       "cancel": "Cancel",
       "validation": {
-        "ratingRequired": "Please provide a 1–5 star rating",
+        "ratingRequired": "Please provide a 1–10 score rating",
         "dimensionsRequired": "Please select all four dimensions",
         "contentRequired": "Review content is required",
         "contentTooShort": "Review content must be at least 10 characters"
       }
+    },
+    "byDepartment": {
+      "title": "Courses by Department",
+      "subtitle": "Browse courses organized by academic departments",
+      "loading": "Loading departments...",
+      "loadingCourses": "Loading courses...",
+      "loadError": "Failed to load courses",
+      "courseCount": "{{count}} courses",
+      "noCourses": "No courses available",
+      "noCoursesDesc": "Check back later for course updates",
+      "noDepartment": "No Department",
+      "levelLabel": "Level {{level}}",
+      "selectDepartment": "Departments",
+      "selectLevel": "Levels",
+      "selectDepartmentFirst": "Select a department first",
+      "selectLevelFirst": "Select a level to view courses",
+      "courses": "Courses",
+      "advancedSearch": "Advanced Search",
+      "search": "Search"
     }
   },
   "about": {
     "title": "About",
     "subtitle": "Learn more about the project, its purpose, and the team behind it.",
-    "whatIsTitle": "What is project-consensus?",
+    "whatIsTitle": "What is polyu.life?",
     "whatIsDescription": "Campus forum and course review community",
-    "whatIsContent": "project-consensus is a campus forum and course review community designed by Frank Yang and Jim Yang. It aims to help students share insights, discuss courses, and build a collaborative community.",
+    "whatIsContent": "polyu.life is a campus forum and course review community designed by Frank Yang and Jim Yang. It aims to help students share insights, discuss courses, and build a collaborative community.",
     "goToHome": "Go to Home",
     "repositoryTitle": "Open-Source Repository",
     "repositoryDescription": "Explore the source code and contribute",
@@ -360,7 +432,7 @@
     "githubRepository": "GitHub Repository",
     "viewIssues": "View Issues",
     "teamTitle": "Team",
-    "teamDescription": "Meet the people behind project-consensus",
+    "teamDescription": "Meet the people behind polyu.life",
     "coCreator": "Co-creator"
   },
   "notFound": {
@@ -379,7 +451,7 @@
     "sections": {
       "acceptance": {
         "title": "1. Acceptance of Terms",
-        "content": "By creating an account or using project-consensus, you agree to these Terms and all applicable policies referenced here."
+        "content": "By creating an account or using polyu.life, you agree to these Terms and all applicable policies referenced here."
       },
       "accounts": {
         "title": "2. Accounts and Eligibility",
@@ -401,7 +473,7 @@
       },
       "intellectualProperty": {
         "title": "5. Intellectual Property",
-        "content": "All trademarks, logos, and software of project-consensus are protected. Do not use them without prior permission."
+        "content": "All trademarks, logos, and software of polyu.life are protected. Do not use them without prior permission."
       },
       "disclaimer": {
         "title": "6. Disclaimer",
@@ -409,7 +481,7 @@
       },
       "limitation": {
         "title": "7. Limitation of Liability",
-        "content": "To the maximum extent permitted by law, project-consensus will not be liable for any indirect, incidental, or consequential damages."
+        "content": "To the maximum extent permitted by law, polyu.life will not be liable for any indirect, incidental, or consequential damages."
       },
       "privacy": {
         "title": "8. Privacy Policy",
@@ -421,7 +493,7 @@
       },
       "contact": {
         "title": "10. Contact",
-        "content": "Questions? Contact us at support@project-consensus.app."
+        "content": "Questions? Contact us at support@polyu.life."
       }
     }
   },
@@ -431,13 +503,18 @@
     "requireLogin": "Please login to access settings.",
     "profile": {
       "title": "Profile",
-      "desc": "Update your display name and avatar.",
-      "displayName": "Display Name",
+      "desc": "Update your nickname and avatar.",
+      "nickname": "Nickname",
       "avatarUrl": "Avatar URL",
       "pronouns": "Pronouns",
       "preview": "Preview",
       "saved": "Profile updated.",
-      "saveFailed": "Failed to save profile."
+      "saveFailed": "Failed to save profile.",
+      "updateRestriction": "Nickname can only be updated once every 14 days.",
+      "lastUpdated": "Nickname last updated",
+      "canUpdateIn": "Nickname can be updated in {{days}} day(s)",
+      "canUpdateNow": "You can update your nickname now",
+      "updateLimitReached": "Nickname update limit reached. Please wait {{days}} more day(s) before updating again."
     },
     "account": {
       "title": "Account Security",
@@ -451,23 +528,19 @@
     },
     "privacy": {
       "title": "Privacy",
-      "desc": "Control how others can see and contact you.",
+      "desc": "Control what content is publicly visible.",
       "items": {
-        "showEmail": {
-          "title": "Show email on profile",
-          "desc": "Allow others to see your email on your profile."
+        "showForumPostsPublicly": {
+          "title": "Show my forum posts publicly",
+          "desc": "Allow others to see the forum posts you've created."
         },
-        "allowDMs": {
-          "title": "Allow direct messages",
-          "desc": "Allow others to send you private messages."
+        "showForumPostCommentsPublicly": {
+          "title": "Show my forum post comments publicly",
+          "desc": "Allow others to see the comments you've made on forum posts."
         },
-        "showOnlineStatus": {
-          "title": "Show online status",
-          "desc": "Let others see when you're online."
-        },
-        "showActivity": {
-          "title": "Show activity",
-          "desc": "Display your public activity timeline."
+        "showCourseReviewsPublicly": {
+          "title": "Show my course reviews publicly",
+          "desc": "Allow others to see the course reviews you've written."
         }
       },
       "saved": "Privacy settings saved.",
@@ -486,14 +559,61 @@
     }
   },
   "pronouns": {
-    "info": "project-consensus values diversity and inclusion. We support you in expressing your identity authentically. If you don’t find suitable pronouns in the preset list, you can choose \"custom\" and set your own pronouns."
+    "info": "polyu.life values diversity and inclusion. We support you in expressing your identity authentically. If you don't find suitable pronouns in the preset list, you can choose \\\"custom\\\" and set your own pronouns.",
+    "share": "Share pronouns on profile"
+  },
+  "validation": {
+    "nickname": {
+      "required": "Nickname is required",
+      "onlyWhitespace": "Nickname cannot be only whitespace",
+      "tooLong": "Nickname must be 15 characters or less",
+      "invalidCharacters": "Nickname cannot contain < or > characters",
+      "invalid": "Invalid nickname",
+      "characters": "characters",
+      "alreadyTaken": "This nickname is already taken. Please choose another one."
+    }
   },
   "profile": {
     "title": "Profile",
-    "subtitle": "Your public profile",
+    "subtitle": "Profile overview and recent activity",
     "actions": {
-      "edit": "Edit Profile"
-    }
+      "edit": "Edit Profile",
+      "viewPublic": "View Public Profile",
+      "viewPrivate": "View Private Profile"
+    },
+    "stats": {
+      "title": "Activity Stats",
+      "posts": "Posts",
+      "comments": "Comments",
+      "reviews": "Reviews",
+      "days": "Member Days"
+    },
+    "activity": {
+      "title": "Recent Activity",
+      "subtitle": "Latest contributions to the community",
+      "myPosts": {
+        "title": "Posts",
+        "subtitle": "Forum posts created",
+        "empty": "No posts yet",
+        "viewPost": "View Post"
+      },
+      "myComments": {
+        "title": "Comments",
+        "subtitle": "Comments on forum posts",
+        "empty": "No comments yet",
+        "inReplyTo": "In reply to",
+        "onPost": "On post:"
+      },
+      "myReviews": {
+        "title": "Reviews",
+        "subtitle": "Course reviews written",
+        "empty": "No reviews yet",
+        "viewCourse": "View Course"
+      },
+      "anonymousBadge": "Anonymous"
+    },
+    "memberFor": "Member for {{days}} days",
+    "privacyNotice": "This user has chosen to keep some activities private."
   },
   "teachers": {
     "title": "Teachers",
@@ -538,6 +658,24 @@
       "difficulty": "Difficulty",
       "reviews": "Reviews",
       "courses": "Courses"
+    }
+  },
+  "notifications": {
+    "bell": "Notifications",
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "deleteRead": "Delete read",
+    "empty": "No notifications yet.",
+    "messages": {
+      "forumPostLiked": "{{actor}} liked your forum post {{target}}",
+      "forumPostCommented": "{{actor}} commented on your forum post {{target}}",
+      "forumPostCommentLiked": "{{actor}} liked your comment on {{target}}",
+      "forumPostCommentReplied": "{{actor}} replied to your comment on {{target}}",
+      "courseReviewLiked": "{{actor}} liked your course review for {{target}}",
+      "courseReviewReplied": "{{actor}} replied to your course review for {{target}}",
+      "courseReviewReplyLiked": "{{actor}} liked your review reply for {{target}}",
+      "courseReviewReplyReplied": "{{actor}} replied to your review reply for {{target}}",
+      "unknownType": "Unknown notification type ({{type}}) from {{actor}}"
     }
   }
 }
