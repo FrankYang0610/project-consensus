@@ -4,7 +4,6 @@ import logging
 from django.db import transaction
 
 from core.utils import delete_images_in_html, delete_storage_object_by_url, extract_image_srcs_from_html
-from .forum_notification import emit_notifications_for_new_comment
 
 from ..models import ForumPost, ForumPostComment
 
