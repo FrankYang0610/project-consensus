@@ -128,10 +128,10 @@ class ForumPostViewSet(viewsets.ModelViewSet):
         incoming_keys = set(serializer.validated_data.keys())
 
         with transaction.atomic():
-            super().perform_update(serializer)
-            instance.refresh_from_db(fields=["content", "is_edited"])  # ensure latest content
-            cleanup_removed_images_for_post(before_html=before_html, post_after_update=instance)
+            # Mark edited on the instance before saving so it persists in the same write
             mark_post_edited_if_fields_changed(post=instance, incoming_keys=incoming_keys)
+            serializer.save()
+            cleanup_removed_images_for_post(before_html=before_html, post_after_update=instance)
 
     @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
     def toggle_like(self, request: Request, pk: str | None = None):

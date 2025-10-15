@@ -54,6 +54,8 @@ def mark_post_edited_if_fields_changed(*, post: ForumPost, incoming_keys: set[st
     """Mark post as edited when editable fields are changed."""
     editable_fields = {"title", "content", "tags", "is_anonymous"}
     if incoming_keys & editable_fields:
-        post.mark_edited()
+        # Set on the instance so a subsequent save() persists it without
+        # being overwritten by instance state.
+        post.is_edited = True
 
 
