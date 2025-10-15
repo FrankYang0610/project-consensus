@@ -14,17 +14,17 @@ from typing import override
 from core.permissions import IsAuthorOrReadOnly
 from .models import ForumPost, ForumPostComment, ForumPostLike, ForumCommentLike
 from .serializers import ForumPostCommentSerializer, ForumPostSerializer
-from .services.forum_like_service import (
+from .services.forum_like import (
     toggle_forum_post_like,
     toggle_forum_comment_like,
 )
-from .services.forum_post_service import (
+from .services.forum_miscellaneous import (
     cleanup_removed_images_for_post,
     delete_post_and_cleanup_images,
-    emit_notifications_for_new_comment,
     mark_post_edited_if_fields_changed,
     soft_delete_comment_and_cleanup_images,
 )
+from .services.forum_notification import emit_notifications_for_new_comment
 
 logger = logging.getLogger(__name__)
 
@@ -103,11 +103,6 @@ class ForumPostViewSet(viewsets.ModelViewSet):
 
         return qs
 
-    # DRF flow note:
-    # ModelViewSet.create() calls perform_create(serializer).
-    # serializer.save(author=...) invokes ModelSerializer.create(...) when no instance exists,
-    # whose default implementation is Model.objects.create(**validated_data),
-    # thus performing the actual INSERT. Passing author here enforces the current user.
     @override
     def perform_create(self, serializer):  # type: ignore[override]
         # Force the author to the current user

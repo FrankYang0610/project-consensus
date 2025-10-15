@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from django.conf import settings
 from django.db import models
+from django.db.models import Avg, Count, Case, When, Value, IntegerField, F
 from django.utils import timezone
 
 
@@ -109,6 +110,107 @@ class Course(models.Model):
     def __str__(self) -> str:  # pragma: no cover
         return f"{self.subject_code} {self.title}"
 
+    def recompute_aggregates(self) -> None:
+        """Recompute rating score, reviews count, and attribute aggregates.
+
+        Must be called within a transaction when concurrency is possible; uses
+        row-level locking to avoid race conditions.
+        """
+        # Lock this course row
+        locked_course = Course.objects.select_for_update().get(pk=self.pk)
+
+        # Attribute value to numeric mappings for weighted averaging
+        DIFFICULTY_MAP = {
+            "veryEasy": 1,
+            "easy": 2,
+            "medium": 3,
+            "hard": 4,
+            "veryHard": 5,
+        }
+        DIFFICULTY_REVERSE = {1: "veryEasy", 2: "easy", 3: "medium", 4: "hard", 5: "veryHard"}
+
+        WORKLOAD_MAP = {
+            "light": 1,
+            "moderate": 2,
+            "heavy": 3,
+            "veryHeavy": 4,
+        }
+        WORKLOAD_REVERSE = {1: "light", 2: "moderate", 3: "heavy", 4: "veryHeavy"}
+
+        GRADING_MAP = {
+            "lenient": 1,
+            "balanced": 2,
+            "strict": 3,
+            "killer": 4,
+        }
+        GRADING_REVERSE = {1: "lenient", 2: "balanced", 3: "strict", 4: "killer"}
+
+        GAIN_MAP = {
+            "low": 1,
+            "decent": 2,
+            "high": 3,
+        }
+        GAIN_REVERSE = {1: "low", 2: "decent", 3: "high"}
+
+        qs = self.reviews.all()
+        agg = qs.aggregate(
+            total_count=Count("id"),
+            rated_count=Count(Case(When(only_text=False, then=Value(1)), output_field=IntegerField())),
+            avg=Avg(Case(When(only_text=False, then=F("overall_rating")))),
+        )
+        total_reviews_count = int(agg.get("total_count") or 0)
+        rated_count = int(agg.get("rated_count") or 0)
+        avg = float(agg.get("avg") or 0.0)
+        score = round(avg, 1) if rated_count > 0 else 0.0
+
+        locked_course.rating_reviews_count = total_reviews_count
+        locked_course.rating_score = score
+
+        if rated_count > 0:
+            reviews = list(qs.filter(only_text=False).values("attr_difficulty", "attr_workload", "attr_grading", "attr_gain"))
+
+            difficulty_values = [DIFFICULTY_MAP.get(r["attr_difficulty"]) for r in reviews]
+            difficulty_values = [v for v in difficulty_values if v is not None]
+            if difficulty_values:
+                avg_difficulty = sum(difficulty_values) / len(difficulty_values)
+                rounded_difficulty = max(1, min(5, round(avg_difficulty)))
+                locked_course.attr_difficulty = DIFFICULTY_REVERSE[rounded_difficulty]
+
+            workload_values = [WORKLOAD_MAP.get(r["attr_workload"]) for r in reviews]
+            workload_values = [v for v in workload_values if v is not None]
+            if workload_values:
+                avg_workload = sum(workload_values) / len(workload_values)
+                rounded_workload = max(1, min(4, round(avg_workload)))
+                locked_course.attr_workload = WORKLOAD_REVERSE[rounded_workload]
+
+            grading_values = [GRADING_MAP.get(r["attr_grading"]) for r in reviews]
+            grading_values = [v for v in grading_values if v is not None]
+            if grading_values:
+                avg_grading = sum(grading_values) / len(grading_values)
+                rounded_grading = max(1, min(4, round(avg_grading)))
+                locked_course.attr_grading = GRADING_REVERSE[rounded_grading]
+
+            gain_values = [GAIN_MAP.get(r["attr_gain"]) for r in reviews]
+            gain_values = [v for v in gain_values if v is not None]
+            if gain_values:
+                avg_gain = sum(gain_values) / len(gain_values)
+                rounded_gain = max(1, min(3, round(avg_gain)))
+                locked_course.attr_gain = GAIN_REVERSE[rounded_gain]
+        else:
+            locked_course.attr_difficulty = None
+            locked_course.attr_workload = None
+            locked_course.attr_grading = None
+            locked_course.attr_gain = None
+
+        locked_course.save(update_fields=[
+            "rating_reviews_count",
+            "rating_score",
+            "attr_difficulty",
+            "attr_workload",
+            "attr_grading",
+            "attr_gain",
+        ])
+
 
 class CourseReview(models.Model):
     """Course review model."""
@@ -143,6 +245,26 @@ class CourseReview(models.Model):
         ]
         verbose_name = "Course review"
         verbose_name_plural = "Course reviews"
+
+    def recompute_replies_count(self) -> None:
+        cnt = self.replies.filter(is_deleted=False).count()
+        CourseReview.objects.filter(pk=self.pk).update(replies_count=cnt)
+
+    def toggle_like(self, user) -> tuple[bool, 'CourseReviewLike | None']:
+        """Toggle like for the given user.
+
+        Returns (liked_now, like_instance_if_created).
+        """
+        existing = CourseReviewLike.objects.filter(review=self, user=user).first()
+        if existing:
+            existing.delete()
+            CourseReview.objects.filter(pk=self.pk, likes_count__gt=0).update(
+                likes_count=F("likes_count") - 1
+            )
+            return False, None
+        like = CourseReviewLike.objects.create(review=self, user=user)
+        CourseReview.objects.filter(pk=self.pk).update(likes_count=F("likes_count") + 1)
+        return True, like
 
 
 class CourseReviewReply(models.Model):
