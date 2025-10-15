@@ -85,6 +85,10 @@ def delete_reply_images(*, reply: CourseReviewReply) -> None:
     """Delete all images in a course review reply content.
     
     This is used when soft deleting a reply.
+    
+    Note: We are still considering whether to allow images in course review replies.
+    Currently, replies use text-only HTML sanitization which strips out images,
+    but this cleanup function is kept for potential future use.
     """
     try:
         delete_images_in_html(getattr(reply, "content", ""), owner_user_id=reply.author_id)
