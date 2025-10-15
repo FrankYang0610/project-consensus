@@ -13,8 +13,7 @@ import { useApp } from "@/contexts/AppContext";
 import {
   fetchForumComments,
   getForumCommentPosition,
-  likeForumComment,
-  unlikeForumComment,
+  toggleLikeForumComment,
   deleteForumComment
 } from "@/lib/api/forum-comment";
 import { HttpError } from "@/lib/api/api-utils";
@@ -248,8 +247,7 @@ export function ForumPostCommentList({
       });
 
       // fire API request
-      const likeAction = willLike ? likeForumComment(id) : unlikeForumComment(id);
-      likeAction
+      toggleLikeForumComment(id)
         .then((data) => {
           // Reconcile with server truth
           setComments(prev => prev.map(c => {

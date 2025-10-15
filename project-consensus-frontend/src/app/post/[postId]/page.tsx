@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { ForumPostDetailCard } from "@/components/ForumPostDetailCard";
 import { ForumPostCommentList } from "@/components/ForumPostCommentList";
-import { fetchForumPostById, likeForumPost, unlikeForumPost, deleteForumPost } from "@/lib/api/forum-post";
+import { fetchForumPostById, toggleLikeForumPost, deleteForumPost } from "@/lib/api/forum-post";
 import { createForumComment } from "@/lib/api/forum-comment";
 import { isContentEmpty } from "@/lib/utils";
 import { useApp } from "@/contexts/AppContext";
@@ -191,8 +191,7 @@ export default function PostPage() {
                 // optimistic
                 setPost(prev => prev ? { ...prev, isLiked: willLike, likesCount: Math.max(0, (prev.likesCount ?? 0) + (willLike ? 1 : -1)) } : prev);
 
-                const likeAction = willLike ? likeForumPost(id) : unlikeForumPost(id);
-                likeAction
+                toggleLikeForumPost(id)
                   .then((data) => {
                     // reconcile with server response
                     setPost(prev => prev ? { ...prev, isLiked: !!data.isLiked, likesCount: Math.max(0, data.likesCount) } : prev);

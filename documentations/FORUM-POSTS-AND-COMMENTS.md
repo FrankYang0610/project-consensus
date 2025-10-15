@@ -18,10 +18,22 @@ This document describes the initial backend/frontend behavior for forum posts an
 - Post: author can hard-delete. Behavior: remove the post row; all related comments/replies/likes are deleted via DB CASCADE. Notifications remain intact because they store snapshots and do not depend on FK relations.
 - Comment: author can soft-delete. Behavior: set `isDeleted=true`, clear `content`, keep the row and thread structure (used as a placeholder in UI).
 
+## Toggle Like
+- **Toggle Like**: `POST /api/forum/posts/{id}/toggle_like/` or `POST /api/forum/comments/{id}/toggle_like/` - Smart toggle: if not liked, creates like; if already liked, removes like. Returns updated object with current `isLiked` and `likesCount`.
+
+### Benefits of Toggle Like:
+- **Simplified Frontend Logic**: Single button that toggles between "like" and "unlike" states without tracking the current state client-side.
+- **Consistent UX**: Provides predictable behavior regardless of the current like state.
+- **Reduced API Complexity**: Eliminates the need for separate like/unlike endpoints and client-side state management.
+
+### Notification Behavior:
+- Toggle operations that result in a like send notifications to the content author (excluding self-notifications).
+- Toggle operations that result in an unlike do not send notifications.
+
 ## Cascading behavior and operations on deleted content
 - Creating new comments is blocked on deleted posts.
 - Replying to a deleted comment is not allowed.
-- Liking/unliking deleted comments is not allowed.
+- Toggle liking deleted comments is not allowed.
 - When a post is deleted, all of its comments (including replies of replies, etc.) are removed entirely.
 - Soft-deleted comments remain as placeholders in the UI (content cleared, `isDeleted=true`).
 
@@ -51,8 +63,7 @@ This document describes the initial backend/frontend behavior for forum posts an
 - Create: `POST /api/forum/posts/`
 - Update: `PATCH /api/forum/posts/{id}/` (author only; sets `isEdited=true` on field changes)
 - Delete: `DELETE /api/forum/posts/{id}/` (hard delete; cleans up embedded images owned by the author)
-- Like: `POST /api/forum/posts/{id}/like/` (idempotent)
-- Unlike: `POST /api/forum/posts/{id}/unlike/` (idempotent)
+- Toggle Like: `POST /api/forum/posts/{id}/toggle_like/` (smart toggle: creates like if not liked, removes like if already liked)
 
 ### Comments
 - List by post: `GET /api/forum/comments/?postId=<uuid>` (404 if post missing)
@@ -60,8 +71,7 @@ This document describes the initial backend/frontend behavior for forum posts an
 - Create: `POST /api/forum/comments/` (requires `postId`; optional `replyTo`)
 - Delete: `DELETE /api/forum/comments/{id}/` (soft delete; clears content, keeps placeholder)
 - Edit: not allowed → `PUT/PATCH` return 405
-- Like: `POST /api/forum/comments/{id}/like/` (idempotent; not allowed on deleted comments)
-- Unlike: `POST /api/forum/comments/{id}/unlike/` (idempotent)
+- Toggle Like: `POST /api/forum/comments/{id}/toggle_like/` (smart toggle: creates like if not liked, removes like if already liked; not allowed on deleted comments)
 
 ### Comment position helper
 - `GET /api/forum/comments/position/?postId=<uuid>&commentId=<uuid>&page_size=<int>`

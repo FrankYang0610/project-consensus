@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from django.http import StreamingHttpResponse, HttpRequest
+from django.http import StreamingHttpResponse, HttpRequest, HttpResponse
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework import status, permissions
 from rest_framework.pagination import PageNumberPagination
@@ -144,9 +144,14 @@ def notifications_delete_read(request):
     return Response({"success": True})
 
 
-@api_view(["GET"])
-@permission_classes([permissions.IsAuthenticated])
 def notifications_stream(request: HttpRequest):
+    """
+    SSE endpoint for real-time notifications.
+    Uses plain Django view (not DRF) to avoid content negotiation issues with text/event-stream.
+    """
+    if not request.user.is_authenticated:
+        return HttpResponse("Unauthorized", status=401)
+    
     user = request.user
     # Streaming response for SSE
     sub = subscribe(str(user.pk))
