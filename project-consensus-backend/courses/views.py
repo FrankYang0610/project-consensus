@@ -115,12 +115,6 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
         ctx["include_other_teachers"] = is_detail
         return ctx
     
-    def retrieve(self, request, *args, **kwargs):
-        """Retrieve a single course instance."""
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
-
     @action(detail=False, methods=["get"], url_path="departments")
     def departments(self, request):
         """Return distinct department names for filtering (case-insensitive).
