@@ -4,32 +4,7 @@ from django.db.models import Q, QuerySet
 
 
 class CourseFilter:
-    """Encapsulate parsing/validation of course list query params and apply to queryset.
-    
-    Current implementation uses a simple class-based approach for better organization.
-    For future scalability, consider migrating to django-filter's FilterSet:
-    
-    ```python
-    import django_filters
-    from django_filters import rest_framework as filters
-    
-    class CourseFilterSet(filters.FilterSet):
-        subject_code = filters.CharFilter()
-        teacher_id = filters.NumberFilter(field_name='teachers__id', distinct=True)
-        category = filters.CharFilter(field_name='selection_category', lookup_expr='iexact')
-        # ... other filters
-        
-        class Meta:
-            model = Course
-            fields = ['subject_code', 'teacher_id', 'category', ...]
-    ```
-    
-    This would enable:
-    - Automatic OpenAPI schema generation
-    - Built-in validation and error handling
-    - More declarative filter definitions
-    - Better integration with DRF browsable API
-    """
+    """Encapsulate parsing/validation of course list query params and apply to queryset."""
 
     def __init__(self, params):
         self.params = params
