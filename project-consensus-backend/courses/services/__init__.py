@@ -46,7 +46,6 @@ from .course_review_reply_like import (
     toggle_course_review_reply_like,
 )
 from .course_voting import toggle_course_vote
-from .course_utils import handle_service_error
 
 __all__ = [
     # Course Review CRUD
@@ -80,9 +79,5 @@ __all__ = [
     "get_departments_with_counts",
     "get_department_level_distribution",
     "get_distinct_departments_case_insensitive",
-    
-    # General Utils
-    "handle_service_error",
 ]
-
 

@@ -1,18 +1,10 @@
 from __future__ import annotations
 
 from typing import Any
-from functools import wraps
 
 from django.contrib.auth import get_user_model
-from rest_framework import status
-from rest_framework.response import Response
 
 from ..models import Course, CourseVote, CourseReview, CourseReviewLike, CourseReviewReply, CourseReviewReplyLike
-from .course_exceptions import (
-    ServiceError, 
-    ValidationError as ServiceValidationError,
-    NotFoundError
-)
 
 User = get_user_model()
 
@@ -152,17 +144,3 @@ def get_user_liked_reply(reply: CourseReviewReply, user: User | None) -> bool:
     
     return CourseReviewReplyLike.objects.filter(reply=reply, user=user).exists()
 
-
-def handle_service_error(func):
-    """Decorator to handle ServiceError exceptions and convert to appropriate HTTP responses."""
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except ServiceValidationError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        except NotFoundError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
-        except ServiceError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    return wrapper

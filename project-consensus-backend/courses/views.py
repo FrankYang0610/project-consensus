@@ -8,7 +8,6 @@ from rest_framework.response import Response
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.exceptions import ValidationError
 from core.permissions import IsAuthorOrReadOnly
-from courses.api_decorators import handle_service_error
 from .pagination import CourseReviewPagination, CourseListPagination
 from .annotations import annotate_is_liked, annotate_user_vote, annotate_user_has_review
 
