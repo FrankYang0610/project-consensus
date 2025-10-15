@@ -8,7 +8,7 @@ import { useI18n } from "@/hooks/use-i18n";
 import CreateForumPostButton from "@/components/CreateForumPostButton";
 import { useApp } from "@/contexts/AppContext";
 import { Button } from "@/components/ui/button";
-import { likeForumPost, unlikeForumPost, fetchForumPosts } from "@/lib/api/forum-post";
+import { toggleLikeForumPost, fetchForumPosts } from "@/lib/api/forum-post";
 import { ForumPost } from "@/types";
 import { useInfiniteList } from "@/hooks/use-infinite-list";
 import { ForumFilterBar } from "@/components/ForumFilterBar";
@@ -75,8 +75,7 @@ export default function HomePage() {
       : p
     ));
 
-    const likeAction = willLike ? likeForumPost(id) : unlikeForumPost(id);
-    likeAction
+    toggleLikeForumPost(id)
       .then((data) => {
         setPosts(prev => prev.map(p => p.id === id
           ? { ...p, isLiked: !!data.isLiked, likesCount: Math.max(0, data.likesCount) }

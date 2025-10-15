@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import uuid
 import bleach
 from rest_framework import serializers
 from typing import override
 
 from accounts.models import Profile
 from .models import ForumPost, ForumPostComment
+from .utils import generate_anonymous_id
 
 
 # Forum-specific allowlist: more permissive than courses to support richer content
@@ -81,11 +81,8 @@ def _author_payload_for(user) -> dict:
 
 
 def _generate_anonymous_id() -> str:
-    """Generate a unique anonymous ID for anonymous posts/comments.
-    
-    Uses UUID4 to ensure uniqueness across all anonymous content.
-    """
-    return f"anonymous_{uuid.uuid4().hex[:8]}"
+    """Backwards-compatible wrapper for generating anonymous ids."""
+    return generate_anonymous_id()
 
 
 class ForumPostSerializer(serializers.ModelSerializer):
@@ -186,6 +183,11 @@ class ForumPostSerializer(serializers.ModelSerializer):
             attrs["content"] = _sanitize_html(raw)
         return attrs
 
+    @override
+    def update(self, instance: ForumPost, validated_data):  # type: ignore[override]
+        """Update post fields only; editing side-effects handled in services/views."""
+        return super().update(instance, validated_data)
+
 
 class ForumPostCommentSerializer(serializers.ModelSerializer):
     """Serializer for forum comments (flat; optional reply target).
@@ -270,39 +272,29 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
     
     @override
     def validate(self, attrs):  # type: ignore[override]
-        """Validate content, resolve relations from PK fields, and enforce rules."""
-        # Sanitize content
+        """Validate content and relations (postId, replyTo)."""
+        # Sanitize content (always sanitize if provided)
         if "content" in attrs:
             raw = attrs.get("content")
             attrs["content"] = _sanitize_html(raw)
 
-        # Resolve post from post_id if provided
-        post = attrs.get("post")
-        if post is None and "post_id" in attrs:
-            post_id = attrs.pop("post_id")
+        # Validate parent post existence when provided (required at field level on create)
+        post_id = attrs.get("post_id")
+        if post_id is not None and not ForumPost.objects.filter(pk=post_id).exists():
+            raise serializers.ValidationError({"postId": "invalid post id"})
+
+        # Validate reply target if provided
+        reply_to_id = attrs.get("reply_to_id")
+        if reply_to_id is not None:
             try:
-                post = ForumPost.objects.get(pk=post_id)
-            except ForumPost.DoesNotExist:
-                raise serializers.ValidationError({"postId": "invalid post id"})
-            attrs["post"] = post
-
-        # Resolve reply_to from reply_to_id if provided
-        reply_to = attrs.get("reply_to")
-        if reply_to is None and "reply_to_id" in attrs:
-            reply_to_id = attrs.pop("reply_to_id")
-            if reply_to_id is not None:
-                try:
-                    reply_to = ForumPostComment.objects.get(pk=reply_to_id)
-                except ForumPostComment.DoesNotExist:
-                    raise serializers.ValidationError({"replyTo": "invalid reply target id"})
-                attrs["reply_to"] = reply_to
-
-        # Disallow replying to a deleted comment
-        if reply_to is not None and getattr(reply_to, "is_deleted", False):
-            raise serializers.ValidationError({"replyTo": "reply target has been deleted"})
-
-        if attrs.get("post") is None:
-            raise serializers.ValidationError({"postId": "post must be provided"})
+                reply_to_obj = ForumPostComment.objects.get(pk=reply_to_id)
+            except ForumPostComment.DoesNotExist:
+                raise serializers.ValidationError({"replyTo": "invalid reply target id"})
+            if getattr(reply_to_obj, "is_deleted", False):
+                raise serializers.ValidationError({"replyTo": "reply target has been deleted"})
+            # Ensure reply target belongs to the same post when post_id is present
+            if post_id is not None and str(reply_to_obj.post_id) != str(post_id):
+                raise serializers.ValidationError({"replyTo": "reply target does not belong to the given postId"})
 
         return attrs
     

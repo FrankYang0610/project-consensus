@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from django.conf import settings
 from django.db import models
+from django.db.models import Case, F, IntegerField, Value, When
 from django.utils import timezone
  
 
@@ -38,6 +39,26 @@ class ForumPost(models.Model):
     def __str__(self) -> str:  # pragma: no cover
         return f"{self.title}"
 
+    def increment_like(self) -> None:
+        """Atomically increment likes_count for this post."""
+        ForumPost.objects.filter(pk=self.pk).update(likes_count=F("likes_count") + 1)
+
+    def decrement_like(self) -> None:
+        """Atomically decrement likes_count for this post without going below zero."""
+        ForumPost.objects.filter(pk=self.pk).update(
+            likes_count=Case(
+                When(likes_count__gt=0, then=F("likes_count") - 1),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        )
+
+    def mark_edited(self) -> None:
+        """Mark the post as edited if it has not been marked yet."""
+        if not getattr(self, "is_edited", False):
+            ForumPost.objects.filter(pk=self.pk, is_edited=False).update(is_edited=True)
+            self.is_edited = True
+
 
 class ForumPostComment(models.Model):
     """Forum comment model (flat with optional reply target).
@@ -67,6 +88,20 @@ class ForumPostComment(models.Model):
 
     def __str__(self) -> str:  # pragma: no cover
         return f"{self.author_id} -> {self.post_id}"
+
+    def increment_like(self) -> None:
+        """Atomically increment likes_count for this comment."""
+        ForumPostComment.objects.filter(pk=self.pk).update(likes_count=F("likes_count") + 1)
+
+    def decrement_like(self) -> None:
+        """Atomically decrement likes_count for this comment without going below zero."""
+        ForumPostComment.objects.filter(pk=self.pk).update(
+            likes_count=Case(
+                When(likes_count__gt=0, then=F("likes_count") - 1),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        )
 
 
 class ForumPostLike(models.Model):

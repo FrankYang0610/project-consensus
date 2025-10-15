@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import logging
 from django.db import transaction
-from django.db.models import Case, Count, Exists, F, IntegerField, OuterRef, Q, Value, When
-from django.utils import timezone
+from django.db.models import Count, Exists, OuterRef, Value
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
@@ -13,11 +12,19 @@ from rest_framework.response import Response
 from typing import override
 
 from core.permissions import IsAuthorOrReadOnly
-from core.utils import delete_images_in_html, delete_storage_object_by_url, extract_image_srcs_from_html
-from notifications import NotificationType
-from notifications.events import DomainEvent, emit
-from .models import ForumCommentLike, ForumPost, ForumPostComment, ForumPostLike
+from .models import ForumPost, ForumPostComment, ForumPostLike, ForumCommentLike
 from .serializers import ForumPostCommentSerializer, ForumPostSerializer
+from .services.forum_like_service import (
+    toggle_forum_post_like,
+    toggle_forum_comment_like,
+)
+from .services.forum_post_service import (
+    cleanup_removed_images_for_post,
+    delete_post_and_cleanup_images,
+    emit_notifications_for_new_comment,
+    mark_post_edited_if_fields_changed,
+    soft_delete_comment_and_cleanup_images,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -108,97 +115,38 @@ class ForumPostViewSet(viewsets.ModelViewSet):
 
     @override
     def perform_destroy(self, instance: ForumPost):  # type: ignore[override]
-        """Hard delete a forum post and cleanup related images."""
-        try:
-            delete_images_in_html(getattr(instance, "content", ""), owner_user_id=instance.author_id)
-        except Exception as e:
-            logger.warning(f"Failed to delete images in forum post {instance.pk}: {e}", exc_info=True)
-        with transaction.atomic():
-            instance.delete()
+        """Hard delete a forum post and cleanup related images (delegated)."""
+        delete_post_and_cleanup_images(post=instance)
+
+    @override
+    def destroy(self, request: Request, *args, **kwargs):  # type: ignore[override]
+        """Explicitly return 204 after performing destroy for clarity and consistency."""
+        instance: ForumPost = self.get_object()
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @override
     def perform_update(self, serializer):  # type: ignore[override]
-        """Update a post, cleanup removed images, and mark as edited when fields change."""
+        """Update a post, then delegate cleanup and edited marking to services."""
         instance: ForumPost = serializer.instance
-        old_srcs = extract_image_srcs_from_html(getattr(instance, "content", ""))
-        editable_fields = {"title", "content", "tags", "is_anonymous"}
+        before_html = getattr(instance, "content", "")
         incoming_keys = set(serializer.validated_data.keys())
 
         with transaction.atomic():
             super().perform_update(serializer)
-            instance.refresh_from_db(fields=["content"])
-            new_srcs = extract_image_srcs_from_html(getattr(instance, "content", ""))
-            removed_srcs = old_srcs - new_srcs
-            author_id = instance.author_id
-            post_pk = instance.pk
-            # Capture variables explicitly using default arguments to avoid closure issues
-            def _cleanup(removed_srcs=removed_srcs, owner_id=author_id, pk=post_pk):
-                try:
-                    for src in removed_srcs:
-                        delete_storage_object_by_url(src, owner_user_id=owner_id)
-                except Exception as e:
-                    logger.warning(f"Failed to delete removed images in forum post {pk}: {e}", exc_info=True)
-            transaction.on_commit(_cleanup)
-
-            if incoming_keys & editable_fields:
-                ForumPost.objects.filter(pk=instance.pk).update(is_edited=True)
-                instance.refresh_from_db(fields=["is_edited"])  # keep instance in sync
+            instance.refresh_from_db(fields=["content", "is_edited"])  # ensure latest content
+            cleanup_removed_images_for_post(before_html=before_html, post_after_update=instance)
+            mark_post_edited_if_fields_changed(post=instance, incoming_keys=incoming_keys)
 
     @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
-    def like(self, request: Request, pk: str | None = None):
-        """Current user likes the post. Idempotent: multiple calls have no additional effect."""
+    def toggle_like(self, request: Request, pk: str | None = None):
+        """Toggle like status for the post. If not liked, creates like; if already liked, removes like."""
         assert pk is not None
         post = self.get_object()
         user = request.user
         try:
-            with transaction.atomic():
-                created = False
-                like, created = ForumPostLike.objects.get_or_create(post=post, user=user)
-                if created:
-                    ForumPost.objects.filter(pk=post.pk).update(likes_count=F("likes_count") + 1)
-                    # Notify post author (exclude self-notify)
-                    if user.pk != post.author_id:
-                        emit(DomainEvent(
-                            type=NotificationType.FORUM_POST_LIKED,
-                            recipient_id=post.author_id,
-                            actor_id=user.pk,
-                            target_app="forum",
-                            target_model="ForumPost",
-                            target_id=str(post.pk),
-                            route=f"/post/{post.pk}",
-                            metadata={
-                                "forumPostId": str(post.pk),
-                                "forumPostTitle": post.title,
-                            },
-                            referenced_content_preview=post.title,
-                            created_at=getattr(like, "created_at", timezone.now()),
-                        ))
-            # Re-fetch to get fresh data and annotations (is_liked)
-            post = self.get_queryset().get(pk=pk)
-            serializer = self.get_serializer(post, context={"request": request})
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except Exception as e:  # pragma: no cover
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
-    def unlike(self, request: Request, pk: str | None = None):
-        """Current user unlikes the post. Idempotent: if not liked, no change."""
-        assert pk is not None
-        post = self.get_object()
-        user = request.user
-        try:
-            with transaction.atomic():
-                deleted, _ = ForumPostLike.objects.filter(post=post, user=user).delete()
-                if deleted:
-                    ForumPost.objects.filter(pk=post.pk).update(
-                        likes_count=Case(
-                            When(likes_count__gt=0, then=F("likes_count") - 1),
-                            default=Value(0),
-                            output_field=IntegerField(),
-                        )
-                    )
-            # Re-fetch to get fresh data and annotations (is_liked)
-            post = self.get_queryset().get(pk=pk)
+            toggle_forum_post_like(user=user, post=post)
+            post = self.get_queryset().get(pk=pk)  # refresh annotations
             serializer = self.get_serializer(post, context={"request": request})
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:  # pragma: no cover
@@ -261,70 +209,23 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
 
     @override
     def perform_create(self, serializer):  # type: ignore[override]
-        # Always set the author to current user; no main thread tracking in flat model
+        # Always set the author to current user; relation validation handled by serializer
         comment: ForumPostComment = serializer.save(author=self.request.user)
-        # Create notifications based on whether it's a reply to post or to comment
-        try:
-            actor = self.request.user
-            if comment.reply_to_id:
-                # Reply to a comment -> notify that comment's author
-                target_user = comment.reply_to.author
-                if target_user.pk != actor.pk:
-                    emit(DomainEvent(
-                        type=NotificationType.FORUM_POST_COMMENT_REPLIED,
-                        recipient_id=target_user.pk,
-                        actor_id=actor.pk,
-                        target_app="forum",
-                        target_model="ForumPostComment",
-                        target_id=str(comment.pk),
-                        route=f"/post/{comment.post_id}#comment-{comment.pk}",
-                        metadata={
-                            "forumPostId": str(comment.post_id),
-                            "forumPostCommentId": str(comment.pk),
-                            "forumPostTitle": comment.post.title,
-                        },
-                        actor_is_anonymous=bool(getattr(comment, "is_anonymous", False)),
-                        content_preview=comment.content,
-                        referenced_content_preview=(comment.reply_to.content if comment.reply_to and comment.reply_to.content else comment.post.title),
-                        created_at=comment.created_at,
-                    ))
-            else:
-                # Top-level comment -> notify post author
-                target_user = comment.post.author
-                if target_user.pk != actor.pk:
-                    emit(DomainEvent(
-                        type=NotificationType.FORUM_POST_COMMENTED,
-                        recipient_id=target_user.pk,
-                        actor_id=actor.pk,
-                        target_app="forum",
-                        target_model="ForumPostComment",
-                        target_id=str(comment.pk),
-                        route=f"/post/{comment.post_id}#comment-{comment.pk}",
-                        metadata={
-                            "forumPostId": str(comment.post_id),
-                            "forumPostCommentId": str(comment.pk),
-                            "forumPostTitle": comment.post.title,
-                        },
-                        actor_is_anonymous=bool(getattr(comment, "is_anonymous", False)),
-                        content_preview=comment.content,
-                        referenced_content_preview=comment.post.title,
-                        created_at=comment.created_at,
-                    ))
-        except Exception:
-            # Best-effort; don't block comment creation on notification errors
-            pass
+        emit_notifications_for_new_comment(comment=comment, actor=self.request.user)
 
     @override
     def perform_destroy(self, instance: ForumPostComment):  # type: ignore[override]
-        """Soft delete a comment and cleanup embedded images."""
+        """Soft delete a comment and cleanup embedded images (delegated)."""
+        soft_delete_comment_and_cleanup_images(comment=instance)
+
+    @override
+    def destroy(self, request: Request, *args, **kwargs):  # type: ignore[override]
+        """Soft delete comments and always return 204 (idempotent)."""
+        instance: ForumPostComment = self.get_object()
         if getattr(instance, "is_deleted", False):
-            return
-        try:
-            delete_images_in_html(getattr(instance, "content", ""), owner_user_id=instance.author_id)
-        except Exception as e:
-            logger.warning(f"Failed to delete images in forum comment {instance.pk}: {e}", exc_info=True)
-        with transaction.atomic():
-            ForumPostComment.objects.filter(pk=instance.pk).update(is_deleted=True, content="")
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=["GET"], url_path="position", permission_classes=[permissions.AllowAny])
     def position(self, request: Request):
@@ -398,8 +299,8 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
         return Response(payload, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
-    def like(self, request: Request, pk: str | None = None):
-        """Current user likes the comment. Idempotent: multiple calls have no additional effect."""
+    def toggle_like(self, request: Request, pk: str | None = None):
+        """Toggle like status for the comment. If not liked, creates like; if already liked, removes like."""
         assert pk is not None
         comment = self.get_object()
         # Disallow liking a deleted comment
@@ -407,57 +308,7 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Cannot like a deleted comment"}, status=status.HTTP_400_BAD_REQUEST)
         user = request.user
         try:
-            with transaction.atomic():
-                like, created = ForumCommentLike.objects.get_or_create(comment=comment, user=user)
-                if created:
-                    ForumPostComment.objects.filter(pk=comment.pk).update(likes_count=F("likes_count") + 1)
-                    # Notify comment author (exclude self)
-                    if user.pk != comment.author_id:
-                        emit(DomainEvent(
-                            type=NotificationType.FORUM_POST_COMMENT_LIKED,
-                            recipient_id=comment.author_id,
-                            actor_id=user.pk,
-                            target_app="forum",
-                            target_model="ForumPostComment",
-                            target_id=str(comment.pk),
-                            route=f"/post/{comment.post_id}#comment-{comment.pk}",
-                            metadata={
-                                "forumPostId": str(comment.post_id),
-                                "forumPostCommentId": str(comment.pk),
-                                "forumPostTitle": comment.post.title,
-                            },
-                            referenced_content_preview=(comment.content if comment and comment.content else comment.post.title),
-                            created_at=getattr(like, "created_at", timezone.now()),
-                        ))
-            # Re-fetch to get fresh data and annotations (is_liked, replies_count)
-            comment = self.get_queryset().get(pk=pk)
-            serializer = self.get_serializer(comment, context={"request": request})
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except Exception as e:  # pragma: no cover
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
-    def unlike(self, request: Request, pk: str | None = None):
-        """Current user unlikes the comment. Idempotent: if not liked, no change."""
-        assert pk is not None
-        comment = self.get_object()
-        # Disallow unliking a deleted comment (no-op)
-        if getattr(comment, "is_deleted", False):
-            serializer = self.get_serializer(comment, context={"request": request})
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        user = request.user
-        try:
-            with transaction.atomic():
-                deleted, _ = ForumCommentLike.objects.filter(comment=comment, user=user).delete()
-                if deleted:
-                    ForumPostComment.objects.filter(pk=comment.pk).update(
-                        likes_count=Case(
-                            When(likes_count__gt=0, then=F("likes_count") - 1),
-                            default=Value(0),
-                            output_field=IntegerField(),
-                        )
-                    )
-            # Re-fetch to get fresh data and annotations (is_liked, replies_count)
+            toggle_forum_comment_like(user=user, comment=comment)
             comment = self.get_queryset().get(pk=pk)
             serializer = self.get_serializer(comment, context={"request": request})
             return Response(serializer.data, status=status.HTTP_200_OK)

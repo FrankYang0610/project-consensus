@@ -762,56 +762,6 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
         except Exception as e:  # pragma: no cover
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
-    def like(self, request, pk: str | None = None):
-        """Current user likes the review (idempotent)."""
-        assert pk is not None
-        review = self.get_object()
-        user = request.user
-        try:
-            with transaction.atomic():
-                like, created = CourseReviewLike.objects.get_or_create(review=review, user=user)
-                if created:
-                    CourseReview.objects.filter(pk=review.pk).update(likes_count=F("likes_count") + 1)
-                    if user.pk != review.author_id:
-                        emit(DomainEvent(
-                            type=NotificationType.COURSE_REVIEW_LIKED,
-                            recipient_id=review.author_id,
-                            actor_id=user.pk,
-                            target_app="courses",
-                            target_model="CourseReview",
-                            target_id=str(review.pk),
-                            route=f"/courses/{review.course.course_id}#review-{review.pk}",
-                            metadata={
-                                "courseId": str(review.course.course_id),
-                                "courseReviewId": str(review.pk),
-                                "courseTitle": f"{review.course.subject_code} {review.course.title}",
-                            },
-                            referenced_content_preview=f"{review.course.subject_code} {review.course.title}",
-                            created_at=getattr(like, "created_at", timezone.now()),
-                        ))
-            review.refresh_from_db(fields=["likes_count"])
-            data = self.get_serializer(review, context={"request": request}).data
-            return Response(data, status=status.HTTP_200_OK)
-        except Exception as e:  # pragma: no cover
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
-    def unlike(self, request, pk: str | None = None):
-        """Current user unlikes the review (idempotent). """
-        assert pk is not None
-        review = self.get_object()
-        user = request.user
-        try:
-            with transaction.atomic():
-                deleted, _ = CourseReviewLike.objects.filter(review=review, user=user).delete()
-                if deleted:
-                    CourseReview.objects.filter(pk=review.pk, likes_count__gt=0).update(likes_count=F("likes_count") - 1)
-            review.refresh_from_db(fields=["likes_count"])
-            data = self.get_serializer(review, context={"request": request}).data
-            return Response(data, status=status.HTTP_200_OK)
-        except Exception as e:  # pragma: no cover
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def _ensure_owner(self, obj: CourseReview) -> None:
         user = self.request.user
@@ -1089,57 +1039,6 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
         except Exception as e:  # pragma: no cover
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
-    def like(self, request, pk: str | None = None):
-        """Current user likes the reply (idempotent). Mirrors forum like handling."""
-        assert pk is not None
-        reply = self.get_object()
-        user = request.user
-        try:
-            with transaction.atomic():
-                like, created = CourseReviewReplyLike.objects.get_or_create(reply=reply, user=user)
-                if created:
-                    CourseReviewReply.objects.filter(pk=reply.pk).update(likes_count=F("likes_count") + 1)
-                    if user.pk != reply.author_id:
-                        emit(DomainEvent(
-                            type=NotificationType.COURSE_REVIEW_REPLY_LIKED,
-                            recipient_id=reply.author_id,
-                            actor_id=user.pk,
-                            target_app="courses",
-                            target_model="CourseReviewReply",
-                            target_id=str(reply.pk),
-                            route=f"/courses/{reply.review.course.course_id}#review-{reply.review.pk}",
-                            metadata={
-                                "courseId": str(reply.review.course.course_id),
-                                "courseReviewId": str(reply.review.pk),
-                                "courseReviewReplyId": str(reply.pk),
-                                "courseTitle": f"{reply.review.course.subject_code} {reply.review.course.title}",
-                            },
-                            referenced_content_preview=reply.content,
-                            created_at=getattr(like, "created_at", timezone.now()),
-                        ))
-            reply.refresh_from_db(fields=["likes_count"])
-            data = self.get_serializer(reply, context={"request": request}).data
-            return Response(data, status=status.HTTP_200_OK)
-        except Exception as e:  # pragma: no cover
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
-    def unlike(self, request, pk: str | None = None):
-        """Current user unlikes the reply (idempotent). Mirrors forum unlike handling."""
-        assert pk is not None
-        reply = self.get_object()
-        user = request.user
-        try:
-            with transaction.atomic():
-                deleted, _ = CourseReviewReplyLike.objects.filter(reply=reply, user=user).delete()
-                if deleted:
-                    CourseReviewReply.objects.filter(pk=reply.pk, likes_count__gt=0).update(likes_count=F("likes_count") - 1)
-            reply.refresh_from_db(fields=["likes_count"])
-            data = self.get_serializer(reply, context={"request": request}).data
-            return Response(data, status=status.HTTP_200_OK)
-        except Exception as e:  # pragma: no cover
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=["GET"], url_path="find-review")
     def find_review(self, request):
