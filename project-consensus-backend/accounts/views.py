@@ -64,12 +64,12 @@ class VerificationCodeRateThrottle(AnonRateThrottle):
 
 
 class PasswordResetRequestRateThrottle(AnonRateThrottle):
-    """Rate limit for password reset request: 5 per hour per IP."""
+    """Rate limit for password reset request: 50 per hour per IP."""
     scope = 'password_reset'
 
 
 class PasswordResetConfirmRateThrottle(AnonRateThrottle):
-    """Rate limit for password reset confirmation: 10 per hour per IP."""
+    """Rate limit for password reset confirmation: 50 per hour per IP."""
     scope = 'password_reset_confirm'
 
 

@@ -178,7 +178,7 @@ REST_FRAMEWORK = {
     ],
     # Currently very high rate limit for testing, needs to be adjusted in production
     "DEFAULT_THROTTLE_RATES": {
-        "image_upload": "100/hour",  # Image upload rate limit: 100 per hour per IPl.
+        "image_upload": "100/hour",  # Image upload rate limit: 100 per hour per IP.
         "login": "100/minute",  # Login attempts: 100 per minute per IP
         "register": "3000/hour",  # Registration: 3000 per hour per IP
         "verification": "50/minute",  # Send verification code: 50 per minute per IP
