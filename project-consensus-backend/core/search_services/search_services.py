@@ -121,12 +121,7 @@ def search_forum_posts(query: str, similarity_threshold: float, is_short_query: 
             text_fields=['title', 'content', 'author__profile__nickname']
         )
     else:
-        # For longer queries, pure trigram similarity on large bodies can be too low
-        # despite exact token presence in content. Allow a substring fallback on content
-        # to avoid missing clear body-only matches.
-        posts_qs = posts_qs.filter(
-            Q(similarity__gte=similarity_threshold) | Q(content__icontains=query)
-        )
+        posts_qs = posts_qs.filter(similarity__gte=similarity_threshold)
 
     posts = posts_qs.select_related('author', 'author__profile').defer(
         'content'
