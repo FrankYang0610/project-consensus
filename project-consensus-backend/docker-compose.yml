@@ -16,6 +16,30 @@ services:
       retries: 10
     volumes:
       - db17_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+
+  redis:
+    image: redis:latest
+    container_name: dj_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass redis_secure_password
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redis_secure_password", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - redis_data:/data
+    networks:
+      - app_network
 
 volumes:
   db17_data:
+  redis_data:
+
+networks:
+  app_network:
+    driver: bridge

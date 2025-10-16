@@ -89,7 +89,9 @@
     "errorPolyuEmail": "请使用有效的理大邮箱（@connect.polyu.hk）",
     "emailPrivacyNotice": "您的电子邮件只用于关联您的 polyu.life 账户并确定您是PolyU学生。您的学校相关内容、邮箱相关内容均不会被读取。您的个人隐私信息不会被分享。",
     "registerConsent": "点击注册即代表您同意我们的",
-    "termsOfService": "服务条款"
+    "termsOfService": "服务条款",
+    "verificationCodeSent": "验证码已发送至 {{email}}，请查收邮件。若未收到，请检查垃圾邮件文件夹。",
+    "errorTooManyAttempts": "尝试次数过多，请稍后再试或请求新的验证码"
   },
   "post": {
     "translate": "翻译",

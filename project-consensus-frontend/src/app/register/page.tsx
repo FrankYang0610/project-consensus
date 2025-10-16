@@ -34,6 +34,7 @@ export default function RegisterPage() {
 
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [canInputCode, setCanInputCode] = useState(false);
+  const [sentToEmail, setSentToEmail] = useState(''); 
   const [resendCountdown, setResendCountdown] = useState(0);
   const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState('');
@@ -64,8 +65,6 @@ export default function RegisterPage() {
     
     try {
       setIsSendingCode(true);
-      // TODO: Actual server address (backend)
-      // TODO：实际服务器地址（后端）
       await fetch(`${getAPIBaseUrl()}/api/accounts/csrf/`, { method: 'GET', credentials: 'include' });
       const csrfToken = getCookie('csrftoken');
       const res = await fetch(`${getAPIBaseUrl()}/api/accounts/send_verification_code/`, {
@@ -76,11 +75,17 @@ export default function RegisterPage() {
       });
       if (!res.ok) {
         const errorData: ErrorResponse = await res.json().catch(() => ({} as ErrorResponse));
+        // Handle specific error cases
+        if (res.status === 429) {
+          throw new Error(errorData.message || t('auth.errorTooManyAttempts'));
+        }
         throw new Error(errorData.message || errorData.detail || 'Failed to send code');
       }
+      const data: SendVerificationCodeResponse = await res.json();
       setCanInputCode(true);
+      setSentToEmail(data.email);
       setResendCountdown(60);
-      setSuccess(t('common.note'));
+      setSuccess(t('auth.verificationCodeSent', { email: data.email }));
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : t('auth.errorNetwork');
       setError(message);
@@ -132,10 +137,17 @@ export default function RegisterPage() {
           email: emailValidation.sanitizedValue,
           verification_code: verificationCode,
           password,
+          password_confirm: confirmPassword,
         }),
       });
       if (!res.ok) {
         const data: ErrorResponse = await res.json().catch(() => ({ message: 'Register failed' } as ErrorResponse));
+        
+        // Handle specific error cases
+        // 处理特定错误情况
+        if (res.status === 429) {
+          throw new Error(data.message || t('auth.errorTooManyAttempts'));
+        }
         
         // Extract error message from various possible formats
         // 从各种可能的格式中提取错误信息
@@ -148,6 +160,10 @@ export default function RegisterPage() {
           // 处理 DRF 验证错误格式: { nickname: ["错误信息"] }
           const nicknameErrors = Array.isArray(data.nickname) ? data.nickname : [data.nickname];
           errorMessage = nicknameErrors[0] || '';
+        }
+        if (!errorMessage && data.password_confirm) {
+          const pwdConfirmErrors = Array.isArray(data.password_confirm) ? data.password_confirm : [data.password_confirm];
+          errorMessage = pwdConfirmErrors[0] || '';
         }
         
         throw new Error(errorMessage || 'Register failed');
@@ -260,8 +276,16 @@ export default function RegisterPage() {
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value)}
                   disabled={!canInputCode || isRegistering}
+                  inputMode="numeric"
+                  pattern="[0-9]{6}"
+                  maxLength={6}
                   required
                 />
+                {sentToEmail && (
+                  <p className="text-sm text-muted-foreground">
+                    {t('auth.verificationCodeSent', { email: sentToEmail })}
+                  </p>
+                )}
               </div>
 
               <div className="grid gap-2">

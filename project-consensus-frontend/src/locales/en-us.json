@@ -91,7 +91,9 @@
     "errorPolyuEmail": "Please use a valid PolyU email (@connect.polyu.hk)",
     "emailPrivacyNotice": "Your email is only used to link your polyu.life account and verify that you are a PolyU student. Your personal information will not be shared.",
     "registerConsent": "By clicking Register you agree to our",
-    "termsOfService": "Terms of Service"
+    "termsOfService": "Terms of Service",
+    "verificationCodeSent": "Verification code sent to {{email}}, please check your email. If you don't receive it, please check your spam folder.",
+    "errorTooManyAttempts": "Too many attempts. Please try again later or request a new code"
   },
   "post": {
     "translate": "Translate",
