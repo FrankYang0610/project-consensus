@@ -1,6 +1,6 @@
-# Core Services
+# Global Search Services
 
-This directory contains service layer functions for core-related business logic. Services encapsulate complex operations, data transformations, and cross-cutting concerns while keeping views thin and focused on HTTP handling.
+This directory contains **global search service layer** functions for core-related business logic. These services encapsulate complex search operations, data transformations, and cross-cutting concerns while keeping views thin and focused on HTTP handling.
 
 ## Architecture
 
@@ -15,7 +15,7 @@ HTTP Response ← Serializer ← Service ← Model
 ## File Structure
 
 ```
-services/
+search_services/
 ├── __init__.py                    # Public API exports
 ├── search_exceptions.py           # Search-related exception definitions
 ├── search_algorithms.py           # Search scoring and similarity algorithms
@@ -24,7 +24,7 @@ services/
 └── README.md                      # This document
 ```
 
-## Core Services
+## Global Search Services
 
 ### `search_services.py`
 **Purpose**: Main search business logic and orchestration.
@@ -71,7 +71,7 @@ services/
 ## Usage Example
 
 ```python
-from core.services import perform_global_search, SearchQueryEmptyError
+from core.search_services import perform_global_search, SearchQueryEmptyError
 
 try:
     result = perform_global_search(
