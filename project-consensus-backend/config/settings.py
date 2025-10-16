@@ -176,15 +176,15 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
     ],
-    #Currently very high rate limit for testing, needs to be adjusted in production
+    # Currently very high rate limit for testing, needs to be adjusted in production
     "DEFAULT_THROTTLE_RATES": {
-        "image_upload": "100/hour",  # Image upload rate limit
+        "image_upload": "100/hour",  # Image upload rate limit: 100 per hour per IPl.
         "login": "100/minute",  # Login attempts: 100 per minute per IP
         "register": "3000/hour",  # Registration: 3000 per hour per IP
-        "verification": "10/minute",  # Send verification code: 10 per minute per IP
+        "verification": "50/minute",  # Send verification code: 50 per minute per IP
         "password_reset": "50/hour",  # Password reset request: 50 per hour per IP
         "password_reset_confirm": "50/hour",  # Password reset confirm: 50 per hour per IP
-        "anon_sustained": "1000/hour",  # General anonymous user rate limit
+        "anon_sustained": "1000/hour",  # General anonymous user rate limit: 1000 per hour per IP
     },
 }
 
