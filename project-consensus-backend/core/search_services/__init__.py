@@ -1,6 +1,6 @@
-# Core Services
+# Search Services
 # 
-# This directory contains service layer functions for core-related business logic.
+# This directory contains service layer functions for search-related business logic.
 # Services encapsulate complex operations, data transformations, and cross-cutting concerns
 # while keeping views thin and focused on HTTP handling.
 
