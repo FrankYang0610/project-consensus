@@ -167,12 +167,13 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
     ],
+    #Currently very high rate limit for testing, needs to be adjusted in production
     "DEFAULT_THROTTLE_RATES": {
         "image_upload": "100/hour",  # Image upload rate limit
-        "login": "5/minute",  # Login attempts: 5 per minute per IP
-        "register": "3/hour",  # Registration: 3 per hour per IP
-        "verification": "5/minute",  # Send verification code: 5 per minute per IP
-        "anon_sustained": "100/hour",  # General anonymous user rate limit
+        "login": "100/minute",  # Login attempts: 5 per minute per IP
+        "register": "3000/hour",  # Registration: 3 per hour per IP
+        "verification": "10/minute",  # Send verification code: 5 per minute per IP
+        "anon_sustained": "1000/hour",  # General anonymous user rate limit
     },
 }
 
@@ -183,7 +184,7 @@ CACHES = {
 
 # Email verification settings
 AUTH_VERIFICATION_CODE_TTL_SECONDS = env.int('AUTH_VERIFICATION_CODE_TTL_SECONDS', default=60 * 15)
-AUTH_VERIFICATION_REQUEST_INTERVAL_SECONDS = env.int('AUTH_VERIFICATION_REQUEST_INTERVAL_SECONDS', default=60)
+AUTH_VERIFICATION_REQUEST_INTERVAL_SECONDS = env.int('AUTH_VERIFICATION_REQUEST_INTERVAL_SECONDS', default=90)
 AUTH_VERIFICATION_MAX_ATTEMPTS = env.int('AUTH_VERIFICATION_MAX_ATTEMPTS', default=5)
 
 # Email service configuration (Resend)

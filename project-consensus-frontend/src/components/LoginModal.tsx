@@ -18,6 +18,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useApp } from '@/contexts/AppContext';
 import { LoginResponse, LoginApiResponse, ErrorResponse, LoginSuccessResponse } from '@/types';
 import { getCookie, getAPIBaseUrl } from '@/lib/api/api-utils';
+import { extractErrorMessage } from '@/lib/api/error-utils';
 import { useI18n } from '@/hooks/use-i18n';
 import { cn, validatePolyuEmail } from '@/lib/utils';
 
@@ -73,7 +74,15 @@ export function LoginModal({ className, onLoginSuccess }: LoginModalProps) {
         const errorData: ErrorResponse = await response
           .json()
           .catch(() => ({ message: 'Login failed' } as ErrorResponse));
-        throw new Error(errorData.message || errorData.detail || 'Login failed');
+        if (response.status === 429) {
+          return { success: false, message: t('auth.errorTooManyAttempts') } as LoginResponse;
+        }
+        let errorMessage = extractErrorMessage(errorData, 'Login failed');
+        // Translate i18n error code if applicable
+        if (errorMessage.startsWith('validation.') || errorMessage.startsWith('auth.')) {
+          errorMessage = t(errorMessage);
+        }
+        return { success: false, message: errorMessage } as LoginResponse;
       }
 
       const data: LoginApiResponse = await response
@@ -86,8 +95,8 @@ export function LoginModal({ className, onLoginSuccess }: LoginModalProps) {
       const err = data as ErrorResponse;
       return { success: false, message: err.message || err.detail || 'Login failed' };
     } catch (err) {
-      console.error('Login error:', err);
-      throw err;
+      const msg = err instanceof Error ? err.message : t('auth.errorNetwork');
+      return { success: false, message: msg } as LoginResponse;
     }
   };
 

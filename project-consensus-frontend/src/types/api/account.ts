@@ -8,6 +8,7 @@ export interface SendVerificationCodeResponse {
   success: boolean;
   email: string; // The email address the code was sent to
   message?: string;
+  resend_after_seconds?: number;
 }
 
 // POST /api/accounts/register/

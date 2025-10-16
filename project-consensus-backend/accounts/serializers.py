@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import bleach
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from core.validators import validate_https_url_in_allowed_hosts
 from django.contrib.auth.password_validation import validate_password as dj_validate_password
 
 from .models import Profile
+from . import error_codes
 
 
 User = get_user_model()
@@ -28,7 +30,7 @@ def validate_and_sanitize_nickname(value: str) -> str:
     - At least 1 non-whitespace character
     """
     if not value:
-        raise serializers.ValidationError("Nickname cannot be empty.")
+        raise serializers.ValidationError(error_codes.NICKNAME_REQUIRED)
     
     # First, use bleach to remove all HTML tags and sanitize
     # Nicknames should be plain text, so no tags are allowed
@@ -47,12 +49,12 @@ def validate_and_sanitize_nickname(value: str) -> str:
     # Check minimum length (after sanitization)
     # 检查最小长度（消毒后）
     if not sanitized:
-        raise serializers.ValidationError("Nickname cannot be empty or only whitespace.")
+        raise serializers.ValidationError(error_codes.NICKNAME_REQUIRED)
     
     # Check maximum length
     # 检查最大长度
     if len(sanitized) > 15:
-        raise serializers.ValidationError("Nickname must be 15 characters or less.")
+        raise serializers.ValidationError(error_codes.NICKNAME_TOO_LONG)
     
     return sanitized
 
@@ -72,9 +74,7 @@ def validate_polyu_email(value: str) -> str:
     - 返回小写版本以保持一致性
     """
     if not value.lower().endswith('@connect.polyu.hk'):
-        raise serializers.ValidationError(
-            "Only PolyU email addresses (@connect.polyu.hk) are allowed."
-        )
+        raise serializers.ValidationError(error_codes.EMAIL_POLYU_ONLY)
     return value.lower()
 
 
@@ -116,15 +116,15 @@ class ProfileSerializer(serializers.ModelSerializer):
         # 检查唯一性（排除当前用户的资料）
         request = self.context.get('request')
         if not request:
-            raise serializers.ValidationError("Request context is required for nickname validation.")
+            raise serializers.ValidationError(error_codes.AUTHENTICATION_REQUIRED)
 
         current_user = request.user
         if not current_user or not current_user.is_authenticated:
-            raise serializers.ValidationError("Authentication is required to update nickname.")
+            raise serializers.ValidationError(error_codes.AUTHENTICATION_REQUIRED)
 
         existing = Profile.objects.filter(nickname=sanitized_value).exclude(user=current_user).first()
         if existing:
-            raise serializers.ValidationError("This nickname is already taken. Please choose another one.")
+            raise serializers.ValidationError(error_codes.NICKNAME_ALREADY_TAKEN)
 
         return sanitized_value
 
@@ -168,19 +168,26 @@ class RegisterSerializer(serializers.Serializer):
         # Check uniqueness for registration
         # 检查注册时的唯一性
         if Profile.objects.filter(nickname=sanitized_value).exists():
-            raise serializers.ValidationError("This nickname is already taken. Please choose another one.")
+            raise serializers.ValidationError(error_codes.NICKNAME_ALREADY_TAKEN)
         
         return sanitized_value
 
     def validate_password(self, value):
-        dj_validate_password(value)
+        """Validate password strength using Django's password validators."""
+        try:
+            dj_validate_password(value)
+        except DjangoValidationError as e:
+            # Convert Django ValidationError to DRF ValidationError
+            # Map Django error messages to i18n error codes
+            error_codes_list = [error_codes.map_django_password_error(msg) for msg in e.messages]
+            raise serializers.ValidationError(error_codes_list)
         return value
 
     def validate(self, attrs):
         password = attrs.get('password')
         password_confirm = attrs.get('password_confirm')
         if password_confirm != password:
-            raise serializers.ValidationError({"password_confirm": "Passwords do not match."})
+            raise serializers.ValidationError({"password_confirm": error_codes.PASSWORD_MISMATCH})
         return attrs
 
 

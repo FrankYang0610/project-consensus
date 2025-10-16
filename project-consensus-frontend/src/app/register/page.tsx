@@ -19,6 +19,7 @@ import { SiteNavigation } from '@/components/SiteNavigation';
 import Link from 'next/link';
 import { ErrorResponse, RegisterSuccessResponse, SendVerificationCodeResponse } from '@/types';
 import { getCookie, getAPIBaseUrl } from '@/lib/api/api-utils';
+import { extractErrorMessage } from '@/lib/api/error-utils';
 import { useApp } from '@/contexts/AppContext';
 import { validateNickname, validatePolyuEmail } from '@/lib/utils';
 
@@ -77,14 +78,19 @@ export default function RegisterPage() {
         const errorData: ErrorResponse = await res.json().catch(() => ({} as ErrorResponse));
         // Handle specific error cases
         if (res.status === 429) {
-          throw new Error(errorData.message || t('auth.errorTooManyAttempts'));
+          const msg = (errorData.message || '').toString();
+          const localized = msg.startsWith('auth.') || msg.startsWith('validation.') ? t(msg) : t('auth.errorTooManyAttempts');
+          throw new Error(localized);
         }
-        throw new Error(errorData.message || errorData.detail || 'Failed to send code');
+        const generic = errorData.message || errorData.detail || 'Failed to send code';
+        const localized = generic.startsWith?.('auth.') || generic.startsWith?.('validation.') ? t(generic) : generic;
+        throw new Error(localized);
       }
       const data: SendVerificationCodeResponse = await res.json();
       setCanInputCode(true);
       setSentToEmail(data.email);
-      setResendCountdown(60);
+      const countdown = typeof data.resend_after_seconds === 'number' && data.resend_after_seconds > 0 ? data.resend_after_seconds : 90;
+      setResendCountdown(countdown);
       setSuccess(t('auth.verificationCodeSent', { email: data.email }));
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : t('auth.errorNetwork');
@@ -146,27 +152,22 @@ export default function RegisterPage() {
         // Handle specific error cases
         // 处理特定错误情况
         if (res.status === 429) {
-          throw new Error(data.message || t('auth.errorTooManyAttempts'));
+          const msg = (data.message || '').toString();
+          const localized429 = msg.startsWith('auth.') || msg.startsWith('validation.') ? t(msg) : t('auth.errorTooManyAttempts');
+          throw new Error(localized429);
         }
         
-        // Extract error message from various possible formats
-        // 从各种可能的格式中提取错误信息
-        let errorMessage = data.message || data.detail || '';
+        // Extract error message using utility function
+        // 使用工具函数提取错误信息
+        let errorMessage = extractErrorMessage(data, 'Register failed');
         
-        // Backend may return validation errors in a nested format
-        // 后端可能以嵌套格式返回验证错误
-        if (!errorMessage && data.nickname) {
-          // Handle DRF validation error format: { nickname: ["error message"] }
-          // 处理 DRF 验证错误格式: { nickname: ["错误信息"] }
-          const nicknameErrors = Array.isArray(data.nickname) ? data.nickname : [data.nickname];
-          errorMessage = nicknameErrors[0] || '';
-        }
-        if (!errorMessage && data.password_confirm) {
-          const pwdConfirmErrors = Array.isArray(data.password_confirm) ? data.password_confirm : [data.password_confirm];
-          errorMessage = pwdConfirmErrors[0] || '';
+        // If error message looks like an i18n key (e.g. "validation.password.tooShort"), translate it
+        // 如果错误消息看起来像 i18n key，则翻译它
+        if (errorMessage.startsWith('validation.') || errorMessage.startsWith('auth.')) {
+          errorMessage = t(errorMessage);
         }
         
-        throw new Error(errorMessage || 'Register failed');
+        throw new Error(errorMessage);
       }
       
       const data: RegisterSuccessResponse = await res.json();
@@ -298,6 +299,14 @@ export default function RegisterPage() {
                   disabled={isRegistering}
                   required
                 />
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p className="font-medium">{t('auth.passwordRequirements')}</p>
+                  <ul className="list-disc list-inside space-y-0.5 ml-1">
+                    {(t('auth.passwordRequirementsList', { returnObjects: true }) as string[]).map((req, idx) => (
+                      <li key={idx}>{req}</li>
+                    ))}
+                  </ul>
+                </div>
               </div>
 
               <div className="grid gap-2">

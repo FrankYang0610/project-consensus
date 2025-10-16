@@ -10,8 +10,8 @@ echo "Starting Celery Worker"
 echo "========================================"
 echo ""
 
-# Get script directory
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# Get script directory and navigate to project root (parent directory of scripts/)
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 cd "$SCRIPT_DIR"
 
 # Check if .env file exists

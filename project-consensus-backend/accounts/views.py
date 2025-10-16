@@ -187,10 +187,11 @@ def send_verification_code(request):
     email = serializer.validated_data["email"].lower()
 
     # throttle: allow only one request per configured window per email
-    request_interval = getattr(settings, "AUTH_VERIFICATION_REQUEST_INTERVAL_SECONDS", 60)
+    request_interval = getattr(settings, "AUTH_VERIFICATION_REQUEST_INTERVAL_SECONDS", 90)
     throttle_key = f"accounts:verify:throttle:{email}"
     if cache.get(throttle_key):
-        return Response({"message": "Please wait before requesting another code."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+        # Use i18n error code; frontend maps 429 to a localized message too
+        return Response({"message": "auth.errorTooManyAttempts"}, status=status.HTTP_429_TOO_MANY_REQUESTS)
 
     # If the email is already registered, do not actually send an email.
     # Return a generic success response and set the throttle to avoid spam/enumeration.
@@ -200,7 +201,11 @@ def send_verification_code(request):
             "Verification code requested for existing account; suppressed sending",
             extra={"email": email}
         )
-        return Response({"success": True, "email": email}, status=status.HTTP_200_OK)
+        return Response({
+            "success": True,
+            "email": email,
+            "resend_after_seconds": request_interval,
+        }, status=status.HTTP_200_OK)
 
     code = f"{secrets.randbelow(10**6):06d}"  # 6-digit numeric
     ttl_seconds = getattr(settings, "AUTH_VERIFICATION_CODE_TTL_SECONDS", 60 * 15)
@@ -285,7 +290,11 @@ def send_verification_code(request):
             email, code
         )
 
-    return Response({"success": True, "email": email}, status=status.HTTP_200_OK)
+    return Response({
+        "success": True,
+        "email": email,
+        "resend_after_seconds": request_interval,
+    }, status=status.HTTP_200_OK)
 
 
 @api_view(["POST"])
@@ -308,7 +317,7 @@ def register(request):
     attempt_key = f"accounts:verify:attempts:{email}"
     attempts = cache.get(attempt_key, 0)
     if attempts >= max_attempts:
-        return Response({"message": "Too many incorrect attempts. Please request a new code."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+        return Response({"message": "validation.verificationCode.tooManyAttempts"}, status=status.HTTP_429_TOO_MANY_REQUESTS)
 
     code_key = f"accounts:verify:code:{email}"
     expected_digest = cache.get(code_key)
@@ -316,11 +325,12 @@ def register(request):
     if not expected_digest or not hmac.compare_digest(str(expected_digest), str(provided_digest)):
         ttl_seconds = getattr(settings, "AUTH_VERIFICATION_CODE_TTL_SECONDS", 60 * 15)
         cache.set(attempt_key, attempts + 1, timeout=ttl_seconds)
-        return Response({"message": "Invalid or expired verification code."}, status=status.HTTP_400_BAD_REQUEST)
+        # DRF-style field error for better UX
+        return Response({"verification_code": ["validation.verificationCode.invalidOrExpired"]}, status=status.HTTP_400_BAD_REQUEST)
 
     # Check if email already exists
     if User.objects.filter(email=email).exists():
-        return Response({"message": "Email already registered."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"email": ["validation.email.alreadyRegistered"]}, status=status.HTTP_400_BAD_REQUEST)
 
     user = User.objects.create_user(username=email, email=email, password=password)
     # Default pronouns to 'not_specified' for new users
@@ -361,13 +371,13 @@ def login_view(request):
 
     user = authenticate(username=email, password=password)
     if not user:
-        return Response({"message": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "auth.invalidCredentials"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Check if the account is active
     profile = getattr(user, 'profile', None)
     if profile and not profile.is_account_active:
         return Response({
-            "message": "This account has been disabled. Please contact support for assistance.",
+            "message": "auth.errorAccountDisabled",
             "account_disabled": True
         }, status=status.HTTP_403_FORBIDDEN)
 
