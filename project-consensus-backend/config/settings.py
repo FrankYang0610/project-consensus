@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os  # Used to build the .env file path
+import sys  # For platform detection
 import environ  # django-environ: typed environment variable parser
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -73,6 +74,7 @@ MIDDLEWARE = [
 
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -139,6 +141,13 @@ USE_TZ = True
 # Frontend may request a specific language via query; when absent, use this.
 DEFAULT_CONTENT_LANGUAGE = env("DEFAULT_CONTENT_LANGUAGE", default="zh-CN")
 
+# Supported UI languages
+LANGUAGES = [
+    ("en", "English"),
+    ("zh-hans", "Simplified Chinese"),
+    ("zh-hant", "Traditional Chinese"),
+]
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
@@ -170,9 +179,11 @@ REST_FRAMEWORK = {
     #Currently very high rate limit for testing, needs to be adjusted in production
     "DEFAULT_THROTTLE_RATES": {
         "image_upload": "100/hour",  # Image upload rate limit
-        "login": "100/minute",  # Login attempts: 5 per minute per IP
-        "register": "3000/hour",  # Registration: 3 per hour per IP
-        "verification": "10/minute",  # Send verification code: 5 per minute per IP
+        "login": "100/minute",  # Login attempts: 100 per minute per IP
+        "register": "3000/hour",  # Registration: 3000 per hour per IP
+        "verification": "10/minute",  # Send verification code: 10 per minute per IP
+        "password_reset": "50/hour",  # Password reset request: 50 per hour per IP
+        "password_reset_confirm": "50/hour",  # Password reset confirm: 50 per hour per IP
         "anon_sustained": "1000/hour",  # General anonymous user rate limit
     },
 }
@@ -186,6 +197,11 @@ CACHES = {
 AUTH_VERIFICATION_CODE_TTL_SECONDS = env.int('AUTH_VERIFICATION_CODE_TTL_SECONDS', default=60 * 15)
 AUTH_VERIFICATION_REQUEST_INTERVAL_SECONDS = env.int('AUTH_VERIFICATION_REQUEST_INTERVAL_SECONDS', default=90)
 AUTH_VERIFICATION_MAX_ATTEMPTS = env.int('AUTH_VERIFICATION_MAX_ATTEMPTS', default=5)
+
+# Password reset settings
+FRONTEND_BASE_URL = env('FRONTEND_BASE_URL', default='http://localhost:3000')
+PASSWORD_RESET_TIMEOUT = env.int('PASSWORD_RESET_TIMEOUT', default=3600)  # 1 hour in seconds
+PASSWORD_RESET_REQUEST_INTERVAL_SECONDS = env.int('PASSWORD_RESET_REQUEST_INTERVAL_SECONDS', default=90)
 
 # Email service configuration (Resend)
 # Set EMAIL_ENABLED=true in production to send actual emails
@@ -230,6 +246,35 @@ CELERY_WORKER_MAX_TASKS_PER_CHILD = 1000  # Restart worker after N tasks (preven
 # Retry configuration
 CELERY_TASK_ACKS_LATE = True  # Acknowledge task after completion (safer)
 CELERY_TASK_REJECT_ON_WORKER_LOST = True  # Requeue tasks if worker dies
+
+# Broker connection retry settings (critical for production)
+# These settings ensure Celery worker reconnects if Redis/broker goes down
+CELERY_BROKER_CONNECTION_RETRY = True  # Enable automatic retry on connection loss
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True  # Retry connection on startup
+CELERY_BROKER_CONNECTION_MAX_RETRIES = None  # Retry indefinitely (0 or None = infinite)
+
+# Redis connection pool settings for better reliability
+# Note: socket_keepalive_options use Linux-specific constants that don't work on macOS
+# We disable keepalive options on macOS to avoid "OSError: [Errno 22] Invalid argument"
+_broker_transport_options = {
+    'visibility_timeout': 3600,  # 1 hour
+    'max_retries': 3,  # Max retries for each task
+    'interval_start': 0,  # Initial retry delay (seconds)
+    'interval_step': 0.2,  # Retry delay increment
+    'interval_max': 0.2,  # Max retry delay
+    'health_check_interval': 30,  # Health check every 30 seconds
+}
+
+# Add socket keepalive only on Linux (not macOS/Windows)
+if sys.platform == 'linux':
+    _broker_transport_options['socket_keepalive'] = True
+    _broker_transport_options['socket_keepalive_options'] = {
+        1: 60,   # TCP_KEEPIDLE: start keepalive after 60s idle
+        2: 10,   # TCP_KEEPINTVL: probe interval
+        3: 3,    # TCP_KEEPCNT: max failed probes before disconnect
+    }
+
+CELERY_BROKER_TRANSPORT_OPTIONS = _broker_transport_options
 
 # Logging
 CELERY_WORKER_HIJACK_ROOT_LOGGER = False  # Don't override Django logging

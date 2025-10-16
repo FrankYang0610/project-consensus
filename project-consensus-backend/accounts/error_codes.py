@@ -36,6 +36,13 @@ FIELD_REQUIRED = "validation.field.required"
 
 # Authentication errors  
 AUTHENTICATION_REQUIRED = "auth.errorAuthRequired"
+AUTH_TOO_MANY_ATTEMPTS = "auth.errorTooManyAttempts"
+
+# Password reset errors
+PASSWORD_RESET_EMAIL_SENT = "auth.passwordReset.emailSent"
+PASSWORD_RESET_INVALID_OR_EXPIRED = "auth.passwordReset.invalidOrExpired"
+PASSWORD_RESET_LINK_EXPIRED = "auth.passwordReset.linkExpired"
+PASSWORD_RESET_SUCCESS = "auth.passwordReset.success"
 
 
 def map_django_password_error(error_message: str) -> str:

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, FormEvent, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -25,7 +26,8 @@ import { validateNickname, validatePolyuEmail } from '@/lib/utils';
 
 export default function RegisterPage() {
   const { t } = useI18n();
-  const { login } = useApp();
+  const router = useRouter();
+  const { login, user, isLoading: authLoading, openLoginModal } = useApp();
 
   const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
@@ -40,6 +42,13 @@ export default function RegisterPage() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push('/');
+    }
+  }, [authLoading, user, router]);
 
   // countdown effect
   useEffect(() => {
@@ -302,9 +311,9 @@ export default function RegisterPage() {
                 <div className="text-xs text-muted-foreground space-y-1">
                   <p className="font-medium">{t('auth.passwordRequirements')}</p>
                   <ul className="list-disc list-inside space-y-0.5 ml-1">
-                    {(t('auth.passwordRequirementsList', { returnObjects: true }) as string[]).map((req, idx) => (
-                      <li key={idx}>{req}</li>
-                    ))}
+                    <li>{t('auth.passwordRequirement1')}</li>
+                    <li>{t('auth.passwordRequirement2')}</li>
+                    <li>{t('auth.passwordRequirement3')}</li>
                   </ul>
                 </div>
               </div>
@@ -342,9 +351,17 @@ export default function RegisterPage() {
 
           <CardFooter className="justify-center text-sm text-muted-foreground">
             <span className="mr-1">{t('auth.alreadyHaveAccount')}</span>
-            <Link className="underline underline-offset-4" href="/">
+            <button
+              type="button"
+              onClick={() => {
+                router.push('/');
+                // Small delay to ensure navigation completes before opening modal
+                setTimeout(() => openLoginModal(), 100);
+              }}
+              className="underline underline-offset-4 hover:text-primary transition-colors"
+            >
               {t('auth.login')}
-            </Link>
+            </button>
           </CardFooter>
         </Card>
       </div>

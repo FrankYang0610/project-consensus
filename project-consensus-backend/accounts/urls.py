@@ -17,6 +17,9 @@ urlpatterns = [
     path("me/", views.me, name="me"),
     # Update profile (PATCH)
     path("profile/", views.update_profile, name="update_profile"),
+    # Password reset endpoints
+    path("password-reset/request/", views.request_password_reset, name="password_reset_request"),
+    path("password-reset/confirm/", views.confirm_password_reset, name="password_reset_confirm"),
     # User activity endpoints
     path("my-posts/", views.my_posts, name="my_posts"),
     path("my-comments/", views.my_comments, name="my_comments"),

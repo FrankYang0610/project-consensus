@@ -1,0 +1,1 @@
+PolyU Life Password Reset Request (Valid for {{ timeout_hours }} hours)

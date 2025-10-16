@@ -205,3 +205,59 @@ class LoginSerializer(serializers.Serializer):
     def validate_email(self, value):
         """Validate that email is from PolyU domain."""
         return validate_polyu_email(value)
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    """Request body for password reset request endpoint.
+    
+    Fields:
+    - email: user email (must be @connect.polyu.hk)
+    
+    Note: This serializer does not check if the email exists in the database
+    to prevent user enumeration attacks. The view will handle this silently.
+    """
+    
+    email = serializers.EmailField(required=True)
+    
+    def validate_email(self, value):
+        """Validate that email is from PolyU domain."""
+        return validate_polyu_email(value)
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    """Request body for password reset confirmation endpoint.
+    
+    Fields:
+    - uid: base64 encoded user ID
+    - token: password reset token
+    - new_password: new password
+    - new_password_confirm: password confirmation
+    """
+    
+    uid = serializers.CharField(required=True)
+    token = serializers.CharField(required=True)
+    new_password = serializers.CharField(write_only=True, required=True)
+    new_password_confirm = serializers.CharField(write_only=True, required=True)
+    
+    def validate_new_password(self, value):
+        """Validate password strength using Django's password validators."""
+        try:
+            dj_validate_password(value)
+        except DjangoValidationError as e:
+            # Convert Django ValidationError to DRF ValidationError
+            # Map Django error messages to i18n error codes
+            error_codes_list = [error_codes.map_django_password_error(msg) for msg in e.messages]
+            raise serializers.ValidationError(error_codes_list)
+        return value
+    
+    def validate(self, attrs):
+        """Validate that both passwords match."""
+        new_password = attrs.get('new_password')
+        new_password_confirm = attrs.get('new_password_confirm')
+        
+        if new_password != new_password_confirm:
+            raise serializers.ValidationError({
+                "new_password_confirm": error_codes.PASSWORD_MISMATCH
+            })
+        
+        return attrs
