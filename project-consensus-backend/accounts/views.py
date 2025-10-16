@@ -244,6 +244,8 @@ def send_verification_code(request):
     # Send verification code via email
     if getattr(settings, 'EMAIL_ENABLED', False):
         language = get_language_from_request(request)
+        # Use Django's get_language_from_request to determine the user's language.
+        # This follows Django's language negotiation conventions and is more robust than manual parsing of HTTP_ACCEPT_LANGUAGE.
         use_async = getattr(settings, 'EMAIL_USE_CELERY', False)
         
         if use_async:
@@ -733,7 +735,7 @@ def request_password_reset(request):
     email = serializer.validated_data["email"].lower()
 
     # Per-email throttle to mitigate abuse
-    request_interval = getattr(settings, "PASSWORD_RESET_REQUEST_INTERVAL_SECONDS", 90)
+    request_interval = getattr(settings, "PASSWORD_RESET_REQUEST_INTERVAL_SECONDS", 300)
     throttle_key = f"accounts:pwdreset:throttle:{email}"
     if cache.get(throttle_key):
         return Response({"message": error_codes.AUTH_TOO_MANY_ATTEMPTS}, status=status.HTTP_429_TOO_MANY_REQUESTS)

@@ -201,7 +201,7 @@ AUTH_VERIFICATION_MAX_ATTEMPTS = env.int('AUTH_VERIFICATION_MAX_ATTEMPTS', defau
 # Password reset settings
 FRONTEND_BASE_URL = env('FRONTEND_BASE_URL', default='http://localhost:3000')
 PASSWORD_RESET_TIMEOUT = env.int('PASSWORD_RESET_TIMEOUT', default=3600)  # 1 hour in seconds
-PASSWORD_RESET_REQUEST_INTERVAL_SECONDS = env.int('PASSWORD_RESET_REQUEST_INTERVAL_SECONDS', default=90)
+PASSWORD_RESET_REQUEST_INTERVAL_SECONDS = env.int('PASSWORD_RESET_REQUEST_INTERVAL_SECONDS', default=300)
 
 # Email service configuration (Resend)
 # Set EMAIL_ENABLED=true in production to send actual emails

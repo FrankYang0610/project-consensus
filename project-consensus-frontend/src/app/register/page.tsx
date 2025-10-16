@@ -356,11 +356,7 @@ export default function RegisterPage() {
             <span className="mr-1">{t('auth.alreadyHaveAccount')}</span>
             <button
               type="button"
-              onClick={() => {
-                router.push('/');
-                // Small delay to ensure navigation completes before opening modal
-                setTimeout(() => openLoginModal(), 100);
-              }}
+              onClick={openLoginModal}
               className="underline underline-offset-4 hover:text-primary transition-colors"
             >
               {t('auth.login')}
