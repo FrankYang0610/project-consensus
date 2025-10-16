@@ -740,5 +740,27 @@
       "courseReviewReplyReplied": "{{actor}} 回覆咗你喺 {{target}} 嘅點評回覆",
       "unknownType": "未知通知類型 ({{type}}) 來自 {{actor}}"
     }
+  },
+  "welcome": {
+    "title": "歡迎來到 PolyU.life！",
+    "subtitle": "透過以下選項開始探索",
+    "registrationSuccess": "註冊成功！你的帳戶已創建。",
+    "completeProfile": {
+      "title": "完善個人資料",
+      "description": "設定你的暱稱、頭像和代稱，個性化你的帳戶。",
+      "action": "前往設定"
+    },
+    "communityRules": {
+      "title": "社區規範",
+      "description": "了解我們的社區標準，學習如何負責任地參與。",
+      "action": "閱讀規範"
+    },
+    "exploreCourses": {
+      "title": "探索課程點評",
+      "description": "瀏覽課程、閱讀點評，分享你的學習體驗。",
+      "action": "瀏覽課程"
+    },
+    "skipForNow": "暫時跳過",
+    "continueToHome": "前往首頁"
   }
 }

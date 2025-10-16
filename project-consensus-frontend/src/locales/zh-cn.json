@@ -739,5 +739,27 @@
       "courseReviewReplyReplied": "{{actor}} 回复了你在 {{target}} 的点评回复",
       "unknownType": "未知通知类型 ({{type}}) 来自 {{actor}}"
     }
+  },
+  "welcome": {
+    "title": "欢迎来到 PolyU.life！",
+    "subtitle": "通过以下选项开始探索",
+    "registrationSuccess": "注册成功！你的账户已创建。",
+    "completeProfile": {
+      "title": "完善个人资料",
+      "description": "设置你的昵称、头像和代称，个性化你的账户。",
+      "action": "前往设置"
+    },
+    "communityRules": {
+      "title": "社区规范",
+      "description": "了解我们的社区标准，学习如何负责任地参与。",
+      "action": "阅读规范"
+    },
+    "exploreCourses": {
+      "title": "探索课程点评",
+      "description": "浏览课程、阅读点评，分享你的学习体验。",
+      "action": "浏览课程"
+    },
+    "skipForNow": "暂时跳过",
+    "continueToHome": "前往首页"
   }
 }

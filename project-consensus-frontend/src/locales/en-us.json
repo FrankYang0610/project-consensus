@@ -739,5 +739,27 @@
       "courseReviewReplyReplied": "{{actor}} replied to your review reply for {{target}}",
       "unknownType": "Unknown notification type ({{type}}) from {{actor}}"
     }
+  },
+  "welcome": {
+    "title": "Welcome to PolyU.life!",
+    "subtitle": "Get started by exploring these options",
+    "registrationSuccess": "Registration successful! Your account has been created.",
+    "completeProfile": {
+      "title": "Complete Your Profile",
+      "description": "Personalize your account with a nickname, avatar, and pronouns.",
+      "action": "Go to Settings"
+    },
+    "communityRules": {
+      "title": "Community Guidelines",
+      "description": "Learn about our community standards and how to participate responsibly.",
+      "action": "Read Guidelines"
+    },
+    "exploreCourses": {
+      "title": "Explore Course Reviews",
+      "description": "Browse courses, read reviews, and share your own experiences.",
+      "action": "Browse Courses"
+    },
+    "skipForNow": "Skip for now",
+    "continueToHome": "Continue to Home"
   }
 }

@@ -180,15 +180,18 @@ export default function RegisterPage() {
       }
       
       const data: RegisterSuccessResponse = await res.json();
-      if (!data.success) {
+      
+      // Verify registration success
+      if (!data.success || !data.user) {
         throw new Error('Register failed');
       }
 
-      // Session cookie is set by backend; update UI state and go back
-      if (data.user) {
-        login(data.user);
-      }
-      window.history.back();
+      // Session cookie is set by backend; update UI state
+      login(data.user);
+      
+      // Use window.location for navigation to ensure clean page load
+      // This helps prevent any state issues with the router
+      window.location.href = '/welcome';
     } catch (e: unknown) {
       // Check if display name is already taken
       // 检查显示名称是否已被占用
