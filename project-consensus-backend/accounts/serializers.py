@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import bleach
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from core.validators import validate_https_url_in_allowed_hosts
+from django.contrib.auth.password_validation import validate_password as dj_validate_password
 
 from .models import Profile
+from . import error_codes
 
 
 User = get_user_model()
@@ -27,7 +30,7 @@ def validate_and_sanitize_nickname(value: str) -> str:
     - At least 1 non-whitespace character
     """
     if not value:
-        raise serializers.ValidationError("Nickname cannot be empty.")
+        raise serializers.ValidationError(error_codes.NICKNAME_REQUIRED)
     
     # First, use bleach to remove all HTML tags and sanitize
     # Nicknames should be plain text, so no tags are allowed
@@ -46,12 +49,12 @@ def validate_and_sanitize_nickname(value: str) -> str:
     # Check minimum length (after sanitization)
     # 检查最小长度（消毒后）
     if not sanitized:
-        raise serializers.ValidationError("Nickname cannot be empty or only whitespace.")
+        raise serializers.ValidationError(error_codes.NICKNAME_REQUIRED)
     
     # Check maximum length
     # 检查最大长度
     if len(sanitized) > 15:
-        raise serializers.ValidationError("Nickname must be 15 characters or less.")
+        raise serializers.ValidationError(error_codes.NICKNAME_TOO_LONG)
     
     return sanitized
 
@@ -71,9 +74,7 @@ def validate_polyu_email(value: str) -> str:
     - 返回小写版本以保持一致性
     """
     if not value.lower().endswith('@connect.polyu.hk'):
-        raise serializers.ValidationError(
-            "Only PolyU email addresses (@connect.polyu.hk) are allowed."
-        )
+        raise serializers.ValidationError(error_codes.EMAIL_POLYU_ONLY)
     return value.lower()
 
 
@@ -108,27 +109,24 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     def validate_nickname(self, value):
         """Validate and sanitize nickname field, check uniqueness."""
-        if value is not None and value != '':
-            # First, validate and sanitize the value
-            # 首先，验证和消毒值
-            sanitized_value = validate_and_sanitize_nickname(value)
-            
-            # Check uniqueness (exclude current user's profile)
-            # 检查唯一性（排除当前用户的资料）
-            request = self.context.get('request')
-            if not request:
-                raise serializers.ValidationError("Request context is required for nickname validation.")
-            
-            current_user = request.user
-            if not current_user or not current_user.is_authenticated:
-                raise serializers.ValidationError("Authentication is required to update nickname.")
-            
-            existing = Profile.objects.filter(nickname=sanitized_value).exclude(user=current_user).first()
-            if existing:
-                raise serializers.ValidationError("This nickname is already taken. Please choose another one.")
-            
-            return sanitized_value
-        return value
+        # Always sanitize and validate when field is present in input.
+        sanitized_value = validate_and_sanitize_nickname(value)
+
+        # Check uniqueness (exclude current user's profile)
+        # 检查唯一性（排除当前用户的资料）
+        request = self.context.get('request')
+        if not request:
+            raise serializers.ValidationError(error_codes.AUTHENTICATION_REQUIRED)
+
+        current_user = request.user
+        if not current_user or not current_user.is_authenticated:
+            raise serializers.ValidationError(error_codes.AUTHENTICATION_REQUIRED)
+
+        existing = Profile.objects.filter(nickname=sanitized_value).exclude(user=current_user).first()
+        if existing:
+            raise serializers.ValidationError(error_codes.NICKNAME_ALREADY_TAKEN)
+
+        return sanitized_value
 
 
 class SendCodeSerializer(serializers.Serializer):
@@ -151,10 +149,11 @@ class RegisterSerializer(serializers.Serializer):
     - password: password
     """
 
-    nickname = serializers.CharField(max_length=100)
-    email = serializers.EmailField()
-    verification_code = serializers.CharField(max_length=16)
-    password = serializers.CharField(write_only=True)
+    nickname = serializers.CharField(max_length=100, required=True)
+    email = serializers.EmailField(required=True)
+    verification_code = serializers.RegexField(regex=r'^\d{6}$', max_length=6, min_length=6, required=True)
+    password = serializers.CharField(write_only=True, required=True)
+    password_confirm = serializers.CharField(write_only=True, required=True)
     
     def validate_email(self, value):
         """Validate that email is from PolyU domain."""
@@ -169,9 +168,27 @@ class RegisterSerializer(serializers.Serializer):
         # Check uniqueness for registration
         # 检查注册时的唯一性
         if Profile.objects.filter(nickname=sanitized_value).exists():
-            raise serializers.ValidationError("This nickname is already taken. Please choose another one.")
+            raise serializers.ValidationError(error_codes.NICKNAME_ALREADY_TAKEN)
         
         return sanitized_value
+
+    def validate_password(self, value):
+        """Validate password strength using Django's password validators."""
+        try:
+            dj_validate_password(value)
+        except DjangoValidationError as e:
+            # Convert Django ValidationError to DRF ValidationError
+            # Map Django error messages to i18n error codes
+            error_codes_list = [error_codes.map_django_password_error(msg) for msg in e.messages]
+            raise serializers.ValidationError(error_codes_list)
+        return value
+
+    def validate(self, attrs):
+        password = attrs.get('password')
+        password_confirm = attrs.get('password_confirm')
+        if password_confirm != password:
+            raise serializers.ValidationError({"password_confirm": error_codes.PASSWORD_MISMATCH})
+        return attrs
 
 
 class LoginSerializer(serializers.Serializer):

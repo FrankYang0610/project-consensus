@@ -6,7 +6,9 @@ import { ErrorResponse } from './common';
 // POST /api/accounts/send_verification_code/
 export interface SendVerificationCodeResponse {
   success: boolean;
+  email: string; // The email address the code was sent to
   message?: string;
+  resend_after_seconds?: number;
 }
 
 // POST /api/accounts/register/

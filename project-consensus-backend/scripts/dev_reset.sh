@@ -33,7 +33,7 @@ fi
 # 3) Reset and start Postgres container
 echo "[dev-reset] Resetting Docker Postgres"
 docker compose down -v || true
-docker compose up -d db
+docker compose up -d db redis
 
 echo "[dev-reset] Waiting for Postgres (container: dj_db17) to be ready..."
 for i in {1..60}; do
@@ -44,6 +44,20 @@ for i in {1..60}; do
   sleep 1
   if [ "$i" -eq 60 ]; then
     echo "[dev-reset] Postgres did not become ready in time." >&2
+    exit 1
+  fi
+done
+
+# Also wait for Redis to be ready
+echo "[dev-reset] Waiting for Redis (container: dj_redis) to be ready..."
+for i in {1..60}; do
+  if docker exec dj_redis redis-cli -a redis_secure_password ping >/dev/null 2>&1; then
+    echo "[dev-reset] Redis is ready."
+    break
+  fi
+  sleep 1
+  if [ "$i" -eq 60 ]; then
+    echo "[dev-reset] Redis did not become ready in time." >&2
     exit 1
   fi
 done

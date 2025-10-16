@@ -216,6 +216,7 @@ Visit the repository's “Actions” tab; runs should pass (especially Migrate a
 ## Collaboration
 
 - Develop on feature branches: `feature/<your-task>` → PR → pass CI → review → merge into `main`.
+- Run `pip-compile -o requirements.txt requirements.in` to compile dependencies.
 - For dependency upgrades: edit `requirements.in` → run `pip-compile` → commit both `requirements.in` and `requirements.txt`.
 - Do not commit `.env`, `.venv/`, or local caches (configure ignores in the repo root `.gitignore`).
 

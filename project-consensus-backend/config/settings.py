@@ -167,8 +167,13 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
     ],
+    # Currently very high rate limit for testing, needs to be adjusted in production
     "DEFAULT_THROTTLE_RATES": {
-        "image_upload": "100/hour",  # Image upload rate limit
+        "image_upload": "100/hour",  # Image upload: 100 per hour per IP
+        "login": "100/minute",  # Login attempts: 100 per minute per IP
+        "register": "3000/hour",  # Registration: 3000 per hour per IP
+        "verification": "10/minute",  # Send verification code: 10 per minute per IP
+        "anon_sustained": "1000/hour",  # General anonymous user: 1000 per hour per IP
     },
 }
 
@@ -179,7 +184,55 @@ CACHES = {
 
 # Email verification settings
 AUTH_VERIFICATION_CODE_TTL_SECONDS = env.int('AUTH_VERIFICATION_CODE_TTL_SECONDS', default=60 * 15)
-AUTH_VERIFICATION_REQUEST_INTERVAL_SECONDS = env.int('AUTH_VERIFICATION_REQUEST_INTERVAL_SECONDS', default=60)
+AUTH_VERIFICATION_REQUEST_INTERVAL_SECONDS = env.int('AUTH_VERIFICATION_REQUEST_INTERVAL_SECONDS', default=90)
+AUTH_VERIFICATION_MAX_ATTEMPTS = env.int('AUTH_VERIFICATION_MAX_ATTEMPTS', default=5)
+
+# Email service configuration (Resend)
+# Set EMAIL_ENABLED=true in production to send actual emails
+EMAIL_ENABLED = env.bool('EMAIL_ENABLED', default=False)
+RESEND_API_KEY = env('RESEND_API_KEY', default='')
+EMAIL_FROM_ADDRESS = env('EMAIL_FROM_ADDRESS', default='PolyU Life <noreply@polyu.life>')
+EMAIL_REPLY_TO = env('EMAIL_REPLY_TO', default='noreply@polyu.life')
+
+# Asynchronous email sending (Celery)
+# Set EMAIL_USE_CELERY=true to send emails asynchronously (recommended for production)
+EMAIL_USE_CELERY = env.bool('EMAIL_USE_CELERY', default=False)
+
+# ==================== Celery Configuration ====================
+# Celery broker (Redis) - Required for async task processing
+CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://:redis_secure_password@localhost:6379/0')
+
+# Celery result backend (optional, for storing task results)
+# Use 'rpc://' for temporary results or Redis for persistent results
+CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='rpc://')
+
+# Task serialization format (JSON is recommended for security)
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']
+
+# Time zone configuration (should match Django TIME_ZONE)
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = True
+
+# Task result expiration (1 day)
+CELERY_RESULT_EXPIRES = 60 * 60 * 24
+
+# Task execution settings
+CELERY_TASK_TRACK_STARTED = True  # Track when tasks start
+CELERY_TASK_TIME_LIMIT = 30 * 60  # Hard time limit: 30 minutes
+CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60  # Soft time limit: 25 minutes
+
+# Worker settings
+CELERY_WORKER_PREFETCH_MULTIPLIER = 4  # Number of tasks to prefetch
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 1000  # Restart worker after N tasks (prevent memory leaks)
+
+# Retry configuration
+CELERY_TASK_ACKS_LATE = True  # Acknowledge task after completion (safer)
+CELERY_TASK_REJECT_ON_WORKER_LOST = True  # Requeue tasks if worker dies
+
+# Logging
+CELERY_WORKER_HIJACK_ROOT_LOGGER = False  # Don't override Django logging
 
 # Enable Browsable API only in development for convenient exploration.
 if DEBUG:

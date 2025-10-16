@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import secrets
-from datetime import timedelta
+import hashlib
+import hmac
 
 from django.contrib.auth import authenticate, get_user_model, login as django_login, logout as django_logout
 from django.conf import settings
@@ -9,9 +10,11 @@ import logging
 from django.db import transaction, models
 from django.core.cache import cache
 from django.db.models import Count, Exists, OuterRef
-from rest_framework.decorators import api_view, permission_classes
+from django.utils import timezone
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.throttling import AnonRateThrottle
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.middleware.csrf import get_token
 from django.http import HttpRequest
@@ -21,23 +24,41 @@ from rest_framework import permissions
 from .models import Profile
 from core.utils import delete_storage_object_by_url
 from .serializers import SendCodeSerializer, RegisterSerializer, LoginSerializer, ProfileSerializer
+from .services.email_service import EmailService
+from .tasks import send_verification_email_async
 
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
 
+# Custom throttle classes for authentication endpoints
+class LoginRateThrottle(AnonRateThrottle):
+    """Rate limit for login attempts: 5 per minute per IP."""
+    scope = 'login'
+
+
+class RegisterRateThrottle(AnonRateThrottle):
+    """Rate limit for registration: 3 per hour per IP."""
+    scope = 'register'
+
+
+class VerificationCodeRateThrottle(AnonRateThrottle):
+    """Rate limit for sending verification code: 5 per minute per IP."""
+    scope = 'verification'
+
+
 def annotate_user_stats(queryset):
     """Add user statistics annotations to a User queryset to avoid N+1 queries.
     
-    使用方法 / Usage:
+    Usage examples:
         # Single user
         user = annotate_user_stats(User.objects.filter(pk=user_id)).first()
         
         # Multiple users
         users = annotate_user_stats(User.objects.all())
     
-    此函数为用户查询集添加统计字段，避免 N+1 查询问题
+    This function adds statistics fields to the user queryset to avoid N+1 queries.
     """
     return queryset.select_related('profile').annotate(
         posts_count=Count('forum_posts', distinct=True),
@@ -48,8 +69,6 @@ def annotate_user_stats(queryset):
 
 def get_user_with_stats(user_id):
     """Fetch a single user with optimized stats to avoid N+1 queries.
-    
-    获取单个用户及其统计数据，避免 N+1 查询
     
     Args:
         user_id: The primary key of the user to fetch
@@ -68,7 +87,7 @@ def _build_base_user_payload(user):
     
     Note: For optimal performance, when querying users, use annotate_user_stats() 
     to pre-calculate statistics and avoid N+1 queries:
-    
+        
         user = User.objects.select_related('profile').annotate(
             posts_count=Count('forum_posts', distinct=True),
             comments_count=Count('forum_comments', distinct=True),
@@ -78,7 +97,6 @@ def _build_base_user_payload(user):
     profile = getattr(user, "profile", None)
     
     # Use pre-calculated statistics if available (from annotate), otherwise query
-    # 优先使用预先计算的统计数据（通过 annotate），否则执行查询
     posts_count = getattr(user, 'posts_count', None)
     if posts_count is None:
         posts_count = user.forum_posts.count()
@@ -94,16 +112,13 @@ def _build_base_user_payload(user):
     # Calculate days since joining
     joined_days = 0
     if user.date_joined:
-        from django.utils import timezone
         delta = timezone.now() - user.date_joined
         joined_days = delta.days
     
     # Calculate days until next nickname update is allowed
-    # 计算距离下次可以更新昵称还剩多少天
     days_until_next_update = None
     last_updated = getattr(profile, "last_nickname_updated_at", None)
     if last_updated:
-        from django.utils import timezone
         days_since_update = (timezone.now() - last_updated).days
         if days_since_update < 14:
             days_until_next_update = 14 - days_since_update
@@ -160,6 +175,7 @@ def build_public_user_payload(user):
     return _build_base_user_payload(user)
 
 @api_view(["POST"])
+@throttle_classes([VerificationCodeRateThrottle])
 def send_verification_code(request):
     """
     Generate a verification code and store it in cache (TTL), then (in real life) send email.
@@ -171,24 +187,118 @@ def send_verification_code(request):
     email = serializer.validated_data["email"].lower()
 
     # throttle: allow only one request per configured window per email
-    request_interval = getattr(settings, "AUTH_VERIFICATION_REQUEST_INTERVAL_SECONDS", 60)
+    request_interval = getattr(settings, "AUTH_VERIFICATION_REQUEST_INTERVAL_SECONDS", 90)
     throttle_key = f"accounts:verify:throttle:{email}"
     if cache.get(throttle_key):
-        return Response({"message": "Please wait before requesting another code."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+        # Use i18n error code; frontend maps 429 to a localized message too
+        return Response({"message": "auth.errorTooManyAttempts"}, status=status.HTTP_429_TOO_MANY_REQUESTS)
 
-    code = f"{secrets.randbelow(999999):06d}"  # 6-digit numeric
+    # If the email is already registered, do not actually send an email.
+    # Return a generic success response and set the throttle to avoid spam/enumeration.
+    if User.objects.filter(email=email).exists():
+        cache.set(throttle_key, True, timeout=request_interval)
+        logger.info(
+            "Verification code requested for existing account; suppressed sending",
+            extra={"email": email}
+        )
+        return Response({
+            "success": True,
+            "email": email,
+            "resend_after_seconds": request_interval,
+        }, status=status.HTTP_200_OK)
+
+    code = f"{secrets.randbelow(10**6):06d}"  # 6-digit numeric
     ttl_seconds = getattr(settings, "AUTH_VERIFICATION_CODE_TTL_SECONDS", 60 * 15)
     code_key = f"accounts:verify:code:{email}"
-    cache.set(code_key, code, timeout=ttl_seconds)
+    cache.set(code_key, hashlib.sha256(code.encode('utf-8')).hexdigest(), timeout=ttl_seconds)
     cache.set(throttle_key, True, timeout=request_interval)
+    # Reset attempt counter when issuing a new code
+    attempt_key = f"accounts:verify:attempts:{email}"
+    cache.delete(attempt_key)
 
-    logger.warning("[PLEASE REMOVE THIS WHEN DONE WITH DEVELOPMENT] Email verification code for %s: %s", email, code)
+    # Send verification code via email
+    if getattr(settings, 'EMAIL_ENABLED', False):
+        language = request.META.get('HTTP_ACCEPT_LANGUAGE', 'zh-CN').split(',')[0].strip()
+        use_async = getattr(settings, 'EMAIL_USE_CELERY', False)
+        
+        if use_async:
+            # Asynchronous sending via Celery (recommended for production)
+            try:
+                send_verification_email_async.delay(
+                    email=email,
+                    code=code,
+                    language=language,
+                    ttl_minutes=ttl_seconds // 60
+                )
+                logger.info(
+                    "Verification email task queued successfully",
+                    extra={"email": email, "async": True}
+                )
+            except Exception as e:
+                # If Celery task queuing fails, log error but don't block user
+                # The verification code is still stored in cache and valid
+                logger.error(
+                    "Failed to queue verification email task",
+                    exc_info=True,
+                    extra={"email": email, "error_type": type(e).__name__}
+                )
+                # Fallback: try synchronous send immediately so the user still receives the email
+                try:
+                    email_service = EmailService()
+                    email_service.send_verification_code(
+                        email=email,
+                        code=code,
+                        language=language,
+                        ttl_minutes=ttl_seconds // 60
+                    )
+                    logger.info(
+                        "Fallback to synchronous email succeeded",
+                        extra={"email": email, "async": False, "fallback": True}
+                    )
+                except Exception as ee:
+                    logger.error(
+                        "Fallback synchronous email failed",
+                        exc_info=True,
+                        extra={"email": email, "error_type": type(ee).__name__}
+                    )
+        else:
+            # Synchronous sending (fallback or development)
+            try:
+                email_service = EmailService()
+                email_service.send_verification_code(
+                    email=email,
+                    code=code,
+                    language=language,
+                    ttl_minutes=ttl_seconds // 60
+                )
+                logger.info(
+                    "Verification email sent successfully",
+                    extra={"email": email, "async": False}
+                )
+            except Exception as e:
+                # Log error but don't block the user flow
+                # The verification code is still stored in cache and valid
+                logger.error(
+                    "Failed to send verification email",
+                    exc_info=True,
+                    extra={"email": email, "error_type": type(e).__name__}
+                )
+    else:
+        # Development mode: log the code
+        logger.warning(
+            "[DEV MODE] Email disabled. Verification code for %s: %s",
+            email, code
+        )
 
-    # TODO: integrate email provider; for now return ok without exposing code
-    return Response({"success": True}, status=status.HTTP_200_OK)
+    return Response({
+        "success": True,
+        "email": email,
+        "resend_after_seconds": request_interval,
+    }, status=status.HTTP_200_OK)
 
 
 @api_view(["POST"])
+@throttle_classes([RegisterRateThrottle])
 @transaction.atomic
 def register(request):
     """
@@ -203,14 +313,24 @@ def register(request):
     code = serializer.validated_data["verification_code"]
     password = serializer.validated_data["password"]
 
-    # Validate code from cache (must match and be within TTL)
-    code_key = f"accounts:verify:code:{email}"
-    expected_code = cache.get(code_key)
-    if not expected_code or expected_code != code:
-        return Response({"message": "Invalid or expired verification code."}, status=status.HTTP_400_BAD_REQUEST)
+    max_attempts = getattr(settings, "AUTH_VERIFICATION_MAX_ATTEMPTS", 5)
+    attempt_key = f"accounts:verify:attempts:{email}"
+    attempts = cache.get(attempt_key, 0)
+    if attempts >= max_attempts:
+        return Response({"message": "validation.verificationCode.tooManyAttempts"}, status=status.HTTP_429_TOO_MANY_REQUESTS)
 
+    code_key = f"accounts:verify:code:{email}"
+    expected_digest = cache.get(code_key)
+    provided_digest = hashlib.sha256(code.encode('utf-8')).hexdigest()
+    if not expected_digest or not hmac.compare_digest(str(expected_digest), str(provided_digest)):
+        ttl_seconds = getattr(settings, "AUTH_VERIFICATION_CODE_TTL_SECONDS", 60 * 15)
+        cache.set(attempt_key, attempts + 1, timeout=ttl_seconds)
+        # DRF-style field error for better UX
+        return Response({"verification_code": ["validation.verificationCode.invalidOrExpired"]}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Check if email already exists
     if User.objects.filter(email=email).exists():
-        return Response({"message": "Email already registered."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"email": ["validation.email.alreadyRegistered"]}, status=status.HTTP_400_BAD_REQUEST)
 
     user = User.objects.create_user(username=email, email=email, password=password)
     # Default pronouns to 'not_specified' for new users
@@ -222,6 +342,7 @@ def register(request):
 
     # Invalidate the code to prevent reuse
     cache.delete(code_key)
+    cache.delete(attempt_key)
 
     # Log the user in to establish a server-side session
     django_login(request, user)
@@ -236,9 +357,10 @@ def csrf(request):
 
 
 @api_view(["POST"])
+@throttle_classes([LoginRateThrottle])
 def login_view(request):
     """
-    Simple username/password login returning a demo token.
+    Simple username/password login.
 
     Body: { email, password }
     """
@@ -249,19 +371,17 @@ def login_view(request):
 
     user = authenticate(username=email, password=password)
     if not user:
-        return Response({"message": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "auth.invalidCredentials"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Check if the account is active
-    # 检查账户是否激活
     profile = getattr(user, 'profile', None)
     if profile and not profile.is_account_active:
         return Response({
-            "message": "This account has been disabled. Please contact support for assistance.",
+            "message": "auth.errorAccountDisabled",
             "account_disabled": True
         }, status=status.HTTP_403_FORBIDDEN)
 
     # Fetch user with optimized stats to avoid N+1 queries
-    # 获取用户时同时计算统计数据，避免 N+1 查询
     user_with_stats = get_user_with_stats(user.pk)
     if not user_with_stats:
         return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -283,7 +403,6 @@ def me(request):
         return Response({"message": "Not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
     
     # Fetch user with optimized stats to avoid N+1 queries
-    # 获取用户时同时计算统计数据，避免 N+1 查询
     user_with_stats = get_user_with_stats(request.user.pk)
     if not user_with_stats:
         return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -298,7 +417,6 @@ def update_profile(request):
     profile, _ = Profile.objects.get_or_create(user=request.user)
     
     # Check if user is trying to update nickname (has 14-day restriction)
-    # 检查用户是否试图更新昵称（有14天限制）
     new_nickname = request.data.get('nickname')
     is_nickname_changed = (
         new_nickname is not None and 
@@ -306,9 +424,7 @@ def update_profile(request):
     )
     
     # If changing nickname, check the 14-day restriction
-    # 如果修改昵称（不同于当前昵称），检查14天限制
     if is_nickname_changed and profile.last_nickname_updated_at:
-        from django.utils import timezone
         days_since_update = (timezone.now() - profile.last_nickname_updated_at).days
         if days_since_update < 14:
             days_remaining = 14 - days_since_update
@@ -329,9 +445,7 @@ def update_profile(request):
         logger.warning(f"Failed to delete old avatar for user {request.user.pk}: {e}", exc_info=True)
     
     # Update last_nickname_updated_at if nickname was actually changed
-    # 如果昵称确实被修改了，更新最后修改时间
     if is_nickname_changed:
-        from django.utils import timezone
         profile.last_nickname_updated_at = timezone.now()
         profile.save(update_fields=['last_nickname_updated_at'])
     

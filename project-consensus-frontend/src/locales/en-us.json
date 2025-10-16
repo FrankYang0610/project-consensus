@@ -77,6 +77,8 @@
     "errorNetwork": "Network error. Please try again.",
     "errorGoogleFailed": "Google login failed",
     "errorAccountDisabled": "This account has been disabled. Please contact support for assistance.",
+    "errorAuthRequired": "Authentication is required for this action. Please log in.",
+    "invalidCredentials": "Invalid email or password",
     "register": "Register",
     "nickname": "Nickname",
     "verificationCode": "Verification Code",
@@ -91,7 +93,15 @@
     "errorPolyuEmail": "Please use a valid PolyU email (@connect.polyu.hk)",
     "emailPrivacyNotice": "Your email is only used to link your polyu.life account and verify that you are a PolyU student. Your personal information will not be shared.",
     "registerConsent": "By clicking Register you agree to our",
-    "termsOfService": "Terms of Service"
+    "termsOfService": "Terms of Service",
+    "verificationCodeSent": "Verification code sent to {{email}}, please check your email. If you don't receive it, please check your spam folder.",
+    "errorTooManyAttempts": "Too many attempts. Please try again later or request a new code",
+    "passwordRequirements": "Password must meet the following requirements:",
+    "passwordRequirementsList": [
+      "At least 8 characters long",
+      "Cannot be a commonly used password",
+      "Cannot be entirely numeric"
+    ]
   },
   "post": {
     "translate": "Translate",
@@ -582,6 +592,29 @@
       "invalid": "Invalid nickname",
       "characters": "characters",
       "alreadyTaken": "This nickname is already taken. Please choose another one."
+    },
+    "email": {
+      "required": "Email is required",
+      "invalid": "Please enter a valid email address",
+      "polyuOnly": "Only PolyU email addresses (@connect.polyu.hk) are allowed",
+      "alreadyRegistered": "This email is already registered. Please login instead."
+    },
+    "password": {
+      "required": "Password is required",
+      "tooShort": "Password must be at least 8 characters long",
+      "tooCommon": "This password is too common. Please choose a more unique password",
+      "entirelyNumeric": "Password cannot be entirely numeric",
+      "tooSimilar": "Password is too similar to your personal information",
+      "mismatch": "Passwords do not match"
+    },
+    "verificationCode": {
+      "required": "Verification code is required",
+      "invalid": "Please enter a valid 6-digit verification code",
+      "invalidOrExpired": "Invalid or expired verification code",
+      "tooManyAttempts": "Too many incorrect attempts. Please request a new code"
+    },
+    "field": {
+      "required": "This field is required"
     }
   },
   "profile": {

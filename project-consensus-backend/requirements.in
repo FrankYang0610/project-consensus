@@ -7,3 +7,6 @@ bleach==6.1.0
 boto3
 django-storages[s3]
 Pillow
+resend
+celery
+redis

@@ -1,0 +1,13 @@
+PolyU Life - Verify Your Account
+
+Hello, thank you for using PolyU Life!
+
+Your verification code is: {{ code }}
+
+This code will expire in {{ ttl_minutes }} minutes. Please do not share this code with anyone.
+
+If you didn't request this code, please ignore this email. Your account security will not be affected.
+
+Need help? Visit our Help Center: https://polyu.life/help
+
+© 2025 PolyU Life. All rights reserved.
