@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 
-from .services import (
+from .search_services import (
     perform_global_search,
     SearchQueryEmptyError,
     SearchQueryTooLongError,
