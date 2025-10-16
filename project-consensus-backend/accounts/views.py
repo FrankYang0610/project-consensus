@@ -765,7 +765,7 @@ def request_password_reset(request):
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         
         # Build reset link (normalize base URL to avoid double slashes)
-        frontend_base_url = getattr(settings, 'FRONTEND_BASE_URL', 'http://localhost:3000').rstrip('/')
+        frontend_base_url = getattr(settings, 'FRONTEND_BASE_URL', 'https://polyu.life').rstrip('/')
         reset_link = f"{frontend_base_url}/reset-password?uid={uid}&token={token}"
         
         # Calculate timeout in hours
