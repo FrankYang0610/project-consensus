@@ -5,6 +5,12 @@ import hashlib
 import hmac
 
 from django.contrib.auth import authenticate, get_user_model, login as django_login, logout as django_logout
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.contrib.auth.password_validation import validate_password as dj_validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.contrib.sessions.models import Session
 from django.conf import settings
 import logging
 from django.db import transaction, models
@@ -19,13 +25,22 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.middleware.csrf import get_token
 from django.http import HttpRequest
 from rest_framework.pagination import PageNumberPagination
+from django.utils.translation import get_language_from_request
 from rest_framework import permissions
 
 from .models import Profile
 from core.utils import delete_storage_object_by_url
-from .serializers import SendCodeSerializer, RegisterSerializer, LoginSerializer, ProfileSerializer
+from .serializers import (
+    SendCodeSerializer, 
+    RegisterSerializer, 
+    LoginSerializer, 
+    ProfileSerializer,
+    PasswordResetRequestSerializer,
+    PasswordResetConfirmSerializer
+)
 from .services.email_service import EmailService
-from .tasks import send_verification_email_async
+from .tasks import send_verification_email_async, send_password_reset_email_async
+from . import error_codes
 
 
 User = get_user_model()
@@ -46,6 +61,16 @@ class RegisterRateThrottle(AnonRateThrottle):
 class VerificationCodeRateThrottle(AnonRateThrottle):
     """Rate limit for sending verification code: 5 per minute per IP."""
     scope = 'verification'
+
+
+class PasswordResetRequestRateThrottle(AnonRateThrottle):
+    """Rate limit for password reset request: 50 per hour per IP."""
+    scope = 'password_reset'
+
+
+class PasswordResetConfirmRateThrottle(AnonRateThrottle):
+    """Rate limit for password reset confirmation: 50 per hour per IP."""
+    scope = 'password_reset_confirm'
 
 
 def annotate_user_stats(queryset):
@@ -218,7 +243,9 @@ def send_verification_code(request):
 
     # Send verification code via email
     if getattr(settings, 'EMAIL_ENABLED', False):
-        language = request.META.get('HTTP_ACCEPT_LANGUAGE', 'zh-CN').split(',')[0].strip()
+        language = get_language_from_request(request)
+        # Use Django's get_language_from_request to determine the user's language.
+        # This follows Django's language negotiation conventions and is more robust than manual parsing of HTTP_ACCEPT_LANGUAGE.
         use_async = getattr(settings, 'EMAIL_USE_CELERY', False)
         
         if use_async:
@@ -690,4 +717,205 @@ def public_user_reviews(request, user_id):
         return Response(serializer.data)
     except User.DoesNotExist:
         return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["POST"])
+@throttle_classes([PasswordResetRequestRateThrottle])
+def request_password_reset(request):
+    """
+    Request a password reset by email.
+    
+    Body: { "email": string }
+    
+    Always returns success to prevent user enumeration.
+    If the email exists, a reset link is sent.
+    """
+    serializer = PasswordResetRequestSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    email = serializer.validated_data["email"].lower()
+
+    # Per-email throttle to mitigate abuse
+    request_interval = getattr(settings, "PASSWORD_RESET_REQUEST_INTERVAL_SECONDS", 300)
+    throttle_key = f"accounts:pwdreset:throttle:{email}"
+    if cache.get(throttle_key):
+        return Response({"message": error_codes.AUTH_TOO_MANY_ATTEMPTS}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+    # Set throttle regardless of whether user exists to avoid enumeration timing
+    cache.set(throttle_key, True, timeout=request_interval)
+    
+    # Get normalized language using Django negotiation
+    language = get_language_from_request(request)
+    
+    # Check if user exists (but don't reveal this information to the client)
+    try:
+        user = User.objects.get(email=email)
+        user_exists = True
+    except User.DoesNotExist:
+        user_exists = False
+        # Log attempt for security monitoring
+        logger.info(
+            "Password reset requested for non-existent email",
+            extra={"email": email}
+        )
+    
+    # Send email only if user exists
+    if user_exists:
+        # Generate password reset token
+        token_generator = PasswordResetTokenGenerator()
+        token = token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        
+        # Build reset link (normalize base URL to avoid double slashes)
+        frontend_base_url = getattr(settings, 'FRONTEND_BASE_URL', 'https://polyu.life').rstrip('/')
+        reset_link = f"{frontend_base_url}/reset-password?uid={uid}&token={token}"
+        
+        # Calculate timeout in hours
+        timeout_seconds = getattr(settings, 'PASSWORD_RESET_TIMEOUT', 3600)
+        timeout_hours = timeout_seconds // 3600
+        
+        # Send password reset email
+        if getattr(settings, 'EMAIL_ENABLED', False):
+            use_async = getattr(settings, 'EMAIL_USE_CELERY', False)
+            
+            if use_async:
+                # Asynchronous sending via Celery
+                try:
+                    send_password_reset_email_async.delay(
+                        email=email,
+                        reset_link=reset_link,
+                        language=language,
+                        timeout_hours=timeout_hours
+                    )
+                    logger.info(
+                        "Password reset email task queued successfully",
+                        extra={"email": email, "async": True}
+                    )
+                except Exception as e:
+                    # Fallback to synchronous if Celery fails
+                    logger.error(
+                        "Failed to queue password reset email task",
+                        exc_info=True,
+                        extra={"email": email, "error_type": type(e).__name__}
+                    )
+                    try:
+                        email_service = EmailService()
+                        email_service.send_password_reset(
+                            email=email,
+                            reset_link=reset_link,
+                            language=language,
+                            timeout_hours=timeout_hours
+                        )
+                        logger.info(
+                            "Fallback to synchronous password reset email succeeded",
+                            extra={"email": email, "async": False, "fallback": True}
+                        )
+                    except Exception as ee:
+                        logger.error(
+                            "Fallback synchronous password reset email failed",
+                            exc_info=True,
+                            extra={"email": email, "error_type": type(ee).__name__}
+                        )
+            else:
+                # Synchronous sending
+                try:
+                    email_service = EmailService()
+                    email_service.send_password_reset(
+                        email=email,
+                        reset_link=reset_link,
+                        language=language,
+                        timeout_hours=timeout_hours
+                    )
+                    logger.info(
+                        "Password reset email sent successfully",
+                        extra={"email": email, "async": False}
+                    )
+                except Exception as e:
+                    logger.error(
+                        "Failed to send password reset email",
+                        exc_info=True,
+                        extra={"email": email, "error_type": type(e).__name__}
+                    )
+        else:
+            # Development mode: log the reset link
+            logger.warning(
+                "[DEV MODE] Email disabled. Password reset link for %s: %s",
+                email, reset_link
+            )
+    
+    # Always return success to prevent user enumeration
+    return Response({
+        "success": True,
+        "message": error_codes.PASSWORD_RESET_EMAIL_SENT
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+@throttle_classes([PasswordResetConfirmRateThrottle])
+@transaction.atomic
+def confirm_password_reset(request):
+    """
+    Confirm password reset with token and set new password.
+    
+    Body: { "uid": string, "token": string, "new_password": string, "new_password_confirm": string }
+    """
+    serializer = PasswordResetConfirmSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    
+    uid = serializer.validated_data["uid"]
+    token = serializer.validated_data["token"]
+    new_password = serializer.validated_data["new_password"]
+    
+    # Decode user ID
+    try:
+        user_id = force_str(urlsafe_base64_decode(uid))
+        user = User.objects.get(pk=user_id)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        return Response({
+            "message": error_codes.PASSWORD_RESET_INVALID_OR_EXPIRED
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Check token validity
+    token_generator = PasswordResetTokenGenerator()
+    if not token_generator.check_token(user, token):
+        return Response({
+            "message": error_codes.PASSWORD_RESET_INVALID_OR_EXPIRED
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    # Validate password strength again with user context (ensures similarity checks)
+    try:
+        dj_validate_password(new_password, user=user)
+    except DjangoValidationError as e:
+        error_codes_list = [error_codes.map_django_password_error(msg) for msg in e.messages]
+        return Response({
+            "new_password": error_codes_list
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    # Set new password
+    user.set_password(new_password)
+    user.save()
+
+    # Invalidate existing sessions for this user only (security best practice)
+    # This forces the user to log in again with the new password
+    try:
+        active_sessions = Session.objects.filter(expire_date__gte=timezone.now())
+        for session in active_sessions:
+            data = session.get_decoded()
+            if str(data.get('_auth_user_id')) == str(user.pk):
+                session.delete()
+    except Exception as e:
+        # Do not fail password reset if session cleanup encounters an error; log and continue
+        logger.warning(
+            "Failed to invalidate user sessions after password reset",
+            extra={"user_id": user.pk, "error": str(e), "error_type": type(e).__name__},
+            exc_info=True
+        )
+
+    logger.info(
+        "Password reset successful",
+        extra={"user_id": user.pk, "email": user.email}
+    )
+    
+    return Response({
+        "success": True,
+        "message": error_codes.PASSWORD_RESET_SUCCESS
+    }, status=status.HTTP_200_OK)
 

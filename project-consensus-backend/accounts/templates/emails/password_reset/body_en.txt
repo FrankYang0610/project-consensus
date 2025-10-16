@@ -1,0 +1,17 @@
+PolyU Life - Reset Your Password
+
+Hello,
+
+We received a request to reset the password for your account. If this was you, please click the link below to reset your password:
+
+{{ reset_link }}
+
+This link will expire in {{ timeout_hours }} hours. For security reasons, this link can only be used once.
+
+If you didn't request a password reset, please ignore this email. Your account security will not be affected.
+
+To protect your account, please do not share this link with anyone.
+
+Need help? Visit our Help Center: https://polyu.life/help
+
+© 2025 PolyU Life. All rights reserved.

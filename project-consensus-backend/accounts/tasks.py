@@ -107,18 +107,23 @@ def send_password_reset_email_async(
     self,
     email: str,
     reset_link: str,
-    language: str = 'zh-CN'
+    language: str = 'zh-CN',
+    timeout_hours: int = 1
 ):
     """
-    Send password reset email asynchronously (placeholder for future implementation).
+    Send password reset email asynchronously.
     
     Args:
         email: Recipient email address
         reset_link: Password reset URL
-        language: Email language
+        language: Email language (zh-CN or en)
+        timeout_hours: Link validity period in hours
         
     Returns:
         dict: Resend API response if sent successfully
+        
+    Raises:
+        Exception: If email sending fails after all retries
     """
     try:
         email_service = EmailService()
@@ -129,13 +134,15 @@ def send_password_reset_email_async(
                 'task_id': self.request.id,
                 'email': email,
                 'language': language,
+                'retry_count': self.request.retries,
             }
         )
         
         response = email_service.send_password_reset(
             email=email,
             reset_link=reset_link,
-            language=language
+            language=language,
+            timeout_hours=timeout_hours
         )
         
         logger.info(
@@ -143,6 +150,7 @@ def send_password_reset_email_async(
             extra={
                 'task_id': self.request.id,
                 'email': email,
+                'resend_id': response.get('id') if response else None,
             }
         )
         
@@ -156,7 +164,9 @@ def send_password_reset_email_async(
                 'email': email,
                 'error': str(e),
                 'error_type': type(e).__name__,
+                'retry_count': self.request.retries,
             },
             exc_info=True
         )
+        # Re-raise exception to trigger Celery retry mechanism
         raise

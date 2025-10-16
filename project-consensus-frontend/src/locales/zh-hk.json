@@ -95,11 +95,29 @@
     "verificationCodeSent": "驗證碼已發送至 {{email}}，請查收郵件。若未收到，請檢查垃圾郵件文件夾。",
     "errorTooManyAttempts": "嘗試次數過多，請稍後再試或請求新的驗證碼",
     "passwordRequirements": "密碼必須滿足以下要求：",
-    "passwordRequirementsList": [
-      "至少8個字符",
-      "不能是常見弱密碼",
-      "不能全部為數字"
-    ]
+    "passwordRequirement1": "至少8個字符",
+    "passwordRequirement2": "不能是常見弱密碼",
+    "passwordRequirement3": "不能全部為數字",
+    "passwordReset": {
+      "title": "重設密碼",
+      "forgotPasswordTitle": "忘記密碼",
+      "forgotPasswordDescription": "輸入你的理大電郵，我們將發送重設連結",
+      "resetPasswordDescription": "請在下方輸入新密碼",
+      "sendResetLink": "發送重設連結",
+      "sending": "發送中...",
+      "resetPassword": "重設密碼",
+      "resetting": "重設中...",
+      "newPassword": "新密碼",
+      "confirmNewPassword": "確認新密碼",
+      "backToLogin": "返回登入",
+      "emailSent": "如果該電郵已註冊帳戶，我們已向其發送了密碼重設連結。請查收郵件（包括垃圾郵件文件夾）。",
+      "invalidOrExpired": "此密碼重設連結無效或已過期，請重新申請。",
+      "linkExpired": "此密碼重設連結已過期，請重新申請。",
+      "success": "密碼重設成功！你現在可以使用新密碼登入了。",
+      "errorInvalidLink": "無效或過期的重設連結",
+      "errorPasswordMismatch": "兩次輸入的密碼不一致",
+      "linkValidFor": "此連結有效期為1小時"
+    }
   },
   "post": {
     "translate": "翻譯",
@@ -722,5 +740,27 @@
       "courseReviewReplyReplied": "{{actor}} 回覆咗你喺 {{target}} 嘅點評回覆",
       "unknownType": "未知通知類型 ({{type}}) 來自 {{actor}}"
     }
+  },
+  "welcome": {
+    "title": "歡迎來到 PolyU.life！",
+    "subtitle": "透過以下選項開始探索",
+    "registrationSuccess": "註冊成功！你的帳戶已創建。",
+    "completeProfile": {
+      "title": "完善個人資料",
+      "description": "設定你的暱稱、頭像和代稱，個性化你的帳戶。",
+      "action": "前往設定"
+    },
+    "communityRules": {
+      "title": "社區規範",
+      "description": "了解我們的社區標準，學習如何負責任地參與。",
+      "action": "閱讀規範"
+    },
+    "exploreCourses": {
+      "title": "探索課程點評",
+      "description": "瀏覽課程、閱讀點評，分享你的學習體驗。",
+      "action": "瀏覽課程"
+    },
+    "skipForNow": "暫時跳過",
+    "continueToHome": "前往首頁"
   }
 }

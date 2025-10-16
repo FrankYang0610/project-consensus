@@ -97,11 +97,29 @@
     "verificationCodeSent": "Verification code sent to {{email}}, please check your email. If you don't receive it, please check your spam folder.",
     "errorTooManyAttempts": "Too many attempts. Please try again later or request a new code",
     "passwordRequirements": "Password must meet the following requirements:",
-    "passwordRequirementsList": [
-      "At least 8 characters long",
-      "Cannot be a commonly used password",
-      "Cannot be entirely numeric"
-    ]
+    "passwordRequirement1": "At least 8 characters long",
+    "passwordRequirement2": "Cannot be a commonly used password",
+    "passwordRequirement3": "Cannot be entirely numeric",
+    "passwordReset": {
+      "title": "Reset Password",
+      "forgotPasswordTitle": "Forgot Password",
+      "forgotPasswordDescription": "Enter your PolyU email and we'll send you a reset link",
+      "resetPasswordDescription": "Enter your new password below",
+      "sendResetLink": "Send Reset Link",
+      "sending": "Sending...",
+      "resetPassword": "Reset Password",
+      "resetting": "Resetting...",
+      "newPassword": "New Password",
+      "confirmNewPassword": "Confirm New Password",
+      "backToLogin": "Back to Login",
+      "emailSent": "If an account with this email exists, a password reset link has been sent. Please check your email (including spam folder).",
+      "invalidOrExpired": "This password reset link is invalid or has expired. Please request a new one.",
+      "linkExpired": "This password reset link has expired. Please request a new one.",
+      "success": "Password reset successful! You can now login with your new password.",
+      "errorInvalidLink": "Invalid or expired reset link",
+      "errorPasswordMismatch": "Passwords do not match",
+      "linkValidFor": "This link is valid for 1 hour"
+    }
   },
   "post": {
     "translate": "Translate",
@@ -721,5 +739,27 @@
       "courseReviewReplyReplied": "{{actor}} replied to your review reply for {{target}}",
       "unknownType": "Unknown notification type ({{type}}) from {{actor}}"
     }
+  },
+  "welcome": {
+    "title": "Welcome to PolyU.life!",
+    "subtitle": "Get started by exploring these options",
+    "registrationSuccess": "Registration successful! Your account has been created.",
+    "completeProfile": {
+      "title": "Complete Your Profile",
+      "description": "Personalize your account with a nickname, avatar, and pronouns.",
+      "action": "Go to Settings"
+    },
+    "communityRules": {
+      "title": "Community Guidelines",
+      "description": "Learn about our community standards and how to participate responsibly.",
+      "action": "Read Guidelines"
+    },
+    "exploreCourses": {
+      "title": "Explore Course Reviews",
+      "description": "Browse courses, read reviews, and share your own experiences.",
+      "action": "Browse Courses"
+    },
+    "skipForNow": "Skip for now",
+    "continueToHome": "Continue to Home"
   }
 }
