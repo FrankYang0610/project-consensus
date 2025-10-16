@@ -28,7 +28,6 @@ class EmailService:
     - Template-based email composition
     - Multi-language support (zh-CN, en)
     - Detailed logging and error handling
-    - Timeout protection
     """
     
     def __init__(self):
@@ -37,7 +36,6 @@ class EmailService:
         self.from_address = getattr(settings, 'EMAIL_FROM_ADDRESS', 'PolyU Life <noreply@polyu.life>')
         self.reply_to = getattr(settings, 'EMAIL_REPLY_TO', 'noreply@polyu.life')
         self.enabled = getattr(settings, 'EMAIL_ENABLED', False)
-        self.timeout = getattr(settings, 'EMAIL_TIMEOUT_SECONDS', 10)
         
         if self.enabled and not self.api_key:
             logger.error("EMAIL_ENABLED is True but RESEND_API_KEY is not configured")

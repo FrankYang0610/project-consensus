@@ -192,7 +192,6 @@ EMAIL_ENABLED = env.bool('EMAIL_ENABLED', default=False)
 RESEND_API_KEY = env('RESEND_API_KEY', default='')
 EMAIL_FROM_ADDRESS = env('EMAIL_FROM_ADDRESS', default='PolyU Life <noreply@polyu.life>')
 EMAIL_REPLY_TO = env('EMAIL_REPLY_TO', default='noreply@polyu.life')
-EMAIL_TIMEOUT_SECONDS = env.int('EMAIL_TIMEOUT_SECONDS', default=10)
 
 # Asynchronous email sending (Celery)
 # Set EMAIL_USE_CELERY=true to send emails asynchronously (recommended for production)
@@ -200,7 +199,7 @@ EMAIL_USE_CELERY = env.bool('EMAIL_USE_CELERY', default=False)
 
 # ==================== Celery Configuration ====================
 # Celery broker (Redis) - Required for async task processing
-CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://localhost:6379/0')
+CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://:redis_secure_password@localhost:6379/0')
 
 # Celery result backend (optional, for storing task results)
 # Use 'rpc://' for temporary results or Redis for persistent results

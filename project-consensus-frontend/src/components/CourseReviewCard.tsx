@@ -32,15 +32,15 @@ import type {
  */
 export interface CourseReviewCardProps {
   review: CourseReview;
-  onLike?: (reviewId: string) => void; // 点赞回调 / Like callback
-  onReply?: (reviewId: string) => void; // 回复回调（若未提供 onToggleReplies，将回退使用此回调） / Reply callback (fallback when onToggleReplies not provided)
-  onToggleReplies?: (reviewId: string, nextExpanded: boolean) => void; // 切换展开/折叠回复 / Toggle replies expand/collapse
-  repliesExpanded?: boolean; // 当前是否展开回复（仅用于显示逻辑，可选） / Whether replies are expanded (optional, for display logic)
-  onCreateReply?: (reviewId: string) => void; // 发表回复回调 / Post reply callback
-  onEdit?: (reviewId: string) => void; // 编辑点评回调 / Edit review callback
-  onDelete?: (reviewId: string) => void; // 删除点评回调 / Delete review callback
+  onLike?: (reviewId: string) => void; // Like callback
+  onReply?: (reviewId: string) => void; // Reply callback (fallback when onToggleReplies not provided)
+  onToggleReplies?: (reviewId: string, nextExpanded: boolean) => void; // Toggle replies expand/collapse
+  repliesExpanded?: boolean; // Whether replies are expanded (optional, for display logic)
+  onCreateReply?: (reviewId: string) => void; // Post reply callback
+  onEdit?: (reviewId: string) => void; // Edit review callback
+  onDelete?: (reviewId: string) => void; // Delete review callback
   className?: string;
-  showRepliesSection?: boolean; // 是否显示回复区域 / Whether to show replies section
+  showRepliesSection?: boolean; // Whether to show replies section
 }
 
 /**
