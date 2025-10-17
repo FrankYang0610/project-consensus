@@ -8,7 +8,7 @@ import { stripHtml, getHighlightParts, buildSearchResultTitle, translateAuthorNa
 
 // Render highlighted text from TextPart array
 function renderHighlightedText(parts: TextPart[]): React.ReactNode {
-  return parts.map((part, i) => 
+  return parts.map((part, i) =>
     part.isHighlighted ? (
       <mark key={i} className="bg-yellow-200 dark:bg-yellow-800 font-semibold">
         {part.text}
@@ -94,7 +94,7 @@ export function SearchResultCard({ result, className, highlight }: SearchResultC
   };
 
   const typeInfo = getTypeInfo();
-  
+
   // Strip HTML and prepare snippet
   const cleanSnippet = stripHtml(result.snippet);
 
@@ -162,9 +162,9 @@ export function SearchResultCard({ result, className, highlight }: SearchResultC
         )}
         {result.metadata.posts_count !== undefined && result.metadata.reviews_count !== undefined && (
           <span>
-            {t('search.resultTitle.userStats', { 
-              posts: result.metadata.posts_count, 
-              reviews: result.metadata.reviews_count 
+            {t('search.resultTitle.userStats', {
+              posts: result.metadata.posts_count,
+              reviews: result.metadata.reviews_count
             })}
           </span>
         )}

@@ -35,8 +35,8 @@
 
 目录约定（可按需修改）：
 
-- 后端路径：`project/project-consensus-backend`
-- 前端路径：`project/project-consensus-frontend`
+- 后端路径：`project/project-consensus/project-consensus-backend`
+- 前端路径：`project/project-consensus/project-consensus-frontend`
 
 ---
 
@@ -51,14 +51,17 @@ mkdir -p project && cd project
 # git checkout beta
 
 # 后端
-cd project/project-consensus-backend
+cd project/project-consensus/project-consensus-backend
 conda create -n py313 python=3.13 -y   # 若已存在可跳过
 conda activate py313
 pip-compile -o requirements.txt requirements.in
 pip install -r requirements.txt
 
 # 前端
-cd project/project-consensus-frontend
+# 首先需要安装nvm 然后
+nvm install --lts
+nvm use --lts
+cd project/project-consensus/project-consensus-frontend
 npm ci
 ```
 
@@ -67,7 +70,7 @@ npm ci
 ## 4. 数据库（PostgreSQL 17 via Docker Compose）
 
 ```bash
-cd project/project-consensus-backend
+cd project/project-consensus/project-consensus-backend
 docker compose up -d
 docker compose ps   # 确认 db/redis healthy
 ```
@@ -78,46 +81,106 @@ docker compose ps   # 确认 db/redis healthy
 
 ## 5. 配置环境变量（后端 .env）
 
-创建 `project/project-consensus-backend/.env`：
+创建 `project/project-consensus/project-consensus-backend/.env`：
 
 ```
+# Django settings
 DEBUG=False
-SECRET_KEY=<强随机>
+SECRET_KEY=change-me-in-production
 ALLOWED_HOSTS=beta-api.polyu.life,127.0.0.1,localhost
 LANGUAGE_CODE=zh-hans
 TIME_ZONE=Asia/Shanghai
 
-# CORS/CSRF（前端和后端域名都用 https 全写）
+# CORS / CSRF (adjust as needed)
 CORS_ALLOWED_ORIGINS=https://beta-app.polyu.life
 CSRF_TRUSTED_ORIGINS=https://beta-app.polyu.life,https://beta-api.polyu.life
 
-# 数据库：对应 docker-compose 的 Postgres 17
-DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/appdb
+# Postgres Connection (Docker)
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/appdb
 
-# 邮件与 Celery（推荐在 beta 启用）
-EMAIL_ENABLED=true
-EMAIL_USE_CELERY=true
-RESEND_API_KEY=<你的 Resend API Key>
-EMAIL_FROM_ADDRESS="PolyU Life <noreply@polyu.life>"
+# Cloudflare R2 Configuration
+# TODO: Replace with actual values from Cloudflare R2 Dashboard
+# ! Use custom domain: Settings → Custom Domains → Add Domain
+# CNAME: images.yourdomain.com → xxx.r2.cloudflarestorage.com
+# ! Use public domain: pub-xxxxx.r2.dev
+R2_ACCOUNT_ID=your_r2_account_id
+R2_BUCKET_NAME=your_bucket_name
+R2_ACCESS_KEY_ID=your_access_key_id
+R2_SECRET_ACCESS_KEY=your_secret_access_key
+R2_PUBLIC_DOMAIN=your_public_domain.r2.dev
+
+# Image Upload Settings
+MAX_IMAGE_SIZE_MB=5
+MAX_IMAGE_PIXELS=50000000
+ALLOWED_IMAGE_TYPES=jpg,jpeg,png,gif,webp
+ALLOWED_IMAGE_HOSTS=image.polyu.life
+
+# ==================== Email Service Configuration (Resend) ====================
+# Resend API Configuration for sending transactional emails
+# Get your API key from: https://resend.com/api-keys
+# Domain verification required at: https://resend.com/domains
+
+# Enable/disable email sending (set to false for development to use console logs)
+EMAIL_ENABLED=false
+
+# Resend API Key (required when EMAIL_ENABLED=true)
+# Example: re_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+RESEND_API_KEY=
+
+# Email sender address (must be verified domain in Resend)
+# Format: "Display Name <email@domain.com>"
+EMAIL_FROM_ADDRESS=PolyU Life <admin@polyu.life>
+
+# Reply-to address for user responses
 EMAIL_REPLY_TO=noreply@polyu.life
 
-# Celery Broker / Result Backend
-CELERY_BROKER_URL=redis://:redis_secure_password@127.0.0.1:6379/0
+# ==================== Email Verification Settings ====================
+# Verification code time-to-live (seconds)
+AUTH_VERIFICATION_CODE_TTL_SECONDS=900
+
+# Minimum interval between verification code requests per email (seconds)
+AUTH_VERIFICATION_REQUEST_INTERVAL_SECONDS=90
+
+# Maximum verification code attempts before requiring a new code
+AUTH_VERIFICATION_MAX_ATTEMPTS=5
+
+# ==================== Celery Configuration (Async Task Queue) ====================
+# Enable asynchronous email sending via Celery (recommended for production)
+# Set to true to send emails in background, false for synchronous sending
+EMAIL_USE_CELERY=false
+
+# Redis URL for Celery broker (required when EMAIL_USE_CELERY=true)
+# Format: redis://[username:password@]host:port/database
+# ⚠️ Important: Must match the password in docker-compose.yml (--requirepass)
+CELERY_BROKER_URL=redis://:redis_secure_password@localhost:6379/0
+
+# Celery result backend (optional)
+# Use 'rpc://' for temporary results or Redis URL for persistent results
+# Example: redis://localhost:6379/1
 CELERY_RESULT_BACKEND=rpc://
 
-# 跨站/跨域 Cookie（如需与不同站点或第三方上下文集成时）：
-# SESSION_COOKIE_SAMESITE=None
-# CSRF_COOKIE_SAMESITE=None
+# ==================== Password Reset Configuration ====================
+# Frontend base URL for generating password reset links
+# This should be your frontend application URL (without trailing slash)
+FRONTEND_BASE_URL=http://localhost:3000
+
+# Password reset token timeout (seconds)
+# Default: 3600 (1 hour)
+PASSWORD_RESET_TIMEOUT=3600
+
+# Minimum interval between password reset requests per email (seconds)
+PASSWORD_RESET_REQUEST_INTERVAL_SECONDS=300
+
 ```
 
-> 管理员创建：使用 `python manage.py createsuperuser`。
+> 管理员创建：迁移完之后使用 `python manage.py createsuperuser`。
 
 ---
 
 ## 6. 初始化数据库与静态文件
 
 ```bash
-cd project/project-consensus-backend
+cd project/project-consensus/project-consensus-backend
 conda activate py313
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput
@@ -139,9 +202,9 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=project/project-consensus-backend
-EnvironmentFile=project/project-consensus-backend/.env
-ExecStart=/usr/bin/conda run -n py313 --no-capture-output gunicorn config.wsgi:application \
+WorkingDirectory=/home/jimyang/project/project-consensus/project-consensus-backend
+EnvironmentFile=/home/jimyang/project/project-consensus/project-consensus-backend/.env
+ExecStart=/home/jimyang/miniconda3/condabin/conda run -n py313 --no-capture-output gunicorn config.wsgi:application \
   --bind 127.0.0.1:8000 --workers 3 --timeout 60
 Restart=always
 RestartSec=3
@@ -171,9 +234,9 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=project/project-consensus-backend
-EnvironmentFile=project/project-consensus-backend/.env
-ExecStart=/usr/bin/conda run -n py313 --no-capture-output celery -A config worker \
+WorkingDirectory=/home/jimyang/project/project-consensus/project-consensus-backend
+EnvironmentFile=/home/jimyang/project/project-consensus/project-consensus-backend/.env
+ExecStart=/home/jimyang/miniconda3/condabin/conda run -n py313 --no-capture-output celery -A config worker \
   --loglevel=info --concurrency=8 --max-tasks-per-child=1000 --time-limit=300 --soft-time-limit=240
 Restart=always
 RestartSec=3
@@ -203,7 +266,7 @@ Next.js 会在 **构建时** 和 **运行时** 解析 `NEXT_PUBLIC_*` 变量，�
 - **方案 A（推荐）**：在项目根创建 `.env.production`
 
   ```bash
-  cd project/project-consensus-frontend
+  cd /home/jimyang/project/project-consensus/project-consensus-frontend
   cat > .env.production <<'EOF'
   NEXT_PUBLIC_API_BASE_URL=https://beta-api.polyu.life
   # NEXT_PUBLIC_CKEDITOR_LICENSE_KEY=GPL     # 如有需要
@@ -232,7 +295,7 @@ Next.js 会在 **构建时** 和 **运行时** 解析 `NEXT_PUBLIC_*` 变量，�
 ### 2. 构建项目
 
 ```bash
-cd project/project-consensus-frontend
+cd /home/jimyang/project/project-consensus/project-consensus-frontend
 npm run build        # 采用方案 A 时可直接执行
 # 采用方案 B 时请确保已按上方方式导入变量后再执行
 ```
@@ -240,15 +303,15 @@ npm run build        # 采用方案 A 时可直接执行
 创建 `/etc/systemd/system/project-consensus-frontend.service`：
 
 ```
-[Unit]
+[Unit]  
 Description=Project Consensus Frontend (Next.js)
 After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=project/project-consensus-frontend
+WorkingDirectory=/home/jimyang/project/project-consensus/project-consensus-frontend
 EnvironmentFile=/etc/project-consensus-frontend.env
-ExecStart=/usr/bin/node node_modules/.bin/next start -p 3000
+ExecStart=/home/jimyang/.nvm/versions/node/v22.20.0/bin/node node_modules/.bin/next start -p 3000
 Restart=always
 RestartSec=3
 
@@ -375,7 +438,7 @@ git checkout beta
 git pull
 
 # 后端
-cd /opt/project/project-consensus-backend
+cd /opt/project/project-consensus/project-consensus-backend
 conda activate py313
 pip install -r requirements.txt
 python manage.py migrate --noinput
@@ -383,7 +446,7 @@ python manage.py collectstatic --noinput
 sudo systemctl restart project-consensus-backend
 
 # 前端
-cd /opt/project/project-consensus-frontend
+cd /opt/project/project-consensus/project-consensus-frontend
 npm ci
 npm run build
 sudo systemctl restart project-consensus-frontend

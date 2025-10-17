@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { searchGlobal } from '@/lib/api/search';
 import { SearchResult, SearchResultType, SearchParams } from '@/types/search';
@@ -11,11 +11,11 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useInfiniteList } from '@/hooks/use-infinite-list';
 
-export default function SearchPage() {
+function SearchContent() {
   const { t } = useI18n();
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
-  
+
   const [selectedType, setSelectedType] = useState<SearchResultType | 'all'>('all');
 
   // Wrapper for searchGlobal that normalizes the response for useInfiniteList
@@ -57,7 +57,7 @@ export default function SearchPage() {
   // Reset and load when query or type filter changes
   useEffect(() => {
     if (!query.trim()) return;
-    
+
     // Build search params inline to avoid dependency issues
     const types = selectedType === 'all' ? undefined : selectedType;
     const params: SearchParams = {
@@ -66,7 +66,7 @@ export default function SearchPage() {
       page_size: 20,
       types,
     };
-    
+
     reset(params);
     // Use setTimeout(0) to defer execution after state update
     setTimeout(() => loadMore(), 0);
@@ -214,6 +214,20 @@ export default function SearchPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto px-4 py-16">
+        <div className="max-w-2xl mx-auto text-center">
+          <Loader2 className="w-16 h-16 mx-auto mb-4 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    }>
+      <SearchContent />
+    </Suspense>
   );
 }
 
