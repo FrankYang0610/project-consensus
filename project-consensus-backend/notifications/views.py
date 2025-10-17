@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from django.http import StreamingHttpResponse, HttpRequest, HttpResponse
+from django.conf import settings
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework import status, permissions
 from rest_framework.pagination import PageNumberPagination
@@ -149,6 +150,8 @@ def notifications_stream(request: HttpRequest):
     SSE endpoint for real-time notifications.
     Uses plain Django view (not DRF) to avoid content negotiation issues with text/event-stream.
     """
+    if not getattr(settings, 'NOTIFICATIONS_DJANGO_SSE_ENABLED', True):
+        return HttpResponse("SSE disabled", status=404)
     if not request.user.is_authenticated:
         return HttpResponse("Unauthorized", status=401)
     

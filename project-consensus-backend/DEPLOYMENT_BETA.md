@@ -5,9 +5,11 @@
 - 后端（Django + DRF）：监听 `127.0.0.1:8000`
 - 前端（Next.js）：监听 `127.0.0.1:3000`
 - 数据库（PostgreSQL 17）：`docker-compose.yml`
+- 实时通知（SSE Server，FastAPI + Uvicorn）：监听 `127.0.0.1:9000`
 - Cloudflare Tunnel：
   - `beta-app.polyu.life` → `http://127.0.0.1:3000`
   - `beta-api.polyu.life` → `http://127.0.0.1:8000`
+  - 可选：`beta-sse.polyu.life` → `http://127.0.0.1:9000`
 - Zero Trust Access：对 `beta-app` 与 `beta-api` 均开启访问控制
 
 ---
@@ -255,6 +257,51 @@ sudo systemctl status project-consensus-celery
 
 > 注意：确保 Redis 已启动且 `.env` 的 `CELERY_BROKER_URL` 密码与 `docker-compose.yml` 一致（默认 `redis_secure_password`）。
 
+### SSE Server（FastAPI + Uvicorn，systemd）
+
+创建 `/etc/systemd/system/project-consensus-sse.service`：
+
+```
+[Unit]
+Description=Project Consensus SSE Server (FastAPI + Uvicorn)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=project/project-consensus-backend
+EnvironmentFile=project/project-consensus-backend/.env
+ExecStart=/usr/bin/conda run -n py313 --no-capture-output uvicorn notifications.sse_server:app \
+  --host 127.0.0.1 --port 9000 --workers 1
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+```
+
+启动：
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now project-consensus-sse
+sudo systemctl status project-consensus-sse
+```
+
+环境变量关键项：
+
+```
+# SSE Server 读取的配置（如未提供则回退到合理默认）
+NOTIFICATIONS_REDIS_URL=redis://:redis_secure_password@127.0.0.1:6379/0
+BACKEND_BASE_URL=https://beta-api.polyu.life
+SSE_KEEPALIVE_SECONDS=15
+```
+
+路由建议：
+
+- Cloudflare Tunnel 将 `beta-sse.polyu.life` → `http://127.0.0.1:9000`
+- 前端设置 `NEXT_PUBLIC_SSE_BASE_URL=https://beta-sse.polyu.life`
+- 或者在同一域下由反向代理将 `/api/notifications/stream/` 转发到 SSE Server（注意禁用缓冲 `X-Accel-Buffering: no`，并允许凭证跨域）
+
 ---
 
 ## 8. 前端构建与运行（Next.js + systemd）
@@ -269,6 +316,8 @@ Next.js 会在 **构建时** 和 **运行时** 解析 `NEXT_PUBLIC_*` 变量，�
   cd /home/jimyang/project/project-consensus/project-consensus-frontend
   cat > .env.production <<'EOF'
   NEXT_PUBLIC_API_BASE_URL=https://beta-api.polyu.life
+  # 可选：分离 SSE 域名提升稳定性
+  NEXT_PUBLIC_SSE_BASE_URL=https://beta-sse.polyu.life
   # NEXT_PUBLIC_CKEDITOR_LICENSE_KEY=GPL     # 如有需要
   EOF
   ```

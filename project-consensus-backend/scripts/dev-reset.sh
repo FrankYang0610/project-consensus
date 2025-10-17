@@ -14,7 +14,14 @@ if [ ! -d .venv ]; then
   python3 -m venv .venv
 fi
 source .venv/bin/activate
-python -m pip install -U pip wheel
+python -m pip install -U pip wheel pip-tools
+
+# 1a) Update requirements.txt from requirements.in
+echo "[dev-reset] Updating requirements.txt from requirements.in"
+pip-compile --quiet --upgrade --generate-hashes requirements.in
+
+# 1b) Install dependencies
+echo "[dev-reset] Installing dependencies from requirements.txt"
 pip install -r requirements.txt
 
 # 2) Write .env if missing

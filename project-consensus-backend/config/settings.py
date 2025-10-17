@@ -307,6 +307,29 @@ CSRF_COOKIE_SAMESITE = env('CSRF_COOKIE_SAMESITE', default='Lax')
 # CSRF token must be readable by JS to set X-CSRFToken header
 CSRF_COOKIE_HTTPONLY = False
 
+
+# ==================== Real-time Notifications Configuration ====================
+# 
+# Real-time notification system using Redis pub/sub for instant message delivery.
+# When users receive notifications (forum replies, course reviews, etc.), they are
+# pushed immediately to connected clients via Server-Sent Events (SSE).
+
+# Redis connection for notification pub/sub messaging
+# - If NOTIFICATIONS_REDIS_URL is set, use the specified Redis instance for notifications
+# - Otherwise, use the default local Redis instance for development
+# - This enables real-time push notifications without polling
+NOTIFICATIONS_REDIS_URL = env('NOTIFICATIONS_REDIS_URL', default='redis://:redis_secure_password@localhost:6379/0')
+
+# SSE (Server-Sent Events) endpoint configuration
+# - True: Use Django's built-in SSE endpoint (suitable for development)
+# - False: Use dedicated async SSE server (recommended for production)
+# 
+# Development: Keep True for simplicity and easier debugging
+# Production: Set False and run the async SSE server (notifications/sse_server.py)
+#             for better performance and concurrent connection handling
+NOTIFICATIONS_DJANGO_SSE_ENABLED = env.bool('NOTIFICATIONS_DJANGO_SSE_ENABLED', default=True)
+
+
 # ==================== File Storage Configuration ====================
 # Use Cloudflare R2 for media files via django-storages with S3 backend
 # R2 is S3-compatible with zero egress fees and built-in CDN

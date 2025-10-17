@@ -12,3 +12,6 @@ celery
 redis
 whitenoise
 gunicorn
+fastapi
+uvicorn[standard]
+httpx
