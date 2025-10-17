@@ -27,15 +27,16 @@
 
 - 系统：Ubuntu 22.04（或其他 Linux/macOS）
 - 依赖：
-  - Python 3.13.x（建议虚拟环境）
+  - Python 3.13.x（使用 Conda 环境 py313）
+  - Conda/Miniconda/Mamba（用于 Python 环境管理）
   - Node.js 20+（用于 Next.js 构建与运行）
   - Docker（运行 PostgreSQL 17）
   - cloudflared（Cloudflare Tunnel 客户端）
 
 目录约定（可按需修改）：
 
-- 后端路径：`/project/project-consensus-backend`
-- 前端路径：`/project/project-consensus-frontend`
+- 后端路径：`project/project-consensus-backend`
+- 前端路径：`project/project-consensus-frontend`
 
 ---
 
@@ -43,20 +44,21 @@
 
 ```bash
 # 以 root 或有 sudo 的用户执行
-mkdir -p /project && cd /project
+mkdir -p project && cd project
 # git clone <repo-url>
 # cd project-consensus
 # 切换到 beta 分支
 # git checkout beta
 
 # 后端
-cd /project/project-consensus-backend
-python3 -m venv .venv
-source .venv/bin/activate
+cd project/project-consensus-backend
+conda create -n py313 python=3.13 -y   # 若已存在可跳过
+conda activate py313
+pip-compile -o requirements.txt requirements.in
 pip install -r requirements.txt
 
 # 前端
-cd /project/project-consensus-frontend
+cd project/project-consensus-frontend
 npm ci
 ```
 
@@ -65,7 +67,7 @@ npm ci
 ## 4. 数据库（PostgreSQL 17 via Docker Compose）
 
 ```bash
-cd /project/project-consensus-backend
+cd project/project-consensus-backend
 docker compose up -d
 docker compose ps   # 确认 db/redis healthy
 ```
@@ -76,7 +78,7 @@ docker compose ps   # 确认 db/redis healthy
 
 ## 5. 配置环境变量（后端 .env）
 
-创建 `/project/project-consensus-backend/.env`：
+创建 `project/project-consensus-backend/.env`：
 
 ```
 DEBUG=False
@@ -115,8 +117,8 @@ CELERY_RESULT_BACKEND=rpc://
 ## 6. 初始化数据库与静态文件
 
 ```bash
-cd /project/project-consensus-backend
-source .venv/bin/activate
+cd project/project-consensus-backend
+conda activate py313
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput
 python manage.py check
@@ -137,9 +139,9 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/project/project-consensus-backend
-EnvironmentFile=/project/project-consensus-backend/.env
-ExecStart=/project/project-consensus-backend/.venv/bin/gunicorn config.wsgi:application \
+WorkingDirectory=project/project-consensus-backend
+EnvironmentFile=project/project-consensus-backend/.env
+ExecStart=/usr/bin/conda run -n py313 --no-capture-output gunicorn config.wsgi:application \
   --bind 127.0.0.1:8000 --workers 3 --timeout 60
 Restart=always
 RestartSec=3
@@ -156,6 +158,8 @@ sudo systemctl enable --now project-consensus-backend
 sudo systemctl status project-consensus-backend
 ```
 
+> Conda 路径说明：如果 `conda` 不在 `/usr/bin/conda`，请用 `which conda` 找到实际绝对路径，并替换上方 unit 文件中 `ExecStart` 的 conda 路径（例如 `/home/ubuntu/miniconda3/bin/conda run -n py313 ...`）。
+
 ### Celery Worker（systemd）
 
 创建 `/etc/systemd/system/project-consensus-celery.service`：
@@ -167,9 +171,9 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/project/project-consensus-backend
-EnvironmentFile=/project/project-consensus-backend/.env
-ExecStart=/project/project-consensus-backend/.venv/bin/celery -A config worker \
+WorkingDirectory=project/project-consensus-backend
+EnvironmentFile=project/project-consensus-backend/.env
+ExecStart=/usr/bin/conda run -n py313 --no-capture-output celery -A config worker \
   --loglevel=info --concurrency=8 --max-tasks-per-child=1000 --time-limit=300 --soft-time-limit=240
 Restart=always
 RestartSec=3
@@ -199,7 +203,7 @@ Next.js 会在 **构建时** 和 **运行时** 解析 `NEXT_PUBLIC_*` 变量，�
 - **方案 A（推荐）**：在项目根创建 `.env.production`
 
   ```bash
-  cd /project/project-consensus-frontend
+  cd project/project-consensus-frontend
   cat > .env.production <<'EOF'
   NEXT_PUBLIC_API_BASE_URL=https://beta-api.polyu.life
   # NEXT_PUBLIC_CKEDITOR_LICENSE_KEY=GPL     # 如有需要
@@ -228,7 +232,7 @@ Next.js 会在 **构建时** 和 **运行时** 解析 `NEXT_PUBLIC_*` 变量，�
 ### 2. 构建项目
 
 ```bash
-cd /project/project-consensus-frontend
+cd project/project-consensus-frontend
 npm run build        # 采用方案 A 时可直接执行
 # 采用方案 B 时请确保已按上方方式导入变量后再执行
 ```
@@ -242,7 +246,7 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/project/project-consensus-frontend
+WorkingDirectory=project/project-consensus-frontend
 EnvironmentFile=/etc/project-consensus-frontend.env
 ExecStart=/usr/bin/node node_modules/.bin/next start -p 3000
 Restart=always
@@ -372,7 +376,7 @@ git pull
 
 # 后端
 cd /opt/project/project-consensus-backend
-source .venv/bin/activate
+conda activate py313
 pip install -r requirements.txt
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput
