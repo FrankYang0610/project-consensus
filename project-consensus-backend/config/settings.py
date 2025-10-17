@@ -39,6 +39,8 @@ DEBUG = env("DEBUG")
 # Comma-separated hostnames/IPs that this Django instance will serve.
 # Example: "127.0.0.1,localhost,api.example.com"
 ALLOWED_HOSTS = [h.strip() for h in env("ALLOWED_HOSTS", default="").split(",") if h.strip()]
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
 
 
 # Application definition
@@ -73,6 +75,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
 
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -152,7 +155,8 @@ LANGUAGES = [
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'  # Static URL prefix; set STATIC_ROOT in production and run collectstatic
+STATIC_URL = '/static/'  # Static URL prefix; set STATIC_ROOT in production and run collectstatic
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # CORS and CSRF configuration
 # CORS_ALLOWED_ORIGINS controls which browser origins may access this API.
@@ -294,14 +298,12 @@ CORS_ALLOW_CREDENTIALS = True
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 10  # 10 days (in seconds)
 SESSION_SAVE_EVERY_REQUEST = True       # rolling expiry: extend on each request
 
-# Use secure cookies in non-debug environments; Lax is fine for same-site SPA API.
+# Use secure cookies in non-debug environments; SameSite is configurable via env.
 SESSION_COOKIE_SECURE = not DEBUG
-# Use Lax for same-site (e.g., localhost:3000 -> localhost:8000) and better CSRF posture.
-# If deploying frontend on a different site, switch to 'None' and ensure HTTPS.
-SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SAMESITE = env('SESSION_COOKIE_SAMESITE', default='Lax')
 
 CSRF_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = env('CSRF_COOKIE_SAMESITE', default='Lax')
 # CSRF token must be readable by JS to set X-CSRFToken header
 CSRF_COOKIE_HTTPONLY = False
 
@@ -327,7 +329,7 @@ STORAGES = {
         },
     },
     "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
 

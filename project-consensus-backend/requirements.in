@@ -10,3 +10,5 @@ Pillow
 resend
 celery
 redis
+whitenoise
+gunicorn
