@@ -67,7 +67,7 @@ npm ci
 ```bash
 cd /opt/project/project-consensus-backend
 docker compose up -d
-docker compose ps   # 确认 db healthy
+docker compose ps   # 确认 db/redis healthy
 ```
 
 如需修改宿主端口，请同步更新 `.env` 的 `DATABASE_URL`。
@@ -92,12 +92,23 @@ CSRF_TRUSTED_ORIGINS=https://beta-app.polyu.life,https://beta-api.polyu.life
 # 数据库：对应 docker-compose 的 Postgres 17
 DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/appdb
 
+# 邮件与 Celery（推荐在 beta 启用）
+EMAIL_ENABLED=true
+EMAIL_USE_CELERY=true
+RESEND_API_KEY=<你的 Resend API Key>
+EMAIL_FROM_ADDRESS="PolyU Life <noreply@polyu.life>"
+EMAIL_REPLY_TO=noreply@polyu.life
+
+# Celery Broker / Result Backend
+CELERY_BROKER_URL=redis://:redis_secure_password@127.0.0.1:6379/0
+CELERY_RESULT_BACKEND=rpc://
+
 # 跨站/跨域 Cookie（如需与不同站点或第三方上下文集成时）：
 # SESSION_COOKIE_SAMESITE=None
 # CSRF_COOKIE_SAMESITE=None
 ```
 
-> 管理员创建：使用 `python manage.py createsuperuser`。如需演示账号，可临时设置 `ENABLE_DEMO_USER=true` 后执行 `migrate`（生产建议关闭）。
+> 管理员创建：使用 `python manage.py createsuperuser`。
 
 ---
 
@@ -144,6 +155,38 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now project-consensus-backend
 sudo systemctl status project-consensus-backend
 ```
+
+### Celery Worker（systemd）
+
+创建 `/etc/systemd/system/project-consensus-celery.service`：
+
+```
+[Unit]
+Description=Project Consensus Celery Worker
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/project/project-consensus-backend
+EnvironmentFile=/opt/project/project-consensus-backend/.env
+ExecStart=/opt/project/project-consensus-backend/.venv/bin/celery -A config worker \
+  --loglevel=info --concurrency=8 --max-tasks-per-child=1000 --time-limit=300 --soft-time-limit=240
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+```
+
+启动：
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now project-consensus-celery
+sudo systemctl status project-consensus-celery
+```
+
+> 注意：确保 Redis 已启动且 `.env` 的 `CELERY_BROKER_URL` 密码与 `docker-compose.yml` 一致（默认 `redis_secure_password`）。
 
 ---
 
@@ -306,9 +349,13 @@ journalctl -u project-consensus-backend -f
 # 前端日志
 journalctl -u project-consensus-frontend -f
 
+# Celery 日志
+journalctl -u project-consensus-celery -f
+
 # 重启服务
 sudo systemctl restart project-consensus-backend
 sudo systemctl restart project-consensus-frontend
+sudo systemctl restart project-consensus-celery
 
 # 数据库容器
 cd /opt/project/project-consensus-backend && docker compose ps
@@ -336,8 +383,9 @@ cd /opt/project/project-consensus-frontend
 npm ci
 npm run build
 sudo systemctl restart project-consensus-frontend
+
+# Celery
+sudo systemctl restart project-consensus-celery
 ```
 
 ---
-
-如需我将你真实域名与部署路径替换进上述配置样例，并生成可直接拷贝的 systemd 单元与 cloudflared 配置，请告知域名与服务器路径。
