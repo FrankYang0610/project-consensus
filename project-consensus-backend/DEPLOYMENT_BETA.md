@@ -1,6 +1,6 @@
 # Beta 部署指南（Cloudflare Tunnel + Zero Trust）
 
-本指南适用于 `beta` 分支，目标是：隐藏源站 IP，通过 Cloudflare Zero Trust 对前后端加访问限制，并以稳定的进程方式运行后端（Gunicorn + WhiteNoise）和前端（Next.js）。
+本指南适用于 `beta` 分支，目标是：隐藏源站 IP，通过 Cloudflare Zero Trust 对前后端加访问限制，并以稳定的进程方式运行后端（Uvicorn + WhiteNoise）和前端（Next.js）。
 
 - 后端（Django + DRF）：监听 `127.0.0.1:8000`
 - 前端（Next.js）：监听 `127.0.0.1:3000`
@@ -18,7 +18,7 @@
   - 静态文件：`STATIC_URL='/static/'`、`STATIC_ROOT=BASE_DIR/'staticfiles'`
   - WhiteNoise：添加 `whitenoise.middleware.WhiteNoiseMiddleware` 并使用 `CompressedManifestStaticFilesStorage`
   - 代理头：`SECURE_PROXY_SSL_HEADER=('HTTP_X_FORWARDED_PROTO','https')`、`USE_X_FORWARDED_HOST=True`
-- 依赖：`requirements.in` 增加 `gunicorn==21.2.0`、`whitenoise==6.8.2`，并写入 `requirements.txt`
+- 依赖：`requirements.in` 增加 `uvicorn[standard]==0.38.0`、`whitenoise==6.8.2`，并写入 `requirements.txt`
 - 管理员账号：请在部署后使用 `python manage.py createsuperuser` 创建；如需演示账号，可临时设置 `ENABLE_DEMO_USER=true` 后再执行迁移（生产建议关闭）
 
 ---
@@ -94,6 +94,9 @@ TIME_ZONE=Asia/Shanghai
 # CORS / CSRF (adjust as needed)
 CORS_ALLOWED_ORIGINS=https://beta-app.polyu.life
 CSRF_TRUSTED_ORIGINS=https://beta-app.polyu.life,https://beta-api.polyu.life
+# Cross-site cookies between app/api subdomains require SameSite=None and HTTPS
+SESSION_COOKIE_SAMESITE=None
+CSRF_COOKIE_SAMESITE=None
 
 # Postgres Connection (Docker)
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/appdb
@@ -191,21 +194,22 @@ python manage.py check
 
 ---
 
-## 7. 后端进程（Gunicorn + systemd）
+## 7. 后端进程（uvicorn + systemd）
 
 创建 `/etc/systemd/system/project-consensus-backend.service`：
 
 ```
 [Unit]
-Description=Project Consensus Backend (Django + Gunicorn)
+Description=Project Consensus Backend (Django + Uvicorn)
 After=network.target
 
 [Service]
 Type=simple
 WorkingDirectory=/home/jimyang/project/project-consensus/project-consensus-backend
 EnvironmentFile=/home/jimyang/project/project-consensus/project-consensus-backend/.env
-ExecStart=/home/jimyang/miniconda3/condabin/conda run -n py313 --no-capture-output gunicorn config.wsgi:application \
-  --bind 127.0.0.1:8000 --workers 3 --timeout 60
+ExecStart=/home/jimyang/miniconda3/condabin/conda run -n py313 --no-capture-output \
+  uvicorn config.asgi:application --host 127.0.0.1 --port 8000 \
+  --workers 1 --loop uvloop --http httptools
 Restart=always
 RestartSec=3
 
@@ -389,6 +393,7 @@ sudo cloudflared service install
   - `curl -I https://beta-api.polyu.life`
   - 首次应跳转到 Access；登录后返回 200
 - 健康检查：`https://beta-api.polyu.life/api/health/` → `{"status":"ok"}`
+- 通知 SSE：`/api/notifications/stream/` 需保持长连接与禁用代理缓冲；使用 Redis 作为消息总线，支持 Last-Event-ID 回放。使用会话 Cookie认证。
 - 静态文件：确认 `/static/...` 可加载（已执行 `collectstatic`，WhiteNoise 生效）
 - CORS/CSRF：
   - 前端请求应携带 Cookie（`credentials: 'include'`）
@@ -404,6 +409,38 @@ sudo cloudflared service install
 - HTTPS 判定不生效：确认 `SECURE_PROXY_SSL_HEADER` 设置，cloudflared 默认会传递 `X-Forwarded-Proto: https`
 - Cookie 不被发送：尝试改为 `SESSION_COOKIE_SAMESITE='None'` 与 `CSRF_COOKIE_SAMESITE='None'`，并确保全程 HTTPS
 - 被 Access 阻挡：先在同一浏览器完成 Access 登录；检查策略是否允许当前账号/身份源
+
+### 通知（Redis + SSE）配置
+
+后端环境变量（`.env`）：
+
+```
+# Redis（通知运行时，未设置时回退到 CELERY_BROKER_URL）
+NOTIFICATIONS_REDIS_URL=redis://:redis_secure_password@localhost:6379/1
+NOTIFICATIONS_REDIS_CHANNEL_PREFIX=notifications:chan:
+NOTIFICATIONS_REDIS_SEQ_PREFIX=notifications:seq:
+NOTIFICATIONS_REDIS_BACKLOG_PREFIX=notifications:backlog:
+NOTIFICATIONS_REDIS_BACKLOG_SIZE=200
+```
+
+客户端使用流程：
+
+1) 默认（推荐）——会话 Cookie（已登录）：
+
+```
+GET /api/notifications/stream/
+Header: Accept: text/event-stream
+Credentials: include  # 浏览器端需 withCredentials: true
+```
+
+2) 断线重连时带上最近收到的事件 ID 实现回放：
+
+```
+GET /api/notifications/stream/?lastEventId=123
+# 或 Header: Last-Event-ID: 123
+```
+
+3) 认证方式：统一使用会话 Cookie。
 
 ---
 

@@ -307,6 +307,10 @@ CSRF_COOKIE_SAMESITE = env('CSRF_COOKIE_SAMESITE', default='Lax')
 # CSRF token must be readable by JS to set X-CSRFToken header
 CSRF_COOKIE_HTTPONLY = False
 
+# Cookie domains (enable cross-subdomain cookies when needed, e.g., .polyu.life)
+SESSION_COOKIE_DOMAIN = env('SESSION_COOKIE_DOMAIN', default=None)
+CSRF_COOKIE_DOMAIN = env('CSRF_COOKIE_DOMAIN', default=None)
+
 # ==================== File Storage Configuration ====================
 # Use Cloudflare R2 for media files via django-storages with S3 backend
 # R2 is S3-compatible with zero egress fees and built-in CDN
@@ -350,3 +354,16 @@ ALLOWED_UPLOAD_FOLDERS = {'images', 'avatars', 'posts', 'wiki'}
 ALLOWED_IMAGE_HOSTS = [
     h.strip().lower() for h in env("ALLOWED_IMAGE_HOSTS", default="image.polyu.life").split(",") if h.strip()
 ]
+
+# ==================== Notifications (Redis + SSE) ====================
+# Redis URL used by notifications runtime (falls back to CELERY_BROKER_URL if unset)
+NOTIFICATIONS_REDIS_URL = env("NOTIFICATIONS_REDIS_URL", default='redis://:redis_secure_password@localhost:6379/0')
+
+# Per-user channel and storage prefixes in Redis
+NOTIFICATIONS_REDIS_CHANNEL_PREFIX = env("NOTIFICATIONS_REDIS_CHANNEL_PREFIX", default="notifications:chan:")
+NOTIFICATIONS_REDIS_SEQ_PREFIX = env("NOTIFICATIONS_REDIS_SEQ_PREFIX", default="notifications:seq:")
+NOTIFICATIONS_REDIS_BACKLOG_PREFIX = env("NOTIFICATIONS_REDIS_BACKLOG_PREFIX", default="notifications:backlog:")
+
+# Backlog size for Last-Event-ID replay
+NOTIFICATIONS_REDIS_BACKLOG_SIZE = env.int("NOTIFICATIONS_REDIS_BACKLOG_SIZE", default=200)
+

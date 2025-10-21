@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from django.http import StreamingHttpResponse, HttpRequest, HttpResponse
+from django.conf import settings
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework import status, permissions
 from rest_framework.pagination import PageNumberPagination
@@ -151,17 +152,28 @@ def notifications_stream(request: HttpRequest):
     """
     if not request.user.is_authenticated:
         return HttpResponse("Unauthorized", status=401)
-    
     user = request.user
-    # Streaming response for SSE
-    sub = subscribe(str(user.pk))
+
+    # Parse Last-Event-ID from header or query
+    last_event_id = None
+    hdr_last_id = request.headers.get("Last-Event-ID")
+    q_last_id = request.GET.get("lastEventId")
+    raw_last = hdr_last_id or q_last_id
+    if raw_last:
+        try:
+            last_event_id = int(raw_last)
+        except Exception:
+            last_event_id = None
+
+    # Streaming response for SSE (with optional replay)
+    sub = subscribe(str(user.pk), last_event_id=last_event_id)
 
     def _gen():
         # initial event
         cnt = Notification.objects.filter(recipient=user, is_read=False, is_deleted=False).count()
         yield f"data: {{\"type\": \"notification\", \"unreadCount\": {int(cnt)} }}\n\n"
         # subsequent events
-        for chunk in sub.listen():
+        for chunk in sub.listen(keepalive_seconds=int(getattr(settings, "NOTIFICATIONS_SSE_KEEPALIVE_SECONDS", 15))):
             yield chunk
 
     resp = StreamingHttpResponse(_gen(), content_type='text/event-stream')

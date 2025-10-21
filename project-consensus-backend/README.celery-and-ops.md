@@ -9,7 +9,7 @@ This document explains the backend architecture, dependency connections, Celery/
 - `project-consensus-backend/accounts/views.py`
 - `project-consensus-backend/docker-compose.yml`
 - `project-consensus-backend/scripts/start-celery.sh`
-- `project-consensus-backend/scripts/dev_reset.sh`
+- `project-consensus-backend/scripts/dev-reset.sh`
 
 ```mermaid
 graph LR
@@ -100,7 +100,7 @@ graph LR
 
 ## Script Descriptions
 
-- **`scripts/dev_reset.sh`**
+- **`scripts/dev-reset.sh`**
   - Create and activate virtual environment, install dependencies
   - If no `.env`, write a minimal usable template
   - `docker compose down -v && docker compose up -d db redis` reset and start Postgres and Redis
@@ -119,7 +119,7 @@ graph LR
 1. Start Dependencies and Backend
    ```bash
    # In project-consensus-backend/ directory
-   bash scripts/dev_reset.sh
+   bash scripts/dev-reset.sh
    # Browser access: http://127.0.0.1:8000/api/health/ expected {"status":"ok"}
    ```
 2. Start Celery Worker (for async emails)

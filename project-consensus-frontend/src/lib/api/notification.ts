@@ -27,7 +27,9 @@ export async function deleteRead(): Promise<void> {
   await apiPost(`/api/notifications/delete_read/`, {});
 }
 
-export function openNotificationSSE(): EventSource {
+// Opens a session-authenticated SSE connection via cookies (default method).
+// Note: For cross-subdomain usage or SameSite cookie issues, consider using a short-lived token flow.
+export async function openNotificationSSE(): Promise<EventSource> {
   const base = getAPIBaseUrl();
   const url = `${base}/api/notifications/stream/`;
   // Use withCredentials to send session cookie with SSE

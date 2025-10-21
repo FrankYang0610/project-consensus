@@ -11,4 +11,5 @@ resend
 celery
 redis
 whitenoise
-gunicorn
+gevent
+uvicorn[standard]

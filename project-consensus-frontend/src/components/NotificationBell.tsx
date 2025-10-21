@@ -25,7 +25,8 @@ export function NotificationBell() {
         // ignore
       }
       try {
-        es = openNotificationSSE();
+        // Session cookie-based SSE
+        es = await openNotificationSSE();
         es.onmessage = (evt) => {
           try {
             const data = JSON.parse(evt.data || "{}");

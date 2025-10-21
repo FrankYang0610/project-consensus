@@ -253,13 +253,13 @@ For convenience, a helper script resets the dev environment, frees port 8000, re
 
 ```bash
 cd /Users/frankyang/project-consensus/project-consensus-backend
-bash scripts/dev_reset.sh
+bash scripts/dev-reset.sh
 ```
 
 Run only up to migration without starting the server:
 
 ```bash
-NO_RUN=1 bash scripts/dev_reset.sh
+NO_RUN=1 bash scripts/dev-reset.sh
 ```
 
 What the script does:

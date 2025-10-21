@@ -1,95 +1,155 @@
 from __future__ import annotations
 
 import json
-import threading
+import os
 import time
-from collections import defaultdict, deque
-from typing import Deque, Dict, Iterator
+from typing import Iterator, Optional
 
-# Simple in-process pub/sub keyed by user_id (string)
-# Not persistent; suitable for single-process development/demo.
-
-_lock = threading.Lock()
-_subscribers: Dict[str, set["_Subscriber"]] = defaultdict(set)
+import redis
+from django.conf import settings
 
 
-class _Subscriber:
-    def __init__(self, user_id: str):
+# ==================== Redis-backed Pub/Sub for Notifications ====================
+# Features:
+# - Per-user Redis Pub/Sub channel for real-time events
+# - Monotonic event IDs per user (Redis INCR)
+# - Short backlog in Redis List to support Last-Event-ID replay on reconnect
+# - SSE-formatted output with id: and data: lines
+
+_REDIS_CLIENT: Optional[redis.Redis] = None
+
+
+def _get_redis() -> redis.Redis:
+    global _REDIS_CLIENT
+    if _REDIS_CLIENT is not None:
+        return _REDIS_CLIENT
+    url = getattr(settings, "NOTIFICATIONS_REDIS_URL", None) or getattr(settings, "CELERY_BROKER_URL", None) or os.environ.get("REDIS_URL") or "redis://localhost:6379/1"
+    # decode_responses=True returns str instead of bytes
+    _REDIS_CLIENT = redis.Redis.from_url(
+        url,
+        decode_responses=True,
+        socket_timeout=float(getattr(settings, "REDIS_SOCKET_TIMEOUT", 1.0)),
+        socket_connect_timeout=float(getattr(settings, "REDIS_SOCKET_CONNECT_TIMEOUT", 1.0)),
+        health_check_interval=int(getattr(settings, "REDIS_HEALTH_CHECK_INTERVAL", 30)),
+        retry_on_timeout=True,
+    )
+    return _REDIS_CLIENT
+
+
+def _chan(user_id: str) -> str:
+    prefix = getattr(settings, "NOTIFICATIONS_REDIS_CHANNEL_PREFIX", "notifications:chan:")
+    return f"{prefix}{user_id}"
+
+
+def _seq_key(user_id: str) -> str:
+    prefix = getattr(settings, "NOTIFICATIONS_REDIS_SEQ_PREFIX", "notifications:seq:")
+    return f"{prefix}{user_id}"
+
+
+def _backlog_key(user_id: str) -> str:
+    prefix = getattr(settings, "NOTIFICATIONS_REDIS_BACKLOG_PREFIX", "notifications:backlog:")
+    return f"{prefix}{user_id}"
+
+
+def _backlog_size() -> int:
+    return int(getattr(settings, "NOTIFICATIONS_REDIS_BACKLOG_SIZE", 200))
+
+
+def _extract_payload(data: dict) -> dict:
+    """Extract payload from event data. Supports both wrapped and legacy formats."""
+    return data.get("payload") if "payload" in data else {k: v for k, v in data.items() if k != "id"}
+
+
+def _sse_format(event_id: int, payload: dict) -> str:
+    data = json.dumps(payload, ensure_ascii=False)
+    return f"id: {event_id}\ndata: {data}\n\n"
+
+
+class _RedisSubscriber:
+    def __init__(self, user_id: str, last_event_id: Optional[int] = None):
         self.user_id = user_id
-        self._queue: Deque[dict] = deque()
-        self._cv = threading.Condition()
+        self.last_event_id = last_event_id
+        self._r = _get_redis()
+        self._pubsub = self._r.pubsub(ignore_subscribe_messages=True)
+        self._pubsub.subscribe(_chan(user_id))
         self._closed = False
 
-    def put(self, msg: dict) -> None:
-        with self._cv:
-            if self._closed:
-                return
-            self._queue.append(msg)
-            self._cv.notify()
-
     def close(self) -> None:
-        with self._cv:
-            self._closed = True
-            self._cv.notify_all()
+        self._closed = True
+        try:
+            self._pubsub.close()
+        except Exception:
+            pass
 
-    def __iter__(self) -> Iterator[str]:
-        return self.listen()
+    def _replay(self) -> Iterator[str]:
+        if self.last_event_id is None:
+            return
+        try:
+            raw_items = self._r.lrange(_backlog_key(self.user_id), 0, _backlog_size() - 1)
+            # Stored newest-first; we need to deliver oldest-first among those > last_event_id
+            events = []
+            for raw in raw_items:
+                try:
+                    item = json.loads(raw)
+                    if int(item.get("id", 0)) > int(self.last_event_id):
+                        events.append(item)
+                except Exception:
+                    continue
+            # reverse to oldest->newest
+            for item in reversed(events):
+                event_id = int(item.get("id", 0))
+                payload = _extract_payload(item)
+                yield _sse_format(event_id, payload)
+        except Exception:
+            # best-effort replay; ignore errors
+            return
 
     def listen(self, keepalive_seconds: int = 25) -> Iterator[str]:
-        """Yield SSE-formatted strings for events and periodic keepalive comments."""
+        # First deliver replay if any
+        yield from self._replay() or ()
         last = time.time()
         try:
-            while True:
-                with self._cv:
-                    # Wait for new message or keepalive timeout
-                    now = time.time()
-                    timeout = max(0.1, keepalive_seconds - (now - last))
-                    if not self._queue and not self._closed:
-                        self._cv.wait(timeout=timeout)
-                    if self._closed:
-                        break
-                    if self._queue:
-                        msg = self._queue.popleft()
-                        payload = json.dumps(msg, ensure_ascii=False)
-                        yield f"data: {payload}\n\n"
+            while not self._closed:
+                # Use non-blocking polling to allow keepalives
+                msg = self._pubsub.get_message(timeout=1.0)
+                if msg and msg.get("type") == "message":
+                    try:
+                        data = json.loads(msg.get("data") or "{}")
+                        event_id = int(data.get("id", 0))
+                        payload = _extract_payload(data)
+                        yield _sse_format(event_id, payload)
                         last = time.time()
-                        continue
-                # Timeout: send keepalive comment
+                    except Exception:
+                        # ignore malformed messages
+                        pass
+                    continue
+
+                # keepalive if idle
                 now = time.time()
                 if now - last >= keepalive_seconds:
                     yield ": keep-alive\n\n"
                     last = now
         finally:
-            # Ensure cleanup
-            unsubscribe(self)
+            self.close()
 
 
-def subscribe(user_id: str) -> _Subscriber:
-    sub = _Subscriber(user_id)
-    with _lock:
-        _subscribers[user_id].add(sub)
-    return sub
-
-
-def unsubscribe(sub: _Subscriber) -> None:
-    with _lock:
-        subs = _subscribers.get(sub.user_id)
-        if subs and sub in subs:
-            subs.remove(sub)
-        if subs is not None and len(subs) == 0:
-            _subscribers.pop(sub.user_id, None)
+def subscribe(user_id: str, last_event_id: Optional[int] = None) -> _RedisSubscriber:
+    return _RedisSubscriber(user_id=user_id, last_event_id=last_event_id)
 
 
 def publish(user_id: str, msg: dict) -> None:
-    # Snapshot subscribers to avoid holding the lock during put
-    with _lock:
-        targets = list(_subscribers.get(user_id, ()))
-    for sub in targets:
+    r = _get_redis()
+    # Assign per-user event id, persist to backlog, then publish
+    seq = r.incr(_seq_key(user_id))
+    envelope = {"id": seq, "payload": msg}
+    p = r.pipeline(transaction=False)
+    p.lpush(_backlog_key(user_id), json.dumps(envelope, ensure_ascii=False))
+    p.ltrim(_backlog_key(user_id), 0, _backlog_size() - 1)
+    p.publish(_chan(user_id), json.dumps(envelope, ensure_ascii=False))
+    try:
+        p.execute()
+    finally:
         try:
-            sub.put(msg)
+            p.reset()
         except Exception:
-            # Ignore individual subscriber errors
-            try:
-                unsubscribe(sub)
-            except Exception:
-                pass
+            pass
