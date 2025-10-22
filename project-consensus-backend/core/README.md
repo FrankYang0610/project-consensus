@@ -205,7 +205,7 @@ Call sites (best-effort cleanup):
 
 - `accounts/views.py::update_profile()` – delete old avatar after change
 - `courses/views.py::CourseReviewViewSet.perform_destroy()` – delete images in a review on delete
-- `forum/views.py::ForumPostViewSet.destroy()` – delete images in a post on delete
+- `forum/views.py::ForumPostViewSet.destroy()` – delete images in a post and all its comments on delete
 - `forum/views.py::ForumPostCommentViewSet.destroy()` – delete images in a comment on delete
 
 ---
