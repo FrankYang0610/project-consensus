@@ -142,10 +142,11 @@ def publish(user_id: str, msg: dict) -> None:
     # Assign per-user event id, persist to backlog, then publish
     seq = r.incr(_seq_key(user_id))
     envelope = {"id": seq, "payload": msg}
+    envelope_json = json.dumps(envelope, ensure_ascii=False)
     p = r.pipeline(transaction=False)
-    p.lpush(_backlog_key(user_id), json.dumps(envelope, ensure_ascii=False))
+    p.lpush(_backlog_key(user_id), envelope_json)
     p.ltrim(_backlog_key(user_id), 0, _backlog_size() - 1)
-    p.publish(_chan(user_id), json.dumps(envelope, ensure_ascii=False))
+    p.publish(_chan(user_id), envelope_json)
     try:
         p.execute()
     finally:
