@@ -28,9 +28,9 @@ def _get_redis() -> redis.Redis:
     _REDIS_CLIENT = redis.Redis.from_url(
         url,
         decode_responses=True,
-        socket_timeout=float(getattr(settings, "REDIS_SOCKET_TIMEOUT", 1.0)),
-        socket_connect_timeout=float(getattr(settings, "REDIS_SOCKET_CONNECT_TIMEOUT", 1.0)),
-        health_check_interval=int(getattr(settings, "REDIS_HEALTH_CHECK_INTERVAL", 30)),
+        socket_timeout=float(getattr(settings, "NOTIFICATIONS_REDIS_SOCKET_TIMEOUT", 1.0)),
+        socket_connect_timeout=float(getattr(settings, "NOTIFICATIONS_REDIS_SOCKET_CONNECT_TIMEOUT", 1.0)),
+        health_check_interval=int(getattr(settings, "NOTIFICATIONS_REDIS_HEALTH_CHECK_INTERVAL", 30)),
         retry_on_timeout=True,
     )
     return _REDIS_CLIENT

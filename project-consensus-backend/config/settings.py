@@ -359,6 +359,11 @@ ALLOWED_IMAGE_HOSTS = [
 # Redis URL used by notifications runtime (falls back to CELERY_BROKER_URL if unset)
 NOTIFICATIONS_REDIS_URL = env("NOTIFICATIONS_REDIS_URL", default='redis://:redis_secure_password@localhost:6379/0')
 
+# Redis connection settings for notifications runtime (separate from Celery's Redis config)
+NOTIFICATIONS_REDIS_SOCKET_TIMEOUT = env.float("NOTIFICATIONS_REDIS_SOCKET_TIMEOUT", default=1.0)
+NOTIFICATIONS_REDIS_SOCKET_CONNECT_TIMEOUT = env.float("NOTIFICATIONS_REDIS_SOCKET_CONNECT_TIMEOUT", default=1.0)
+NOTIFICATIONS_REDIS_HEALTH_CHECK_INTERVAL = env.int("NOTIFICATIONS_REDIS_HEALTH_CHECK_INTERVAL", default=30)
+
 # Per-user channel and storage prefixes in Redis
 NOTIFICATIONS_REDIS_CHANNEL_PREFIX = env("NOTIFICATIONS_REDIS_CHANNEL_PREFIX", default="notifications:chan:")
 NOTIFICATIONS_REDIS_SEQ_PREFIX = env("NOTIFICATIONS_REDIS_SEQ_PREFIX", default="notifications:seq:")
