@@ -18,7 +18,7 @@
   - 静态文件：`STATIC_URL='/static/'`、`STATIC_ROOT=BASE_DIR/'staticfiles'`
   - WhiteNoise：添加 `whitenoise.middleware.WhiteNoiseMiddleware` 并使用 `CompressedManifestStaticFilesStorage`
   - 代理头：`SECURE_PROXY_SSL_HEADER=('HTTP_X_FORWARDED_PROTO','https')`、`USE_X_FORWARDED_HOST=True`
-- 依赖：`requirements.in` 增加 `uvicorn[standard]==0.38.0`、`whitenoise==6.8.2`，并写入 `requirements.txt`
+- 依赖：`requirements.in` 增加 `uvicorn[standard]`、`whitenoise`，并写入 `requirements.txt`
 - 管理员账号：请在部署后使用 `python manage.py createsuperuser` 创建；如需演示账号，可临时设置 `ENABLE_DEMO_USER=true` 后再执行迁移（生产建议关闭）
 
 ---
