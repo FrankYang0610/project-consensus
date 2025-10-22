@@ -23,7 +23,7 @@ def _get_redis() -> redis.Redis:
     global _REDIS_CLIENT
     if _REDIS_CLIENT is not None:
         return _REDIS_CLIENT
-    url = getattr(settings, "NOTIFICATIONS_REDIS_URL", None) or getattr(settings, "CELERY_BROKER_URL", None) or os.environ.get("REDIS_URL") or "redis://localhost:6379/1"
+    url = getattr(settings, "NOTIFICATIONS_REDIS_URL", "redis://:redis_secure_password@localhost:6379/1")
     # decode_responses=True returns str instead of bytes
     _REDIS_CLIENT = redis.Redis.from_url(
         url,

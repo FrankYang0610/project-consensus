@@ -357,7 +357,8 @@ ALLOWED_IMAGE_HOSTS = [
 
 # ==================== Notifications (Redis + SSE) ====================
 # Redis URL used by notifications runtime (falls back to CELERY_BROKER_URL if unset)
-NOTIFICATIONS_REDIS_URL = env("NOTIFICATIONS_REDIS_URL", default='redis://:redis_secure_password@localhost:6379/0')
+# Note: Uses database /1 (different from Celery's /0) to separate notification data from task queue data
+NOTIFICATIONS_REDIS_URL = env("NOTIFICATIONS_REDIS_URL", default='redis://:redis_secure_password@localhost:6379/1')
 
 # Redis connection settings for notifications runtime (separate from Celery's Redis config)
 NOTIFICATIONS_REDIS_SOCKET_TIMEOUT = env.float("NOTIFICATIONS_REDIS_SOCKET_TIMEOUT", default=1.0)
