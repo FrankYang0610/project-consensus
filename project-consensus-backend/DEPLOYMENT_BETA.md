@@ -1,6 +1,6 @@
 # Beta 部署指南（Cloudflare Tunnel + Zero Trust）
 
-本指南适用于 `beta` 分支，目标是：隐藏源站 IP，通过 Cloudflare Zero Trust 对前后端加访问限制，并以稳定的进程方式运行后端（Gunicorn + WhiteNoise）和前端（Next.js）。
+本指南适用于 `beta` 分支，目标是：隐藏源站 IP，通过 Cloudflare Zero Trust 对前后端加访问限制，并以稳定的进程方式运行后端（Uvicorn + WhiteNoise）和前端（Next.js）。
 
 - 后端（Django + DRF）：监听 `127.0.0.1:8000`
 - 前端（Next.js）：监听 `127.0.0.1:3000`
@@ -18,7 +18,7 @@
   - 静态文件：`STATIC_URL='/static/'`、`STATIC_ROOT=BASE_DIR/'staticfiles'`
   - WhiteNoise：添加 `whitenoise.middleware.WhiteNoiseMiddleware` 并使用 `CompressedManifestStaticFilesStorage`
   - 代理头：`SECURE_PROXY_SSL_HEADER=('HTTP_X_FORWARDED_PROTO','https')`、`USE_X_FORWARDED_HOST=True`
-- 依赖：`requirements.in` 增加 `gunicorn==21.2.0`、`whitenoise==6.8.2`，并写入 `requirements.txt`
+- 依赖：`requirements.in` 增加 `uvicorn[standard]`、`whitenoise`，并写入 `requirements.txt`
 - 管理员账号：请在部署后使用 `python manage.py createsuperuser` 创建；如需演示账号，可临时设置 `ENABLE_DEMO_USER=true` 后再执行迁移（生产建议关闭）
 
 ---
@@ -81,97 +81,11 @@ docker compose ps   # 确认 db/redis healthy
 
 ## 5. 配置环境变量（后端 .env）
 
-创建 `project/project-consensus/project-consensus-backend/.env`：
+创建 `project/project-consensus/project-consensus-backend/.env`。环境变量配置内容请参考 `project/project-consensus/project-consensus-backend/.env.example`。Beta版本的网址是 `https://beta-app.polyu.life`，因此 `ALLOWED_HOSTS`、`CORS_ALLOWED_ORIGINS`、`CSRF_TRUSTED_ORIGINS` 需要配置为以下值：
 
-```
-# Django settings
-DEBUG=False
-SECRET_KEY=change-me-in-production
-ALLOWED_HOSTS=beta-api.polyu.life,127.0.0.1,localhost
-LANGUAGE_CODE=zh-hans
-TIME_ZONE=Asia/Shanghai
-
-# CORS / CSRF (adjust as needed)
-CORS_ALLOWED_ORIGINS=https://beta-app.polyu.life
-CSRF_TRUSTED_ORIGINS=https://beta-app.polyu.life,https://beta-api.polyu.life
-
-# Postgres Connection (Docker)
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/appdb
-
-# Cloudflare R2 Configuration
-# TODO: Replace with actual values from Cloudflare R2 Dashboard
-# ! Use custom domain: Settings → Custom Domains → Add Domain
-# CNAME: images.yourdomain.com → xxx.r2.cloudflarestorage.com
-# ! Use public domain: pub-xxxxx.r2.dev
-R2_ACCOUNT_ID=your_r2_account_id
-R2_BUCKET_NAME=your_bucket_name
-R2_ACCESS_KEY_ID=your_access_key_id
-R2_SECRET_ACCESS_KEY=your_secret_access_key
-R2_PUBLIC_DOMAIN=your_public_domain.r2.dev
-
-# Image Upload Settings
-MAX_IMAGE_SIZE_MB=5
-MAX_IMAGE_PIXELS=50000000
-ALLOWED_IMAGE_TYPES=jpg,jpeg,png,gif,webp
-ALLOWED_IMAGE_HOSTS=image.polyu.life
-
-# ==================== Email Service Configuration (Resend) ====================
-# Resend API Configuration for sending transactional emails
-# Get your API key from: https://resend.com/api-keys
-# Domain verification required at: https://resend.com/domains
-
-# Enable/disable email sending (set to false for development to use console logs)
-EMAIL_ENABLED=false
-
-# Resend API Key (required when EMAIL_ENABLED=true)
-# Example: re_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
-RESEND_API_KEY=
-
-# Email sender address (must be verified domain in Resend)
-# Format: "Display Name <email@domain.com>"
-EMAIL_FROM_ADDRESS=PolyU Life <admin@polyu.life>
-
-# Reply-to address for user responses
-EMAIL_REPLY_TO=noreply@polyu.life
-
-# ==================== Email Verification Settings ====================
-# Verification code time-to-live (seconds)
-AUTH_VERIFICATION_CODE_TTL_SECONDS=900
-
-# Minimum interval between verification code requests per email (seconds)
-AUTH_VERIFICATION_REQUEST_INTERVAL_SECONDS=90
-
-# Maximum verification code attempts before requiring a new code
-AUTH_VERIFICATION_MAX_ATTEMPTS=5
-
-# ==================== Celery Configuration (Async Task Queue) ====================
-# Enable asynchronous email sending via Celery (recommended for production)
-# Set to true to send emails in background, false for synchronous sending
-EMAIL_USE_CELERY=false
-
-# Redis URL for Celery broker (required when EMAIL_USE_CELERY=true)
-# Format: redis://[username:password@]host:port/database
-# ⚠️ Important: Must match the password in docker-compose.yml (--requirepass)
-CELERY_BROKER_URL=redis://:redis_secure_password@localhost:6379/0
-
-# Celery result backend (optional)
-# Use 'rpc://' for temporary results or Redis URL for persistent results
-# Example: redis://localhost:6379/1
-CELERY_RESULT_BACKEND=rpc://
-
-# ==================== Password Reset Configuration ====================
-# Frontend base URL for generating password reset links
-# This should be your frontend application URL (without trailing slash)
-FRONTEND_BASE_URL=http://localhost:3000
-
-# Password reset token timeout (seconds)
-# Default: 3600 (1 hour)
-PASSWORD_RESET_TIMEOUT=3600
-
-# Minimum interval between password reset requests per email (seconds)
-PASSWORD_RESET_REQUEST_INTERVAL_SECONDS=300
-
-```
+- `ALLOWED_HOSTS=beta-api.polyu.life,127.0.0.1,localhost`
+- `CORS_ALLOWED_ORIGINS=https://beta-app.polyu.life`
+- `CSRF_TRUSTED_ORIGINS=https://beta-app.polyu.life,https://beta-api.polyu.life`
 
 > 管理员创建：迁移完之后使用 `python manage.py createsuperuser`。
 
@@ -191,21 +105,22 @@ python manage.py check
 
 ---
 
-## 7. 后端进程（Gunicorn + systemd）
+## 7. 后端进程（uvicorn + systemd）
 
 创建 `/etc/systemd/system/project-consensus-backend.service`：
 
 ```
 [Unit]
-Description=Project Consensus Backend (Django + Gunicorn)
+Description=Project Consensus Backend (Django + Uvicorn)
 After=network.target
 
 [Service]
 Type=simple
 WorkingDirectory=/home/jimyang/project/project-consensus/project-consensus-backend
 EnvironmentFile=/home/jimyang/project/project-consensus/project-consensus-backend/.env
-ExecStart=/home/jimyang/miniconda3/condabin/conda run -n py313 --no-capture-output gunicorn config.wsgi:application \
-  --bind 127.0.0.1:8000 --workers 3 --timeout 60
+ExecStart=/home/jimyang/miniconda3/condabin/conda run -n py313 --no-capture-output \
+  uvicorn config.asgi:application --host 127.0.0.1 --port 8000 \
+  --workers 1 --loop uvloop --http httptools
 Restart=always
 RestartSec=3
 
@@ -389,6 +304,7 @@ sudo cloudflared service install
   - `curl -I https://beta-api.polyu.life`
   - 首次应跳转到 Access；登录后返回 200
 - 健康检查：`https://beta-api.polyu.life/api/health/` → `{"status":"ok"}`
+- 通知 SSE：`/api/notifications/stream/` 需保持长连接与禁用代理缓冲；使用 Redis 作为消息总线，支持 Last-Event-ID 回放。使用会话 Cookie认证。
 - 静态文件：确认 `/static/...` 可加载（已执行 `collectstatic`，WhiteNoise 生效）
 - CORS/CSRF：
   - 前端请求应携带 Cookie（`credentials: 'include'`）
