@@ -10,6 +10,7 @@ from rest_framework import status
 from rest_framework.throttling import UserRateThrottle
 
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.conf import settings
 from core.serializers import ImageUploadSerializer
 from core.utils import upload_image_to_r2
 
@@ -34,7 +35,7 @@ class ImageUploadView(APIView):
     
     **Request** (multipart/form-data):
     - `image` (file, required): Image file (JPEG/PNG/GIF/WebP)
-    - `folder` (string, required): Target folder ('images', 'avatars', 'posts', 'wiki')
+    - `folder` (string, optional): Target folder ('images', 'avatars')
     
     **Response**:
     - 200: `{"url": "https://..."}`
@@ -78,7 +79,24 @@ class ImageUploadView(APIView):
         # Copy folder parameter if present
         if 'folder' in request.data:
             data['folder'] = request.data['folder']
+        else:
+            qp_folder = request.query_params.get('folder')
+            if qp_folder:
+                data['folder'] = qp_folder
         
+        if 'folder' in data:
+            folder_val = str(data['folder']).strip()
+            if folder_val not in settings.ALLOWED_UPLOAD_FOLDERS:
+                return Response(
+                    {
+                        "error": "Invalid upload request",
+                        "detail": {"folder": [
+                            f"must be one of: {', '.join(sorted(settings.ALLOWED_UPLOAD_FOLDERS))}"
+                        ]}
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
         serializer = ImageUploadSerializer(data=data)
         
         if not serializer.is_valid():

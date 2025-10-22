@@ -102,7 +102,7 @@ class ImageUploadSerializer(serializers.Serializer):
         ]
     )
     folder = serializers.ChoiceField(
-        choices=['images', 'avatars', 'posts', 'wiki'],
+        choices=['images', 'avatars'],
         default='images',
         required=False,
         help_text="Target folder in storage"

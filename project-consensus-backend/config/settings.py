@@ -347,7 +347,7 @@ ALLOWED_IMAGE_EXTENSIONS = [
 
 # Allowed folders for image uploads in R2 storage
 # These are used as path prefixes when organizing uploaded files
-ALLOWED_UPLOAD_FOLDERS = {'images', 'avatars', 'posts', 'wiki'}
+ALLOWED_UPLOAD_FOLDERS = {'images', 'avatars'}
 
 # Allowed public image hosts for rendering and profile avatar URLs
 # Comma-separated. Example: "image.polyu.life,cdn.example.com"
