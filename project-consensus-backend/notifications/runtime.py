@@ -106,7 +106,7 @@ class _RedisSubscriber:
 
     def listen(self, keepalive_seconds: int = 25) -> Iterator[str]:
         # First deliver replay if any
-        yield from self._replay() or ()
+        yield from self._replay()
         last = time.time()
         try:
             while not self._closed:
