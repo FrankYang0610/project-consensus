@@ -13,7 +13,7 @@ from django.conf import settings
 # Features:
 # - Per-user Redis Pub/Sub channel for real-time events
 # - Monotonic event IDs per user (Redis INCR)
-# - Short backlog in Redis List to support Last-Event-ID replay on reconnect
+# - Short backlog in Redis Sorted Set (ZSET) to support efficient Last-Event-ID replay on reconnect
 # - SSE-formatted output with id: and data: lines
 
 _REDIS_CLIENT: Optional[redis.Redis] = None
@@ -85,21 +85,22 @@ class _RedisSubscriber:
         if self.last_event_id is None:
             return
         try:
-            raw_items = self._r.lrange(_backlog_key(self.user_id), 0, _backlog_size() - 1)
-            # Stored newest-first; we need to deliver oldest-first among those > last_event_id
-            events = []
+            # Use ZSET ZRANGEBYSCORE to efficiently fetch only events > last_event_id
+            # Score is event_id, fetch in ascending order (oldest first)
+            raw_items = self._r.zrangebyscore(
+                _backlog_key(self.user_id),
+                min=f"({self.last_event_id}",  # exclusive lower bound
+                max="+inf"
+            )
             for raw in raw_items:
                 try:
                     item = json.loads(raw)
-                    if int(item.get("id", 0)) > int(self.last_event_id):
-                        events.append(item)
+                    event_id = int(item.get("id", 0))
+                    payload = _extract_payload(item)
+                    yield _sse_format(event_id, payload)
                 except Exception:
+                    # ignore malformed entries
                     continue
-            # reverse to oldest->newest
-            for item in reversed(events):
-                event_id = int(item.get("id", 0))
-                payload = _extract_payload(item)
-                yield _sse_format(event_id, payload)
         except Exception:
             # best-effort replay; ignore errors
             return
@@ -144,8 +145,12 @@ def publish(user_id: str, msg: dict) -> None:
     envelope = {"id": seq, "payload": msg}
     envelope_json = json.dumps(envelope, ensure_ascii=False)
     p = r.pipeline(transaction=False)
-    p.lpush(_backlog_key(user_id), envelope_json)
-    p.ltrim(_backlog_key(user_id), 0, _backlog_size() - 1)
+    # Use ZADD with event_id as score for efficient range queries
+    p.zadd(_backlog_key(user_id), {envelope_json: seq})
+    # Keep only the most recent N items using ZREMRANGEBYRANK
+    # Keep items ranked 0 to (size-1), remove everything before that
+    backlog_size = _backlog_size()
+    p.zremrangebyrank(_backlog_key(user_id), 0, -(backlog_size + 1))
     p.publish(_chan(user_id), envelope_json)
     try:
         p.execute()
