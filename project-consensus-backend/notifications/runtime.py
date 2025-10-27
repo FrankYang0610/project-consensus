@@ -28,7 +28,7 @@ def _get_redis() -> redis.Redis:
     if url is None:
         url = "redis://localhost:6379/1"
         warnings.warn(
-            "Redis client is using default URL without authentication. "
+            "Notifications Redis client is using default URL without authentication. "
             "This is insecure for production; configure NOTIFICATIONS_REDIS_URL.",
             RuntimeWarning,
         )
