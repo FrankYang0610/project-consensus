@@ -15,7 +15,7 @@ import { useInfiniteList } from "@/hooks/use-infinite-list";
 import { ForumFilterBar } from "@/components/ForumFilterBar";
 import { useSearchParams } from "next/navigation";
 
-// 将使用 useSearchParams 的逻辑提取到子组件
+// Extract the logic using `useSearchParams` to a child component
 function HomePageContent() {
   const { t } = useI18n();
   const { user } = useApp();
@@ -49,7 +49,7 @@ function HomePageContent() {
     dedupeKey: (p) => p.id,
   });
 
-  // 防止 "连点点赞/取消赞" 导致 UI 和后端状态打架的轻量级锁
+  // Light-weight lock to prevent UI and backend state from fighting when "clicking like/unlike" multiple times
   const postLikeInFlightRef = React.useRef<Set<string>>(new Set());
 
   const handleLike = React.useCallback((id: string) => {
@@ -136,7 +136,7 @@ function HomePageContent() {
           ))}
         </div>
 
-        {/* Infinite scroll sentinel (handled by useInfiniteList) */}
+        {/* Infinite scroll sentinel (handled by `useInfiniteList`) */}
         <div className="max-w-7xl mx-auto flex justify-center mt-6">
           <div ref={loaderRef} className="h-8 w-full" aria-hidden="true" />
         </div>
@@ -157,7 +157,7 @@ function HomePageContent() {
   );
 }
 
-// 加载状态组件
+// Loading component
 function HomePageLoading() {
   const { t } = useI18n();
 
@@ -175,7 +175,7 @@ function HomePageLoading() {
   );
 }
 
-// 主组件
+// Main component
 export default function HomePage() {
   const { t } = useI18n();
 
@@ -195,7 +195,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* 用 Suspense 包裹使用 useSearchParams 的组件 */}
+          {/* Wrap the component using `useSearchParams` with `Suspense` */}
           <Suspense fallback={<HomePageLoading />}>
             <HomePageContent />
           </Suspense>
