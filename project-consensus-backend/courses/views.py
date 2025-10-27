@@ -114,6 +114,54 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
         ctx["include_user_review"] = is_detail
         ctx["include_other_teachers"] = is_detail
         return ctx
+
+    def retrieve(self, request, *args, **kwargs):  # type: ignore[override]
+        instance: Course = self.get_object()
+
+        current_teacher_ids = set(instance.teachers.values_list("id", flat=True))
+        others_qs = (
+            Course.objects
+            .filter(subject_code=instance.subject_code)
+            .exclude(course_id=instance.course_id)
+            .prefetch_related("teachers")
+        )
+
+        items: list[dict] = []
+        for c in others_qs:
+            teachers = list(c.teachers.all())
+            chosen = None
+            if teachers:
+                for t in teachers:
+                    if t.id not in current_teacher_ids:
+                        chosen = t
+                        break
+                if chosen is None:
+                    chosen = teachers[0]
+                teacher_name = chosen.name
+                teacher_avatar = getattr(chosen, "avatar_url", None) or None
+            else:
+                teacher_name = ""
+                teacher_avatar = None
+
+            items.append({
+                "courseId": str(c.course_id),
+                "teacherName": teacher_name,
+                "teacherAvatarUrl": teacher_avatar,
+                "rating": {
+                    "score": c.rating_score,
+                    "reviewsCount": c.rating_reviews_count,
+                },
+                "attributes": {
+                    "difficulty": c.attr_difficulty or None,
+                    "workload": c.attr_workload or None,
+                    "grading": c.attr_grading or None,
+                    "gain": c.attr_gain or None,
+                },
+            })
+
+        setattr(instance, "_other_teacher_courses", items)
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
     
     @action(detail=False, methods=["get"], url_path="departments")
     def departments(self, request):
