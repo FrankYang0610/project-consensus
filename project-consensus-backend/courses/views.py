@@ -127,7 +127,7 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
             .prefetch_related("teachers")
         )
 
-        items: list[dict] = []
+        other_teacher_courses: list[dict] = []
         for c in others_qs:
             teachers = list(c.teachers.all())
             chosen = None
@@ -144,7 +144,7 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
                 teacher_name = ""
                 teacher_avatar = None
 
-            items.append({
+            other_teacher_courses.append({
                 "courseId": str(c.course_id),
                 "teacherName": teacher_name,
                 "teacherAvatarUrl": teacher_avatar,
@@ -160,7 +160,7 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
                 },
             })
 
-        setattr(instance, "_other_teacher_courses", items)
+        setattr(instance, "_other_teacher_courses", other_teacher_courses)
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
     
