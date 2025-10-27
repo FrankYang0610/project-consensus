@@ -16,6 +16,25 @@ def delete_post_and_cleanup_images(*, post: ForumPost) -> None:
         delete_images_in_html(getattr(post, "content", ""), owner_user_id=post.author_id)
     except Exception as e:
         logger.warning(f"Failed to delete images in forum post {post.pk}: {e}", exc_info=True)
+    # Also cleanup images embedded in all comments (including replies) under this post
+    try:
+        for content, author_id in (
+            ForumPostComment.objects
+            .filter(post_id=post.pk)
+            .values_list("content", "author_id")
+            .iterator(chunk_size=1000)
+        ):
+            if content and author_id:
+                try:
+                    delete_images_in_html(content, owner_user_id=author_id)
+                except Exception:
+                    # Best-effort per comment; continue on failure
+                    pass
+    except Exception as e:
+        logger.warning(
+            f"Failed to cleanup images in comments for forum post {post.pk}: {e}",
+            exc_info=True,
+        )
     with transaction.atomic():
         post.delete()
 
