@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os  # Used to build the .env file path
 import sys  # For platform detection
+import warnings  # For security warnings
 import environ  # django-environ: typed environment variable parser
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -220,7 +221,15 @@ EMAIL_USE_CELERY = env.bool('EMAIL_USE_CELERY', default=False)
 
 # ==================== Celery Configuration ====================
 # Celery broker (Redis) - Required for async task processing
-CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://:redis_secure_password@localhost:6379/0')
+CELERY_BROKER_URL = env('CELERY_BROKER_URL', default=None)
+
+if CELERY_BROKER_URL is None:
+    CELERY_BROKER_URL = "redis://localhost:6379/0"
+    warnings.warn(
+        "Using default Redis URL without password — intended for local development only. "
+        "For production, set CELERY_BROKER_URL in your environment with a secure password.",
+        RuntimeWarning,
+    )
 
 # Celery result backend (optional, for storing task results)
 # Use 'rpc://' for temporary results or Redis for persistent results
@@ -358,7 +367,15 @@ ALLOWED_IMAGE_HOSTS = [
 # ==================== Notifications (Redis + SSE) ====================
 # Redis URL used by notifications runtime (falls back to CELERY_BROKER_URL if unset)
 # Note: Uses database /1 (different from Celery's /0) to separate notification data from task queue data
-NOTIFICATIONS_REDIS_URL = env("NOTIFICATIONS_REDIS_URL", default='redis://:redis_secure_password@localhost:6379/1')
+NOTIFICATIONS_REDIS_URL = env("NOTIFICATIONS_REDIS_URL", default=None)
+
+if NOTIFICATIONS_REDIS_URL is None:
+    NOTIFICATIONS_REDIS_URL = "redis://localhost:6379/1"
+    warnings.warn(
+        "Using default Redis URL without password — intended for local development only. "
+        "For production, set NOTIFICATIONS_REDIS_URL in your environment with a secure password.",
+        RuntimeWarning,
+    )
 
 # Redis connection settings for notifications runtime (separate from Celery's Redis config)
 NOTIFICATIONS_REDIS_SOCKET_TIMEOUT = env.float("NOTIFICATIONS_REDIS_SOCKET_TIMEOUT", default=1.0)
