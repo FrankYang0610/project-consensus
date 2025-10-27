@@ -123,6 +123,7 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
             Course.objects
             .filter(subject_code=instance.subject_code)
             .exclude(course_id=instance.course_id)
+            .order_by("-rating_score", "-rating_reviews_count", "-last_updated")
             .prefetch_related("teachers")
         )
 
@@ -138,7 +139,7 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
                 if chosen is None:
                     chosen = teachers[0]
                 teacher_name = chosen.name
-                teacher_avatar = getattr(chosen, "avatar_url", None) or None
+                teacher_avatar = getattr(chosen, "avatar_url", None)
             else:
                 teacher_name = ""
                 teacher_avatar = None
