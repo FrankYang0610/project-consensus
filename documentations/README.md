@@ -13,7 +13,7 @@ This folder contains documentation for key backend and frontend concepts used in
 
 #### Deployment Documentation
 - [Beta Deployment (Chinese Simplified)](./beta/DEPLOYMENT-BETA.md) — Configuration and deployment instructions for the beta environment.
-- [Preprod Deployment Settings (Chinese Simplified)](./preprod/PREPROD-DEPLOYMENT)-SETTINGS.md) — Pre-production environment configuration and deployment settings.
+- [Preprod Deployment Settings (Chinese Simplified)](./preprod/PREPROD-DEPLOYMENT-SETTINGS.md) — Pre-production environment configuration and deployment settings.
 
 ### Conventions
 - All documentation is written with Django REST Framework in mind for the backend and Next.js/TypeScript for the frontend.
