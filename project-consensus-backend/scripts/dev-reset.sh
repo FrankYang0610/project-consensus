@@ -14,7 +14,14 @@ if [ ! -d .venv ]; then
   python3 -m venv .venv
 fi
 source .venv/bin/activate
-python -m pip install -U pip wheel
+python -m pip install -U pip wheel pip-tools
+
+# Compile requirements.txt from requirements.in if needed or forced
+if [ ! -f requirements.txt ] || [ requirements.in -nt requirements.txt ] || [ "${FORCE_COMPILE:-0}" = "1" ]; then
+  echo "[dev-reset] Compiling requirements.txt from requirements.in"
+  pip-compile --quiet --output-file=requirements.txt requirements.in
+fi
+
 pip install -r requirements.txt
 
 # 2) Write .env if missing
@@ -74,11 +81,20 @@ fi
 echo "[dev-reset] Running database migrations"
 python manage.py migrate
 
+# --- SSE local testing notes ---
+# Basic: `runserver` is sufficient for SSE functionality in development.
+# High concurrency (low workers): set NO_RUN=1 and launch a dedicated ASGI instance:
+#   source .venv/bin/activate
+#   uvicorn config.asgi:application \
+#     --host 127.0.0.1 --port 8011 --workers 1 --loop uvloop --http httptools
+# Then point only `/api/notifications/stream/` to http://127.0.0.1:8011 (frontend or curl).
+# Celery is not required for SSE.
+
 # 6) Run server (skip if NO_RUN=1)
 if [ "${NO_RUN:-0}" = "1" ]; then
   echo "[dev-reset] NO_RUN=1 set; skipping runserver."
 else
-  echo "[dev-reset] Starting server at 127.0.0.1:8000"
+  echo "[dev-reset] Starting server at 127.0.0.1:8000 (SSE OK; for high-concurrency use ASGI, see comments above)"
   python manage.py runserver
 fi
 

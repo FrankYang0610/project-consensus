@@ -1,14 +1,14 @@
-# Preprod 部署指南（Cloudflare Tunnel + Zero Trust）
+# Beta 部署指南（Cloudflare Tunnel + Zero Trust）
 
-本指南适用于 `preprod` 分支，目标是：隐藏源站 IP，通过 Cloudflare Zero Trust 对前后端加访问限制，并以稳定的进程方式运行后端（Gunicorn + WhiteNoise）和前端（Next.js）。
+本指南适用于 Beta 版本部署，目标是隐藏源站 IP，通过 Cloudflare Zero Trust 对前后端加访问限制，并以稳定的进程方式运行后端（Uvicorn + WhiteNoise）和前端（Next.js）。
 
 - 后端（Django + DRF）：监听 `127.0.0.1:8000`
 - 前端（Next.js）：监听 `127.0.0.1:3000`
 - 数据库（PostgreSQL 17）：`docker-compose.yml`
 - Cloudflare Tunnel：
-  - `preprod-app.polyu.life` → `http://127.0.0.1:3000`
-  - `preprod-api.polyu.life` → `http://127.0.0.1:8000`
-- Zero Trust Access：对 `preprod-app` 与 `preprod-api` 均开启访问控制
+  - `beta-app.polyu.life` → `http://127.0.0.1:3000`
+  - `beta-api.polyu.life` → `http://127.0.0.1:8000`
+- Zero Trust Access：对 `beta-app` 与 `beta-api` 均开启访问控制
 
 ---
 
@@ -18,8 +18,8 @@
   - 静态文件：`STATIC_URL='/static/'`、`STATIC_ROOT=BASE_DIR/'staticfiles'`
   - WhiteNoise：添加 `whitenoise.middleware.WhiteNoiseMiddleware` 并使用 `CompressedManifestStaticFilesStorage`
   - 代理头：`SECURE_PROXY_SSL_HEADER=('HTTP_X_FORWARDED_PROTO','https')`、`USE_X_FORWARDED_HOST=True`
-- 依赖：`requirements.in` 增加 `gunicorn==21.2.0`、`whitenoise==6.8.2`，并写入 `requirements.txt`
-- 迁移：`accounts/migrations/0003_create_preprod_admins.py`（创建两个预发布管理员账号，强密码从环境变量读取；未提供时随机生成并打印到迁移输出）
+- 依赖：`requirements.in` 增加 `uvicorn[standard]`、`whitenoise`，并写入 `requirements.txt`
+- 管理员账号：请在部署后使用 `python manage.py createsuperuser` 创建；如需演示账号，可临时设置 `ENABLE_DEMO_USER=true` 后再执行迁移（生产建议关闭）
 
 ---
 
@@ -27,15 +27,16 @@
 
 - 系统：Ubuntu 22.04（或其他 Linux/macOS）
 - 依赖：
-  - Python 3.13.x（建议虚拟环境）
+  - Python 3.13.x（使用 Conda 环境 py313）
+  - Conda/Miniconda/Mamba（用于 Python 环境管理）
   - Node.js 20+（用于 Next.js 构建与运行）
   - Docker（运行 PostgreSQL 17）
   - cloudflared（Cloudflare Tunnel 客户端）
 
 目录约定（可按需修改）：
 
-- 后端路径：`/opt/project/project-consensus-backend`
-- 前端路径：`/opt/project/project-consensus-frontend`
+- 后端路径：`project/project-consensus/project-consensus-backend`
+- 前端路径：`project/project-consensus/project-consensus-frontend`
 
 ---
 
@@ -43,20 +44,24 @@
 
 ```bash
 # 以 root 或有 sudo 的用户执行
-mkdir -p /opt/project && cd /opt/project
+mkdir -p project && cd project
 # git clone <repo-url>
 # cd project-consensus
-# 切换到 preprod 分支
-# git checkout preprod
+# 切换到 beta 分支
+# git checkout beta
 
 # 后端
-cd /opt/project/project-consensus-backend
-python3 -m venv .venv
-source .venv/bin/activate
+cd project/project-consensus/project-consensus-backend
+conda create -n py313 python=3.13 -y   # 若已存在可跳过
+conda activate py313
+pip-compile -o requirements.txt requirements.in
 pip install -r requirements.txt
 
 # 前端
-cd /opt/project/project-consensus-frontend
+# 首先需要安装nvm 然后
+nvm install --lts
+nvm use --lts
+cd project/project-consensus/project-consensus-frontend
 npm ci
 ```
 
@@ -65,9 +70,9 @@ npm ci
 ## 4. 数据库（PostgreSQL 17 via Docker Compose）
 
 ```bash
-cd /opt/project/project-consensus-backend
+cd project/project-consensus/project-consensus-backend
 docker compose up -d
-docker compose ps   # 确认 db healthy
+docker compose ps   # 确认 db/redis healthy
 ```
 
 如需修改宿主端口，请同步更新 `.env` 的 `DATABASE_URL`。
@@ -76,67 +81,46 @@ docker compose ps   # 确认 db healthy
 
 ## 5. 配置环境变量（后端 .env）
 
-创建 `/opt/project/project-consensus-backend/.env`：
+创建 `project/project-consensus/project-consensus-backend/.env`。环境变量配置内容请参考 `project/project-consensus/project-consensus-backend/.env.example`。Beta版本的网址是 `https://beta-app.polyu.life`，因此 `ALLOWED_HOSTS`、`CORS_ALLOWED_ORIGINS`、`CSRF_TRUSTED_ORIGINS` 需要配置为以下值：
 
-```
-DEBUG=False
-SECRET_KEY=<强随机>
-ALLOWED_HOSTS=preprod-api.polyu.life,127.0.0.1,localhost
-LANGUAGE_CODE=zh-hans
-TIME_ZONE=Asia/Shanghai
+- `ALLOWED_HOSTS=beta-api.polyu.life,127.0.0.1,localhost`
+- `CORS_ALLOWED_ORIGINS=https://beta-app.polyu.life`
+- `CSRF_TRUSTED_ORIGINS=https://beta-app.polyu.life,https://beta-api.polyu.life`
 
-# CORS/CSRF（前端和后端域名都用 https 全写）
-CORS_ALLOWED_ORIGINS=https://preprod-app.polyu.life
-CSRF_TRUSTED_ORIGINS=https://preprod-app.polyu.life,https://preprod-api.polyu.life
-
-# 数据库：对应 docker-compose 的 Postgres 17
-DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/appdb
-
-# 可选：预发布管理员账号（迁移时使用；不提供则随机密码并打印到迁移输出）
-PREPROD_ADMIN1_USERNAME=admin1
-PREPROD_ADMIN1_EMAIL=admin1@polyu.life
-PREPROD_ADMIN1_PASSWORD=<强密码-可选>
-PREPROD_ADMIN1_DISPLAY_NAME=Preprod Admin 1
-
-PREPROD_ADMIN2_USERNAME=admin2
-PREPROD_ADMIN2_EMAIL=admin2@polyu.life
-PREPROD_ADMIN2_PASSWORD=<强密码-可选>
-PREPROD_ADMIN2_DISPLAY_NAME=Preprod Admin 2
-```
-
-> 注意：如果提供 `PREPROD_ADMIN*_PASSWORD`，迁移不会回显密码；若不提供，将在迁移输出中打印随机生成的密码（仅用于预发布环境）。
+> 管理员创建：迁移完之后使用 `python manage.py createsuperuser`。
 
 ---
 
 ## 6. 初始化数据库与静态文件
 
 ```bash
-cd /opt/project/project-consensus-backend
-source .venv/bin/activate
+cd project/project-consensus/project-consensus-backend
+conda activate py313
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput
 python manage.py check
 ```
 
-- `migrate` 将执行 `0003_create_preprod_admins`，创建两个管理员；注意控制台输出的随机密码（若未在 .env 中显式提供）。
+- - 建议在迁移后运行：`python manage.py createsuperuser` 创建管理员账号。
 
 ---
 
-## 7. 后端进程（Gunicorn + systemd）
+## 7. 后端进程（uvicorn + systemd）
 
 创建 `/etc/systemd/system/project-consensus-backend.service`：
 
 ```
 [Unit]
-Description=Project Consensus Backend (Django + Gunicorn)
+Description=Project Consensus Backend (Django + Uvicorn)
 After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/opt/project/project-consensus-backend
-EnvironmentFile=/opt/project/project-consensus-backend/.env
-ExecStart=/opt/project/project-consensus-backend/.venv/bin/gunicorn config.wsgi:application \
-  --bind 127.0.0.1:8000 --workers 3 --timeout 60
+WorkingDirectory=/home/jimyang/project/project-consensus/project-consensus-backend
+EnvironmentFile=/home/jimyang/project/project-consensus/project-consensus-backend/.env
+ExecStart=/home/jimyang/miniconda3/condabin/conda run -n py313 --no-capture-output \
+  uvicorn config.asgi:application --host 127.0.0.1 --port 8000 \
+  --workers 1 --loop uvloop --http httptools
 Restart=always
 RestartSec=3
 
@@ -152,6 +136,40 @@ sudo systemctl enable --now project-consensus-backend
 sudo systemctl status project-consensus-backend
 ```
 
+> Conda 路径说明：如果 `conda` 不在 `/usr/bin/conda`，请用 `which conda` 找到实际绝对路径，并替换上方 unit 文件中 `ExecStart` 的 conda 路径（例如 `/home/ubuntu/miniconda3/bin/conda run -n py313 ...`）。
+
+### Celery Worker（systemd）
+
+创建 `/etc/systemd/system/project-consensus-celery.service`：
+
+```
+[Unit]
+Description=Project Consensus Celery Worker
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/jimyang/project/project-consensus/project-consensus-backend
+EnvironmentFile=/home/jimyang/project/project-consensus/project-consensus-backend/.env
+ExecStart=/home/jimyang/miniconda3/condabin/conda run -n py313 --no-capture-output celery -A config worker \
+  --loglevel=info --concurrency=8 --max-tasks-per-child=1000 --time-limit=300 --soft-time-limit=240
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+```
+
+启动：
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now project-consensus-celery
+sudo systemctl status project-consensus-celery
+```
+
+> 注意：确保 Redis 已启动且 `.env` 的 `CELERY_BROKER_URL` 密码与 `docker-compose.yml` 一致（默认 `redis_secure_password`）。
+
 ---
 
 ## 8. 前端构建与运行（Next.js + systemd）
@@ -163,18 +181,19 @@ Next.js 会在 **构建时** 和 **运行时** 解析 `NEXT_PUBLIC_*` 变量，�
 - **方案 A（推荐）**：在项目根创建 `.env.production`
 
   ```bash
-  cd /opt/project/project-consensus-frontend
+  cd /home/jimyang/project/project-consensus/project-consensus-frontend
   cat > .env.production <<'EOF'
-  NEXT_PUBLIC_API_BASE_URL=https://preprod-api.polyu.life
+  NEXT_PUBLIC_API_BASE_URL=https://beta-api.polyu.life
   # NEXT_PUBLIC_CKEDITOR_LICENSE_KEY=GPL     # 如有需要
   EOF
   ```
+
   之后直接执行 `npm run build` 即可，Next.js 会自动加载此文件。
 
 - **方案 B**：继续使用系统级文件 `/etc/project-consensus-frontend.env`
 
   ```
-  NEXT_PUBLIC_API_BASE_URL=https://preprod-api.polyu.life
+  NEXT_PUBLIC_API_BASE_URL=https://beta-api.polyu.life
   ```
 
   在构建前让当前 shell 继承该文件，再执行构建命令，例如：
@@ -191,7 +210,7 @@ Next.js 会在 **构建时** 和 **运行时** 解析 `NEXT_PUBLIC_*` 变量，�
 ### 2. 构建项目
 
 ```bash
-cd /opt/project/project-consensus-frontend
+cd /home/jimyang/project/project-consensus/project-consensus-frontend
 npm run build        # 采用方案 A 时可直接执行
 # 采用方案 B 时请确保已按上方方式导入变量后再执行
 ```
@@ -199,15 +218,15 @@ npm run build        # 采用方案 A 时可直接执行
 创建 `/etc/systemd/system/project-consensus-frontend.service`：
 
 ```
-[Unit]
+[Unit]  
 Description=Project Consensus Frontend (Next.js)
 After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/opt/project/project-consensus-frontend
+WorkingDirectory=/home/jimyang/project/project-consensus/project-consensus-frontend
 EnvironmentFile=/etc/project-consensus-frontend.env
-ExecStart=/usr/bin/node node_modules/.bin/next start -p 3000
+ExecStart=/home/jimyang/.nvm/versions/node/v22.20.0/bin/node node_modules/.bin/next start -p 3000
 Restart=always
 RestartSec=3
 
@@ -231,14 +250,14 @@ sudo systemctl status project-consensus-frontend
 
 ```bash
 cloudflared tunnel login
-cloudflared tunnel create preprod-tunnel
+cloudflared tunnel create beta-tunnel
 ```
 
 2. 绑定 DNS：
 
 ```bash
-cloudflared tunnel route dns preprod-tunnel preprod-app.polyu.life
-cloudflared tunnel route dns preprod-tunnel preprod-api.polyu.life
+cloudflared tunnel route dns beta-tunnel beta-app.polyu.life
+cloudflared tunnel route dns beta-tunnel beta-api.polyu.life
 ```
 
 3. 配置 `/etc/cloudflared/config.yml`：
@@ -248,9 +267,9 @@ tunnel: <tunnel-uuid>
 credentials-file: /etc/cloudflared/<tunnel-uuid>.json
 
 ingress:
-  - hostname: preprod-app.polyu.life
+  - hostname: beta-app.polyu.life
     service: http://127.0.0.1:3000
-  - hostname: preprod-api.polyu.life
+  - hostname: beta-api.polyu.life
     service: http://127.0.0.1:8000
   - service: http_status:404
 ```
@@ -268,8 +287,8 @@ sudo cloudflared service install
 ## 10. Cloudflare Zero Trust Access（访问限制）
 
 - Zero Trust → Access → Applications → Add application → Self-hosted：
-  - 应用 A：`preprod-app.polyu.life`
-  - 应用 B：`preprod-api.polyu.life`
+  - 应用 A：`beta-app.polyu.life`
+  - 应用 B：`beta-api.polyu.life`
 - 策略（Policies）：
   - Allow：仅允许你的测试账号（按 Email/GitHub/Google 身份源筛选）
   - 可设置 Session 时长（例如 8 小时）
@@ -281,10 +300,11 @@ sudo cloudflared service install
 ## 11. 联调与验证
 
 - 隧道连通：
-  - `curl -I https://preprod-app.polyu.life`
-  - `curl -I https://preprod-api.polyu.life`
+  - `curl -I https://beta-app.polyu.life`
+  - `curl -I https://beta-api.polyu.life`
   - 首次应跳转到 Access；登录后返回 200
-- 健康检查：`https://preprod-api.polyu.life/api/health/` → `{"status":"ok"}`
+- 健康检查：`https://beta-api.polyu.life/api/health/` → `{"status":"ok"}`
+- 通知 SSE：`/api/notifications/stream/` 需保持长连接与禁用代理缓冲；使用 Redis 作为消息总线，支持 Last-Event-ID 回放。使用会话 Cookie认证。
 - 静态文件：确认 `/static/...` 可加载（已执行 `collectstatic`，WhiteNoise 生效）
 - CORS/CSRF：
   - 前端请求应携带 Cookie（`credentials: 'include'`）
@@ -312,9 +332,13 @@ journalctl -u project-consensus-backend -f
 # 前端日志
 journalctl -u project-consensus-frontend -f
 
+# Celery 日志
+journalctl -u project-consensus-celery -f
+
 # 重启服务
 sudo systemctl restart project-consensus-backend
 sudo systemctl restart project-consensus-frontend
+sudo systemctl restart project-consensus-celery
 
 # 数据库容器
 cd /opt/project/project-consensus-backend && docker compose ps
@@ -322,28 +346,29 @@ cd /opt/project/project-consensus-backend && docker compose ps
 
 ---
 
-## 14. 版本更新流程（preprod）
+## 14. 版本更新流程（beta）
 
 ```bash
 # 在仓库中
-git checkout preprod
+git checkout beta
 git pull
 
 # 后端
-cd /opt/project/project-consensus-backend
-source .venv/bin/activate
+cd /opt/project/project-consensus/project-consensus-backend
+conda activate py313
 pip install -r requirements.txt
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput
 sudo systemctl restart project-consensus-backend
 
 # 前端
-cd /opt/project/project-consensus-frontend
+cd /opt/project/project-consensus/project-consensus-frontend
 npm ci
 npm run build
 sudo systemctl restart project-consensus-frontend
+
+# Celery
+sudo systemctl restart project-consensus-celery
 ```
 
 ---
-
-如需我将你真实域名与部署路径替换进上述配置样例，并生成可直接拷贝的 systemd 单元与 cloudflared 配置，请告知域名与服务器路径。

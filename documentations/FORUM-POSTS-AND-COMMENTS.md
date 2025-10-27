@@ -11,12 +11,45 @@ This document describes the initial backend/frontend behavior for forum posts an
 - Comment: authenticated users can create on non-deleted posts; replies require a valid non-deleted target comment; invalid `postId` returns 400 `{ postId: "invalid post id" }`; HTML is sanitized.
 
 ## Update
-- Post: author can update title/content/tags/isAnonymous. When updated, `isEdited` is set to true.
+- Post: author can update `title` / `content` / `tags` / `isAnonymous`. When updated, `isEdited` is set to true.
 - Comment: editing is not allowed.
 
 ## Delete
-- Post: author can hard-delete. Behavior: remove the post row; all related comments/replies/likes are deleted via DB CASCADE. Notifications remain intact because they store snapshots and do not depend on FK relations.
-- Comment: author can soft-delete. Behavior: set `isDeleted=true`, clear `content`, keep the row and thread structure (used as a placeholder in UI).
+- Post: author can hard-delete. Behavior: remove the post row; all related comments/replies/likes are deleted via DB CASCADE. Additionally, images embedded in the post content and in all its comments/replies are cleaned up from storage on delete. Notifications remain intact because they store snapshots and do not depend on FK relations.
+  > **Post Deletion Complexity Analysis**
+  > 
+  > **Database Operations**: `O(1)` - Single post deletion with CASCADE
+  > - Post row deletion: 1 operation
+  > - Comments/replies deletion: CASCADE handled by DB (`O(C)` where `C` = comment count)
+  > - Likes deletion: CASCADE handled by DB (`O(L)` where `L` = like count)
+  > 
+  > **Image Cleanup Operations**: `O(K)` where `K` = total images across post + all comments
+  > - Post content images: `O(P)` where `P` = images in post content
+  > - Comment images: `O(Σ|content_i|)` where `i` ranges over all comments
+  > - Storage deletion: `K` individual R2 delete requests (network bottleneck)
+  > 
+  > **Memory Usage**: `O(chunk_size)` - Streaming iterator with 1000-item chunks
+  > - Only loads `content` and `author_id` columns per comment
+  > - Avoids loading full model instances
+  > 
+  > **Time Complexity**: 
+  > - DB scan: `O(C)` with `post_id` index
+  > - HTML parsing: `O(Σ|content_i|)` 
+  > - Storage deletion: `O(K)` network requests (dominant factor)
+  > 
+  > **Performance Characteristics**:
+  > - **Small posts** (< 100 comments, < 50 images): ~1-3 seconds
+  > - **Large posts** (> 1000 comments, > 200 images): ~10-30 seconds
+  > - **Bottleneck**: R2 single-object delete requests (network I/O)
+  > - **Memory efficient**: Streaming query prevents OOM on large posts
+  > 
+  > **Optimization Opportunities**:
+  > - **Async cleanup**: Move to `transaction.on_commit` + Celery for non-blocking
+  > - **Batch deletion**: Use R2 Multi-Object Delete (1000 keys per request)
+  > - **Parallel deletion**: Controlled concurrency for storage operations
+  > - **Smart filtering**: Skip comments without `<img>` tags in query
+
+- Comment: author can soft-delete. Behavior: set `isDeleted=true`, clear `content`, keep the row and thread structure (used as a placeholder in UI). Associated images embedded in the comment content are cleaned up from storage.
 
 ## Toggle Like
 - **Toggle Like**: `POST /api/forum/posts/{id}/toggle_like/` or `POST /api/forum/comments/{id}/toggle_like/` - Smart toggle: if not liked, creates like; if already liked, removes like. Returns updated object with current `isLiked` and `likesCount`.
@@ -34,7 +67,7 @@ This document describes the initial backend/frontend behavior for forum posts an
 - Creating new comments is blocked on deleted posts.
 - Replying to a deleted comment is not allowed.
 - Toggle liking deleted comments is not allowed.
-- When a post is deleted, all of its comments (including replies of replies, etc.) are removed entirely.
+- When a post is deleted, all of its comments (including replies of replies, etc.) are removed entirely, and images embedded in both the post and its comments are deleted from storage (best-effort, owner-verified).
 - Soft-deleted comments remain as placeholders in the UI (content cleared, `isDeleted=true`).
 
 ## Frontend notes
@@ -62,7 +95,7 @@ This document describes the initial backend/frontend behavior for forum posts an
 - Retrieve: `GET /api/forum/posts/{id}/`
 - Create: `POST /api/forum/posts/`
 - Update: `PATCH /api/forum/posts/{id}/` (author only; sets `isEdited=true` on field changes)
-- Delete: `DELETE /api/forum/posts/{id}/` (hard delete; cleans up embedded images owned by the author)
+- Delete: `DELETE /api/forum/posts/{id}/` (hard delete; cleans up embedded images in the post and all its comments, owner-verified)
 - Toggle Like: `POST /api/forum/posts/{id}/toggle_like/` (smart toggle: creates like if not liked, removes like if already liked)
 
 ### Comments
@@ -83,6 +116,7 @@ This document describes the initial backend/frontend behavior for forum posts an
 |------|----------------|-------------|------------------|---------------|------------------|
 | Forum Post | Author | Allowed | Author | Hard Delete | Set `is_edited=true`; clean removed images |
 | Forum Post Comment | None | Forbidden | Author | Soft Delete | Clear content, preserve structure |
+| Cleanups | n/a | n/a | n/a | n/a | On post delete, delete images in the post and all its comments; on comment soft delete, delete comment images |
 
 ### Key Design Principles:
 1. **Permission Control**: All edit/delete operations require user permission validation

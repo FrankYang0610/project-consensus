@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Suspense } from "react";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ForumPostPreviewCard } from "@/components/ForumPostPreviewCard";
@@ -14,15 +15,17 @@ import { useInfiniteList } from "@/hooks/use-infinite-list";
 import { ForumFilterBar } from "@/components/ForumFilterBar";
 import { useSearchParams } from "next/navigation";
 
-export default function HomePage() {
+// Extract the logic using `useSearchParams` to a child component
+function HomePageContent() {
   const { t } = useI18n();
-  const { isLoggedIn, user } = useApp();
+  const { user } = useApp();
   const searchParams = useSearchParams();
-  
+
   // URL is the single source of truth for filters
   const orderingParam = searchParams.get("ordering") || undefined;
   const searchQuery = searchParams.get("search") || undefined;
   const tagParams = searchParams.getAll("tags").filter(Boolean);
+
   const {
     items: posts,
     setItems: setPosts,
@@ -46,17 +49,7 @@ export default function HomePage() {
     dedupeKey: (p) => p.id,
   });
 
-  // 防止 "连点点赞/取消赞" 导致 UI 和后端状态打架的轻量级锁
-  // Lightweight lock to prevent double-tap like/unlike causing UI/server mismatch
-  //
-  // 用法：
-  // - 某条评论正在发起点赞/取消赞请求时，把这条评论的 id 放进 Set 里；
-  // - 在请求成功、失败或超时后，再把它从 Set 里移除；
-  // - 只要 id 还在 Set 里，后续对同一条评论的点击一律忽略（避免计数 "抖动"）。
-  // Meaning:
-  // - When a like/unlike request is in flight for a comment, put its id into this Set
-  // - Remove the id after success/error/timeout
-  // - While the id stays in the Set, further toggles for that comment are ignored
+  // Light-weight lock to prevent UI and backend state from fighting when "clicking like/unlike" multiple times
   const postLikeInFlightRef = React.useRef<Set<string>>(new Set());
 
   const handleLike = React.useCallback((id: string) => {
@@ -90,7 +83,7 @@ export default function HomePage() {
         ));
         postLikeInFlightRef.current.delete(id);
       });
-  }, [posts]);
+  }, [posts, setPosts]);
 
   const visiblePosts = posts; // All loaded posts are shown
 
@@ -125,10 +118,66 @@ export default function HomePage() {
       return;
     }
     reset(nextParams);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orderingParam, searchQuery, JSON.stringify([...tagParams].sort())]);
+  }, [orderingParam, searchQuery, JSON.stringify([...tagParams].sort()), reset]);
 
-  // no-op
+  return (
+    <>
+      <div className="w-full p-6 pt-0">
+        <div className="max-w-7xl mx-auto mb-4">
+          <ForumFilterBar
+            initialSort={initialSort}
+            initialSearch={searchQuery ?? ""}
+            initialTags={tagParams}
+          />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto">
+          {visiblePosts.map(post => (
+            <ForumPostPreviewCard key={post.id} post={post} onLike={handleLike} currentUserId={user?.id} />
+          ))}
+        </div>
+
+        {/* Infinite scroll sentinel (handled by `useInfiniteList`) */}
+        <div className="max-w-7xl mx-auto flex justify-center mt-6">
+          <div ref={loaderRef} className="h-8 w-full" aria-hidden="true" />
+        </div>
+      </div>
+
+      {loadError && (hasMore || visiblePosts.length === 0) && (
+        <Button
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-red-600 hover:bg-red-700 text-white"
+          onClick={() => {
+            setLoadError(false);
+            loadMore();
+          }}
+        >
+          {t('common.loadFailedRetry')}
+        </Button>
+      )}
+    </>
+  );
+}
+
+// Loading component
+function HomePageLoading() {
+  const { t } = useI18n();
+
+  return (
+    <div className="w-full p-6 pt-0">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-4 h-12 bg-gray-200 animate-pulse rounded"></div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-48 bg-gray-200 animate-pulse rounded-lg"></div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Main component
+export default function HomePage() {
+  const { t } = useI18n();
 
   return (
     <>
@@ -146,38 +195,12 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="w-full p-6 pt-0">
-            <div className="max-w-7xl mx-auto mb-4">
-              <ForumFilterBar
-                initialSort={initialSort}
-                initialSearch={searchQuery ?? ""}
-                initialTags={tagParams}
-              />
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto">
-              {visiblePosts.map(post => (
-                <ForumPostPreviewCard key={post.id} post={post} onLike={handleLike} currentUserId={user?.id} />
-              ))}
-            </div>
-
-            {/* Infinite scroll sentinel (handled by useInfiniteList) */}
-            <div className="max-w-7xl mx-auto flex justify-center mt-6">
-              <div ref={loaderRef} className="h-8 w-full" aria-hidden="true" />
-            </div>
-          </div>
+          {/* Wrap the component using `useSearchParams` with `Suspense` */}
+          <Suspense fallback={<HomePageLoading />}>
+            <HomePageContent />
+          </Suspense>
         </main>
       </div>
-      {loadError && (hasMore || visiblePosts.length === 0) && (
-        <Button
-          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-red-600 hover:bg-red-700 text-white"
-          onClick={() => {
-            setLoadError(false);
-            loadMore();
-          }}
-        >
-          {t('common.loadFailedRetry')}
-        </Button>
-      )}
       <CreateForumPostButton />
     </>
   );
