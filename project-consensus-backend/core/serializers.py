@@ -29,7 +29,7 @@ class ImageUploadSerializer(serializers.Serializer):
     folder = serializers.ChoiceField(
         choices=sorted(settings.ALLOWED_UPLOAD_FOLDERS),
         required=True,
-        help_text="Required. Target folder in storage"
+        help_text="Required. Target folder in storage (images, avatars)"
     )
     
     def validate_image(self, value):

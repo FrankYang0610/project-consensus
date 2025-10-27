@@ -10,3 +10,6 @@ Pillow
 resend
 celery
 redis
+whitenoise
+gevent
+uvicorn[standard]
