@@ -1,6 +1,6 @@
 # Beta 部署指南（Cloudflare Tunnel + Zero Trust）
 
-本指南适用于 `beta` 分支，目标是：隐藏源站 IP，通过 Cloudflare Zero Trust 对前后端加访问限制，并以稳定的进程方式运行后端（Uvicorn + WhiteNoise）和前端（Next.js）。
+本指南适用于 Beta 版本部署，目标是隐藏源站 IP，通过 Cloudflare Zero Trust 对前后端加访问限制，并以稳定的进程方式运行后端（Uvicorn + WhiteNoise）和前端（Next.js）。
 
 - 后端（Django + DRF）：监听 `127.0.0.1:8000`
 - 前端（Next.js）：监听 `127.0.0.1:3000`
