@@ -64,7 +64,7 @@ GET /api/teachers/
 
 **Query Parameters:**
 
-- `q` (可选): 搜索关键词 (搜索姓名和院系)
+- `q` (可选): 搜索关键词 (搜索姓名、院系和标签 tags)
 - `page` (可选): 页码 (默认: 1)
 - `page_size` (可选): 每页数量 (默认: 20, 最大: 100)
 - `ordering` (可选): 排序字段
@@ -197,7 +197,7 @@ curl http://localhost:8000/api/teachers/tch_3b9d6a54-3a5a-4e58-9e3d-1b2c4f5a6d71
 **Features:**
 
 - 分页支持 (TeacherPagination: 默认 20 条/页, 最大 100 条/页)
-- 搜索功能 (SearchFilter: name, department)
+- 搜索功能 (支持通过 `?q=` 自定义搜索，综合 name / department / tags)
 - 排序功能 (OrderingFilter: name, department, rating_overall, rating_reviews_count, updated_at)
 - 自定义搜索 (支持通过 `?q=` 参数搜索)
 - 性能优化 (在 courses 端点使用 `.only()` 优化查询)
@@ -351,7 +351,8 @@ def recompute_teacher_aggregates(teacher):
 
 ### Medium Priority (中优先级)
 
-- [ ] 增强搜索 (支持 tags 和 languages JSON 字段搜索)
+- [x] 增强搜索：支持 `tags` 字段搜索（Splink 与 fallback 均已纳入）
+- [ ] 增强搜索：支持 `languages` 字段搜索（待定）
 - [ ] 添加 django-filter 支持高级筛选
 - [ ] 教师对比功能
 - [ ] 教师关注功能

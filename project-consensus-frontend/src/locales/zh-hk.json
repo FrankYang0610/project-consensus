@@ -703,7 +703,8 @@
     "noResults": "未找到包含「{{query}}」的老師",
     "noTeachers": "暫無老師",
     "endOfResults": "已顯示全部 (共 {{count}} 位)",
-    "retry": "重試"
+    "retry": "重試",
+    "approximateCountNote": "模糊搜尋使用相似度配對；顯示的總數為下限，可能仲有更多結果。"
   },
   "teacher": {
     "about": "簡介",

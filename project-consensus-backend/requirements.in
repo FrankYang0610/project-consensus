@@ -13,3 +13,6 @@ redis
 whitenoise
 gevent
 uvicorn[standard]
+splink
+duckdb
+pandas

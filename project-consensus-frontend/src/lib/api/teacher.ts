@@ -66,16 +66,37 @@ export async function fetchTeachers(
   params?: FetchTeachersParams,
   init?: RequestInit
 ): Promise<PaginatedResponse<Teacher>> {
-  const queryParams = new URLSearchParams();
-  
-  if (params?.q) queryParams.set('q', params.q);
-  if (params?.page) queryParams.set('page', String(params.page));
-  if (params?.pageSize) queryParams.set('page_size', String(params.pageSize));
-  if (params?.ordering) queryParams.set('ordering', params.ordering);
+  const q = params?.q?.trim();
+  const page = Math.max(params?.page ?? 1, 1);
+  const pageSize = Math.max(params?.pageSize ?? 20, 1);
+  const ordering = params?.ordering;
 
-  const queryString = queryParams.toString();
-  const url = `/api/teachers/${queryString ? `?${queryString}` : ''}`;
-  return apiGet<PaginatedResponse<Teacher>>(url, init);
+  const buildListUrl = () => {
+    const qs = new URLSearchParams();
+    if (q) qs.set('q', q);
+    qs.set('page', String(page));
+    qs.set('page_size', String(pageSize));
+    if (ordering) qs.set('ordering', ordering);
+    return `/api/teachers/?${qs.toString()}`;
+  };
+
+  if (q) {
+    try {
+      // Prefer backend-paginated Splink endpoint to mirror forum pagination behavior
+      const qs = new URLSearchParams();
+      qs.set('q', q);
+      qs.set('page', String(page));
+      qs.set('page_size', String(pageSize));
+      return apiGet<PaginatedResponse<Teacher>>(
+        `/api/teachers/search-splink/?${qs.toString()}`,
+        init
+      );
+    } catch {
+      return apiGet<PaginatedResponse<Teacher>>(buildListUrl(), init);
+    }
+  }
+
+  return apiGet<PaginatedResponse<Teacher>>(buildListUrl(), init);
 }
 
 /**

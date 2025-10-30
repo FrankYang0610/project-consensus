@@ -702,7 +702,8 @@
     "noResults": "No teachers found for \"{{query}}\"",
     "noTeachers": "No teachers available",
     "endOfResults": "End of results ({{count}} total)",
-    "retry": "Retry"
+    "retry": "Retry",
+    "approximateCountNote": "Fuzzy search shows a conservative lower-bound total; there may be more results."
   },
   "teacher": {
     "about": "About",
