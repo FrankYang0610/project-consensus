@@ -17,8 +17,8 @@ class Teacher(models.Model):
         STRICT = "strict", "strict"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=200, db_index=True)
-    title = models.CharField(max_length=100, blank=True)
+    name = models.CharField(max_length=100, db_index=True)
+    title = models.CharField(max_length=300, blank=True)
     department = models.CharField(max_length=200, blank=True)
 
     avatar_url = models.URLField(blank=True)
