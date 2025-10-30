@@ -82,7 +82,7 @@ def _normalize_record(raw: Dict[str, Any]) -> Dict[str, Any]:
     bio = "\n".join(bio_parts)
 
     # Respect DB column lengths (per teachers.0001_initial)
-    name = _truncate(name, 200)
+    name = _truncate(name, 100)
     title = _truncate(title, 300)
     department = _truncate(department, 200)
     avatar_url = _truncate(avatar_url, 200)
