@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import List
+from urllib.parse import urlencode
 
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
@@ -96,7 +97,8 @@ class TeacherViewSet(viewsets.ReadOnlyModelViewSet):
 
         # Build pagination links (relative URLs are sufficient for clients that only test truthiness)
         def build_url(p: int) -> str:
-            return f"/api/teachers/search-splink/?q={q}&page={p}&page_size={page_size}"
+            query = urlencode({"q": q, "page": p, "page_size": page_size})
+            return f"/api/teachers/search-splink/?{query}"
 
         next_url = build_url(page + 1) if has_more else None
         prev_url = build_url(page - 1) if page > 1 else None
