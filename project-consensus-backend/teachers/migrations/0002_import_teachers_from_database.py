@@ -92,17 +92,15 @@ def _normalize_record(raw: Dict[str, Any]) -> Dict[str, Any]:
     biography = (raw.get("biography") or "").strip()
     professional_qualifications = (raw.get("professional_qualifications") or "").strip()
     
-    academic_and_professional_experience = (raw.get("academic_and_professional_experience") or "").strip()
-    education = (raw.get("education") or "").strip()
-    
-    if education and academic_and_professional_experience:
-        academic_and_professional_experience = f"Education: {education}\n\nAcademic and Professional Experience: {academic_and_professional_experience}"
-    elif education:
-        academic_and_professional_experience = education
-    elif academic_and_professional_experience:
-        pass
+    db_academic_and_professional_experience = (raw.get("academic_and_professional_experience") or "").strip()
+    db_education = (raw.get("education") or "").strip()
+
+    if db_education and db_academic_and_professional_experience:
+        academic_and_professional_experience = f"Education: {db_education}\n\nAcademic and Professional Experience: {db_academic_and_professional_experience}"
+    elif db_education:
+        academic_and_professional_experience = db_education
     else:
-        academic_and_professional_experience = ""
+        academic_and_professional_experience = db_academic_and_professional_experience
 
     # Respect DB column lengths (per teachers.0001_initial)
     name = _truncate(name, 100)
