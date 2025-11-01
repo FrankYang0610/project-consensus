@@ -90,7 +90,7 @@ export default function TeachersPage() {
     reset(buildTeachersParams());
   }, [committedQuery, sortBy, buildTeachersParams, reset]);
 
-  // Handle search form submit (optional, debounce already handles it)
+  // Handle search form submit: commit input to URL (?q=) and reload results
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const q = searchInput.trim();
@@ -98,7 +98,7 @@ export default function TeachersPage() {
     const qs = new URLSearchParams();
     if (q) qs.set("q", q);
     router.replace(`/teachers${qs.toString() ? `?${qs.toString()}` : ""}`);
-    // Trigger an immediate search using the current input (bypass debounce)
+    // Trigger an immediate search using the current input
     reset({ q: q || undefined, ordering: getSortOrdering(sortBy) });
   };
 
