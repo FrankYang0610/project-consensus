@@ -100,7 +100,7 @@ def _normalize_record(raw: Dict[str, Any]) -> Dict[str, Any]:
     elif education:
         academic_and_professional_experience = education
     elif academic_and_professional_experience:
-        academic_and_professional_experience = academic_and_professional_experience
+        pass
     else:
         academic_and_professional_experience = ""
 
