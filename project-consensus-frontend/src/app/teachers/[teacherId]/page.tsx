@@ -107,7 +107,7 @@ export default function TeacherDetailPage() {
             <div className="container mx-auto px-4 max-w-3xl">
               <Card>
                 <CardContent className="pt-6">
-                  <p className="text-muted-foreground text-center">Loading...</p>
+                  <p className="text-muted-foreground text-center">{t('teachers.loading')}</p>
                 </CardContent>
               </Card>
             </div>
@@ -183,25 +183,25 @@ export default function TeacherDetailPage() {
                   <div className="space-y-4 text-sm text-foreground">
                     {teacher.biography && (
                       <div>
-                        <div className="text-muted-foreground mb-1">Biography</div>
+                        <div className="text-muted-foreground mb-1">{t('teacher.biography')}</div>
                         <div className="whitespace-pre-line leading-7">{teacher.biography}</div>
                       </div>
                     )}
                     {teacher.researchInterests && (
                       <div>
-                        <div className="text-muted-foreground mb-1">Research interests</div>
+                        <div className="text-muted-foreground mb-1">{t('teacher.researchInterests')}</div>
                         <div className="whitespace-pre-line leading-7">{teacher.researchInterests}</div>
                       </div>
                     )}
                     {teacher.academicAndProfessionalExperience && (
                       <div>
-                        <div className="text-muted-foreground mb-1">Academic & Professional Experience</div>
+                        <div className="text-muted-foreground mb-1">{t('teacher.experience')}</div>
                         <div className="whitespace-pre-line leading-7">{teacher.academicAndProfessionalExperience}</div>
                       </div>
                     )}
                     {teacher.professionalQualifications && (
                       <div>
-                        <div className="text-muted-foreground mb-1">Professional Qualifications</div>
+                        <div className="text-muted-foreground mb-1">{t('teacher.qualifications')}</div>
                         <div className="whitespace-pre-line leading-7">{teacher.professionalQualifications}</div>
                       </div>
                     )}
@@ -244,13 +244,13 @@ export default function TeacherDetailPage() {
                   )}
                   {teacher.phone && (
                     <div>
-                      <div className="text-muted-foreground">Phone</div>
+                      <div className="text-muted-foreground">{t('teacher.phone')}</div>
                       <div className="truncate">{teacher.phone}</div>
                     </div>
                   )}
                   {teacher.profileUrl && (
                     <div>
-                      <div className="text-muted-foreground">Profile</div>
+                      <div className="text-muted-foreground">{t('teacher.profile')}</div>
                       <Link className="text-primary underline break-all" href={teacher.profileUrl} target="_blank">
                         {teacher.profileUrl}
                       </Link>
@@ -258,7 +258,7 @@ export default function TeacherDetailPage() {
                   )}
                   {teacher.scholarsHubUrl && (
                     <div>
-                      <div className="text-muted-foreground">Scholars Hub</div>
+                      <div className="text-muted-foreground">{t('teacher.scholarsHub')}</div>
                       <Link className="text-primary underline break-all" href={teacher.scholarsHubUrl} target="_blank">
                         {teacher.scholarsHubUrl}
                       </Link>
@@ -266,7 +266,7 @@ export default function TeacherDetailPage() {
                   )}
                   {teacher.orcid && (teacher.orcid.id || teacher.orcid.url) && (
                     <div>
-                      <div className="text-muted-foreground">ORCID</div>
+                      <div className="text-muted-foreground">{t('teacher.orcid')}</div>
                       {teacher.orcid.url ? (
                         <Link className="text-primary underline break-all" href={teacher.orcid.url} target="_blank">
                           {teacher.orcid.id || teacher.orcid.url}
@@ -278,7 +278,7 @@ export default function TeacherDetailPage() {
                   )}
                   {teacher.scopus && (teacher.scopus.id || teacher.scopus.url) && (
                     <div>
-                      <div className="text-muted-foreground">Scopus</div>
+                      <div className="text-muted-foreground">{t('teacher.scopus')}</div>
                       {teacher.scopus.url ? (
                         <Link className="text-primary underline break-all" href={teacher.scopus.url} target="_blank">
                           {teacher.scopus.id || teacher.scopus.url}
@@ -290,7 +290,7 @@ export default function TeacherDetailPage() {
                   )}
                   {teacher.researchId && (teacher.researchId.id || teacher.researchId.url) && (
                     <div>
-                      <div className="text-muted-foreground">ResearcherID</div>
+                      <div className="text-muted-foreground">{t('teacher.researcherId')}</div>
                       {teacher.researchId.url ? (
                         <Link className="text-primary underline break-all" href={teacher.researchId.url} target="_blank">
                           {teacher.researchId.id || teacher.researchId.url}

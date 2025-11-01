@@ -96,7 +96,7 @@ def _normalize_record(raw: Dict[str, Any]) -> Dict[str, Any]:
     education = (raw.get("education") or "").strip()
     
     if education and academic_and_professional_experience:
-        academic_and_professional_experience = f"Education: {education}\n\n Academic and Professional Experience: {academic_and_professional_experience}"
+        academic_and_professional_experience = f"Education: {education}\n\nAcademic and Professional Experience: {academic_and_professional_experience}"
     elif education:
         academic_and_professional_experience = education
     elif academic_and_professional_experience:
