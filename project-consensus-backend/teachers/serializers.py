@@ -48,6 +48,7 @@ class TeacherSerializer(serializers.ModelSerializer):
             "researchInterests",
             "academicAndProfessionalExperience",
             "professionalQualifications",
+            "tags",
             "languages",
             "yearsExperience",
             "orcid",
@@ -83,6 +84,7 @@ class TeacherSerializer(serializers.ModelSerializer):
             "researchInterests",
             "academicAndProfessionalExperience",
             "professionalQualifications",
+            "tags",
             "languages",
             "yearsExperience",
         ]
