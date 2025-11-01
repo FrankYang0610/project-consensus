@@ -51,13 +51,13 @@ def _normalize_record(raw: Dict[str, Any]) -> Dict[str, Any]:
     # Prefer explicit office, then fallback to "location" from scraper output
     office = (raw.get("office") or raw.get("location") or "").strip()
 
-    # Use website.url as the sole source for homepage_url
+    # Use website.url as the sole source for website_url
     website = raw.get("website") or {}
-    homepage_url = ""
     website_name = ""
+    website_url = ""
     if isinstance(website, dict):
-        homepage_url = (website.get("url") or "").strip()
         website_name = (website.get("name") or "").strip()
+        website_url = (website.get("url") or "").strip()
 
     profile_url = (raw.get("profile_url") or "").strip()
     scholars_hub_url = (raw.get("scholars_hub_url") or "").strip()
@@ -111,8 +111,8 @@ def _normalize_record(raw: Dict[str, Any]) -> Dict[str, Any]:
     title = _truncate(title, 300)
     department = _truncate(department, 200)
     avatar_url = _truncate(avatar_url, 200)
-    homepage_url = _truncate(homepage_url, 200)
     website_name = _truncate(website_name, 200)
+    website_url = _truncate(website_url, 200)
     office = _truncate(office, 200)
     email = _truncate(email, 254)
     phone = _truncate(phone, 50)
@@ -142,8 +142,8 @@ def _normalize_record(raw: Dict[str, Any]) -> Dict[str, Any]:
         "email": email,
         "phone": phone,
         "office": office,
-        "homepage_url": homepage_url,
         "website_name": website_name,
+        "website_url": website_url,
         "profile_url": profile_url,
         "scholars_hub_url": scholars_hub_url,
         "biography": biography,

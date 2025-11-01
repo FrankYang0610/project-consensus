@@ -120,7 +120,7 @@ def _ensure_min_teachers(apps, min_teachers: int):
             email=f"teacher{i}@university.edu",
             office=f"Bldg {random.randint(1,9)}-{random.randint(101, 699)}",
             office_hours=random.choice(["Mon 14:00-16:00", "Wed 10:00-12:00", "Fri 13:00-15:00"]),
-            homepage_url="",
+            website_url="",
             biography=_rand_words(12, 24),
             tags=[random.choice(["AI", "ML", "Systems", "Theory", "HCI", "Statistics"]) for _ in range(random.randint(1, 3))],
             languages=random.sample(["English", "Chinese", "Portuguese", "Spanish"], k=random.randint(1, 2)),

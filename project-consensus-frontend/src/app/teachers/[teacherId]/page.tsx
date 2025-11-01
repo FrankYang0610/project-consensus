@@ -234,11 +234,11 @@ export default function TeacherDetailPage() {
                       <div>{teacher.officeHours}</div>
                     </div>
                   )}
-                  {teacher.homepageUrl && (
+                  {teacher.websiteUrl && (
                     <div>
                       <div className="text-muted-foreground">{t('teacher.homepage')}</div>
-                      <Link className="text-primary underline break-all" href={teacher.homepageUrl} target="_blank">
-                        {teacher.websiteName || teacher.homepageUrl}
+                      <Link className="text-primary underline break-all" href={teacher.websiteUrl} target="_blank">
+                        {teacher.websiteName || teacher.websiteUrl}
                       </Link>
                     </div>
                   )}

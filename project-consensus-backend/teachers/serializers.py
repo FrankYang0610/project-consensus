@@ -10,16 +10,16 @@ class TeacherSerializer(serializers.ModelSerializer):
 
     # Coalesce empty string to None for consistent frontend handling
     avatarUrl = serializers.SerializerMethodField()
-    officeHours = serializers.CharField(source="office_hours", required=False, allow_blank=True)
-    homepageUrl = serializers.URLField(source="homepage_url", required=False, allow_null=True)
-    websiteName = serializers.CharField(source="website_name", required=False, allow_blank=True)
-    profileUrl = serializers.URLField(source="profile_url", required=False, allow_null=True)
-    scholarsHubUrl = serializers.URLField(source="scholars_hub_url", required=False, allow_null=True)
-    biography = serializers.CharField(required=False, allow_blank=True)
-    researchInterests = serializers.CharField(source="research_interests", required=False, allow_blank=True)
-    academicAndProfessionalExperience = serializers.CharField(source="academic_and_professional_experience", required=False, allow_blank=True)
-    professionalQualifications = serializers.CharField(source="professional_qualifications", required=False, allow_blank=True)
-    yearsExperience = serializers.IntegerField(source="years_experience", required=False, allow_null=True)
+    officeHours = serializers.CharField(source="office_hours", required=False, allow_blank=True, read_only=True)
+    websiteName = serializers.CharField(source="website_name", required=False, allow_blank=True, read_only=True)
+    websiteUrl = serializers.URLField(source="website_url", required=False, allow_null=True, read_only=True)
+    profileUrl = serializers.URLField(source="profile_url", required=False, allow_null=True, read_only=True)
+    scholarsHubUrl = serializers.URLField(source="scholars_hub_url", required=False, allow_null=True, read_only=True)
+    biography = serializers.CharField(required=False, allow_blank=True, read_only=True)
+    researchInterests = serializers.CharField(source="research_interests", required=False, allow_blank=True, read_only=True)
+    academicAndProfessionalExperience = serializers.CharField(source="academic_and_professional_experience", required=False, allow_blank=True, read_only=True)
+    professionalQualifications = serializers.CharField(source="professional_qualifications", required=False, allow_blank=True, read_only=True)
+    yearsExperience = serializers.IntegerField(source="years_experience", required=False, allow_null=True, read_only=True)
     createdAt = serializers.DateTimeField(source="created_at", read_only=True)
     updatedAt = serializers.DateTimeField(source="updated_at", read_only=True)
 
@@ -40,8 +40,8 @@ class TeacherSerializer(serializers.ModelSerializer):
             "phone",
             "office",
             "officeHours",
-            "homepageUrl",
             "websiteName",
+            "websiteUrl",
             "profileUrl",
             "scholarsHubUrl",
             "biography",
@@ -57,7 +57,35 @@ class TeacherSerializer(serializers.ModelSerializer):
             "createdAt",
             "updatedAt",
         ]
-        read_only_fields = ["id", "createdAt", "updatedAt", "rating"]
+        read_only_fields = [
+            "id",
+            "createdAt",
+            "updatedAt",
+            # Computed/derived fields
+            "avatarUrl",
+            "rating",
+            "orcid",
+            "scopus",
+            "researchId",
+            # Source fields we do not allow writing via this API
+            "name",
+            "title",
+            "department",
+            "email",
+            "phone",
+            "office",
+            "officeHours",
+            "websiteName",
+            "websiteUrl",
+            "profileUrl",
+            "scholarsHubUrl",
+            "biography",
+            "researchInterests",
+            "academicAndProfessionalExperience",
+            "professionalQualifications",
+            "languages",
+            "yearsExperience",
+        ]
 
     def get_rating(self, obj: Teacher):
         return {

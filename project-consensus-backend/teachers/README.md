@@ -21,7 +21,7 @@
 - `email` (Email, 可选) → 前端 `email`
 - `office` (字符串, 可选) → 前端 `office`
 - `office_hours` (字符串, 可选) → 前端 `officeHours`
-- `homepage_url` (URL, 可选) → 前端 `homepageUrl`
+- `website_url` (URL, 可选) → 前端 `websiteUrl`
 
 #### Profile (简介)
 
@@ -92,7 +92,7 @@ GET /api/teachers/
       "email": "wang@polyu.edu.hk",
       "office": "AG702",
       "officeHours": "Tue 14:00-16:00",
-      "homepageUrl": "https://...",
+      "websiteUrl": "https://...",
       "bio": "Focus on social sciences...",
       "tags": ["Social Sciences", "Research Methods"],
       "languages": ["English", "普通话"],

@@ -36,8 +36,8 @@ export interface Teacher {
   phone?: string;
   office?: string;
   officeHours?: string;
-  homepageUrl?: string; // external personal homepage (displayed on teacher profile)
   websiteName?: string;
+  websiteUrl?: string; // external personal website (displayed on teacher profile)
   profileUrl?: string;
   scholarsHubUrl?: string;
   biography?: string;
