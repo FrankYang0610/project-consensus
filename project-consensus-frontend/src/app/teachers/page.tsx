@@ -20,7 +20,7 @@ import type { Teacher } from "@/types";
 import { useInfiniteList } from "@/hooks/use-infinite-list";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function TeachersPage() {
+function TeachersPageContent() {
   const { t } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -278,6 +278,24 @@ export default function TeachersPage() {
         </main>
       </div>
     </>
+  );
+}
+
+export default function TeachersPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="min-h-screen bg-background">
+          <main className="w-full py-10">
+            <div className="container mx-auto px-4 max-w-7xl text-center text-muted-foreground">
+              Loading...
+            </div>
+          </main>
+        </div>
+      }
+    >
+      <TeachersPageContent />
+    </React.Suspense>
   );
 }
 
