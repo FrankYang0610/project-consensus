@@ -279,19 +279,19 @@ function TeachersPageLoading() {
     <>
       {/* Header skeleton */}
       <div className="mb-6">
-        <div className="h-8 w-40 bg-gray-200 animate-pulse rounded mb-2"></div>
-        <div className="h-4 w-24 bg-gray-200 animate-pulse rounded"></div>
+        <div className="h-8 w-40 bg-muted animate-pulse rounded mb-2"></div>
+        <div className="h-4 w-24 bg-muted animate-pulse rounded"></div>
       </div>
 
       {/* Search and filter bar skeleton */}
       <div className="mb-6">
-        <div className="h-20 bg-gray-200 animate-pulse rounded"></div>
+        <div className="h-20 bg-muted animate-pulse rounded"></div>
       </div>
 
       {/* Teachers grid skeleton */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-44 bg-gray-200 animate-pulse rounded-lg"></div>
+          <div key={i} className="h-44 bg-muted animate-pulse rounded-lg"></div>
         ))}
       </div>
     </>
