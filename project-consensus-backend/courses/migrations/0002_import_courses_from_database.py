@@ -168,12 +168,12 @@ def _match_teacher_by_name(apps, raw_name: str, dept_hint: str | None = None):
         if dept_hint_norm and t.department:
             if dept_hint_norm.split()[0] in _normalize_name(t.department):
                 score += 0.03
-        if score > best_score:
+        if best is None or score > best_score:
             best_score = score
             best = t
 
-    # Require a modest threshold to avoid spurious matches
-    return best if best_score >= 0.75 else None
+    # Always choose the highest-scoring candidate when any candidates exist
+    return best
 
 
 def _extract_teacher_names(rec: dict) -> List[str]:
