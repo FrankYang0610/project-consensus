@@ -281,18 +281,41 @@ function TeachersPageContent() {
   );
 }
 
+function TeachersPageLoading() {
+  return (
+    <>
+      <SiteNavigation />
+      <div className="min-h-screen bg-background">
+        <main className="w-full py-6 sm:py-8">
+          <div className="container mx-auto px-4 max-w-7xl">
+            {/* Header skeleton */}
+            <div className="mb-6">
+              <div className="h-8 w-40 bg-gray-200 animate-pulse rounded mb-2"></div>
+              <div className="h-4 w-24 bg-gray-200 animate-pulse rounded"></div>
+            </div>
+
+            {/* Search and filter bar skeleton */}
+            <div className="mb-6">
+              <div className="h-20 bg-gray-200 animate-pulse rounded"></div>
+            </div>
+
+            {/* Teachers grid skeleton */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-44 bg-gray-200 animate-pulse rounded-lg"></div>
+              ))}
+            </div>
+          </div>
+        </main>
+      </div>
+    </>
+  );
+}
+
 export default function TeachersPage() {
   return (
     <React.Suspense
-      fallback={
-        <div className="min-h-screen bg-background">
-          <main className="w-full py-10">
-            <div className="container mx-auto px-4 max-w-7xl text-center text-muted-foreground">
-              Loading...
-            </div>
-          </main>
-        </div>
-      }
+      fallback={<TeachersPageLoading />}
     >
       <TeachersPageContent />
     </React.Suspense>
