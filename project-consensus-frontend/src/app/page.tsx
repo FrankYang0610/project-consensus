@@ -164,10 +164,10 @@ function HomePageLoading() {
   return (
     <div className="w-full p-6 pt-0">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-4 h-12 bg-gray-200 animate-pulse rounded"></div>
+        <div className="mb-4 h-12 bg-muted animate-pulse rounded"></div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-48 bg-gray-200 animate-pulse rounded-lg"></div>
+            <div key={i} className="h-48 bg-muted animate-pulse rounded-lg"></div>
           ))}
         </div>
       </div>
