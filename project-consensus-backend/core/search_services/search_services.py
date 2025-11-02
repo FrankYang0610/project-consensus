@@ -316,17 +316,21 @@ def search_teachers(query: str, similarity_threshold: float, is_short_query: boo
     """
     Search in Teacher model using trigram similarity.
     
-    Searches across: name, department, bio
-    Snippet: bio or title-department combination
+    Searches across: name, department, biography, research_interests,
+    academic_and_professional_experience, professional_qualifications
+    Snippet: biography (fallback to research_interests) or title-department combination
     Popularity: based on review count
     """
     teachers_qs = Teacher.objects.annotate(
         similarity=Greatest(
             Coalesce(TrigramSimilarity('name', query), Value(0.0)),
             Coalesce(TrigramSimilarity('department', query), Value(0.0)),
-            Coalesce(TrigramSimilarity('bio', query), Value(0.0))
+            Coalesce(TrigramSimilarity('biography', query), Value(0.0)),
+            Coalesce(TrigramSimilarity('research_interests', query), Value(0.0)),
+            Coalesce(TrigramSimilarity('academic_and_professional_experience', query), Value(0.0)),
+            Coalesce(TrigramSimilarity('professional_qualifications', query), Value(0.0)),
         ),
-        snippet=create_snippet_expr('bio'),
+        snippet=create_snippet_expr('biography', 'research_interests'),
     ).annotate(
         popularity_norm=create_popularity_norm('rating_reviews_count', 'reviews'),
         final_score=create_final_score_expr()
@@ -336,7 +340,7 @@ def search_teachers(query: str, similarity_threshold: float, is_short_query: boo
         teachers_qs = apply_short_query_filters(
             teachers_qs, query, similarity_threshold,
             prefix_fields=['name', 'department'],
-            text_fields=['name', 'department', 'bio']
+            text_fields=['name', 'department', 'biography', 'research_interests', 'academic_and_professional_experience', 'professional_qualifications']
         )
     else:
         teachers_qs = teachers_qs.filter(similarity__gte=similarity_threshold)

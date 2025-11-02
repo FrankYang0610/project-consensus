@@ -702,7 +702,8 @@
     "noResults": "No teachers found for \"{{query}}\"",
     "noTeachers": "No teachers available",
     "endOfResults": "End of results ({{count}} total)",
-    "retry": "Retry"
+    "retry": "Retry",
+    "approximateCountNote": "Fuzzy search shows a conservative lower-bound total; there may be more results."
   },
   "teacher": {
     "about": "About",
@@ -711,6 +712,16 @@
     "office": "Office",
     "officeHours": "Office Hours",
     "homepage": "Homepage",
+    "phone": "Phone",
+    "profile": "Profile",
+    "scholarsHub": "PolyU Scholars Hub",
+    "orcid": "ORCID",
+    "scopus": "Scopus",
+    "researcherId": "ResearcherID",
+    "biography": "Biography",
+    "researchInterests": "Research Interests",
+    "experience": "Academic & Professional Experience",
+    "qualifications": "Professional Qualifications",
     "yearsExperience": "Years of Experience",
     "languages": "Languages",
     "coursesTaught": "Courses Taught",

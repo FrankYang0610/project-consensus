@@ -14,12 +14,13 @@ if [ ! -d .venv ]; then
   python3 -m venv .venv
 fi
 source .venv/bin/activate
-python -m pip install -U pip wheel pip-tools
+# Pin to a pip version that retains InstallRequirement.use_pep517 for compatibility with pip-tools
+python -m pip install -U "pip<24.1" wheel "pip-tools>=7.5.0"
 
 # Compile requirements.txt from requirements.in if needed or forced
 if [ ! -f requirements.txt ] || [ requirements.in -nt requirements.txt ] || [ "${FORCE_COMPILE:-0}" = "1" ]; then
   echo "[dev-reset] Compiling requirements.txt from requirements.in"
-  pip-compile --quiet --output-file=requirements.txt requirements.in
+  python -m piptools compile --quiet --output-file=requirements.txt requirements.in
 fi
 
 pip install -r requirements.txt

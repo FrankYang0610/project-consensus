@@ -703,7 +703,8 @@
     "noResults": "未找到包含「{{query}}」的老師",
     "noTeachers": "暫無老師",
     "endOfResults": "已顯示全部 (共 {{count}} 位)",
-    "retry": "重試"
+    "retry": "重試",
+    "approximateCountNote": "模糊搜尋使用相似度配對；顯示的總數為下限，可能仲有更多結果。"
   },
   "teacher": {
     "about": "簡介",
@@ -712,6 +713,16 @@
     "office": "辦公室",
     "officeHours": "辦公時間",
     "homepage": "主頁",
+    "phone": "電話",
+    "profile": "個人資料頁",
+    "scholarsHub": "PolyU Scholars Hub",
+    "orcid": "ORCID",
+    "scopus": "Scopus",
+    "researcherId": "ResearcherID",
+    "biography": "個人簡介",
+    "researchInterests": "研究方向",
+    "experience": "學術與專業經歷",
+    "qualifications": "專業資歷",
     "yearsExperience": "任教年資",
     "languages": "授課語言",
     "coursesTaught": "授課課程",

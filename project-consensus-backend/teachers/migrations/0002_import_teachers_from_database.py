@@ -43,52 +43,94 @@ def _truncate(value: str, max_len: int) -> str:
 def _normalize_record(raw: Dict[str, Any]) -> Dict[str, Any]:
     name = (raw.get("name") or "").strip()
     title = (raw.get("title") or "").strip()
+    grade = (raw.get("grade") or "").strip()
     department = (raw.get("dept_name") or "").strip()
     avatar_url = (raw.get("photo") or raw.get("avatar_url") or "").strip()
     email = (raw.get("email") or "").strip()
-    office = (raw.get("office") or "").strip()
-    homepage_url = (raw.get("homepage_url") or "").strip()
+    phone = (raw.get("phone") or "").strip()
+    # Prefer explicit office, then fallback to "location" from scraper output
+    office = (raw.get("office") or raw.get("location") or "").strip()
 
-    # Build bio from biography + education + professional_qualifications
-    # Format: biography + 2 empty lines + education + 2 empty lines + professional_qualifications
-    # If a field is empty, don't add extra empty lines
-    bio_parts = []
-    
+    # Use website.url as the sole source for website_url
+    website = raw.get("website") or {}
+    website_name = ""
+    website_url = ""
+    if isinstance(website, dict):
+        website_name = (website.get("name") or "").strip()
+        website_url = (website.get("url") or "").strip()
+
+    profile_url = (raw.get("profile_url") or "").strip()
+    scholars_hub_url = (raw.get("scholars_hub_url") or "").strip()
+
+    # External IDs
+    orcid = raw.get("orcid") or {}
+    if isinstance(orcid, dict):
+        orcid_id = (orcid.get("id") or "").strip()
+        orcid_url = (orcid.get("url") or "").strip()
+    else:
+        orcid_id = ""
+        orcid_url = ""
+
+    scopus = raw.get("scopus") or {}
+    if isinstance(scopus, dict):
+        scopus_id = (scopus.get("id") or "").strip()
+        scopus_url = (scopus.get("url") or "").strip()
+    else:
+        scopus_id = ""
+        scopus_url = ""
+
+    researcherid = raw.get("researcherid") or {}
+    if isinstance(researcherid, dict):
+        researcherid_id = (researcherid.get("id") or "").strip()
+        researcherid_url = (researcherid.get("url") or "").strip()
+    else:
+        researcherid_id = ""
+        researcherid_url = ""
+
+    # Simple raw fields for frontend sections
+    research_interests = (raw.get("research_interests") or "").strip()
     biography = (raw.get("biography") or "").strip()
-    education = (raw.get("education") or "").strip()
-    # Format education: replace semicolon + optional space with newline
-    # This ensures multiple education entries are displayed on separate lines
-    if education:
-        education = education.replace("; ", ";\n").strip()
     professional_qualifications = (raw.get("professional_qualifications") or "").strip()
     
-    if biography:
-        bio_parts.append(biography)
-        # Add 2 empty lines only if there's a next field (education or professional_qualifications)
-        if education or professional_qualifications:
-            bio_parts.append("")  # First empty line
-            bio_parts.append("")  # Second empty line
-    
-    if education:
-        bio_parts.append(education)
-        # Add 2 empty lines only if there's a next field (professional_qualifications)
-        if professional_qualifications:
-            bio_parts.append("")  # First empty line
-            bio_parts.append("")  # Second empty line
-    
-    if professional_qualifications:
-        bio_parts.append(professional_qualifications)
-    
-    bio = "\n".join(bio_parts)
+    db_academic_and_professional_experience = (raw.get("academic_and_professional_experience") or "").strip()
+    db_education = (raw.get("education") or "").strip()
+
+    if db_education and db_academic_and_professional_experience:
+        academic_and_professional_experience = f"Education: {db_education}\n\nAcademic and Professional Experience: {db_academic_and_professional_experience}"
+    elif db_education:
+        academic_and_professional_experience = db_education
+    else:
+        academic_and_professional_experience = db_academic_and_professional_experience
 
     # Respect DB column lengths (per teachers.0001_initial)
     name = _truncate(name, 100)
+    if not title:
+        title = grade
     title = _truncate(title, 300)
     department = _truncate(department, 200)
     avatar_url = _truncate(avatar_url, 200)
-    homepage_url = _truncate(homepage_url, 200)
+    website_name = _truncate(website_name, 200)
+    website_url = _truncate(website_url, 200)
     office = _truncate(office, 200)
     email = _truncate(email, 254)
+    phone = _truncate(phone, 50)
+    profile_url = _truncate(profile_url, 200)
+    scholars_hub_url = _truncate(scholars_hub_url, 200)
+    orcid_id = _truncate(orcid_id, 100)
+    orcid_url = _truncate(orcid_url, 200)
+    scopus_id = _truncate(scopus_id, 100)
+    scopus_url = _truncate(scopus_url, 200)
+    researcherid_id = _truncate(researcherid_id, 100)
+    researcherid_url = _truncate(researcherid_url, 200)
+
+    # Defaults for rating fields to satisfy serializer expectations
+    # Floats: None when no reviews; Count: 0; Grading: empty string
+    rating_overall = None
+    rating_difficulty = None
+    rating_friendliness = None
+    rating_clarity = None
+    rating_grading = ""
+    rating_reviews_count = 0
 
     return {
         "name": name,
@@ -96,9 +138,29 @@ def _normalize_record(raw: Dict[str, Any]) -> Dict[str, Any]:
         "department": department,
         "avatar_url": avatar_url,
         "email": email,
+        "phone": phone,
         "office": office,
-        "homepage_url": homepage_url,
-        "bio": bio,
+        "website_name": website_name,
+        "website_url": website_url,
+        "profile_url": profile_url,
+        "scholars_hub_url": scholars_hub_url,
+        "biography": biography,
+        "research_interests": research_interests,
+        "academic_and_professional_experience": academic_and_professional_experience,
+        "professional_qualifications": professional_qualifications,
+        "orcid_id": orcid_id,
+        "orcid_url": orcid_url,
+        "scopus_id": scopus_id,
+        "scopus_url": scopus_url,
+        "researcherid_id": researcherid_id,
+        "researcherid_url": researcherid_url,
+        # Rating defaults
+        "rating_overall": rating_overall,
+        "rating_difficulty": rating_difficulty,
+        "rating_friendliness": rating_friendliness,
+        "rating_clarity": rating_clarity,
+        "rating_grading": rating_grading,
+        "rating_reviews_count": rating_reviews_count,
     }
 
 

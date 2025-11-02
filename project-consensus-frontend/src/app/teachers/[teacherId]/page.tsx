@@ -107,7 +107,7 @@ export default function TeacherDetailPage() {
             <div className="container mx-auto px-4 max-w-3xl">
               <Card>
                 <CardContent className="pt-6">
-                  <p className="text-muted-foreground text-center">Loading...</p>
+                  <p className="text-muted-foreground text-center">{t('teachers.loading')}</p>
                 </CardContent>
               </Card>
             </div>
@@ -154,15 +154,6 @@ export default function TeacherDetailPage() {
                       {[teacher.title, teacher.department].filter(Boolean).join(' · ')}
                     </div>
                     {/* External homepage link removed; navigate via internal UUID profile */}
-                    {teacher.tags && teacher.tags.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {teacher.tags.map((tag, index) => (
-                          <span key={`${teacher.id}-tag-${index}`} className="px-2 py-0.5 rounded bg-muted text-xs text-muted-foreground">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
                   </div>
                   <div className="sm:ml-auto grid grid-cols-3 gap-4 w-full sm:w-auto">
                     <div className="text-center">
@@ -189,8 +180,34 @@ export default function TeacherDetailPage() {
                   <CardTitle className="text-lg">{t('teacher.about')}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="whitespace-pre-line leading-7 text-sm text-foreground">
-                    {teacher.bio || t('teachers.noBio')}
+                  <div className="space-y-4 text-sm text-foreground">
+                    {teacher.biography && (
+                      <div>
+                        <div className="text-muted-foreground mb-1">{t('teacher.biography')}</div>
+                        <div className="whitespace-pre-line leading-7">{teacher.biography}</div>
+                      </div>
+                    )}
+                    {teacher.researchInterests && (
+                      <div>
+                        <div className="text-muted-foreground mb-1">{t('teacher.researchInterests')}</div>
+                        <div className="whitespace-pre-line leading-7">{teacher.researchInterests}</div>
+                      </div>
+                    )}
+                    {teacher.academicAndProfessionalExperience && (
+                      <div>
+                        <div className="text-muted-foreground mb-1">{t('teacher.experience')}</div>
+                        <div className="whitespace-pre-line leading-7">{teacher.academicAndProfessionalExperience}</div>
+                      </div>
+                    )}
+                    {teacher.professionalQualifications && (
+                      <div>
+                        <div className="text-muted-foreground mb-1">{t('teacher.qualifications')}</div>
+                        <div className="whitespace-pre-line leading-7">{teacher.professionalQualifications}</div>
+                      </div>
+                    )}
+                    {!teacher.biography && !teacher.researchInterests && !teacher.academicAndProfessionalExperience && !teacher.professionalQualifications && (
+                      <div className="text-muted-foreground">{t('teachers.noBio')}</div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -217,12 +234,70 @@ export default function TeacherDetailPage() {
                       <div>{teacher.officeHours}</div>
                     </div>
                   )}
-                  {teacher.homepageUrl && (
+                  {teacher.websiteUrl && (
                     <div>
                       <div className="text-muted-foreground">{t('teacher.homepage')}</div>
-                      <Link className="text-primary underline break-all" href={teacher.homepageUrl} target="_blank">
-                        {teacher.homepageUrl}
+                      <Link className="text-primary underline break-all" href={teacher.websiteUrl} target="_blank">
+                        {teacher.websiteName || teacher.websiteUrl}
                       </Link>
+                    </div>
+                  )}
+                  {teacher.phone && (
+                    <div>
+                      <div className="text-muted-foreground">{t('teacher.phone')}</div>
+                      <div className="truncate">{teacher.phone}</div>
+                    </div>
+                  )}
+                  {teacher.profileUrl && (
+                    <div>
+                      <div className="text-muted-foreground">{t('teacher.profile')}</div>
+                      <Link className="text-primary underline break-all" href={teacher.profileUrl} target="_blank">
+                        {teacher.profileUrl}
+                      </Link>
+                    </div>
+                  )}
+                  {teacher.scholarsHubUrl && (
+                    <div>
+                      <div className="text-muted-foreground">{t('teacher.scholarsHub')}</div>
+                      <Link className="text-primary underline break-all" href={teacher.scholarsHubUrl} target="_blank">
+                        {teacher.scholarsHubUrl}
+                      </Link>
+                    </div>
+                  )}
+                  {teacher.orcid && (teacher.orcid.id || teacher.orcid.url) && (
+                    <div>
+                      <div className="text-muted-foreground">{t('teacher.orcid')}</div>
+                      {teacher.orcid.url ? (
+                        <Link className="text-primary underline break-all" href={teacher.orcid.url} target="_blank">
+                          {teacher.orcid.id || teacher.orcid.url}
+                        </Link>
+                      ) : (
+                        <div className="truncate">{teacher.orcid.id}</div>
+                      )}
+                    </div>
+                  )}
+                  {teacher.scopus && (teacher.scopus.id || teacher.scopus.url) && (
+                    <div>
+                      <div className="text-muted-foreground">{t('teacher.scopus')}</div>
+                      {teacher.scopus.url ? (
+                        <Link className="text-primary underline break-all" href={teacher.scopus.url} target="_blank">
+                          {teacher.scopus.id || teacher.scopus.url}
+                        </Link>
+                      ) : (
+                        <div className="truncate">{teacher.scopus.id}</div>
+                      )}
+                    </div>
+                  )}
+                  {teacher.researchId && (teacher.researchId.id || teacher.researchId.url) && (
+                    <div>
+                      <div className="text-muted-foreground">{t('teacher.researcherId')}</div>
+                      {teacher.researchId.url ? (
+                        <Link className="text-primary underline break-all" href={teacher.researchId.url} target="_blank">
+                          {teacher.researchId.id || teacher.researchId.url}
+                        </Link>
+                      ) : (
+                        <div className="truncate">{teacher.researchId.id}</div>
+                      )}
                     </div>
                   )}
                   {typeof teacher.yearsExperience === 'number' && (

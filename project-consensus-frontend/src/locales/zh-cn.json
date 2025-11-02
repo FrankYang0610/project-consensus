@@ -702,7 +702,8 @@
     "noResults": "未找到包含「{{query}}」的教师",
     "noTeachers": "暂无教师",
     "endOfResults": "已显示全部 (共 {{count}} 位)",
-    "retry": "重试"
+    "retry": "重试",
+    "approximateCountNote": "模糊搜索采用相似度匹配；显示的总数为下限，可能还有更多结果。"
   },
   "teacher": {
     "about": "简介",
@@ -711,6 +712,16 @@
     "office": "办公室",
     "officeHours": "办公时间",
     "homepage": "主页",
+    "phone": "电话",
+    "profile": "个人资料页",
+    "scholarsHub": "PolyU Scholars Hub",
+    "orcid": "ORCID",
+    "scopus": "Scopus",
+    "researcherId": "ResearcherID",
+    "biography": "个人简介",
+    "researchInterests": "研究方向",
+    "experience": "学术与专业经历",
+    "qualifications": "专业资质",
     "yearsExperience": "任教年限",
     "languages": "授课语言",
     "coursesTaught": "授课课程",

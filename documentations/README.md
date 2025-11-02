@@ -6,6 +6,7 @@ This folder contains documentation for key backend and frontend concepts used in
 
 #### Core Documentation
 - [Serializers, Views and Services](./SERIALIZERS-VIEWS-SERVICES.md) — Overview of serializer patterns, view conventions, and service layer architecture used across apps.
+- [Teacher Searching](./TEACHER-SEARCHING.md) — Splink-based approximate matching and robust fallback for teacher search (name/department/tags).
 - [Forum Posts and Comments](./FORUM-POSTS-AND-COMMENTS.md) — Data model and API behaviors for forum posts, comments, and related operations.
 - [Forum Posts Filtering](./FORUM-POSTS-FILTERING.md) — Query parameters and examples for server-side filtering and pagination of forum posts.
 - [Course Reviews and Replies](./COURSE-REVIEWS-AND-REPLIES.md) — Structure and endpoints for course reviews, ratings, and threaded replies.

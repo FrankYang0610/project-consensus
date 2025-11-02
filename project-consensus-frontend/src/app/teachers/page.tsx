@@ -14,21 +14,33 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useI18n } from "@/hooks/use-i18n";
-import { useDebounce } from "@/hooks/use-debounce";
 import { TeacherPreviewCard } from "@/components/TeacherPreviewCard";
 import { fetchTeachers } from "@/lib/api/teacher";
 import type { Teacher } from "@/types";
 import { useInfiniteList } from "@/hooks/use-infinite-list";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function TeachersPage() {
   const { t } = useI18n();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   // State
-  const [searchInput, setSearchInput] = React.useState("");
+  const [searchInput, setSearchInput] = React.useState<string>(
+    () => searchParams.get("q") || ""
+  );
   const [sortBy, setSortBy] = React.useState<string>("name");
 
-  // Debounce search input (500ms delay)
-  const debouncedSearchQuery = useDebounce(searchInput, 500);
+  // Committed query comes from URL (?q=); input is only committed on Enter or clear
+  const committedQuery = React.useMemo(() => (searchParams.get("q") || "").trim(), [searchParams]);
+
+  // Keep input in sync when URL ?q changes (e.g., on submit/replace)
+  React.useEffect(() => {
+    const qp = searchParams.get("q") || "";
+    // Only update if different to avoid cursor jumps while typing
+    if (qp !== searchInput) setSearchInput(qp);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   // Map sort options to backend ordering (stable identity)
   const getSortOrdering = React.useCallback((sort: string): string => {
@@ -49,9 +61,9 @@ export default function TeachersPage() {
 
   // Unified infinite list for teachers via fetcher
   const buildTeachersParams = React.useCallback(() => ({
-    q: debouncedSearchQuery.trim() || undefined,
+    q: committedQuery || undefined,
     ordering: getSortOrdering(sortBy),
-  }), [debouncedSearchQuery, sortBy, getSortOrdering]);
+  }), [committedQuery, sortBy, getSortOrdering]);
 
   const {
     items: teachers,
@@ -73,19 +85,28 @@ export default function TeachersPage() {
 
   const countForDisplay = teachersTotalCount ?? teachers.length;
 
-  // Reload on debounced search or sort change (fetcher mode)
+  // Reload when committed query (URL) or sort changes
   React.useEffect(() => {
     reset(buildTeachersParams());
-  }, [debouncedSearchQuery, sortBy, buildTeachersParams, reset]);
+  }, [committedQuery, sortBy, buildTeachersParams, reset]);
 
-  // Handle search form submit (optional, debounce already handles it)
+  // Handle search form submit: commit input to URL (?q=) and reload results
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Search is automatically triggered by debounced value
+    const q = searchInput.trim();
+    // Reflect query in URL
+    const qs = new URLSearchParams();
+    if (q) qs.set("q", q);
+    router.replace(`/teachers${qs.toString() ? `?${qs.toString()}` : ""}`);
+    // Trigger an immediate search using the current input
+    reset({ q: q || undefined, ordering: getSortOrdering(sortBy) });
   };
 
   const handleClearSearch = () => {
     setSearchInput("");
+    // Clear query param from URL
+    router.replace(`/teachers`);
+    reset({ q: undefined, ordering: getSortOrdering(sortBy) });
   };
 
   return (
@@ -108,6 +129,11 @@ export default function TeachersPage() {
               <p className="text-muted-foreground">
                 {countForDisplay > 0 && t("teachers.total", { count: countForDisplay })}
               </p>
+              {committedQuery && (
+                <p className="text-muted-foreground text-xs mt-1">
+                  {t("teachers.approximateCountNote")}
+                </p>
+              )}
             </div>
 
             {/* Search and Filter Bar */}
@@ -203,8 +229,8 @@ export default function TeachersPage() {
                   <Card>
                     <CardContent className="py-12 text-center">
                       <p className="text-muted-foreground">
-                        {debouncedSearchQuery
-                          ? t("teachers.noResults", { query: debouncedSearchQuery })
+                        {committedQuery
+                          ? t("teachers.noResults", { query: committedQuery })
                           : t("teachers.noTeachers")}
                       </p>
                     </CardContent>
