@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { Suspense } from "react";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
@@ -315,11 +314,11 @@ function TeachersPageLoading() {
 
 export default function TeachersPage() {
   return (
-    <Suspense
+    <React.Suspense
       fallback={<TeachersPageLoading />}
     >
       <TeachersPageContent />
-    </Suspense>
+    </React.Suspense>
   );
 }
 
