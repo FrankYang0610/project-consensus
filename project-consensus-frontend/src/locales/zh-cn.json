@@ -1,26 +1,22 @@
 {
   "navigation": {
     "forum": "论坛",
-    "courseReview": "课程点评",
+    "coursesTeachers": "课程/教师",
     "browseCourses": "浏览课程",
     "browseCoursesDesc": "按学术部门分类探索课程",
+    "browseTeachers": "浏览教师",
+    "browseTeachersDesc": "探索教师主页与评分",
     "advancedSearch": "高级搜索",
     "advancedSearchDesc": "使用高级选项搜索和筛选课程",
     "more": "更多",
-    "about": "关于",
     "language": "语言"
   },
   "menu": {
-    "techSupport": "技术支持",
-    "techSupportDesc": "获取技术问题帮助",
-    "featureRequests": "功能建议",
-    "featureRequestsDesc": "建议新功能和改进",
+    "wiki": "Wiki",
+    "wikiDesc": "浏览社区 Wiki 页面",
+    "about": "关于",
     "announcements": "公告",
     "announcementsDesc": "获取最新消息",
-    "documentation": "文档",
-    "documentationDesc": "全面的指南和API参考",
-    "discord": "Discord",
-    "discordDesc": "加入我们的社区聊天",
     "resources": "资源",
     "resourcesDesc": "有用的工具和资料"
   },

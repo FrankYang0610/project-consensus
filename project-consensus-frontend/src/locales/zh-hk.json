@@ -1,26 +1,22 @@
 {
   "navigation": {
     "forum": "論壇",
-    "courseReview": "課程點評",
+    "coursesTeachers": "課程/老師",
     "browseCourses": "瀏覽課程",
     "browseCoursesDesc": "按學術部門分類探索課程",
+    "browseTeachers": "瀏覽老師",
+    "browseTeachersDesc": "探索老師主頁與評分",
     "advancedSearch": "進階搜索",
     "advancedSearchDesc": "使用進階選項搜尋和篩選課程",
     "more": "更多",
-    "about": "關於",
     "language": "語言"
   },
   "menu": {
-    "techSupport": "技術支援",
-    "techSupportDesc": "獲取技術問題幫助",
-    "featureRequests": "功能建議",
-    "featureRequestsDesc": "建議新功能和改進",
+    "wiki": "Wiki",
+    "wikiDesc": "瀏覽社區 Wiki 頁面",
+    "about": "關於",
     "announcements": "公告",
     "announcementsDesc": "獲取最新消息",
-    "documentation": "文檔",
-    "documentationDesc": "全面的指南和API參考",
-    "discord": "Discord",
-    "discordDesc": "加入我們的社區聊天",
     "resources": "資源",
     "resourcesDesc": "有用的工具和資料"
   },
