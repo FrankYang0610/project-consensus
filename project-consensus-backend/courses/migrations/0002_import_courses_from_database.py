@@ -9,7 +9,6 @@ from typing import Iterable, List, Tuple
 from django.db import migrations
 from django.utils import timezone
 
-from courses.util import iter_json_array_objects
 
 
 # ---------- Helpers: path & parsing ----------
@@ -25,35 +24,29 @@ def _database_courses_json_path() -> Path:
 
 
 def _iter_records_from_json(path: Path) -> Iterable[dict]:
-    """Yield course records from a large JSON file robustly.
-
-    Stream parse objects from a large top-level JSON array without loading the
-    entire file into memory.
-    """
+    """Yield course records using the standard json parser."""
     if not path.exists():
         print(f"  [courses.0002] Source JSON not found: {path}")
         return
 
     try:
         with path.open("r", encoding="utf-8") as fp:
-            yielded_any = False
-            for obj in iter_json_array_objects(fp):
-                yielded_any = True
-                if isinstance(obj, dict):
-                    yield obj
-            if not yielded_any:
-                # Conservative fallback: if it's actually a small valid JSON
-                try:
-                    fp.seek(0)
-                    data = json.load(fp)
-                    if isinstance(data, list):
-                        for rec in data:
+            data = json.load(fp)
+            if isinstance(data, list):
+                for rec in data:
+                    if isinstance(rec, dict):
+                        yield rec
+            elif isinstance(data, dict):
+                # Support object-wrapped arrays like {"records": [...]} or {"data": [...]}.
+                for key in ("records", "data", "items"):
+                    arr = data.get(key)
+                    if isinstance(arr, list):
+                        for rec in arr:
                             if isinstance(rec, dict):
                                 yield rec
-                except Exception:
-                    pass
+                        break
     except Exception as e:
-        print(f"  [courses.0002] Streaming parse failed: {e}")
+        print(f"  [courses.0002] JSON parse failed: {e}")
 
 
 def _parse_year_sem(record: dict) -> Tuple[int, str]:
