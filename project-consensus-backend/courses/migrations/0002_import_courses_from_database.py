@@ -78,7 +78,7 @@ def _parse_year_sem(record: dict) -> Tuple[int, str]:
         if sem_code == "3":
             return base_year + 1, "summer"
     # Last resort defaults
-    year = int(text[:4] or 0) or timezone.now().year
+    year = int(text[:4]) if len(text) >= 4 and text[:4].isdigit() else timezone.now().year
     return year, "fall"
 
 
@@ -119,7 +119,7 @@ def _sequence_similarity(a: str, b: str) -> float:
     return SequenceMatcher(None, a, b).ratio()
 
 
-def _match_teacher_by_name(apps, raw_name: str, dept_hint: str | None = None):
+def _match_teacher_by_name(apps, raw_name: str, dept: str | None = None):
     """Return the best-matching Teacher object for the given raw name, or None.
 
     Similar in spirit to teachers.services.splink_search.search_teachers_with_splink,
@@ -155,7 +155,8 @@ def _match_teacher_by_name(apps, raw_name: str, dept_hint: str | None = None):
     best_score = 0.0
     rev = _reverse_two_token_name(query_norm)
     sorted_q = _sort_name_tokens(query_norm)
-    dept_hint_norm = _normalize_name(dept_hint or "")
+    # Use case-insensitive exact comparison for department matching; no normalization
+    dept_lower = (dept or "").strip().lower()
 
     for t in candidates:
         name_norm = _normalize_name(t.name)
@@ -164,9 +165,9 @@ def _match_teacher_by_name(apps, raw_name: str, dept_hint: str | None = None):
             _sequence_similarity(name_norm, rev),
             _sequence_similarity(_sort_name_tokens(name_norm), sorted_q),
         )
-        # Small boost if department hint matches
-        if dept_hint_norm and t.department:
-            if dept_hint_norm.split()[0] in _normalize_name(t.department):
+        # Small boost if course department exactly matches teacher department (case-insensitive)
+        if dept_lower and t.department:
+            if dept_lower == str(t.department or "").strip().lower():
                 score += 0.03
         if best is None or score > best_score:
             best_score = score
@@ -304,7 +305,7 @@ def import_courses_forward(apps, schema_editor):
             matched: List[object] = []
             seen_ids = set()
             for name in names:
-                t = _match_teacher_by_name(apps, name, dept_hint=department)
+                t = _match_teacher_by_name(apps, name, dept=department)
                 if t and t.id not in seen_ids:
                     matched.append(t)
                     seen_ids.add(t.id)
