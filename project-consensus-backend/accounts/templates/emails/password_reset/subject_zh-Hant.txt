@@ -1,0 +1,1 @@
+PolyU Life 密碼重設請求（{{ timeout_hours }} 小時內有效）

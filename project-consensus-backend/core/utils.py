@@ -16,8 +16,7 @@ from core.validators import get_allowed_image_hosts, is_host_in_allowed
 if TYPE_CHECKING:
     from django.core.files.uploadedfile import UploadedFile
 
-
-def upload_image_to_r2(file: UploadedFile, folder: str, user=None) -> str:
+def upload_image_to_r2(file: UploadedFile, folder: str, user) -> str:
     """
     Upload an image to Cloudflare R2 and return the public URL.
     
@@ -30,7 +29,7 @@ def upload_image_to_r2(file: UploadedFile, folder: str, user=None) -> str:
     
     Args:
         file: Uploaded image file (already validated)
-        folder: Required. Folder/prefix in R2 bucket (e.g., 'avatars', 'posts', 'wiki')
+        folder: Required. Folder/prefix in R2 bucket (e.g., 'avatars', 'images')
         user: Optional user object to include owner id in the path
     
     Returns:
@@ -51,15 +50,19 @@ def upload_image_to_r2(file: UploadedFile, folder: str, user=None) -> str:
         raise ValidationError(
             f"Invalid folder. Must be one of: {', '.join(sorted(settings.ALLOWED_UPLOAD_FOLDERS))}"
         )
-    
+
+    # Validate user
+    if user is None or getattr(user, 'pk', None) is None:
+        raise ValidationError("Authenticated user is required for image upload")
+
     # Extract file extension
     original_name = file.name or 'image'
     extension = original_name.rsplit('.', 1)[-1].lower() if '.' in original_name else 'jpg'
     
     # Generate unique filename
     unique_id = uuid.uuid4()
-    owner_id = getattr(user, 'pk', None) if user is not None else None
-    owner_segment = f"{owner_id}/" if owner_id is not None else ""
+    owner_id = getattr(user, 'pk', None)
+    owner_segment = f"{owner_id}/"
     filename = f"{folder}/{owner_segment}{unique_id}.{extension}"
     
     # Upload to R2
@@ -104,8 +107,7 @@ def _storage_path_belongs_to_user(path: str, user_id: int | None) -> bool:
     Expected path format: 'folder/user_id/filename.ext'
     Examples:
         - 'avatars/123/abc123.jpg' → belongs to user 123
-        - 'posts/456/def456.png' → belongs to user 456
-        - 'images/789.jpg' → invalid (missing user_id segment)
+        - 'images/456/def456.png' → belongs to user 456
     
     Args:
         path: Storage path to validate (e.g., 'avatars/123/uuid.jpg')

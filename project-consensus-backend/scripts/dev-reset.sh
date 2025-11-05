@@ -14,7 +14,15 @@ if [ ! -d .venv ]; then
   python3 -m venv .venv
 fi
 source .venv/bin/activate
-python -m pip install -U pip wheel
+# Pin to a pip version that retains InstallRequirement.use_pep517 for compatibility with pip-tools
+python -m pip install -U "pip<24.1" wheel "pip-tools>=7.5.0"
+
+# Compile requirements.txt from requirements.in if needed or forced
+if [ ! -f requirements.txt ] || [ requirements.in -nt requirements.txt ] || [ "${FORCE_COMPILE:-0}" = "1" ]; then
+  echo "[dev-reset] Compiling requirements.txt from requirements.in"
+  python -m piptools compile --quiet --output-file=requirements.txt requirements.in
+fi
+
 pip install -r requirements.txt
 
 # 2) Write .env if missing
@@ -33,7 +41,7 @@ fi
 # 3) Reset and start Postgres container
 echo "[dev-reset] Resetting Docker Postgres"
 docker compose down -v || true
-docker compose up -d db
+docker compose up -d db redis
 
 echo "[dev-reset] Waiting for Postgres (container: dj_db17) to be ready..."
 for i in {1..60}; do
@@ -44,6 +52,20 @@ for i in {1..60}; do
   sleep 1
   if [ "$i" -eq 60 ]; then
     echo "[dev-reset] Postgres did not become ready in time." >&2
+    exit 1
+  fi
+done
+
+# Also wait for Redis to be ready
+echo "[dev-reset] Waiting for Redis (container: dj_redis) to be ready..."
+for i in {1..60}; do
+  if docker exec dj_redis redis-cli -a redis_secure_password ping >/dev/null 2>&1; then
+    echo "[dev-reset] Redis is ready."
+    break
+  fi
+  sleep 1
+  if [ "$i" -eq 60 ]; then
+    echo "[dev-reset] Redis did not become ready in time." >&2
     exit 1
   fi
 done
@@ -60,11 +82,20 @@ fi
 echo "[dev-reset] Running database migrations"
 python manage.py migrate
 
+# --- SSE local testing notes ---
+# Basic: `runserver` is sufficient for SSE functionality in development.
+# High concurrency (low workers): set NO_RUN=1 and launch a dedicated ASGI instance:
+#   source .venv/bin/activate
+#   uvicorn config.asgi:application \
+#     --host 127.0.0.1 --port 8011 --workers 1 --loop uvloop --http httptools
+# Then point only `/api/notifications/stream/` to http://127.0.0.1:8011 (frontend or curl).
+# Celery is not required for SSE.
+
 # 6) Run server (skip if NO_RUN=1)
 if [ "${NO_RUN:-0}" = "1" ]; then
   echo "[dev-reset] NO_RUN=1 set; skipping runserver."
 else
-  echo "[dev-reset] Starting server at 127.0.0.1:8000"
+  echo "[dev-reset] Starting server at 127.0.0.1:8000 (SSE OK; for high-concurrency use ASGI, see comments above)"
   python manage.py runserver
 fi
 

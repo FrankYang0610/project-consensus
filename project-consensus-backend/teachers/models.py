@@ -17,20 +17,35 @@ class Teacher(models.Model):
         STRICT = "strict", "strict"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=200, db_index=True)
-    title = models.CharField(max_length=100, blank=True)
+    name = models.CharField(max_length=100, db_index=True)
+    title = models.CharField(max_length=300, blank=True)
     department = models.CharField(max_length=200, blank=True)
 
     avatar_url = models.URLField(blank=True)
     email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=50, blank=True)
     office = models.CharField(max_length=200, blank=True)
     office_hours = models.CharField(max_length=200, blank=True)
-    homepage_url = models.URLField(blank=True)
-    bio = models.TextField(blank=True)
+    website_name = models.CharField(max_length=200, blank=True)
+    website_url = models.URLField(blank=True)
+    profile_url = models.URLField(blank=True)
+    scholars_hub_url = models.URLField(blank=True)
+    biography = models.TextField(blank=True)
+    research_interests = models.TextField(blank=True)
+    academic_and_professional_experience = models.TextField(blank=True)
+    professional_qualifications = models.TextField(blank=True)
 
     tags = models.JSONField(default=list, blank=True, help_text="List of tags/areas of expertise")
     languages = models.JSONField(default=list, blank=True, help_text="List of teaching languages")
     years_experience = models.PositiveIntegerField(null=True, blank=True)
+
+    # External identifiers
+    orcid_id = models.CharField(max_length=100, blank=True)
+    orcid_url = models.URLField(blank=True)
+    scopus_id = models.CharField(max_length=100, blank=True)
+    scopus_url = models.URLField(blank=True)
+    researcherid_id = models.CharField(max_length=100, blank=True)
+    researcherid_url = models.URLField(blank=True)
 
     # Rating metrics
     rating_overall = models.FloatField(null=True, blank=True, help_text="Overall rating 0.0-10.0, null if no reviews")

@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os  # Used to build the .env file path
+import sys  # For platform detection
+import warnings  # For security warnings
 import environ  # django-environ: typed environment variable parser
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -38,6 +40,8 @@ DEBUG = env("DEBUG")
 # Comma-separated hostnames/IPs that this Django instance will serve.
 # Example: "127.0.0.1,localhost,api.example.com"
 ALLOWED_HOSTS = [h.strip() for h in env("ALLOWED_HOSTS", default="").split(",") if h.strip()]
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
 
 
 # Application definition
@@ -72,7 +76,9 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
 
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -139,11 +145,19 @@ USE_TZ = True
 # Frontend may request a specific language via query; when absent, use this.
 DEFAULT_CONTENT_LANGUAGE = env("DEFAULT_CONTENT_LANGUAGE", default="zh-CN")
 
+# Supported UI languages
+LANGUAGES = [
+    ("en", "English"),
+    ("zh-hans", "Simplified Chinese"),
+    ("zh-hant", "Traditional Chinese"),
+]
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'  # Static URL prefix; set STATIC_ROOT in production and run collectstatic
+STATIC_URL = '/static/'  # Static URL prefix; set STATIC_ROOT in production and run collectstatic
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # CORS and CSRF configuration
 # CORS_ALLOWED_ORIGINS controls which browser origins may access this API.
@@ -167,8 +181,15 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
     ],
+    # Currently very high rate limit for testing, needs to be adjusted in production
     "DEFAULT_THROTTLE_RATES": {
-        "image_upload": "100/hour",  # Image upload rate limit
+        "image_upload": "100/hour",  # Image upload rate limit: 100 per hour per IP.
+        "login": "100/minute",  # Login attempts: 100 per minute per IP
+        "register": "3000/hour",  # Registration: 3000 per hour per IP
+        "verification": "50/minute",  # Send verification code: 50 per minute per IP
+        "password_reset": "50/hour",  # Password reset request: 50 per hour per IP
+        "password_reset_confirm": "50/hour",  # Password reset confirm: 50 per hour per IP
+        "anon_sustained": "1000/hour",  # General anonymous user rate limit: 1000 per hour per IP
     },
 }
 
@@ -179,7 +200,97 @@ CACHES = {
 
 # Email verification settings
 AUTH_VERIFICATION_CODE_TTL_SECONDS = env.int('AUTH_VERIFICATION_CODE_TTL_SECONDS', default=60 * 15)
-AUTH_VERIFICATION_REQUEST_INTERVAL_SECONDS = env.int('AUTH_VERIFICATION_REQUEST_INTERVAL_SECONDS', default=60)
+AUTH_VERIFICATION_REQUEST_INTERVAL_SECONDS = env.int('AUTH_VERIFICATION_REQUEST_INTERVAL_SECONDS', default=90)
+AUTH_VERIFICATION_MAX_ATTEMPTS = env.int('AUTH_VERIFICATION_MAX_ATTEMPTS', default=5)
+
+# Password reset settings
+FRONTEND_BASE_URL = env('FRONTEND_BASE_URL', default='https://polyu.life')
+PASSWORD_RESET_TIMEOUT = env.int('PASSWORD_RESET_TIMEOUT', default=3600)  # 1 hour in seconds
+PASSWORD_RESET_REQUEST_INTERVAL_SECONDS = env.int('PASSWORD_RESET_REQUEST_INTERVAL_SECONDS', default=300)
+
+# Email service configuration (Resend)
+# Set EMAIL_ENABLED=true in production to send actual emails
+EMAIL_ENABLED = env.bool('EMAIL_ENABLED', default=False)
+RESEND_API_KEY = env('RESEND_API_KEY', default='')
+EMAIL_FROM_ADDRESS = env('EMAIL_FROM_ADDRESS', default='PolyU Life <noreply@polyu.life>')
+EMAIL_REPLY_TO = env('EMAIL_REPLY_TO', default='noreply@polyu.life')
+
+# Asynchronous email sending (Celery)
+# Set EMAIL_USE_CELERY=true to send emails asynchronously (recommended for production)
+EMAIL_USE_CELERY = env.bool('EMAIL_USE_CELERY', default=False)
+
+# ==================== Celery Configuration ====================
+# Celery broker (Redis) - Required for async task processing
+CELERY_BROKER_URL = env('CELERY_BROKER_URL', default=None)
+
+if CELERY_BROKER_URL is None:
+    CELERY_BROKER_URL = "redis://localhost:6379/0"
+    warnings.warn(
+        "Using default Redis URL without password — intended for local development only. "
+        "For production, set CELERY_BROKER_URL in your environment with a secure password.",
+        RuntimeWarning,
+    )
+
+# Celery result backend (optional, for storing task results)
+# Use 'rpc://' for temporary results or Redis for persistent results
+CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='rpc://')
+
+# Task serialization format (JSON is recommended for security)
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']
+
+# Time zone configuration (should match Django TIME_ZONE)
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = True
+
+# Task result expiration (1 day)
+CELERY_RESULT_EXPIRES = 60 * 60 * 24
+
+# Task execution settings
+CELERY_TASK_TRACK_STARTED = True  # Track when tasks start
+CELERY_TASK_TIME_LIMIT = 30 * 60  # Hard time limit: 30 minutes
+CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60  # Soft time limit: 25 minutes
+
+# Worker settings
+CELERY_WORKER_PREFETCH_MULTIPLIER = 4  # Number of tasks to prefetch
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 1000  # Restart worker after N tasks (prevent memory leaks)
+
+# Retry configuration
+CELERY_TASK_ACKS_LATE = True  # Acknowledge task after completion (safer)
+CELERY_TASK_REJECT_ON_WORKER_LOST = True  # Requeue tasks if worker dies
+
+# Broker connection retry settings (critical for production)
+# These settings ensure Celery worker reconnects if Redis/broker goes down
+CELERY_BROKER_CONNECTION_RETRY = True  # Enable automatic retry on connection loss
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True  # Retry connection on startup
+CELERY_BROKER_CONNECTION_MAX_RETRIES = None  # Retry indefinitely (0 or None = infinite)
+
+# Redis connection pool settings for better reliability
+# Note: socket_keepalive_options use Linux-specific constants that don't work on macOS
+# We disable keepalive options on macOS to avoid "OSError: [Errno 22] Invalid argument"
+_broker_transport_options = {
+    'visibility_timeout': 3600,  # 1 hour
+    'max_retries': 3,  # Max retries for each task
+    'interval_start': 0,  # Initial retry delay (seconds)
+    'interval_step': 0.2,  # Retry delay increment
+    'interval_max': 0.2,  # Max retry delay
+    'health_check_interval': 30,  # Health check every 30 seconds
+}
+
+# Add socket keepalive only on Linux (not macOS/Windows)
+if sys.platform == 'linux':
+    _broker_transport_options['socket_keepalive'] = True
+    _broker_transport_options['socket_keepalive_options'] = {
+        1: 60,   # TCP_KEEPIDLE: start keepalive after 60s idle
+        2: 10,   # TCP_KEEPINTVL: probe interval
+        3: 3,    # TCP_KEEPCNT: max failed probes before disconnect
+    }
+
+CELERY_BROKER_TRANSPORT_OPTIONS = _broker_transport_options
+
+# Logging
+CELERY_WORKER_HIJACK_ROOT_LOGGER = False  # Don't override Django logging
 
 # Enable Browsable API only in development for convenient exploration.
 if DEBUG:
@@ -196,16 +307,18 @@ CORS_ALLOW_CREDENTIALS = True
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 10  # 10 days (in seconds)
 SESSION_SAVE_EVERY_REQUEST = True       # rolling expiry: extend on each request
 
-# Use secure cookies in non-debug environments; Lax is fine for same-site SPA API.
+# Use secure cookies in non-debug environments; SameSite is configurable via env.
 SESSION_COOKIE_SECURE = not DEBUG
-# Use Lax for same-site (e.g., localhost:3000 -> localhost:8000) and better CSRF posture.
-# If deploying frontend on a different site, switch to 'None' and ensure HTTPS.
-SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SAMESITE = env('SESSION_COOKIE_SAMESITE', default='Lax')
 
 CSRF_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = env('CSRF_COOKIE_SAMESITE', default='Lax')
 # CSRF token must be readable by JS to set X-CSRFToken header
 CSRF_COOKIE_HTTPONLY = False
+
+# Cookie domains (enable cross-subdomain cookies when needed, e.g., .polyu.life)
+SESSION_COOKIE_DOMAIN = env('SESSION_COOKIE_DOMAIN', default=None)
+CSRF_COOKIE_DOMAIN = env('CSRF_COOKIE_DOMAIN', default=None)
 
 # ==================== File Storage Configuration ====================
 # Use Cloudflare R2 for media files via django-storages with S3 backend
@@ -229,7 +342,7 @@ STORAGES = {
         },
     },
     "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
 
@@ -243,10 +356,37 @@ ALLOWED_IMAGE_EXTENSIONS = [
 
 # Allowed folders for image uploads in R2 storage
 # These are used as path prefixes when organizing uploaded files
-ALLOWED_UPLOAD_FOLDERS = {'images', 'avatars', 'posts', 'wiki'}
+ALLOWED_UPLOAD_FOLDERS = {'images', 'avatars'}
 
 # Allowed public image hosts for rendering and profile avatar URLs
 # Comma-separated. Example: "image.polyu.life,cdn.example.com"
 ALLOWED_IMAGE_HOSTS = [
     h.strip().lower() for h in env("ALLOWED_IMAGE_HOSTS", default="image.polyu.life").split(",") if h.strip()
 ]
+
+# ==================== Notifications (Redis + SSE) ====================
+# Redis URL used by notifications runtime (falls back to CELERY_BROKER_URL if unset)
+# Note: Uses database /1 (different from Celery's /0) to separate notification data from task queue data
+NOTIFICATIONS_REDIS_URL = env("NOTIFICATIONS_REDIS_URL", default=None)
+
+if NOTIFICATIONS_REDIS_URL is None:
+    NOTIFICATIONS_REDIS_URL = "redis://localhost:6379/1"
+    warnings.warn(
+        "Using default Redis URL without password — intended for local development only. "
+        "For production, set NOTIFICATIONS_REDIS_URL in your environment with a secure password.",
+        RuntimeWarning,
+    )
+
+# Redis connection settings for notifications runtime (separate from Celery's Redis config)
+NOTIFICATIONS_REDIS_SOCKET_TIMEOUT = env.float("NOTIFICATIONS_REDIS_SOCKET_TIMEOUT", default=1.0)
+NOTIFICATIONS_REDIS_SOCKET_CONNECT_TIMEOUT = env.float("NOTIFICATIONS_REDIS_SOCKET_CONNECT_TIMEOUT", default=1.0)
+NOTIFICATIONS_REDIS_HEALTH_CHECK_INTERVAL = env.int("NOTIFICATIONS_REDIS_HEALTH_CHECK_INTERVAL", default=30)
+
+# Per-user channel and storage prefixes in Redis
+NOTIFICATIONS_REDIS_CHANNEL_PREFIX = env("NOTIFICATIONS_REDIS_CHANNEL_PREFIX", default="notifications:chan:")
+NOTIFICATIONS_REDIS_SEQ_PREFIX = env("NOTIFICATIONS_REDIS_SEQ_PREFIX", default="notifications:seq:")
+NOTIFICATIONS_REDIS_BACKLOG_PREFIX = env("NOTIFICATIONS_REDIS_BACKLOG_PREFIX", default="notifications:backlog:")
+
+# Backlog size for Last-Event-ID replay
+NOTIFICATIONS_REDIS_BACKLOG_SIZE = env.int("NOTIFICATIONS_REDIS_BACKLOG_SIZE", default=200)
+

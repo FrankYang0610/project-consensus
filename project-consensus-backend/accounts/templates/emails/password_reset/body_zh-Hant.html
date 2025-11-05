@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>密碼重設郵件</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td align="center" style="padding: 40px 0;">
+                <table role="presentation" style="width: 600px; max-width: 100%; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding: 40px 40px 30px 40px; text-align: center; border-bottom: 1px solid #e5e7eb;">
+                            <h1 style="margin: 0; font-size: 24px; font-weight: 600; color: #111827;">PolyU Life</h1>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px;">
+                            <h2 style="margin: 0 0 20px 0; font-size: 20px; font-weight: 600; color: #111827;">重設您的密碼</h2>
+                            
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.5; color: #374151;">
+                                您好，
+                            </p>
+                            
+                            <p style="margin: 0 0 30px 0; font-size: 16px; line-height: 1.5; color: #374151;">
+                                我們收到重設您帳戶密碼的請求。如果這是您本人操作，請點擊下方按鈕以重設密碼：
+                            </p>
+                            
+                            <!-- Reset Button -->
+                            <div style="text-align: center; margin: 0 0 30px 0;">
+                                <a href="{{ reset_link }}" style="display: inline-block; padding: 14px 32px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">重設密碼</a>
+                            </div>
+                            
+                            <p style="margin: 0 0 20px 0; font-size: 14px; line-height: 1.5; color: #6b7280;">
+                                若按鈕無法點擊，請複製以下連結至瀏覽器地址欄訪問：
+                            </p>
+                            
+                            <div style="background-color: #f3f4f6; border-radius: 6px; padding: 16px; margin: 0 0 30px 0; word-break: break-all;">
+                                <a href="{{ reset_link }}" style="color: #2563eb; text-decoration: none; font-size: 14px;">{{ reset_link }}</a>
+                            </div>
+                            
+                            <p style="margin: 0 0 20px 0; font-size: 14px; line-height: 1.5; color: #6b7280;">
+                                此連結將在 <strong>{{ timeout_hours }} 小時</strong>內有效。基於安全考量，該連結僅能使用一次。
+                            </p>
+                            
+                            <p style="margin: 0 0 20px 0; font-size: 14px; line-height: 1.5; color: #6b7280;">
+                                若您未曾提出重設密碼的請求，請忽略此郵件，您的帳戶安全不會受到影響。
+                            </p>
+                            
+                            <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #ef4444; background-color: #fef2f2; padding: 12px; border-radius: 6px; border-left: 4px solid #ef4444;">
+                                <strong>安全提醒：</strong>為了保護您的帳戶，請不要與任何人分享此連結。
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; border-radius: 0 0 8px 8px;">
+                            <p style="margin: 0 0 10px 0; font-size: 14px; color: #6b7280; text-align: center;">
+                                需要協助？前往我們的 <a href="https://polyu.life/help" style="color: #2563eb; text-decoration: none;">幫助中心</a>
+                            </p>
+                            <p style="margin: 0; font-size: 12px; color: #9ca3af; text-align: center;">
+                                &copy; 2025 PolyU Life. 保留所有權利。
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

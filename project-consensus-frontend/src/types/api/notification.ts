@@ -26,7 +26,7 @@ export interface NotificationItem {
   referencedContentPreview?: string;
 }
 
-export interface NotificationsListResponse extends PaginatedResponse<NotificationItem> {}
+export type NotificationsListResponse = PaginatedResponse<NotificationItem>;
 
 export interface NotificationSSEEvent {
   type: 'notification';

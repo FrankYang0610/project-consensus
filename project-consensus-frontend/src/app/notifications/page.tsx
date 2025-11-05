@@ -108,7 +108,7 @@ export default function NotificationsPage() {
 
   const handleClickItem = async (n: NotificationItem) => {
     if (!n.isRead) {
-      try { await markRead(n.id); setItems(prev => (prev || []).map(it => it.id === n.id ? { ...it, isRead: true } : it)); } catch {}
+      try { await markRead(n.id); setItems(prev => (prev || []).map(it => it.id === n.id ? { ...it, isRead: true } : it)); } catch { }
     }
     navigateToTarget(n);
   };
@@ -157,7 +157,7 @@ export default function NotificationsPage() {
                         <div className="text-sm line-clamp-1">{notificationTitleText(n)}</div>
                         {n.contentPreview && (
                           <div className="text-sm text-muted-foreground mt-1 line-clamp-1">
-                            "{stripHtmlTags(n.contentPreview)}"
+                            &quot;{stripHtmlTags(n.contentPreview)}&quot;
                           </div>
                         )}
                         <div className="text-xs text-muted-foreground mt-1">{new Date(n.createdAt).toLocaleString()}</div>

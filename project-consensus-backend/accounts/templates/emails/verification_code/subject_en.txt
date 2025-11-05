@@ -1,0 +1,1 @@
+PolyU Life Verification Code {{ code }} (Valid for {{ ttl_minutes }} minutes)

@@ -216,6 +216,7 @@ Visit the repository's “Actions” tab; runs should pass (especially Migrate a
 ## Collaboration
 
 - Develop on feature branches: `feature/<your-task>` → PR → pass CI → review → merge into `main`.
+- Run `pip-compile -o requirements.txt requirements.in` to compile dependencies.
 - For dependency upgrades: edit `requirements.in` → run `pip-compile` → commit both `requirements.in` and `requirements.txt`.
 - Do not commit `.env`, `.venv/`, or local caches (configure ignores in the repo root `.gitignore`).
 
@@ -252,13 +253,13 @@ For convenience, a helper script resets the dev environment, frees port 8000, re
 
 ```bash
 cd /Users/frankyang/project-consensus/project-consensus-backend
-bash scripts/dev_reset.sh
+bash scripts/dev-reset.sh
 ```
 
 Run only up to migration without starting the server:
 
 ```bash
-NO_RUN=1 bash scripts/dev_reset.sh
+NO_RUN=1 bash scripts/dev-reset.sh
 ```
 
 What the script does:

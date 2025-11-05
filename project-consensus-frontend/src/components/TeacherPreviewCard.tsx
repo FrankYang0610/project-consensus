@@ -52,16 +52,21 @@ export function TeacherPreviewCard({ teacher }: TeacherPreviewCardProps) {
                 <h3 className="text-base sm:text-lg font-semibold truncate">
                   {teacher.name}
                 </h3>
-                {(teacher.title || teacher.department) && (
+                {teacher.title && (
                   <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                    {[teacher.title, teacher.department].filter(Boolean).join(' · ')}
+                    {teacher.title}
+                  </p>
+                )}
+                {teacher.department && (
+                  <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                    {teacher.department}
                   </p>
                 )}
               </div>
 
               {/* Rating and Stats */}
               <div className="flex items-center gap-3 sm:gap-4 mb-3">
-                {teacher.rating && (
+                {teacher.rating && teacher.rating.overall !== null && teacher.rating.overall !== undefined && (
                   <>
                     <div className="flex items-center gap-1">
                       <span className="text-lg sm:text-xl font-bold text-primary">
@@ -72,7 +77,7 @@ export function TeacherPreviewCard({ teacher }: TeacherPreviewCardProps) {
                       </span>
                     </div>
                     <div className="text-xs sm:text-sm text-muted-foreground">
-                      {t("teachers.reviews", { count: teacher.rating.reviewsCount })}
+                      {t("teachers.reviews", { count: teacher.rating.reviewsCount || 0 })}
                     </div>
                   </>
                 )}

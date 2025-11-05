@@ -160,14 +160,9 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
     return {
       forumItems: [
         {
-          title: t('menu.techSupport'),
-          href: '/support',
-          description: t('menu.techSupportDesc'),
-        },
-        {
-          title: t('menu.featureRequests'),
-          href: '/features',
-          description: t('menu.featureRequestsDesc'),
+          title: t('menu.wiki'),
+          href: '/wiki',
+          description: t('menu.wikiDesc'),
         },
         {
           title: t('menu.announcements'),
@@ -176,17 +171,6 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
         },
       ],
       linksItems: [
-        {
-          title: t('menu.documentation'),
-          href: '/docs',
-          description: t('menu.documentationDesc'),
-        },
-        {
-          title: t('menu.discord'),
-          href: 'https://discord.com',
-          description: t('menu.discordDesc'),
-          external: true,
-        },
         {
           title: t('menu.resources'),
           href: '/resources',
@@ -221,7 +205,7 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
       "supports-[backdrop-filter]:bg-background/60"
     )}>
       {/* Main navigation container - max width constraint and centered */}
-      <div className="grid grid-cols-3 h-20 items-center px-6 lg:px-8 xl:px-12 2xl:px-16">
+      <div className="grid grid-cols-[auto_1fr_auto] h-20 items-center px-6 lg:px-8 xl:px-12 2xl:px-16">
 
         {/* Logo area - click to return home */}
         <div className="flex items-center">
@@ -244,11 +228,8 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
               priority
             />
           </Link>
-        </div>
-
-        {/* Desktop navigation menu - visible on medium screens and up */}
-        <div className="flex justify-center">
-          <NavigationMenu className="hidden md:flex">
+          {/* Desktop navigation menu - moved next to logo and left-aligned */}
+          <NavigationMenu className="hidden md:flex ml-6">
             <NavigationMenuList className="gap-2">
 
               {/* Home navigation item - simple link without dropdown */}
@@ -261,10 +242,10 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                 </NavigationMenuLink>
               </NavigationMenuItem>
 
-              {/* Course Review navigation item - dropdown with browse options */}
+              {/* Courses/Teachers navigation item - dropdown with browse options */}
               <NavigationMenuItem>
                 <NavigationMenuTrigger className="h-12 px-6 text-base font-medium">
-                  {t('navigation.courseReview')}
+                  {t('navigation.coursesTeachers')}
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <ul className="grid w-[400px] gap-3 p-6">
@@ -275,10 +256,22 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                       {t('navigation.browseCoursesDesc')}
                     </ListItem>
                     <ListItem
+                      title={t('navigation.browseTeachers')}
+                      href="/teachers"
+                    >
+                      {t('navigation.browseTeachersDesc')}
+                    </ListItem>
+                    <ListItem
                       title={t('navigation.advancedSearch')}
                       href="/courses/advanced-search"
                     >
                       {t('navigation.advancedSearchDesc')}
+                    </ListItem>
+                    <ListItem
+                      title={t('courses.latestReviews.title')}
+                      href="/courses/latest-reviews"
+                    >
+                      {t('courses.latestReviews.subtitle')}
                     </ListItem>
                   </ul>
                 </NavigationMenuContent>
@@ -309,34 +302,29 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                         key={item.title}
                         title={item.title}
                         href={item.href}
-                        // External links open in new tab
-                        target={item.external ? '_blank' : undefined}
-                        // Security attributes for external links
-                        rel={item.external ? 'noopener noreferrer' : undefined}
                       >
                         {item.description}
                       </ListItem>
                     ))}
+                    <ListItem
+                      key="about"
+                      title={t('menu.about')}
+                      href="/about"
+                    >
+                      {t('about.subtitle')}
+                    </ListItem>
                   </ul>
                 </NavigationMenuContent>
-              </NavigationMenuItem>
-
-              {/* About navigation item - simple link without dropdown */}
-              <NavigationMenuItem>
-                <NavigationMenuLink
-                  href="/about"
-                  className={customNavigationMenuTriggerStyle()}
-                >
-                  {t('navigation.about')}
-                </NavigationMenuLink>
               </NavigationMenuItem>
 
             </NavigationMenuList>
           </NavigationMenu>
         </div>
 
+        
+
         {/* Right side - Search bar, login, and mobile menu button */}
-        <div className="flex justify-end items-center gap-4">
+        <div className="flex justify-end items-center gap-4 col-start-3 justify-self-end">
           {/* Search bar - visible on larger screens */}
           <SearchBar className="hidden lg:flex" placeholder={t('search.placeholder')} />
 
@@ -428,14 +416,14 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
               {t('navigation.forum')}
             </Link>
 
-            {/* Course Review collapsible section */}
+              {/* Courses/Teachers collapsible section */}
             <div>
-              {/* Course Review collapse button */}
+              {/* Courses/Teachers collapse button */}
               <button
                 className="flex items-center justify-between w-full py-3 px-2 text-sm font-medium hover:bg-accent rounded-md transition-colors"
                 onClick={() => toggleMobileDropdown('courses')}
               >
-                <span>{t('navigation.courseReview')}</span>
+                <span>{t('navigation.coursesTeachers')}</span>
                 {/* Arrow icon - rotates 180 degrees when expanded */}
                 <ChevronDown
                   size={16}
@@ -459,6 +447,16 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                     </div>
                   </Link>
                   <Link
+                    href="/teachers"
+                    className="block py-2 px-3 text-sm hover:bg-accent rounded-md transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <div className="font-medium">{t('navigation.browseTeachers')}</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {t('navigation.browseTeachersDesc')}
+                    </div>
+                  </Link>
+                  <Link
                     href="/courses/advanced-search"
                     className="block py-2 px-3 text-sm hover:bg-accent rounded-md transition-colors"
                     onClick={() => setIsMobileMenuOpen(false)}
@@ -466,6 +464,16 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                     <div className="font-medium">{t('navigation.advancedSearch')}</div>
                     <div className="text-xs text-muted-foreground mt-1">
                       {t('navigation.advancedSearchDesc')}
+                    </div>
+                  </Link>
+                  <Link
+                    href="/courses/latest-reviews"
+                    className="block py-2 px-3 text-sm hover:bg-accent rounded-md transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <div className="font-medium">{t('courses.latestReviews.title')}</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {t('courses.latestReviews.subtitle')}
                     </div>
                   </Link>
                 </div>
@@ -506,46 +514,33 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                     </Link>
                   ))}
                   {translatedLinksItems.map((item) => (
-                    item.external ? (
-                      <a
-                        key={item.title}
-                        href={item.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block py-2 px-3 text-sm hover:bg-accent rounded-md transition-colors"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        <div className="font-medium">{item.title}</div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {item.description}
-                        </div>
-                      </a>
-                    ) : (
-                      <Link
-                        key={item.title}
-                        href={item.href}
-                        className="block py-2 px-3 text-sm hover:bg-accent rounded-md transition-colors"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                      >
-                        <div className="font-medium">{item.title}</div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {item.description}
-                        </div>
-                      </Link>
-                    )
+                    <Link
+                      key={item.title}
+                      href={item.href}
+                      className="block py-2 px-3 text-sm hover:bg-accent rounded-md transition-colors"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <div className="font-medium">{item.title}</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {item.description}
+                      </div>
+                    </Link>
                   ))}
+                  {/* About link inside More submenu */}
+                  <Link
+                    href="/about"
+                    className="block py-2 px-3 text-sm hover:bg-accent rounded-md transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <div className="font-medium">{t('menu.about')}</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {t('about.subtitle')}
+                    </div>
+                  </Link>
                 </div>
               )}
             </div>
 
-            {/* About link - mobile simple link */}
-            <Link
-              href="/about"
-              className="block py-3 px-2 text-sm font-medium hover:bg-accent rounded-md transition-colors"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              {t('navigation.about')}
-            </Link>
 
             {/* Language Switcher - mobile */}
             <div className="border-t pt-2 mt-2">

@@ -1,26 +1,22 @@
 {
   "navigation": {
     "forum": "論壇",
-    "courseReview": "課程點評",
+    "coursesTeachers": "課程/老師",
     "browseCourses": "瀏覽課程",
     "browseCoursesDesc": "按學術部門分類探索課程",
+    "browseTeachers": "瀏覽老師",
+    "browseTeachersDesc": "探索老師主頁與評分",
     "advancedSearch": "進階搜索",
     "advancedSearchDesc": "使用進階選項搜尋和篩選課程",
     "more": "更多",
-    "about": "關於",
     "language": "語言"
   },
   "menu": {
-    "techSupport": "技術支援",
-    "techSupportDesc": "獲取技術問題幫助",
-    "featureRequests": "功能建議",
-    "featureRequestsDesc": "建議新功能和改進",
+    "wiki": "Wiki",
+    "wikiDesc": "瀏覽社區 Wiki 頁面",
+    "about": "關於",
     "announcements": "公告",
     "announcementsDesc": "獲取最新消息",
-    "documentation": "文檔",
-    "documentationDesc": "全面的指南和API參考",
-    "discord": "Discord",
-    "discordDesc": "加入我們的社區聊天",
     "resources": "資源",
     "resourcesDesc": "有用的工具和資料"
   },
@@ -75,6 +71,8 @@
     "errorNetwork": "網絡錯誤，請重試",
     "errorGoogleFailed": "Google 登入失敗",
     "errorAccountDisabled": "此帳戶已被停用，請聯絡支援團隊尋求協助。",
+    "errorAuthRequired": "此操作需要身份驗證，請登入。",
+    "invalidCredentials": "電郵或密碼錯誤",
     "register": "註冊",
     "nickname": "暱稱",
     "verificationCode": "驗證碼",
@@ -89,7 +87,33 @@
     "errorPolyuEmail": "請使用有效的理大電郵（@connect.polyu.hk）",
     "emailPrivacyNotice": "您的電郵只用於關聯您的 polyu.life 帳戶並確認您是 PolyU 學生。您的學校相關內容、電郵相關內容均不會被讀取您的個人隱私信息不會被分享。",
     "registerConsent": "點擊註冊即代表你同意我們的",
-    "termsOfService": "服務條款"
+    "termsOfService": "服務條款",
+    "verificationCodeSent": "驗證碼已發送至 {{email}}，請查收郵件。若未收到，請檢查垃圾郵件文件夾。",
+    "errorTooManyAttempts": "嘗試次數過多，請稍後再試或請求新的驗證碼",
+    "passwordRequirements": "密碼必須滿足以下要求：",
+    "passwordRequirement1": "至少8個字符",
+    "passwordRequirement2": "不能是常見弱密碼",
+    "passwordRequirement3": "不能全部為數字",
+    "passwordReset": {
+      "title": "重設密碼",
+      "forgotPasswordTitle": "忘記密碼",
+      "forgotPasswordDescription": "輸入你的理大電郵，我們將發送重設連結",
+      "resetPasswordDescription": "請在下方輸入新密碼",
+      "sendResetLink": "發送重設連結",
+      "sending": "發送中...",
+      "resetPassword": "重設密碼",
+      "resetting": "重設中...",
+      "newPassword": "新密碼",
+      "confirmNewPassword": "確認新密碼",
+      "backToLogin": "返回登入",
+      "emailSent": "如果該電郵已註冊帳戶，我們已向其發送了密碼重設連結。請查收郵件（包括垃圾郵件文件夾）。",
+      "invalidOrExpired": "此密碼重設連結無效或已過期，請重新申請。",
+      "linkExpired": "此密碼重設連結已過期，請重新申請。",
+      "success": "密碼重設成功！你現在可以使用新密碼登入了。",
+      "errorInvalidLink": "無效或過期的重設連結",
+      "errorPasswordMismatch": "兩次輸入的密碼不一致",
+      "linkValidFor": "此連結有效期為1小時"
+    }
   },
   "post": {
     "translate": "翻譯",
@@ -417,6 +441,17 @@
       "courses": "課程列表",
       "advancedSearch": "進階搜索",
       "search": "搜索"
+    },
+    "latestReviews": {
+      "title": "最新點評",
+      "subtitle": "瀏覽社區最新的課程點評",
+      "loading": "載入點評中...",
+      "noReviews": "暫無點評",
+      "noReviewsDesc": "還沒有任何點評，快來發佈第一條吧！",
+      "loadMore": "載入更多",
+      "course": "課程",
+      "viewCourse": "查看課程詳情",
+      "totalReviews": "共 {{count}} 條點評"
     }
   }
 ,
@@ -572,6 +607,29 @@
       "invalid": "無效的暱稱",
       "characters": "字符",
       "alreadyTaken": "此暱稱已被使用，請選擇其他名稱。"
+    },
+    "email": {
+      "required": "郵箱不能為空",
+      "invalid": "請輸入有效的郵箱地址",
+      "polyuOnly": "僅允許使用理大郵箱（@connect.polyu.hk）",
+      "alreadyRegistered": "此郵箱已被註冊，請直接登入。"
+    },
+    "password": {
+      "required": "密碼不能為空",
+      "tooShort": "密碼至少需要8個字符",
+      "tooCommon": "該密碼過於常見，請選擇更獨特的密碼",
+      "entirelyNumeric": "密碼不能全部為數字",
+      "tooSimilar": "密碼與您的個人信息過於相似",
+      "mismatch": "兩次輸入的密碼不一致"
+    },
+    "verificationCode": {
+      "required": "驗證碼不能為空",
+      "invalid": "請輸入有效的6位數字驗證碼",
+      "invalidOrExpired": "驗證碼無效或已過期",
+      "tooManyAttempts": "嘗試次數過多，請請求新的驗證碼"
+    },
+    "field": {
+      "required": "此字段為必填項"
     }
   },
   "profile": {
@@ -641,7 +699,8 @@
     "noResults": "未找到包含「{{query}}」的老師",
     "noTeachers": "暫無老師",
     "endOfResults": "已顯示全部 (共 {{count}} 位)",
-    "retry": "重試"
+    "retry": "重試",
+    "approximateCountNote": "模糊搜尋使用相似度配對；顯示的總數為下限，可能仲有更多結果。"
   },
   "teacher": {
     "about": "簡介",
@@ -650,6 +709,16 @@
     "office": "辦公室",
     "officeHours": "辦公時間",
     "homepage": "主頁",
+    "phone": "電話",
+    "profile": "個人資料頁",
+    "scholarsHub": "PolyU Scholars Hub",
+    "orcid": "ORCID",
+    "scopus": "Scopus",
+    "researcherId": "ResearcherID",
+    "biography": "個人簡介",
+    "researchInterests": "研究方向",
+    "experience": "學術與專業經歷",
+    "qualifications": "專業資歷",
     "yearsExperience": "任教年資",
     "languages": "授課語言",
     "coursesTaught": "授課課程",
@@ -678,5 +747,27 @@
       "courseReviewReplyReplied": "{{actor}} 回覆咗你喺 {{target}} 嘅點評回覆",
       "unknownType": "未知通知類型 ({{type}}) 來自 {{actor}}"
     }
+  },
+  "welcome": {
+    "title": "歡迎來到 PolyU.life！",
+    "subtitle": "透過以下選項開始探索",
+    "registrationSuccess": "註冊成功！你的帳戶已創建。",
+    "completeProfile": {
+      "title": "完善個人資料",
+      "description": "設定你的暱稱、頭像和代稱，個性化你的帳戶。",
+      "action": "前往設定"
+    },
+    "communityRules": {
+      "title": "社區規範",
+      "description": "了解我們的社區標準，學習如何負責任地參與。",
+      "action": "閱讀規範"
+    },
+    "exploreCourses": {
+      "title": "探索課程點評",
+      "description": "瀏覽課程、閱讀點評，分享你的學習體驗。",
+      "action": "瀏覽課程"
+    },
+    "skipForNow": "暫時跳過",
+    "continueToHome": "前往首頁"
   }
 }

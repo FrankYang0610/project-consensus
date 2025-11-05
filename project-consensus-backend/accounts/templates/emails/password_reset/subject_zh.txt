@@ -1,0 +1,1 @@
+PolyU Life 密码重置请求（{{ timeout_hours }} 小时内有效）

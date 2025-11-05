@@ -1,26 +1,22 @@
 {
   "navigation": {
     "forum": "Forum",
-    "courseReview": "Course Review",
+    "coursesTeachers": "Courses/Teachers",
     "browseCourses": "Browse Courses",
     "browseCoursesDesc": "Explore courses organized by academic departments",
+    "browseTeachers": "Browse Teachers",
+    "browseTeachersDesc": "Explore teacher profiles and ratings",
     "advancedSearch": "Advanced Search",
     "advancedSearchDesc": "Search and filter courses with advanced options",
     "more": "More",
-    "about": "About",
     "language": "Language"
   },
   "menu": {
-    "techSupport": "Technical Support",
-    "techSupportDesc": "Get help with technical issues",
-    "featureRequests": "Feature Requests",
-    "featureRequestsDesc": "Suggest new features and improvements",
+    "wiki": "Wiki",
+    "wikiDesc": "Browse community wiki pages",
+    "about": "About",
     "announcements": "Announcements",
     "announcementsDesc": "Stay updated with latest news",
-    "documentation": "Documentation",
-    "documentationDesc": "Comprehensive guides and API references",
-    "discord": "Discord",
-    "discordDesc": "Join our community chat",
     "resources": "Resources",
     "resourcesDesc": "Useful tools and materials"
   },
@@ -77,6 +73,8 @@
     "errorNetwork": "Network error. Please try again.",
     "errorGoogleFailed": "Google login failed",
     "errorAccountDisabled": "This account has been disabled. Please contact support for assistance.",
+    "errorAuthRequired": "Authentication is required for this action. Please log in.",
+    "invalidCredentials": "Invalid email or password",
     "register": "Register",
     "nickname": "Nickname",
     "verificationCode": "Verification Code",
@@ -91,7 +89,33 @@
     "errorPolyuEmail": "Please use a valid PolyU email (@connect.polyu.hk)",
     "emailPrivacyNotice": "Your email is only used to link your polyu.life account and verify that you are a PolyU student. Your personal information will not be shared.",
     "registerConsent": "By clicking Register you agree to our",
-    "termsOfService": "Terms of Service"
+    "termsOfService": "Terms of Service",
+    "verificationCodeSent": "Verification code sent to {{email}}, please check your email. If you don't receive it, please check your spam folder.",
+    "errorTooManyAttempts": "Too many attempts. Please try again later or request a new code",
+    "passwordRequirements": "Password must meet the following requirements:",
+    "passwordRequirement1": "At least 8 characters long",
+    "passwordRequirement2": "Cannot be a commonly used password",
+    "passwordRequirement3": "Cannot be entirely numeric",
+    "passwordReset": {
+      "title": "Reset Password",
+      "forgotPasswordTitle": "Forgot Password",
+      "forgotPasswordDescription": "Enter your PolyU email and we'll send you a reset link",
+      "resetPasswordDescription": "Enter your new password below",
+      "sendResetLink": "Send Reset Link",
+      "sending": "Sending...",
+      "resetPassword": "Reset Password",
+      "resetting": "Resetting...",
+      "newPassword": "New Password",
+      "confirmNewPassword": "Confirm New Password",
+      "backToLogin": "Back to Login",
+      "emailSent": "If an account with this email exists, a password reset link has been sent. Please check your email (including spam folder).",
+      "invalidOrExpired": "This password reset link is invalid or has expired. Please request a new one.",
+      "linkExpired": "This password reset link has expired. Please request a new one.",
+      "success": "Password reset successful! You can now login with your new password.",
+      "errorInvalidLink": "Invalid or expired reset link",
+      "errorPasswordMismatch": "Passwords do not match",
+      "linkValidFor": "This link is valid for 1 hour"
+    }
   },
   "post": {
     "translate": "Translate",
@@ -417,6 +441,17 @@
       "courses": "Courses",
       "advancedSearch": "Advanced Search",
       "search": "Search"
+    },
+    "latestReviews": {
+      "title": "Latest Reviews",
+      "subtitle": "Browse the latest course reviews from the community",
+      "loading": "Loading reviews...",
+      "noReviews": "No reviews yet",
+      "noReviewsDesc": "Be the first to post a review!",
+      "loadMore": "Load More",
+      "course": "Course",
+      "viewCourse": "View Course Details",
+      "totalReviews": "{{count}} reviews in total"
     }
   },
   "about": {
@@ -571,6 +606,29 @@
       "invalid": "Invalid nickname",
       "characters": "characters",
       "alreadyTaken": "This nickname is already taken. Please choose another one."
+    },
+    "email": {
+      "required": "Email is required",
+      "invalid": "Please enter a valid email address",
+      "polyuOnly": "Only PolyU email addresses (@connect.polyu.hk) are allowed",
+      "alreadyRegistered": "This email is already registered. Please login instead."
+    },
+    "password": {
+      "required": "Password is required",
+      "tooShort": "Password must be at least 8 characters long",
+      "tooCommon": "This password is too common. Please choose a more unique password",
+      "entirelyNumeric": "Password cannot be entirely numeric",
+      "tooSimilar": "Password is too similar to your personal information",
+      "mismatch": "Passwords do not match"
+    },
+    "verificationCode": {
+      "required": "Verification code is required",
+      "invalid": "Please enter a valid 6-digit verification code",
+      "invalidOrExpired": "Invalid or expired verification code",
+      "tooManyAttempts": "Too many incorrect attempts. Please request a new code"
+    },
+    "field": {
+      "required": "This field is required"
     }
   },
   "profile": {
@@ -640,7 +698,8 @@
     "noResults": "No teachers found for \"{{query}}\"",
     "noTeachers": "No teachers available",
     "endOfResults": "End of results ({{count}} total)",
-    "retry": "Retry"
+    "retry": "Retry",
+    "approximateCountNote": "Fuzzy search shows a conservative lower-bound total; there may be more results."
   },
   "teacher": {
     "about": "About",
@@ -649,6 +708,16 @@
     "office": "Office",
     "officeHours": "Office Hours",
     "homepage": "Homepage",
+    "phone": "Phone",
+    "profile": "Profile",
+    "scholarsHub": "PolyU Scholars Hub",
+    "orcid": "ORCID",
+    "scopus": "Scopus",
+    "researcherId": "ResearcherID",
+    "biography": "Biography",
+    "researchInterests": "Research Interests",
+    "experience": "Academic & Professional Experience",
+    "qualifications": "Professional Qualifications",
     "yearsExperience": "Years of Experience",
     "languages": "Languages",
     "coursesTaught": "Courses Taught",
@@ -677,5 +746,27 @@
       "courseReviewReplyReplied": "{{actor}} replied to your review reply for {{target}}",
       "unknownType": "Unknown notification type ({{type}}) from {{actor}}"
     }
+  },
+  "welcome": {
+    "title": "Welcome to PolyU.life!",
+    "subtitle": "Get started by exploring these options",
+    "registrationSuccess": "Registration successful! Your account has been created.",
+    "completeProfile": {
+      "title": "Complete Your Profile",
+      "description": "Personalize your account with a nickname, avatar, and pronouns.",
+      "action": "Go to Settings"
+    },
+    "communityRules": {
+      "title": "Community Guidelines",
+      "description": "Learn about our community standards and how to participate responsibly.",
+      "action": "Read Guidelines"
+    },
+    "exploreCourses": {
+      "title": "Explore Course Reviews",
+      "description": "Browse courses, read reviews, and share your own experiences.",
+      "action": "Browse Courses"
+    },
+    "skipForNow": "Skip for now",
+    "continueToHome": "Continue to Home"
   }
 }

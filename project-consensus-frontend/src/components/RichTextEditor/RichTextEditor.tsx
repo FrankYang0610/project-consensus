@@ -112,7 +112,7 @@ export default function RichTextEditor({ value, onChange, placeholder, className
     // SimpleUploadAdapter configuration for R2 image upload
     // CKEditor sends images with field name 'upload'
     simpleUpload: {
-      uploadUrl: `${getAPIBaseUrl()}/api/upload/image/`,
+      uploadUrl: `${getAPIBaseUrl()}/api/upload/image/?folder=images`,
       withCredentials: true,
       headers: {
         'X-CSRFToken': csrfToken,

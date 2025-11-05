@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, FormEvent, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -19,12 +20,14 @@ import { SiteNavigation } from '@/components/SiteNavigation';
 import Link from 'next/link';
 import { ErrorResponse, RegisterSuccessResponse, SendVerificationCodeResponse } from '@/types';
 import { getCookie, getAPIBaseUrl } from '@/lib/api/api-utils';
+import { extractErrorMessage } from '@/lib/api/error-utils';
 import { useApp } from '@/contexts/AppContext';
 import { validateNickname, validatePolyuEmail } from '@/lib/utils';
 
 export default function RegisterPage() {
   const { t } = useI18n();
-  const { login } = useApp();
+  const router = useRouter();
+  const { login, user, isLoading: authLoading, openLoginModal } = useApp();
 
   const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
@@ -34,10 +37,18 @@ export default function RegisterPage() {
 
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [canInputCode, setCanInputCode] = useState(false);
+  const [sentToEmail, setSentToEmail] = useState(''); 
   const [resendCountdown, setResendCountdown] = useState(0);
   const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push('/');
+    }
+  }, [authLoading, user, router]);
 
   // countdown effect
   useEffect(() => {
@@ -64,8 +75,6 @@ export default function RegisterPage() {
     
     try {
       setIsSendingCode(true);
-      // TODO: Actual server address (backend)
-      // TODO：实际服务器地址（后端）
       await fetch(`${getAPIBaseUrl()}/api/accounts/csrf/`, { method: 'GET', credentials: 'include' });
       const csrfToken = getCookie('csrftoken');
       const res = await fetch(`${getAPIBaseUrl()}/api/accounts/send_verification_code/`, {
@@ -76,11 +85,22 @@ export default function RegisterPage() {
       });
       if (!res.ok) {
         const errorData: ErrorResponse = await res.json().catch(() => ({} as ErrorResponse));
-        throw new Error(errorData.message || errorData.detail || 'Failed to send code');
+        // Handle specific error cases
+        if (res.status === 429) {
+          const msg = (errorData.message || '').toString();
+          const localized = msg.startsWith('auth.') || msg.startsWith('validation.') ? t(msg) : t('auth.errorTooManyAttempts');
+          throw new Error(localized);
+        }
+        const generic = errorData.message || errorData.detail || 'Failed to send code';
+        const localized = generic.startsWith?.('auth.') || generic.startsWith?.('validation.') ? t(generic) : generic;
+        throw new Error(localized);
       }
+      const data: SendVerificationCodeResponse = await res.json();
       setCanInputCode(true);
-      setResendCountdown(60);
-      setSuccess(t('common.note'));
+      setSentToEmail(data.email);
+      const countdown = typeof data.resend_after_seconds === 'number' && data.resend_after_seconds > 0 ? data.resend_after_seconds : 90;
+      setResendCountdown(countdown);
+      setSuccess(t('auth.verificationCodeSent', { email: data.email }));
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : t('auth.errorNetwork');
       setError(message);
@@ -132,37 +152,46 @@ export default function RegisterPage() {
           email: emailValidation.sanitizedValue,
           verification_code: verificationCode,
           password,
+          password_confirm: confirmPassword,
         }),
       });
       if (!res.ok) {
         const data: ErrorResponse = await res.json().catch(() => ({ message: 'Register failed' } as ErrorResponse));
         
-        // Extract error message from various possible formats
-        // 从各种可能的格式中提取错误信息
-        let errorMessage = data.message || data.detail || '';
-        
-        // Backend may return validation errors in a nested format
-        // 后端可能以嵌套格式返回验证错误
-        if (!errorMessage && data.nickname) {
-          // Handle DRF validation error format: { nickname: ["error message"] }
-          // 处理 DRF 验证错误格式: { nickname: ["错误信息"] }
-          const nicknameErrors = Array.isArray(data.nickname) ? data.nickname : [data.nickname];
-          errorMessage = nicknameErrors[0] || '';
+        // Handle specific error cases
+        // 处理特定错误情况
+        if (res.status === 429) {
+          const msg = (data.message || '').toString();
+          const localized429 = msg.startsWith('auth.') || msg.startsWith('validation.') ? t(msg) : t('auth.errorTooManyAttempts');
+          throw new Error(localized429);
         }
         
-        throw new Error(errorMessage || 'Register failed');
+        // Extract error message using utility function
+        // 使用工具函数提取错误信息
+        let errorMessage = extractErrorMessage(data, 'Register failed');
+        
+        // If error message looks like an i18n key (e.g. "validation.password.tooShort"), translate it
+        // 如果错误消息看起来像 i18n key，则翻译它
+        if (errorMessage.startsWith('validation.') || errorMessage.startsWith('auth.')) {
+          errorMessage = t(errorMessage);
+        }
+        
+        throw new Error(errorMessage);
       }
       
       const data: RegisterSuccessResponse = await res.json();
-      if (!data.success) {
+      
+      // Verify registration success
+      if (!data.success || !data.user) {
         throw new Error('Register failed');
       }
 
-      // Session cookie is set by backend; update UI state and go back
-      if (data.user) {
-        login(data.user);
-      }
-      window.history.back();
+      // Session cookie is set by backend; update UI state
+      login(data.user);
+      
+      // Use window.location for navigation to ensure clean page load
+      // This helps prevent any state issues with the router
+      window.location.href = '/welcome';
     } catch (e: unknown) {
       // Check if display name is already taken
       // 检查显示名称是否已被占用
@@ -260,8 +289,16 @@ export default function RegisterPage() {
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value)}
                   disabled={!canInputCode || isRegistering}
+                  inputMode="numeric"
+                  pattern="[0-9]{6}"
+                  maxLength={6}
                   required
                 />
+                {sentToEmail && (
+                  <p className="text-sm text-muted-foreground">
+                    {t('auth.verificationCodeSent', { email: sentToEmail })}
+                  </p>
+                )}
               </div>
 
               <div className="grid gap-2">
@@ -274,6 +311,14 @@ export default function RegisterPage() {
                   disabled={isRegistering}
                   required
                 />
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p className="font-medium">{t('auth.passwordRequirements')}</p>
+                  <ul className="list-disc list-inside space-y-0.5 ml-1">
+                    <li>{t('auth.passwordRequirement1')}</li>
+                    <li>{t('auth.passwordRequirement2')}</li>
+                    <li>{t('auth.passwordRequirement3')}</li>
+                  </ul>
+                </div>
               </div>
 
               <div className="grid gap-2">
@@ -309,9 +354,13 @@ export default function RegisterPage() {
 
           <CardFooter className="justify-center text-sm text-muted-foreground">
             <span className="mr-1">{t('auth.alreadyHaveAccount')}</span>
-            <Link className="underline underline-offset-4" href="/">
+            <button
+              type="button"
+              onClick={openLoginModal}
+              className="underline underline-offset-4 hover:text-primary transition-colors"
+            >
               {t('auth.login')}
-            </Link>
+            </button>
           </CardFooter>
         </Card>
       </div>

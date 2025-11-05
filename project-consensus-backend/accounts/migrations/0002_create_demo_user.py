@@ -1,11 +1,6 @@
 """
-目的（中文）：
-  本迁移在数据库中创建一个用于演示/本地开发的示例账号（email/password），
-  便于直接登录联调。回滚此迁移时删除该示例账号。
-
-Purpose (English):
-  This migration creates a demo user for local development/testing so you can
-  log in immediately. Rolling back this migration will delete the demo user.
+This migration creates a demo user for local development/testing so you can
+log in immediately. Rolling back this migration will delete the demo user.
 
 Account:
   Email: demo@connect.polyu.hk

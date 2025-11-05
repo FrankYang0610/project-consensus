@@ -1,0 +1,1 @@
+PolyU Life 驗證碼 {{ code }}（{{ ttl_minutes }} 分鐘內有效）

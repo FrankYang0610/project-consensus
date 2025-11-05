@@ -53,7 +53,7 @@ The following diagram illustrates the complete preprod deployment topology:
               │ (tunnel)                     │ (tunnel)
               ▼                              ▼
 ┌─────────────────────────┐    ┌──────────────────────────────────┐
-│   Next.js Frontend      │    │   Django Backend (Gunicorn)      │
+│   Next.js Frontend      │    │   Django Backend (Uvicorn)       │
 │   127.0.0.1:3000        │◄───┤   127.0.0.1:8000                 │
 │                         │ API│                                  │
 │ - Reads CSRF from cookie│calls  - Issues csrftoken cookie       │
@@ -555,7 +555,7 @@ SESSION_COOKIE_SAMESITE = env("SESSION_COOKIE_SAMESITE", default="Lax")
 CSRF_COOKIE_SAMESITE = env("CSRF_COOKIE_SAMESITE", default="Lax")
 ```
 
-Then your `.env` entries will take effect. If you set either value to `None`, ensure you are on HTTPS so the corresponding cookie is also marked `Secure` (already true when `DEBUG=False`). Restart Gunicorn after the change.
+Then your `.env` entries will take effect. If you set either value to `None`, ensure you are on HTTPS so the corresponding cookie is also marked `Secure` (already true when `DEBUG=False`). Restart Uvicorn after the change.
 
 ---
 
