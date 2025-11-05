@@ -179,8 +179,8 @@ def _match_teacher_by_name(apps, raw_name: str, dept: str | None = None):
 
 def _extract_teacher_names(rec: dict) -> List[str]:
     details = rec.get("details") or {}
-    # Prefer list field if available
-    names_field = details.get("teaching_staff_all")
+    primary_field = details.get("teaching_staff")
+    names_field = None if (primary_field and str(primary_field).strip()) else details.get("teaching_staff_all")
 
     def _split_pairs(s: str) -> List[str]:
         # Split a string like "CHEUNG, Wan Chuen, FOK, WH Thomas" into
@@ -200,7 +200,19 @@ def _extract_teacher_names(rec: dict) -> List[str]:
         return out
 
     names: List[str] = []
-    if isinstance(names_field, list) and names_field:
+    # First, try 'teaching_staff'
+    raw_primary = str(primary_field or "").strip()
+    if raw_primary:
+        if "," in raw_primary:
+            names = _split_pairs(raw_primary)
+        else:
+            _conn_re = re.compile(r"\s*(?:\+|&|/|\band\b|、|＆)\s*", re.IGNORECASE)
+            parts = [p.strip() for p in _conn_re.split(raw_primary) if p and p.strip()]
+            if len(parts) > 1:
+                names = parts
+            else:
+                names = [raw_primary]
+    elif isinstance(names_field, list) and names_field:
         for item in names_field:
             if not item:
                 continue
@@ -209,13 +221,6 @@ def _extract_teacher_names(rec: dict) -> List[str]:
                 names.extend(_split_pairs(s))
             else:
                 names.append(s)
-    else:
-        raw = details.get("teaching_staff") or ""
-        s = str(raw).strip()
-        if "," in s:
-            names = _split_pairs(s)
-        elif s:
-            names = [s]
     # Clean common sentinels
     cleaned = []
     for n in names:
@@ -263,25 +268,61 @@ def import_courses_forward(apps, schema_editor):
             level = str(rec.get("subject_level") or details.get("level") or "").strip()
             credits = str(rec.get("credits") or details.get("credits") or "").strip()
 
-            # Create or update a Course matched by (subject_code, term_year, term_semester)
-            obj = (
-                Course.objects.filter(
-                    subject_code=subject_code,
-                    term_year=term_year,
-                    term_semester=term_semester,
-                ).first()
-            )
+            # selection_category: take the first group_type from subject_groups if available
+            selection_category_val = ""
+            try:
+                subject_groups = details.get("subject_groups") or []
+                if isinstance(subject_groups, list):
+                    for g in subject_groups:
+                        if isinstance(g, dict):
+                            gt = str(g.get("group_type") or "").strip()
+                            if gt:
+                                selection_category_val = gt
+                                break
+            except Exception:
+                selection_category_val = ""
 
-            if obj is None:
-                obj = Course(
-                    subject_code=subject_code,
-                    title=title,
-                    term_year=term_year,
-                    term_semester=term_semester,
-                )
-                created = True
+            # Prepare teacher matching first so we can merge by (subject_code + teacher set)
+            names = _extract_teacher_names(rec)
+            matched: List[object] = []
+            seen_ids = set()
+            for name in names:
+                t = _match_teacher_by_name(apps, name, dept=department)
+                if t and t.id not in seen_ids:
+                    matched.append(t)
+                    seen_ids.add(t.id)
+
+            # Create or update a Course:
+            #   - Prefer merging by (subject_code + identical teacher ID set) across terms
+            #   - Fallback to legacy key (subject_code, term_year, term_semester) if no teacher matched
+            obj = None
+            created = False
+            if matched:
+                candidates = list(Course.objects.filter(subject_code=subject_code))
+                matched_ids = {t.id for t in matched}
+                for c in candidates:
+                    cand_ids = set(c.teachers.values_list("id", flat=True))
+                    if cand_ids == matched_ids:
+                        obj = c
+                        break
+                if obj is None:
+                    obj = Course(
+                        subject_code=subject_code,
+                        title=title,
+                        term_year=term_year,
+                        term_semester=term_semester,
+                    )
+                    created = True
             else:
-                created = False
+                obj = Course.objects.filter(subject_code=subject_code, teachers__isnull=True).first()
+                if obj is None:
+                    obj = Course(
+                        subject_code=subject_code,
+                        title=title,
+                        term_year=term_year,
+                        term_semester=term_semester,
+                    )
+                    created = True
 
             # Assign fields
             obj.title = title
@@ -291,24 +332,21 @@ def import_courses_forward(apps, schema_editor):
             obj.credits = credits[:20] if credits else ""
             obj.course_homepage_url = ""
             obj.syllabus_url = ""
-            obj.selection_category = ""
+            obj.selection_category = selection_category_val
             obj.teaching_type = ""
             obj.ai_summary = ""
             obj.course_category = "imported"  # marker for easy reverse
             obj.last_updated = now
-            obj.terms = [{"year": term_year, "semester": term_semester}]
+            # Accumulate unique (year, semester) pairs into terms
+            existing_terms = obj.terms if isinstance(getattr(obj, "terms", None), list) else []
+            new_term = {"year": term_year, "semester": term_semester}
+            if not any((t.get("year") == new_term["year"] and t.get("semester") == new_term["semester"]) for t in existing_terms):
+                existing_terms.append(new_term)
+            obj.terms = existing_terms
 
             obj.save()
 
             # Attach teachers by best-match name
-            names = _extract_teacher_names(rec)
-            matched: List[object] = []
-            seen_ids = set()
-            for name in names:
-                t = _match_teacher_by_name(apps, name, dept=department)
-                if t and t.id not in seen_ids:
-                    matched.append(t)
-                    seen_ids.add(t.id)
             if matched:
                 obj.teachers.set(matched)
             else:
