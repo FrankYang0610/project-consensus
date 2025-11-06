@@ -4,7 +4,7 @@ import json
 import re
 from difflib import SequenceMatcher
 from pathlib import Path
-from typing import Iterable, List, Tuple
+from typing import Iterable, List, Tuple, Dict, Set
 
 from django.db import migrations
 from django.db.utils import DataError
@@ -121,6 +121,7 @@ def _sequence_similarity(a: str, b: str) -> float:
 
 
 _TEACHER_MATCH_MIN_SCORE = 0.72
+_MAIN_TYPES = {"LEC", "SEM", "LTL"}
 
 
 def _match_teacher_by_name(apps, raw_name: str, dept: str | None = None, min_score: float | None = None):
@@ -185,10 +186,21 @@ def _match_teacher_by_name(apps, raw_name: str, dept: str | None = None, min_sco
     return best
 
 
+def _is_ignored_staff_text(s: str) -> bool:
+    low = str(s or "").strip().lower()
+    if not low:
+        return False
+    if low in {"n/a", "na", "not applicable", "tba", "to be announced"}:
+        return True
+    if "class canceled" in low or "class cancelled" in low:
+        return True
+    return False
+
+
 def _extract_teacher_names(rec: dict) -> List[str]:
     details = rec.get("details") or {}
     primary_field = details.get("teaching_staff")
-    names_field = None if (primary_field and str(primary_field).strip()) else details.get("teaching_staff_all")
+    names_all = details.get("teaching_staff_all")
 
     def _split_pairs(s: str) -> List[str]:
         # Split a string like "CHEUNG, Wan Chuen, FOK, WH Thomas" into
@@ -208,26 +220,9 @@ def _extract_teacher_names(rec: dict) -> List[str]:
         return out
 
     names: List[str] = []
-    # First, try 'teaching_staff'
-    raw_primary = str(primary_field or "").strip()
-    if raw_primary:
-        _conn_re = re.compile(r"\s*(?:\+|&|/|\band\b|、|＆)\s*", re.IGNORECASE)
-        tokens = [p.strip() for p in _conn_re.split(raw_primary) if p and p.strip()]
-        if tokens:
-            if len(tokens) == 1:
-                tok = tokens[0]
-                if "," in tok:
-                    names = _split_pairs(tok)
-                else:
-                    names = [tok]
-            else:
-                for tok in tokens:
-                    if "," in tok:
-                        names.extend(_split_pairs(tok))
-                    else:
-                        names.append(tok)
-    elif isinstance(names_field, list) and names_field:
-        for item in names_field:
+    # Prefer explicit full list if available
+    if isinstance(names_all, list) and names_all:
+        for item in names_all:
             if not item:
                 continue
             s = str(item).strip()
@@ -235,12 +230,35 @@ def _extract_teacher_names(rec: dict) -> List[str]:
                 names.extend(_split_pairs(s))
             else:
                 names.append(s)
-    # Clean common sentinels
+    else:
+        # Fallback to 'teaching_staff' (display string). Ignore GROUP[...] tokens.
+        raw_primary = str(primary_field or "").strip()
+        if raw_primary:
+            _conn_re = re.compile(r"\s*(?:\+|&|/|\band\b|、|＆)\s*", re.IGNORECASE)
+            tokens = [p.strip() for p in _conn_re.split(raw_primary) if p and p.strip()]
+            if tokens:
+                if len(tokens) == 1:
+                    tok = tokens[0]
+                    if tok.upper().startswith("GROUP["):
+                        pass
+                    elif "," in tok:
+                        names = _split_pairs(tok)
+                    else:
+                        names = [tok]
+                else:
+                    for tok in tokens:
+                        if tok.upper().startswith("GROUP["):
+                            continue
+                        if "," in tok:
+                            names.extend(_split_pairs(tok))
+                        else:
+                            names.append(tok)
+    # Clean common sentinels and canceled markers
     cleaned = []
     for n in names:
         if not n:
             continue
-        if str(n).strip().lower() in {"n/a", "na", "not applicable", "tba", "to be announced"}:
+        if _is_ignored_staff_text(n):
             continue
         cleaned.append(str(n).strip())
     return cleaned
@@ -249,6 +267,131 @@ def _extract_teacher_names(rec: dict) -> List[str]:
 def _extract_teacher_name_sets(rec: dict) -> List[List[str]]:
     details = rec.get("details") or {}
     result: List[List[str]] = []
+    classes = details.get("teaching_staff_classes")
+    if isinstance(classes, list) and classes:
+        def _split_pairs_local(s: str) -> List[str]:
+            parts = [p.strip() for p in str(s).split(",") if p and p.strip()]
+            if len(parts) <= 1:
+                return parts
+            out: List[str] = []
+            i = 0
+            while i < len(parts):
+                if i + 1 < len(parts):
+                    out.append(f"{parts[i]} {parts[i+1]}".strip())
+                    i += 2
+                else:
+                    out.append(parts[i])
+                    i += 1
+            return out
+
+        _conn_re = re.compile(r"\s*(?:\+|&|/|\band\b|、|＆)\s*", re.IGNORECASE)
+
+        # Map: mainsig (tuple of sorted main names) -> set of all names (starts with main names)
+        mainsig_to_names: Dict[Tuple[str, ...], Set[str]] = {}
+        # Supportive names across the whole subject (non-main types or missing main)
+        supportive_all: Set[str] = set()
+
+        def _collect_names(seq) -> List[str]:
+            names: List[str] = []
+            if isinstance(seq, list) and seq:
+                for item in seq:
+                    s = str(item).strip()
+                    if s and not _is_ignored_staff_text(s):
+                        tokens = [p.strip() for p in _conn_re.split(s) if p and p.strip()]
+                        if tokens:
+                            for tok in tokens:
+                                if _is_ignored_staff_text(tok):
+                                    continue
+                                if "," in tok:
+                                    for nm in _split_pairs_local(tok):
+                                        if not _is_ignored_staff_text(nm):
+                                            names.append(nm)
+                                else:
+                                    names.append(tok)
+                        else:
+                            if "," in s:
+                                for nm in _split_pairs_local(s):
+                                    if not _is_ignored_staff_text(nm):
+                                        names.append(nm)
+                            else:
+                                names.append(s)
+            return names
+
+        for c in classes:
+            if not isinstance(c, dict):
+                continue
+            mt = str(c.get("main_type") or "").strip().upper()
+            main_staff = _collect_names(c.get("main_staff"))
+            staff = _collect_names(c.get("staff"))
+
+            if mt in _MAIN_TYPES and main_staff:
+                key = tuple(sorted([x.strip() for x in main_staff if x], key=lambda x: x.lower()))
+                if key:
+                    s = mainsig_to_names.get(key)
+                    if s is None:
+                        s = set()
+                        mainsig_to_names[key] = s
+                    for nm in main_staff:
+                        t = str(nm).strip()
+                        if t and not _is_ignored_staff_text(t):
+                            s.add(t)
+            else:
+                # Non-main or missing main: treat as supportive
+                for nm in staff:
+                    t = str(nm).strip()
+                    if t and not _is_ignored_staff_text(t):
+                        supportive_all.add(t)
+
+        # Enrich supportive_all with group-level and all-staff info (if provided)
+        # but exclude any names that are already part of a main combo
+        all_main_names: Set[str] = set()
+        for key in mainsig_to_names.keys():
+            for nm in key:
+                t = str(nm).strip()
+                if t:
+                    all_main_names.add(t)
+        groups = details.get("teaching_staff_groups")
+        if isinstance(groups, list) and groups:
+            for g in groups:
+                if not isinstance(g, dict):
+                    continue
+                staff = g.get("staff")
+                for nm in _collect_names(staff):
+                    t = str(nm).strip()
+                    if t and not _is_ignored_staff_text(t) and t not in all_main_names:
+                        supportive_all.add(t)
+
+        names_all = details.get("teaching_staff_all")
+        if isinstance(names_all, list) and names_all:
+            for nm in _collect_names(names_all):
+                t = str(nm).strip()
+                if t and not _is_ignored_staff_text(t) and t not in all_main_names:
+                    supportive_all.add(t)
+
+        # Build one teacher set per mainsig: mainsig ∪ supportive_all
+        if mainsig_to_names:
+            for key, names in mainsig_to_names.items():
+                union_names = set(names)
+                union_names |= supportive_all
+                final = tuple(sorted([x.strip() for x in union_names if x], key=lambda x: x.lower()))
+                if final:
+                    result.append(list(final))
+            if result:
+                dedup: List[List[str]] = []
+                seen = set()
+                for ns in result:
+                    k = tuple(sorted([x.strip() for x in ns if x], key=lambda x: x.lower()))
+                    if k and k not in seen:
+                        seen.add(k)
+                        dedup.append(list(k))
+                if dedup:
+                    return dedup
+        else:
+            # No mainsig found, but we may still have supportive names
+            if supportive_all:
+                final = tuple(sorted([x.strip() for x in supportive_all if x], key=lambda x: x.lower()))
+                if final:
+                    return [list(final)]
     groups = details.get("teaching_staff_groups")
     if isinstance(groups, list) and groups:
         def _split_pairs_local(s: str) -> List[str]:
@@ -275,17 +418,23 @@ def _extract_teacher_name_sets(rec: dict) -> List[List[str]]:
                 names = []
                 for item in staff:
                     s = str(item).strip()
-                    if s and s.lower() not in {"n/a", "na", "not applicable", "tba", "to be announced"}:
+                    if s and not _is_ignored_staff_text(s):
                         tokens = [p.strip() for p in _conn_re.split(s) if p and p.strip()]
                         if tokens:
                             for tok in tokens:
+                                if _is_ignored_staff_text(tok):
+                                    continue
                                 if "," in tok:
-                                    names.extend(_split_pairs_local(tok))
+                                    for nm in _split_pairs_local(tok):
+                                        if not _is_ignored_staff_text(nm):
+                                            names.append(nm)
                                 else:
                                     names.append(tok)
                         else:
                             if "," in s:
-                                names.extend(_split_pairs_local(s))
+                                for nm in _split_pairs_local(s):
+                                    if not _is_ignored_staff_text(nm):
+                                        names.append(nm)
                             else:
                                 names.append(s)
                 if names:
@@ -304,6 +453,176 @@ def _extract_teacher_name_sets(rec: dict) -> List[List[str]]:
     if names:
         return [names]
     return []
+
+
+def _compute_course_category(rec: dict) -> str:
+    details = rec.get("details") or {}
+    raw_category = str(details.get("category") or "").strip()
+    cats = rec.get("categories")
+
+    items: List[str] = []
+    if isinstance(cats, list) and cats:
+        for it in cats:
+            if it is not None:
+                s = str(it).strip()
+                if s:
+                    items.append(s)
+    else:
+        if raw_category:
+            if any(ch in raw_category for ch in ["\n", "\r", "\t"]):
+                for part in re.split(r"[\r\n\t]+", raw_category):
+                    p = str(part).strip()
+                    if p:
+                        items.append(p)
+            else:
+                items = [raw_category]
+        else:
+            return ""
+
+    car_codes: List[str] = []
+    seen_car = set()
+    lang_codes: List[str] = []
+    seen_lang = set()
+    special_codes: List[str] = []  # e.g. CSR (China Studies requirement)
+    seen_special = set()
+    others: List[str] = []
+    seen_others = set()
+
+    def _process_token(tok: str) -> None:
+        if not tok:
+            return
+        # Ignore HD-CAR-* items entirely
+        if re.search(r"(?i)\bhd\s*-\s*car\s*-\s*[a-z]", tok):
+            return
+
+        # CAR mapping: Ug-CAR-X -> X
+        m = re.search(r"(?i)\bug\s*-\s*car\s*-\s*([A-Z])\b", tok)
+        if m:
+            code = m.group(1).upper()
+            if code not in seen_car:
+                seen_car.add(code)
+                car_codes.append(code)
+            return
+
+        low = tok.lower()
+
+        # Ignore HD Chinese/English Language & Communication
+        if re.search(r"^\s*hd\b.*\blanguage\b.*commu\w*", low):
+            return
+
+        # Map Ug Chinese/English Language & Communication
+        if re.search(r"^\s*ug\b.*\bchinese\b.*\blanguage\b.*commu\w*", low):
+            code = "Ug CLC"
+            if code not in seen_special:
+                seen_special.add(code)
+                special_codes.append(code)
+            return
+        if re.search(r"^\s*ug\b.*\benglish\b.*\blanguage\b.*commu\w*", low):
+            code = "Ug ELC"
+            if code not in seen_special:
+                seen_special.add(code)
+                special_codes.append(code)
+            return
+
+        # Language requirements (English/Chinese, Reading/Writing only)
+        lang_initial = None
+        if "english" in low:
+            lang_initial = "E"
+        elif "chinese" in low:
+            lang_initial = "C"
+        if lang_initial:
+            has_read = bool(re.search(r"read\w*", low))
+            has_writ = bool(re.search(r"writ\w*", low))
+            if has_read:
+                code = f"{lang_initial}R"
+                if code not in seen_lang:
+                    seen_lang.add(code)
+                    lang_codes.append(code)
+            if has_writ:
+                code = f"{lang_initial}W"
+                if code not in seen_lang:
+                    seen_lang.add(code)
+                    lang_codes.append(code)
+            if has_read or has_writ:
+                return
+
+        # China Studies requirement -> CSR (tolerate minor typos)
+        if re.search(r"china\s*stud\w*\s*require\w*", low):
+            if "CSR" not in seen_special:
+                seen_special.add("CSR")
+                special_codes.append("CSR")
+            return
+
+        # Others: keep as-is (single line)
+        if tok not in seen_others:
+            seen_others.add(tok)
+            others.append(tok)
+
+    for s in items:
+        if not s:
+            continue
+        parts = [p.strip() for p in re.split(r"\s*\+\s*", s)] if "+" in s else [s]
+        for p in parts:
+            _process_token(p)
+
+    tokens: List[str] = []
+    if car_codes:
+        tokens.append("CAR-" + "/".join(car_codes))
+    if lang_codes:
+        tokens.append("/".join(lang_codes))
+    for sc in special_codes:
+        tokens.append(sc)
+    for o in others:
+        tokens.append(o)
+
+    result = "+".join(tokens)
+    if not result:
+        # Fallback: if single-line category exists and produced nothing, keep it
+        if raw_category and not any(ch in raw_category for ch in ["\n", "\r", "\t"]):
+            result = raw_category.strip()
+        else:
+            result = ""
+    return result[:100]
+
+
+def _compute_teaching_type(rec: dict) -> str:
+    details = rec.get("details") or {}
+    types_set: Set[str] = set()
+
+    def _add(tok: object) -> None:
+        if tok is None:
+            return
+        t = str(tok).strip()
+        if not t:
+            return
+        # Normalize: uppercase, remove spaces and non-alnum
+        t = re.sub(r"\s+", "", t).upper()
+        t = re.sub(r"[^A-Z0-9]", "", t)
+        if t:
+            types_set.add(t)
+
+    comp = details.get("component_codes")
+    if isinstance(comp, list):
+        for it in comp:
+            _add(it)
+
+    classes = details.get("classes")
+    if isinstance(classes, list):
+        for c in classes:
+            if isinstance(c, dict):
+                _add(c.get("main_type"))
+
+    tsc = details.get("teaching_staff_classes")
+    if isinstance(tsc, list):
+        for c in tsc:
+            if isinstance(c, dict):
+                _add(c.get("main_type"))
+
+    preferred_order = ["LEC", "SEM", "LTL", "TUT", "LAB"]
+    ordered = [t for t in preferred_order if t in types_set]
+    rest = sorted([t for t in types_set if t not in preferred_order])
+    result = "+".join(ordered + rest)
+    return result[:100]
 
 
 # ---------- Forward / reverse ----------
@@ -362,6 +681,7 @@ def import_courses_forward(apps, schema_editor):
                 name_sets = [[ic_name]]
             else:
                 name_sets = _extract_teacher_name_sets(rec)
+            teaching_type_code = _compute_teaching_type(rec)
             matched_sets: List[List[object]] = []
             if name_sets:
                 tmp_map = {}
@@ -424,9 +744,11 @@ def import_courses_forward(apps, schema_editor):
                     obj.credits = credits[:20] if credits else ""
                     obj.course_homepage_url = ""
                     obj.syllabus_url = ""
-                    obj.teaching_type = ""
+                    obj.teaching_type = (teaching_type_code or "")[:100]
+                    obj.selection_category = (selection_category_val or "")[:100]
                     obj.ai_summary = ""
-                    obj.course_category = "imported"
+                    category_code = _compute_course_category(rec)
+                    obj.course_category = (category_code or "")[:100]
                     obj.last_updated = now
                     existing_terms = obj.terms if isinstance(getattr(obj, "terms", None), list) else []
                     new_term = {"year": term_year, "semester": term_semester}
@@ -458,9 +780,11 @@ def import_courses_forward(apps, schema_editor):
                 obj.credits = credits[:20] if credits else ""
                 obj.course_homepage_url = ""
                 obj.syllabus_url = ""
-                obj.teaching_type = ""
+                obj.teaching_type = (teaching_type_code or "")[:100]
+                obj.selection_category = (selection_category_val or "")[:100]
                 obj.ai_summary = ""
-                obj.course_category = "imported"
+                category_code = _compute_course_category(rec)
+                obj.course_category = (category_code or "")[:100]
                 obj.last_updated = now
                 existing_terms = obj.terms if isinstance(getattr(obj, "terms", None), list) else []
                 new_term = {"year": term_year, "semester": term_semester}
@@ -501,9 +825,8 @@ def import_courses_forward(apps, schema_editor):
 
 
 def import_courses_reverse(apps, schema_editor):
-    Course = apps.get_model("courses", "Course")
-    # Remove only the records we imported in this migration
-    Course.objects.filter(course_category="imported").delete()
+    # No-op: keep imported data
+    pass
 
 
 class Migration(migrations.Migration):
