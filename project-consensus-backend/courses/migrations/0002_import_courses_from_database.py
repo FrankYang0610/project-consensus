@@ -306,6 +306,136 @@ def _extract_teacher_name_sets(rec: dict) -> List[List[str]]:
     return []
 
 
+def _compute_course_category(rec: dict) -> str:
+    details = rec.get("details") or {}
+    raw_category = str(details.get("category") or "").strip()
+    cats = rec.get("categories")
+
+    items: List[str] = []
+    if isinstance(cats, list) and cats:
+        for it in cats:
+            if it is not None:
+                s = str(it).strip()
+                if s:
+                    items.append(s)
+    else:
+        if raw_category:
+            if any(ch in raw_category for ch in ["\n", "\r", "\t"]):
+                for part in re.split(r"[\r\n\t]+", raw_category):
+                    p = str(part).strip()
+                    if p:
+                        items.append(p)
+            else:
+                items = [raw_category]
+        else:
+            return ""
+
+    car_codes: List[str] = []
+    seen_car = set()
+    lang_codes: List[str] = []
+    seen_lang = set()
+    special_codes: List[str] = []  # e.g. CSR (China Studies requirement)
+    seen_special = set()
+    others: List[str] = []
+    seen_others = set()
+
+    def _process_token(tok: str) -> None:
+        if not tok:
+            return
+        # Ignore HD-CAR-* items entirely
+        if re.search(r"(?i)\bhd\s*-\s*car\s*-\s*[a-z]", tok):
+            return
+
+        # CAR mapping: Ug-CAR-X -> X
+        m = re.search(r"(?i)\bug\s*-\s*car\s*-\s*([A-Z])\b", tok)
+        if m:
+            code = m.group(1).upper()
+            if code not in seen_car:
+                seen_car.add(code)
+                car_codes.append(code)
+            return
+
+        low = tok.lower()
+
+        # Ignore HD Chinese/English Language & Communication
+        if re.search(r"^\s*hd\b.*\blanguage\b.*commu\w*", low):
+            return
+
+        # Map Ug Chinese/English Language & Communication
+        if re.search(r"^\s*ug\b.*\bchinese\b.*\blanguage\b.*commu\w*", low):
+            code = "Ug CLC"
+            if code not in seen_special:
+                seen_special.add(code)
+                special_codes.append(code)
+            return
+        if re.search(r"^\s*ug\b.*\benglish\b.*\blanguage\b.*commu\w*", low):
+            code = "Ug ELC"
+            if code not in seen_special:
+                seen_special.add(code)
+                special_codes.append(code)
+            return
+
+        # Language requirements (English/Chinese, Reading/Writing only)
+        lang_initial = None
+        if "english" in low:
+            lang_initial = "E"
+        elif "chinese" in low:
+            lang_initial = "C"
+        if lang_initial:
+            has_read = bool(re.search(r"read\w*", low))
+            has_writ = bool(re.search(r"writ\w*", low))
+            if has_read:
+                code = f"{lang_initial}R"
+                if code not in seen_lang:
+                    seen_lang.add(code)
+                    lang_codes.append(code)
+            if has_writ:
+                code = f"{lang_initial}W"
+                if code not in seen_lang:
+                    seen_lang.add(code)
+                    lang_codes.append(code)
+            if has_read or has_writ:
+                return
+
+        # China Studies requirement -> CSR (tolerate minor typos)
+        if re.search(r"china\s*stud\w*\s*require\w*", low):
+            if "CSR" not in seen_special:
+                seen_special.add("CSR")
+                special_codes.append("CSR")
+            return
+
+        # Others: keep as-is (single line)
+        if tok not in seen_others:
+            seen_others.add(tok)
+            others.append(tok)
+
+    for s in items:
+        if not s:
+            continue
+        parts = [p.strip() for p in re.split(r"\s*\+\s*", s)] if "+" in s else [s]
+        for p in parts:
+            _process_token(p)
+
+    tokens: List[str] = []
+    if car_codes:
+        tokens.append("CAR-" + "/".join(car_codes))
+    if lang_codes:
+        tokens.append("/".join(lang_codes))
+    for sc in special_codes:
+        tokens.append(sc)
+    for o in others:
+        tokens.append(o)
+
+    result = "+".join(tokens)
+    if not result:
+        # Fallback: if single-line category exists and produced nothing, keep it
+        if raw_category and not any(ch in raw_category for ch in ["\n", "\r", "\t"]):
+            result = raw_category.strip()
+        else:
+            result = ""
+    return result[:100]
+
+
 # ---------- Forward / reverse ----------
 def import_courses_forward(apps, schema_editor):
     Course = apps.get_model("courses", "Course")
@@ -426,7 +556,8 @@ def import_courses_forward(apps, schema_editor):
                     obj.syllabus_url = ""
                     obj.teaching_type = ""
                     obj.ai_summary = ""
-                    obj.course_category = "imported"
+                    category_code = _compute_course_category(rec)
+                    obj.course_category = (category_code or "")[:100]
                     obj.last_updated = now
                     existing_terms = obj.terms if isinstance(getattr(obj, "terms", None), list) else []
                     new_term = {"year": term_year, "semester": term_semester}
@@ -460,7 +591,8 @@ def import_courses_forward(apps, schema_editor):
                 obj.syllabus_url = ""
                 obj.teaching_type = ""
                 obj.ai_summary = ""
-                obj.course_category = "imported"
+                category_code = _compute_course_category(rec)
+                obj.course_category = (category_code or "")[:100]
                 obj.last_updated = now
                 existing_terms = obj.terms if isinstance(getattr(obj, "terms", None), list) else []
                 new_term = {"year": term_year, "semester": term_semester}
@@ -501,9 +633,8 @@ def import_courses_forward(apps, schema_editor):
 
 
 def import_courses_reverse(apps, schema_editor):
-    Course = apps.get_model("courses", "Course")
-    # Remove only the records we imported in this migration
-    Course.objects.filter(course_category="imported").delete()
+    # No-op: keep imported data
+    pass
 
 
 class Migration(migrations.Migration):
