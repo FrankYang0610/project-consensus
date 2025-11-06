@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import dynamic from "next/dynamic";
-import { useSearchParams } from "next/navigation";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import CourseDetailCard from "@/components/CourseDetailCard";
@@ -37,8 +36,6 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
   const { t } = useI18n();
   const { isLoggedIn, openLoginModal } = useApp();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const teacherQuery = searchParams.get("teacher") || undefined;
 
   // Unwrap params Promise for Next.js 15
   const resolvedParams = React.use(params);
@@ -57,15 +54,10 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
     return () => { cancelled = true; };
   }, [courseId]);
 
-  // Use teachers from data (already {id,name}); if ?teacher=name 提供，则将该老师置顶显示
+  // Use teachers from data (already {id,name})
   const teachers: TeacherInfo[] = React.useMemo(() => {
-    const list = course?.teachers ?? [];
-    if (!teacherQuery) return list;
-    const idx = list.findIndex(t => t.name === teacherQuery);
-    if (idx <= 0) return list;
-    const picked = list[idx];
-    return [picked, ...list.filter((_, i) => i !== idx)];
-  }, [course, teacherQuery]);
+    return course?.teachers ?? [];
+  }, [course]);
 
   // Get other teachers teaching the same course
   const otherTeacherCourses = React.useMemo(() => (course?.otherTeacherCourses ?? []), [course]);

@@ -1056,18 +1056,23 @@ export function CourseDetailCard({
                 <GraduationCap className="w-5 h-5" /> {t("courses.detail.teachers")}
               </h3>
 
-              {/* Primary Teacher */}
-              {primaryTeacher && (
-                <Link
-                  href={`/teachers/${primaryTeacher.id}`}
-                  className="flex items-start gap-4 p-4 rounded-lg border bg-background hover:bg-muted/50 transition-colors"
-                >
-                  <TeacherAvatar name={primaryTeacher.name} avatarUrl={primaryTeacher.avatarUrl} />
-                  <div className="flex-1">
-                    <div className="font-medium text-base">{primaryTeacher.name}</div>
-                    <div className="text-sm text-muted-foreground">{department}</div>
-                  </div>
-                </Link>
+              {/* All Teachers of this course */}
+              {teachers && teachers.length > 0 && (
+                <div className="space-y-2">
+                  {teachers.map((t) => (
+                    <Link
+                      key={t.id}
+                      href={`/teachers/${t.id}`}
+                      className="flex items-start gap-4 p-4 rounded-lg border bg-background hover:bg-muted/50 transition-colors"
+                    >
+                      <TeacherAvatar name={t.name} avatarUrl={t.avatarUrl} />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-base truncate">{t.name}</div>
+                        <div className="text-sm text-muted-foreground truncate">{t.department || department || ""}</div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               )}
 
               {/* Other Teachers */}

@@ -15,6 +15,7 @@ export interface TeacherInfo {
   id: string; // Teacher UUID
   name: string;
   avatarUrl?: string;
+  department?: string;
   // Note: teacher homepage URL removed; we navigate by UUID to internal profile page
 }
 

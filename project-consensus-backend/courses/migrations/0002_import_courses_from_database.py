@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Iterable, List, Tuple
 
 from django.db import migrations
+from django.db.utils import DataError
 from django.utils import timezone
 
 
@@ -119,7 +120,10 @@ def _sequence_similarity(a: str, b: str) -> float:
     return SequenceMatcher(None, a, b).ratio()
 
 
-def _match_teacher_by_name(apps, raw_name: str, dept: str | None = None):
+_TEACHER_MATCH_MIN_SCORE = 0.72
+
+
+def _match_teacher_by_name(apps, raw_name: str, dept: str | None = None, min_score: float | None = None):
     """Return the best-matching Teacher object for the given raw name, or None.
 
     Similar in spirit to teachers.services.splink_search.search_teachers_with_splink,
@@ -173,7 +177,11 @@ def _match_teacher_by_name(apps, raw_name: str, dept: str | None = None):
             best_score = score
             best = t
 
-    # Always choose the highest-scoring candidate when any candidates exist
+    if best is None:
+        return None
+    threshold = _TEACHER_MATCH_MIN_SCORE if min_score is None else float(min_score)
+    if best_score < threshold:
+        return None
     return best
 
 
@@ -203,15 +211,21 @@ def _extract_teacher_names(rec: dict) -> List[str]:
     # First, try 'teaching_staff'
     raw_primary = str(primary_field or "").strip()
     if raw_primary:
-        if "," in raw_primary:
-            names = _split_pairs(raw_primary)
-        else:
-            _conn_re = re.compile(r"\s*(?:\+|&|/|\band\b|、|＆)\s*", re.IGNORECASE)
-            parts = [p.strip() for p in _conn_re.split(raw_primary) if p and p.strip()]
-            if len(parts) > 1:
-                names = parts
+        _conn_re = re.compile(r"\s*(?:\+|&|/|\band\b|、|＆)\s*", re.IGNORECASE)
+        tokens = [p.strip() for p in _conn_re.split(raw_primary) if p and p.strip()]
+        if tokens:
+            if len(tokens) == 1:
+                tok = tokens[0]
+                if "," in tok:
+                    names = _split_pairs(tok)
+                else:
+                    names = [tok]
             else:
-                names = [raw_primary]
+                for tok in tokens:
+                    if "," in tok:
+                        names.extend(_split_pairs(tok))
+                    else:
+                        names.append(tok)
     elif isinstance(names_field, list) and names_field:
         for item in names_field:
             if not item:
@@ -230,6 +244,66 @@ def _extract_teacher_names(rec: dict) -> List[str]:
             continue
         cleaned.append(str(n).strip())
     return cleaned
+
+
+def _extract_teacher_name_sets(rec: dict) -> List[List[str]]:
+    details = rec.get("details") or {}
+    result: List[List[str]] = []
+    groups = details.get("teaching_staff_groups")
+    if isinstance(groups, list) and groups:
+        def _split_pairs_local(s: str) -> List[str]:
+            parts = [p.strip() for p in str(s).split(",") if p and p.strip()]
+            if len(parts) <= 1:
+                return parts
+            out: List[str] = []
+            i = 0
+            while i < len(parts):
+                if i + 1 < len(parts):
+                    out.append(f"{parts[i]} {parts[i+1]}".strip())
+                    i += 2
+                else:
+                    out.append(parts[i])
+                    i += 1
+            return out
+
+        _conn_re = re.compile(r"\s*(?:\+|&|/|\band\b|、|＆)\s*", re.IGNORECASE)
+        for g in groups:
+            if not isinstance(g, dict):
+                continue
+            staff = g.get("staff")
+            if isinstance(staff, list) and staff:
+                names = []
+                for item in staff:
+                    s = str(item).strip()
+                    if s and s.lower() not in {"n/a", "na", "not applicable", "tba", "to be announced"}:
+                        tokens = [p.strip() for p in _conn_re.split(s) if p and p.strip()]
+                        if tokens:
+                            for tok in tokens:
+                                if "," in tok:
+                                    names.extend(_split_pairs_local(tok))
+                                else:
+                                    names.append(tok)
+                        else:
+                            if "," in s:
+                                names.extend(_split_pairs_local(s))
+                            else:
+                                names.append(s)
+                if names:
+                    result.append(names)
+        if result:
+            dedup: List[List[str]] = []
+            seen = set()
+            for ns in result:
+                key = tuple(sorted([x.strip() for x in ns if x], key=lambda x: x.lower()))
+                if key and key not in seen:
+                    seen.add(key)
+                    dedup.append(list(key))
+            if dedup:
+                return dedup
+    names = _extract_teacher_names(rec)
+    if names:
+        return [names]
+    return []
 
 
 # ---------- Forward / reverse ----------
@@ -282,83 +356,138 @@ def import_courses_forward(apps, schema_editor):
             except Exception:
                 selection_category_val = ""
 
-            # Prepare teacher matching first so we can merge by (subject_code + teacher set)
-            names = _extract_teacher_names(rec)
-            matched: List[object] = []
-            seen_ids = set()
-            for name in names:
-                t = _match_teacher_by_name(apps, name, dept=department)
-                if t and t.id not in seen_ids:
-                    matched.append(t)
-                    seen_ids.add(t.id)
+            co_offering_department = str(details.get("co_offering_department") or "").strip()
+            if co_offering_department.upper() == "INDUSTRIAL CENTRE":
+                ic_name = co_offering_department or "INDUSTRIAL CENTRE"
+                name_sets = [[ic_name]]
+            else:
+                name_sets = _extract_teacher_name_sets(rec)
+            matched_sets: List[List[object]] = []
+            if name_sets:
+                tmp_map = {}
+                for names in name_sets:
+                    seen_ids = set()
+                    matched: List[object] = []
+                    for name in names:
+                        t = _match_teacher_by_name(apps, name, dept=department)
+                        if not t:
+                            s = str(name).strip()
+                            if s:
+                                cand = Teacher.objects.filter(name__iexact=s).first()
+                                if cand is None:
+                                    try:
+                                        cand = Teacher.objects.create(name=s, department=(department or "")[:200])
+                                    except DataError as de:
+                                        try:
+                                            sc = subject_code
+                                        except Exception:
+                                            sc = ""
+                                        print(f"  [courses.0002] DataError creating Teacher: name='{s}' dept='{(department or '')}' subject_code={sc}: {de}")
+                                        raise
+                                t = cand
+                        if t and t.id not in seen_ids:
+                            matched.append(t)
+                            seen_ids.add(t.id)
+                    if matched:
+                        key = tuple(sorted(seen_ids))
+                        if key not in tmp_map:
+                            tmp_map[key] = matched
+                matched_sets = list(tmp_map.values())
 
-            # Create or update a Course:
-            #   - Prefer merging by (subject_code + identical teacher ID set) across terms
-            #   - Fallback to legacy key (subject_code, term_year, term_semester) if no teacher matched
-            obj = None
-            created = False
-            if matched:
-                candidates = list(Course.objects.filter(subject_code=subject_code))
-                matched_ids = {t.id for t in matched}
-                for c in candidates:
-                    cand_ids = set(c.teachers.values_list("id", flat=True))
-                    if cand_ids == matched_ids:
-                        obj = c
-                        break
-                if obj is None:
-                    obj = Course(
-                        subject_code=subject_code,
-                        title=title,
-                        term_year=term_year,
-                        term_semester=term_semester,
-                    )
-                    created = True
+            created_any = 0
+            updated_any = 0
+
+            if matched_sets:
+                for matched in matched_sets:
+                    obj = None
+                    created = False
+                    candidates = list(Course.objects.filter(subject_code=subject_code))
+                    matched_ids = {t.id for t in matched}
+                    for c in candidates:
+                        cand_ids = set(c.teachers.values_list("id", flat=True))
+                        if cand_ids == matched_ids:
+                            obj = c
+                            break
+                    if obj is None:
+                        obj = Course(
+                            subject_code=subject_code[:64],
+                            title=title[:200],
+                            term_year=term_year,
+                            term_semester=term_semester,
+                        )
+                        created = True
+
+                    obj.title = title[:200]
+                    obj.department = department[:200]
+                    obj.offering_department = (offering_department or "")[:200]
+                    obj.level = level[:1] if level else ""
+                    obj.credits = credits[:20] if credits else ""
+                    obj.course_homepage_url = ""
+                    obj.syllabus_url = ""
+                    obj.selection_category = selection_category_val[:100]
+                    obj.teaching_type = ""
+                    obj.ai_summary = ""
+                    obj.course_category = "imported"
+                    obj.last_updated = now
+                    existing_terms = obj.terms if isinstance(getattr(obj, "terms", None), list) else []
+                    new_term = {"year": term_year, "semester": term_semester}
+                    if not any((t.get("year") == new_term["year"] and t.get("semester") == new_term["semester"]) for t in existing_terms):
+                        existing_terms.append(new_term)
+                    obj.terms = existing_terms
+                    obj.save()
+                    obj.teachers.set(matched)
+
+                    if created:
+                        created_any += 1
+                    else:
+                        updated_any += 1
             else:
                 obj = Course.objects.filter(subject_code=subject_code, teachers__isnull=True).first()
+                created = False
                 if obj is None:
                     obj = Course(
-                        subject_code=subject_code,
-                        title=title,
+                        subject_code=subject_code[:64],
+                        title=title[:200],
                         term_year=term_year,
                         term_semester=term_semester,
                     )
                     created = True
-
-            # Assign fields
-            obj.title = title
-            obj.department = department[:200]
-            obj.offering_department = (offering_department or "")[:200]
-            obj.level = level[:1] if level else ""
-            obj.credits = credits[:20] if credits else ""
-            obj.course_homepage_url = ""
-            obj.syllabus_url = ""
-            obj.selection_category = selection_category_val
-            obj.teaching_type = ""
-            obj.ai_summary = ""
-            obj.course_category = "imported"  # marker for easy reverse
-            obj.last_updated = now
-            # Accumulate unique (year, semester) pairs into terms
-            existing_terms = obj.terms if isinstance(getattr(obj, "terms", None), list) else []
-            new_term = {"year": term_year, "semester": term_semester}
-            if not any((t.get("year") == new_term["year"] and t.get("semester") == new_term["semester"]) for t in existing_terms):
-                existing_terms.append(new_term)
-            obj.terms = existing_terms
-
-            obj.save()
-
-            # Attach teachers by best-match name
-            if matched:
-                obj.teachers.set(matched)
-            else:
+                obj.title = title[:200]
+                obj.department = department[:200]
+                obj.offering_department = (offering_department or "")[:200]
+                obj.level = level[:1] if level else ""
+                obj.credits = credits[:20] if credits else ""
+                obj.course_homepage_url = ""
+                obj.syllabus_url = ""
+                obj.selection_category = selection_category_val[:100]
+                obj.teaching_type = ""
+                obj.ai_summary = ""
+                obj.course_category = "imported"
+                obj.last_updated = now
+                existing_terms = obj.terms if isinstance(getattr(obj, "terms", None), list) else []
+                new_term = {"year": term_year, "semester": term_semester}
+                if not any((t.get("year") == new_term["year"] and t.get("semester") == new_term["semester"]) for t in existing_terms):
+                    existing_terms.append(new_term)
+                obj.terms = existing_terms
+                obj.save()
                 obj.teachers.clear()
+                if created:
+                    created_any += 1
+                else:
+                    updated_any += 1
 
             processed_count += 1
-            if created:
-                created_count += 1
-            else:
-                updated_count += 1
+            created_count += created_any
+            updated_count += updated_any
 
         except Exception as e:
+            if isinstance(e, DataError):
+                try:
+                    sc = subject_code  # may be set earlier in try
+                except Exception:
+                    sc = ""
+                print(f"  [courses.0002] DataError while processing subject_code={sc}: {e}")
+                raise
             skipped_count += 1
             if len(first_errors) < 3:
                 first_errors.append(repr(e))

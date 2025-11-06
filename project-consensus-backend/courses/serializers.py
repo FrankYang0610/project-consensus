@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from django.contrib.auth import get_user_model
+import re
 from rest_framework import serializers
 
 from .models import Course, CourseReview, CourseReviewReply, CourseReviewLike, CourseReviewReplyLike, CourseVote
@@ -118,10 +119,57 @@ class CourseSerializer(serializers.ModelSerializer):
         }
 
     def get_teachers(self, obj: Course):
-        # Use M2M: return minimal refs with id + name + avatarUrl
+        # Order teachers by surname (alphabetical), stripping common titles and handling comma-separated names
+        TITLE_PREFIXES = {
+            "prof", "professor", "dr", "mr", "mrs", "ms", "miss",
+            "assoc", "associate", "asst", "assistant", "ir", "capt",
+        }
+
+        def strip_titles(name: str) -> str:
+            if not name:
+                return ""
+            tokens = str(name).strip().split()
+            i = 0
+            while i < len(tokens):
+                raw = re.sub(r"[\.,;:()\[\]{}'`]+", "", tokens[i]).strip().lower()
+                raw = raw[:-1] if raw.endswith(".") else raw
+                if raw in TITLE_PREFIXES:
+                    i += 1
+                else:
+                    break
+            return " ".join(tokens[i:]).strip()
+
+        def surname_key(name: str) -> tuple[str, str]:
+            base = strip_titles(name)
+            if not base:
+                return ("", "")
+            if "," in base:
+                # "CHEUNG, Wan Chuen" -> surname = "CHEUNG"
+                parts = base.split(",", 1)
+                surname = parts[0].strip()
+                rest = parts[1].strip() if len(parts) > 1 else ""
+            else:
+                parts = base.split()
+                if len(parts) >= 2:
+                    first = parts[0]
+                    tail = " ".join(parts[1:])
+                    # Heuristic: if first token is ALLCAPS and tail has lowercase, assume surname-first style
+                    if first.isupper() and any(ch.islower() for ch in tail):
+                        surname = first
+                        rest = tail
+                    else:
+                        surname = parts[-1]
+                        rest = " ".join(parts[:-1])
+                else:
+                    surname = parts[-1] if parts else base
+                    rest = ""
+            return (surname.lower(), f"{surname} {rest}".lower())
+
+        teachers = list(obj.teachers.all())
+        teachers_sorted = sorted(teachers, key=lambda t: surname_key(t.name or ""))
         return [
-            {"id": str(t.id), "name": t.name, "avatarUrl": t.avatar_url or None}
-            for t in obj.teachers.all()
+            {"id": str(t.id), "name": t.name, "avatarUrl": t.avatar_url or None, "department": (t.department or None)}
+            for t in teachers_sorted
         ]
 
     def get_otherTeacherCourses(self, obj: Course):
