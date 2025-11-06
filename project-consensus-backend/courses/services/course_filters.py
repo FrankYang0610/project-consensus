@@ -34,13 +34,7 @@ class CourseFilter:
         if teacher_id:
             qs = qs.filter(teachers__id=teacher_id).distinct()
 
-        category = self.params.get("category")
-        if category and str(category).lower() != "all":
-            qs = qs.filter(selection_category__iexact=category)
-
-        selection_categories = self._collect_multi("selectionCategory")
-        if selection_categories:
-            qs = qs.filter(selection_category__in=selection_categories)
+        # selection_category support removed
 
         course_categories = self._collect_multi("courseCategory") or self._collect_multi("categories")
         if course_categories:

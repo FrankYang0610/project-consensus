@@ -33,7 +33,6 @@ class CourseSerializer(serializers.ModelSerializer):
     teachers = serializers.SerializerMethodField()
     lastUpdated = serializers.DateTimeField(source="last_updated")
     aiSummary = serializers.CharField(source="ai_summary", required=False, allow_blank=True)
-    selectionCategory = serializers.CharField(source="selection_category", required=False, allow_blank=True)
     teachingType = serializers.CharField(source="teaching_type", required=False, allow_blank=True)
     courseCategory = serializers.CharField(source="course_category", required=False, allow_blank=True)
     offeringDepartment = serializers.CharField(source="offering_department", required=False, allow_blank=True)
@@ -62,7 +61,6 @@ class CourseSerializer(serializers.ModelSerializer):
             "department",
             "lastUpdated",
             "aiSummary",
-            "selectionCategory",
             "teachingType",
             "courseCategory",
             "offeringDepartment",

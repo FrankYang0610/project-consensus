@@ -119,7 +119,6 @@ export interface CourseDetailCardProps {
   // AI generated summary content (plain text)
   aiSummary?: string;
   // Course metadata
-  selectionCategory?: string;
   teachingType?: string;
   courseCategory?: string;
   offeringDepartment?: string;
@@ -287,7 +286,6 @@ export function CourseDetailCard({
   teachers,
   department,
   lastUpdated,
-  selectionCategory,
   teachingType,
   courseCategory,
   offeringDepartment,
@@ -1134,11 +1132,11 @@ export function CourseDetailCard({
                 <FileText className="w-5 h-5" /> {t("courses.detail.courseInfo")}
               </h3>
               <div className="p-5 rounded-lg border bg-background/80">
+                {/* Offering Department - first row (full width) */}
+                <MetaRow label={t("courses.detail.offeringDepartment")} value={offeringDepartment ?? department} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-y-1 gap-x-12">
-                  <MetaRow label={t("courses.detail.selectionCategory")} value={selectionCategory} />
                   <MetaRow label={t("courses.detail.teachingType")} value={teachingType} />
                   <MetaRow label={t("courses.detail.courseCategory")} value={courseCategory} />
-                  <MetaRow label={t("courses.detail.offeringDepartment")} value={offeringDepartment ?? department} />
                   <MetaRow label={t("courses.detail.level")} value={level} />
                   <MetaRow label={t("courses.detail.credits")} value={credits !== undefined ? String(credits) : undefined} />
                 </div>

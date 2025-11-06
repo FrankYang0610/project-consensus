@@ -38,7 +38,6 @@ class CourseAdmin(admin.ModelAdmin):
         ("Metadata", {
             "fields": (
                 "ai_summary",
-                "selection_category",
                 "teaching_type",
                 "course_category",
                 "offering_department",

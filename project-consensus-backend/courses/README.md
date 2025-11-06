@@ -41,10 +41,9 @@ This module provides a complete course evaluation system, including:
   - `last_updated` (datetime) → frontend `lastUpdated`
   - Course detail extra metadata:
     - `ai_summary` → frontend `aiSummary`
-    - `selection_category` → frontend `selectionCategory`
     - `teaching_type` → frontend `teachingType`
     - `course_category` → frontend `courseCategory`
-    - `offering_department` → frontend `offeringDepartment`
+    - `offering_department` → frontend `offeringDepartment` (displayed as a dedicated first line on the course detail card)
     - `level` (string)
     - `credits` (string, for compatibility with numbers or text)
     - `course_homepage_url` → frontend `courseHomepageUrl`
@@ -209,12 +208,12 @@ Note: Vote counts and rating aggregates are independent (votes don't participate
 
 ---
 
-## Course Attributes and Frontend Filter Integration (level/category/selectionCategory, etc.)
+## Course Attributes and Frontend Filter Integration (level/courseCategory, etc.)
 
 Backend `Course` model and serializer output course metadata to support frontend filtering and detail display:
 
 - Detail display fields (all optional strings):
-  - `selectionCategory` (selection category), `teachingType` (teaching type), `courseCategory` (course category/tags), `offeringDepartment` (offering department, frontend falls back to `department` if empty), `level` (course level, unified as string `'1'..'6'`), `credits` (credits, string for compatibility with "3.0/TBD", etc.)
+  - `teachingType` (teaching type), `courseCategory` (course category/tags), `offeringDepartment` (offering department, frontend falls back to `department` if empty; rendered as a dedicated first line in the course card), `level` (course level, unified as string `'1'..'6'`), `credits` (credits, string for compatibility with "3.0/TBD", etc.)
 
 ### Course List Filter Parameters (GET /api/courses/)
 
@@ -225,8 +224,6 @@ Backend `Course` model and serializer output course metadata to support frontend
   - `teacherId`: instructor UUID (optional)
   - `search`: full-text search (`subject_code/title/department`)
 - New (linked with frontend filter):
-  - `category`: main category (maps to `selection_category`), ignores `all`
-  - `selectionCategory`: multi-value (repeated params or comma-separated)
   - `courseCategory` / `categories`: multi-value (repeated params or comma-separated)
   - `teachingType`: multi-value
   - `level` / `levels`: multi-value, unified as `'1'..'6'`; supports repeated params or `levels=1,2,3`
@@ -245,7 +242,7 @@ Example (multi-value filter parameter usage):
   - `/api/courses/?level=1&level=2&level=3`
   - Or comma-separated (alias `levels`): `/api/courses/?levels=1,2,3`
 
-- Effective parameters: sorting (rating/reviews/composite → `ordering`), course code (`subjectCode`), department (multi-select → `department` multi-value), title and teacher name (merged into `search`), main category (`category`→`selection_category`), detailed categories (`categories`→`courseCategory` multi-select), level (`level` multi-select).
+- Effective parameters: sorting (rating/reviews/composite → `ordering`), course code (`subjectCode`), department (multi-select → `department` multi-value), title and teacher name (merged into `search`), detailed categories (`categories`→`courseCategory` multi-select), level (`level` multi-select).
 
 About `level`:
 

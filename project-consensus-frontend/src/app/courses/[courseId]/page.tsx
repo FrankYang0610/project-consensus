@@ -518,7 +518,6 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
                 filterState={filterState}
                 filterCallbacks={filterCallbacks}
                 // placeholders - can be wired later
-                selectionCategory={course.selectionCategory}
                 teachingType={course.teachingType}
                 courseCategory={course.courseCategory}
                 offeringDepartment={course.offeringDepartment ?? course.department}

@@ -140,7 +140,6 @@ export interface Course {
    */
   aiSummary?: string;
   // Course metadata
-  selectionCategory?: string;
   teachingType?: string;
   courseCategory?: string;
   offeringDepartment?: string;

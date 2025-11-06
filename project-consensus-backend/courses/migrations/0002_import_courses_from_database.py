@@ -424,7 +424,6 @@ def import_courses_forward(apps, schema_editor):
                     obj.credits = credits[:20] if credits else ""
                     obj.course_homepage_url = ""
                     obj.syllabus_url = ""
-                    obj.selection_category = selection_category_val[:100]
                     obj.teaching_type = ""
                     obj.ai_summary = ""
                     obj.course_category = "imported"
@@ -459,7 +458,6 @@ def import_courses_forward(apps, schema_editor):
                 obj.credits = credits[:20] if credits else ""
                 obj.course_homepage_url = ""
                 obj.syllabus_url = ""
-                obj.selection_category = selection_category_val[:100]
                 obj.teaching_type = ""
                 obj.ai_summary = ""
                 obj.course_category = "imported"
