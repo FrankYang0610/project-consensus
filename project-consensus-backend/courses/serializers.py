@@ -130,7 +130,6 @@ class CourseSerializer(serializers.ModelSerializer):
             i = 0
             while i < len(tokens):
                 raw = re.sub(r"[\.,;:()\[\]{}'`]+", "", tokens[i]).strip().lower()
-                raw = raw[:-1] if raw.endswith(".") else raw
                 if raw in TITLE_PREFIXES:
                     i += 1
                 else:
