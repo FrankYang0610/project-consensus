@@ -8,6 +8,11 @@ from .models import Course, CourseReview, CourseReviewReply, CourseReviewLike, C
 from .validators import validate_curriculum_structure, validate_course_attributes_enum
 
 
+TITLE_PREFIXES = frozenset({
+    "prof", "professor", "dr", "mr", "mrs", "ms", "miss",
+    "assoc", "associate", "asst", "assistant", "ir", "capt",
+})
+
 User = get_user_model()
 
 
@@ -118,11 +123,6 @@ class CourseSerializer(serializers.ModelSerializer):
 
     def get_teachers(self, obj: Course):
         # Order teachers by surname (alphabetical), stripping common titles and handling comma-separated names
-        TITLE_PREFIXES = {
-            "prof", "professor", "dr", "mr", "mrs", "ms", "miss",
-            "assoc", "associate", "asst", "assistant", "ir", "capt",
-        }
-
         def strip_titles(name: str) -> str:
             if not name:
                 return ""
