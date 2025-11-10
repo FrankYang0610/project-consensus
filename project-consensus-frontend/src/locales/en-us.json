@@ -1,26 +1,22 @@
 {
   "navigation": {
     "forum": "Forum",
-    "courseReview": "Course Review",
+    "coursesTeachers": "Courses/Teachers",
     "browseCourses": "Browse Courses",
     "browseCoursesDesc": "Explore courses organized by academic departments",
+    "browseTeachers": "Browse Teachers",
+    "browseTeachersDesc": "Explore teacher profiles and ratings",
     "advancedSearch": "Advanced Search",
     "advancedSearchDesc": "Search and filter courses with advanced options",
     "more": "More",
-    "about": "About",
     "language": "Language"
   },
   "menu": {
-    "techSupport": "Technical Support",
-    "techSupportDesc": "Get help with technical issues",
-    "featureRequests": "Feature Requests",
-    "featureRequestsDesc": "Suggest new features and improvements",
+    "wiki": "Wiki",
+    "wikiDesc": "Browse community wiki pages",
+    "about": "About",
     "announcements": "Announcements",
     "announcementsDesc": "Stay updated with latest news",
-    "documentation": "Documentation",
-    "documentationDesc": "Comprehensive guides and API references",
-    "discord": "Discord",
-    "discordDesc": "Join our community chat",
     "resources": "Resources",
     "resourcesDesc": "Useful tools and materials"
   },

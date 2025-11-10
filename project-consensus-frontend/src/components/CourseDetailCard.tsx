@@ -119,7 +119,6 @@ export interface CourseDetailCardProps {
   // AI generated summary content (plain text)
   aiSummary?: string;
   // Course metadata
-  selectionCategory?: string;
   teachingType?: string;
   courseCategory?: string;
   offeringDepartment?: string;
@@ -287,7 +286,6 @@ export function CourseDetailCard({
   teachers,
   department,
   lastUpdated,
-  selectionCategory,
   teachingType,
   courseCategory,
   offeringDepartment,
@@ -1056,18 +1054,23 @@ export function CourseDetailCard({
                 <GraduationCap className="w-5 h-5" /> {t("courses.detail.teachers")}
               </h3>
 
-              {/* Primary Teacher */}
-              {primaryTeacher && (
-                <Link
-                  href={`/teachers/${primaryTeacher.id}`}
-                  className="flex items-start gap-4 p-4 rounded-lg border bg-background hover:bg-muted/50 transition-colors"
-                >
-                  <TeacherAvatar name={primaryTeacher.name} avatarUrl={primaryTeacher.avatarUrl} />
-                  <div className="flex-1">
-                    <div className="font-medium text-base">{primaryTeacher.name}</div>
-                    <div className="text-sm text-muted-foreground">{department}</div>
-                  </div>
-                </Link>
+              {/* All Teachers of this course */}
+              {teachers && teachers.length > 0 && (
+                <div className="space-y-2">
+                  {teachers.map((t) => (
+                    <Link
+                      key={t.id}
+                      href={`/teachers/${t.id}`}
+                      className="flex items-start gap-4 p-4 rounded-lg border bg-background hover:bg-muted/50 transition-colors"
+                    >
+                      <TeacherAvatar name={t.name} avatarUrl={t.avatarUrl} />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-base truncate">{t.name}</div>
+                        <div className="text-sm text-muted-foreground truncate">{t.department || department || ""}</div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               )}
 
               {/* Other Teachers */}
@@ -1129,11 +1132,11 @@ export function CourseDetailCard({
                 <FileText className="w-5 h-5" /> {t("courses.detail.courseInfo")}
               </h3>
               <div className="p-5 rounded-lg border bg-background/80">
+                {/* Offering Department - first row (full width) */}
+                <MetaRow label={t("courses.detail.offeringDepartment")} value={offeringDepartment ?? department} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-y-1 gap-x-12">
-                  <MetaRow label={t("courses.detail.selectionCategory")} value={selectionCategory} />
                   <MetaRow label={t("courses.detail.teachingType")} value={teachingType} />
                   <MetaRow label={t("courses.detail.courseCategory")} value={courseCategory} />
-                  <MetaRow label={t("courses.detail.offeringDepartment")} value={offeringDepartment ?? department} />
                   <MetaRow label={t("courses.detail.level")} value={level} />
                   <MetaRow label={t("courses.detail.credits")} value={credits !== undefined ? String(credits) : undefined} />
                 </div>

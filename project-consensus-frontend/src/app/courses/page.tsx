@@ -11,6 +11,7 @@ import { fetchCourses, fetchCourseDepartmentsWithCounts, fetchDepartmentLevels }
 import { Building2, Loader2, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { formatDepartmentTitle } from "@/lib/dept-display-utils";
 
 export default function CourseBrowsePage() {
   const { t } = useI18n();
@@ -422,7 +423,7 @@ export default function CourseBrowsePage() {
                 {!loading && !error && departments.length > 0 && (
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-[600px]">
                     {/* Left Column: Departments */}
-                    <div className="lg:col-span-3 space-y-2">
+                    <div className="lg:col-span-4 space-y-2">
                       <div className="text-sm font-medium text-muted-foreground mb-3 px-1">
                         {t("courses.byDepartment.selectDepartment")}
                       </div>
@@ -439,7 +440,7 @@ export default function CourseBrowsePage() {
                                 : "hover:bg-accent"
                             )}
                           >
-                            <span className="text-sm font-medium truncate">{dept.name}</span>
+                            <span className="text-sm font-medium truncate">{formatDepartmentTitle(dept.name)}</span>
                             <span className={cn(
                               "text-xs px-2 py-0.5 rounded-full flex-shrink-0",
                               selectedDepartment === dept.name
@@ -454,7 +455,7 @@ export default function CourseBrowsePage() {
                     </div>
 
                     {/* Middle Column: Levels */}
-                    <div className="lg:col-span-3 space-y-2">
+                    <div className="lg:col-span-2 space-y-2">
                       <div className="text-sm font-medium text-muted-foreground mb-3 px-1">
                         {t("courses.byDepartment.selectLevel")}
                       </div>
