@@ -628,7 +628,7 @@ def _compute_teaching_type(rec: dict) -> str:
 # ---------- Forward / reverse ----------
 def import_courses_forward(apps, schema_editor):
     Course = apps.get_model("courses", "Course")
-    Teacher = apps.get_model("teachers", "Teacher")  # noqa: F401 - ensures historical state is loaded
+    Teacher = apps.get_model("teachers", "Teacher")
 
     json_path = _database_courses_json_path()
     if not json_path.exists():
