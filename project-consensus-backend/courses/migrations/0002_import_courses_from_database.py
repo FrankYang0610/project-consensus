@@ -109,6 +109,39 @@ def _reverse_two_token_name(normalized: str) -> str:
     return normalized
 
 
+def _simple_tokenize(text: str) -> List[str]:
+    """Tokenize a string into lowercase alphanumeric tokens suitable for fuzzy matching."""
+    if not text:
+        return []
+    raw_tokens = re.split(r"[^A-Za-z0-9]+", str(text).lower())
+    tokens: List[str] = []
+    for tok in raw_tokens:
+        t = re.sub(r"^[^a-z0-9]+|[^a-z0-9]+$", "", tok)
+        if t:
+            tokens.append(t)
+    return tokens
+
+
+def _email_local_tokens(email: str | None) -> List[str]:
+    """Extract tokens from the email local-part (before '@'), split by common separators.
+
+    Example: 'comp-bo.li@polyu.edu.hk' -> ['comp', 'bo', 'li']
+    """
+    if not email:
+        return []
+    s = str(email).strip()
+    if not s or "@" not in s:
+        return []
+    local = s.split("@", 1)[0]
+    parts = re.split(r"[.\-_\+\s]+", local)
+    tokens: List[str] = []
+    for p in parts:
+        t = re.sub(r"[^A-Za-z0-9]", "", p).lower()
+        if t:
+            tokens.append(t)
+    return tokens
+
+
 def _sort_name_tokens(normalized: str) -> str:
     tokens = [t for t in normalized.split() if t]
     if not tokens:
@@ -140,17 +173,24 @@ def _match_teacher_by_name(apps, raw_name: str, dept: str | None = None, min_sco
     from django.db.models import Q
 
     tokens = [t for t in query_norm.split() if t]
-    q_obj = Q()
+    q_name = Q()
     for tok in tokens:
-        q_obj &= Q(name__icontains=tok)
+        q_name &= Q(name__icontains=tok)
+    # Also allow filtering via email local-part by checking email contains each token
+    q_email = Q()
+    for tok in tokens:
+        q_email &= Q(email__icontains=tok)
 
     candidates = list(
-        Teacher.objects.filter(q_obj).only("id", "name", "department")[:50]
+        Teacher.objects.filter(q_name | q_email).only("id", "name", "department", "email")[:50]
     )
     if not candidates:
-        # very loose fallback
+        # very loose fallback: first token in either name or email
         candidates = list(
-            Teacher.objects.filter(name__icontains=query_norm.split()[0]).only("id", "name", "department")[:50]
+            Teacher.objects.filter(
+                Q(name__icontains=(tokens[0] if tokens else query_norm))
+                | Q(email__icontains=(tokens[0] if tokens else query_norm))
+            ).only("id", "name", "department", "email")[:50]
         )
         if not candidates:
             return None
@@ -160,6 +200,7 @@ def _match_teacher_by_name(apps, raw_name: str, dept: str | None = None, min_sco
     best_score = 0.0
     rev = _reverse_two_token_name(query_norm)
     sorted_q = _sort_name_tokens(query_norm)
+    query_tokens_set = set(_simple_tokenize(query_norm))
     # Use case-insensitive exact comparison for department matching; no normalization
     dept_lower = (dept or "").strip().lower()
 
@@ -170,6 +211,21 @@ def _match_teacher_by_name(apps, raw_name: str, dept: str | None = None, min_sco
             _sequence_similarity(name_norm, rev),
             _sequence_similarity(_sort_name_tokens(name_norm), sorted_q),
         )
+        # Boost based on email local-part token overlap with query name tokens
+        try:
+            email_tokens = set(_email_local_tokens(getattr(t, "email", "") or ""))
+        except Exception:
+            email_tokens = set()
+        if query_tokens_set and email_tokens:
+            overlap = len(query_tokens_set & email_tokens)
+            if overlap > 0:
+                ratio = overlap / max(1, len(query_tokens_set))
+                if ratio >= 1.0 or overlap >= 3:
+                    score += 0.20
+                elif ratio >= 0.67 or overlap >= 2:
+                    score += 0.12
+                else:
+                    score += 0.06
         # Small boost if course department exactly matches teacher department (case-insensitive)
         if dept_lower and t.department:
             if dept_lower == str(t.department or "").strip().lower():
