@@ -133,6 +133,7 @@ export function LatestReviewCard({
   const { t, language } = useI18n();
   const router = useRouter();
   const { user, isLoggedIn, openLoginModal } = useApp();
+  const imagePlaceholder = t("courses.review.imagePlaceholder");
 
   // Handle like action (prevent event bubbling)
   const handleLike = React.useCallback((e: React.MouseEvent) => {
@@ -177,6 +178,13 @@ export function LatestReviewCard({
     }
     return review.author.name;
   }, [review.isAnonymous, review.author?.id, review.author?.name, isOwner, t]);
+
+  // Sanitize review content and replace <img> tags with a localized text placeholder
+  const reviewContentHtml = React.useMemo(() => {
+    const sanitized = sanitizeHtml(review.content || "");
+    // Replace any <img ...> tag with a simple span containing localized placeholder text
+    return sanitized.replace(/<img\b[^>]*>/gi, `<span>${imagePlaceholder}</span>`);
+  }, [review.content, imagePlaceholder]);
 
   // Validation
   if (!review?.id || !review?.author?.name) {
@@ -299,7 +307,7 @@ export function LatestReviewCard({
           <div className="rounded-md bg-muted/20 border border-muted/30 p-3">
             <div
               className="prose prose-zinc dark:prose-invert max-w-none text-sm leading-relaxed line-clamp-3"
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(review.content) }}
+              dangerouslySetInnerHTML={{ __html: reviewContentHtml }}
             />
           </div>
 
