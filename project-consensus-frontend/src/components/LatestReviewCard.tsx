@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/use-i18n";
 import { useApp } from "@/contexts/AppContext";
 import { clamp, formatTerm, formatDateDisplay, validateRating } from "@/lib/course-utils";
-import { sanitizeHtml } from "@/lib/html-utils";
+import { sanitizeHtml, stripHtmlTags } from "@/lib/html-utils";
 import type { CourseReview } from "@/types";
 
 /**
@@ -182,8 +182,11 @@ export function LatestReviewCard({
   // Sanitize review content and replace <img> tags with a localized text placeholder
   const reviewContentHtml = React.useMemo(() => {
     const sanitized = sanitizeHtml(review.content || "");
+    // strip any HTML from the placeholder,
+    // so translations are always treated as plain text.
+    const safePlaceholder = stripHtmlTags(imagePlaceholder || "");
     // Replace any <img ...> tag with a simple span containing localized placeholder text
-    return sanitized.replace(/<img\b[^>]*>/gi, `<span>${imagePlaceholder}</span>`);
+    return sanitized.replace(/<img\b[^>]*>/gi, `<span>${safePlaceholder}</span>`);
   }, [review.content, imagePlaceholder]);
 
   // Validation
