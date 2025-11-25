@@ -230,12 +230,14 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     Fields:
     - uid: base64 encoded user ID
     - token: password reset token
+    - session_id: per-request session identifier from the reset email link
     - new_password: new password
     - new_password_confirm: password confirmation
     """
     
     uid = serializers.CharField(required=True)
     token = serializers.CharField(required=True)
+    session_id = serializers.CharField(required=True)
     new_password = serializers.CharField(write_only=True, required=True)
     new_password_confirm = serializers.CharField(write_only=True, required=True)
     

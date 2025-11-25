@@ -763,13 +763,20 @@ def request_password_reset(request):
         token_generator = PasswordResetTokenGenerator()
         token = token_generator.make_token(user)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
-        
+
+        # Generate a per-request session identifier so that only the latest
+        # password reset email remains valid. Older links with a stale
+        # session_id will be rejected even if the token itself has not expired.
+        session_id = secrets.token_urlsafe(16)
+        timeout_seconds = getattr(settings, 'PASSWORD_RESET_TIMEOUT', 3600)
+        session_cache_key = f"accounts:pwdreset:session:{user.pk}"
+        cache.set(session_cache_key, session_id, timeout=timeout_seconds)
+
         # Build reset link (normalize base URL to avoid double slashes)
         frontend_base_url = getattr(settings, 'FRONTEND_BASE_URL', 'https://polyu.life').rstrip('/')
-        reset_link = f"{frontend_base_url}/reset-password?uid={uid}&token={token}"
-        
-        # Calculate timeout in hours
-        timeout_seconds = getattr(settings, 'PASSWORD_RESET_TIMEOUT', 3600)
+        reset_link = f"{frontend_base_url}/reset-password?uid={uid}&token={token}&sid={session_id}"
+
+        # Calculate timeout in hours (for email copy only)
         timeout_hours = timeout_seconds // 3600
         
         # Send password reset email
@@ -862,6 +869,7 @@ def confirm_password_reset(request):
     
     uid = serializer.validated_data["uid"]
     token = serializer.validated_data["token"]
+    session_id = serializer.validated_data["session_id"]
     new_password = serializer.validated_data["new_password"]
     
     # Decode user ID
@@ -872,7 +880,17 @@ def confirm_password_reset(request):
         return Response({
             "message": error_codes.PASSWORD_RESET_INVALID_OR_EXPIRED
         }, status=status.HTTP_400_BAD_REQUEST)
-    
+
+    # Ensure this request matches the latest password reset email by checking
+    # the cached session identifier. This invalidates all older emails once a
+    # new reset link is generated.
+    session_cache_key = f"accounts:pwdreset:session:{user.pk}"
+    expected_session_id = cache.get(session_cache_key)
+    if not expected_session_id or not hmac.compare_digest(str(expected_session_id), str(session_id)):
+        return Response({
+            "message": error_codes.PASSWORD_RESET_INVALID_OR_EXPIRED
+        }, status=status.HTTP_400_BAD_REQUEST)
+
     # Check token validity
     token_generator = PasswordResetTokenGenerator()
     if not token_generator.check_token(user, token):
@@ -892,6 +910,9 @@ def confirm_password_reset(request):
     # Set new password
     user.set_password(new_password)
     user.save()
+
+    # Invalidate the session identifier so this link cannot be reused.
+    cache.delete(session_cache_key)
 
     # Invalidate existing sessions for this user only (security best practice)
     # This forces the user to log in again with the new password

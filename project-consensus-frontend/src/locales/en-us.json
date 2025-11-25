@@ -397,7 +397,8 @@
       "cancel": "Cancel",
       "reply": "Reply",
       "replies": "{{count}} replies",
-      "repliesSection": "Replies will appear here"
+      "repliesSection": "Replies will appear here",
+      "imagePlaceholder": "[Image]"
     },
     "reviewForm": {
       "title": "Write Course Review",

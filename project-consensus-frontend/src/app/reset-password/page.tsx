@@ -30,6 +30,7 @@ function ResetPasswordForm() {
 
   const [uid, setUid] = useState('');
   const [token, setToken] = useState('');
+  const [sessionId, setSessionId] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -44,17 +45,19 @@ function ResetPasswordForm() {
     }
   }, [authLoading, user, router]);
 
-  // Extract uid and token from URL on mount
+  // Extract uid, token and session id from URL on mount
   useEffect(() => {
     const uidParam = searchParams.get('uid');
     const tokenParam = searchParams.get('token');
+    const sidParam = searchParams.get('sid');
 
-    if (!uidParam || !tokenParam) {
+    if (!uidParam || !tokenParam || !sidParam) {
       setInvalidLink(true);
       setError(t('auth.passwordReset.errorInvalidLink'));
     } else {
       setUid(uidParam);
       setToken(tokenParam);
+      setSessionId(sidParam);
     }
   }, [searchParams, t]);
 
@@ -96,6 +99,7 @@ function ResetPasswordForm() {
         body: JSON.stringify({
           uid,
           token,
+          session_id: sessionId,
           new_password: newPassword,
           new_password_confirm: confirmPassword,
         }),

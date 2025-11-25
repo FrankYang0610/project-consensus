@@ -397,7 +397,8 @@
       "cancel": "取消",
       "reply": "回复",
       "replies": "{{count}} 条回复",
-      "repliesSection": "回复将显示在此处"
+      "repliesSection": "回复将显示在此处",
+      "imagePlaceholder": "【图片】"
     },
     "reviewForm": {
       "title": "撰写课程点评",
