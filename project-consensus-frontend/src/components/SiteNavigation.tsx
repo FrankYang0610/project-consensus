@@ -131,8 +131,6 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
     more: false,
   });
 
-  // Search input state is now handled by SearchBar component
-
   /**
    * Toggle specific mobile dropdown open/close state
    * @param {'courses' | 'more'} key - Dropdown identifier ('courses', 'more')
@@ -143,8 +141,6 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
       [key]: !prev[key],
     }));
   };
-
-  // Search form submission is now handled by SearchBar component
 
   /**
    * Get current language display information
