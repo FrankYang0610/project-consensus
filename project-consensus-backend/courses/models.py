@@ -227,7 +227,7 @@ class CourseReview(models.Model):
 
     content = models.TextField()
     is_anonymous = models.BooleanField(default=False)
-    only_text = models.BooleanField(default=False, help_text="Text only (no ratings)")
+    only_text = models.BooleanField(default=False, help_text="If true, only text reviews (no rating and attributes)")
     likes_count = models.PositiveIntegerField(default=0)
     is_edited = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now, db_index=True)
