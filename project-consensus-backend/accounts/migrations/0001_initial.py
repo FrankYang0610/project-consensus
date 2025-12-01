@@ -18,57 +18,16 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Profile',
             fields=[
-                (
-                    "id",
-                    models.BigAutoField(
-                        auto_created=True,
-                        primary_key=True,
-                        serialize=False,
-                        verbose_name="ID",
-                    ),
-                ),
-                (
-                    "nickname",
-                    models.CharField(
-                        help_text="展示昵称（唯一）", max_length=15, unique=True
-                    ),
-                ),
-                (
-                    "avatar_url",
-                    models.URLField(blank=True, help_text="头像 URL，可为空"),
-                ),
-                (
-                    "pronouns",
-                    models.CharField(blank=True, help_text="用户代词，可为空", max_length=100),
-                ),
-                (
-                    "show_forum_posts_publicly",
-                    models.BooleanField(default=True, help_text="是否公开展示自己发的forum posts"),
-                ),
-                (
-                    "show_forum_post_comments_publicly",
-                    models.BooleanField(default=True, help_text="是否公开展示自己发的forum post comments"),
-                ),
-                (
-                    "show_course_reviews_publicly",
-                    models.BooleanField(default=True, help_text="是否公开展示自己发的course reviews"),
-                ),
-                (
-                    "last_nickname_updated_at",
-                    models.DateTimeField(blank=True, help_text="最后一次修改昵称的时间", null=True),
-                ),
-                (
-                    "is_account_active",
-                    models.BooleanField(default=True, help_text="账户是否激活（允许登录）"),
-                ),
-                (
-                    "user",
-                    models.OneToOneField(
-                        on_delete=django.db.models.deletion.CASCADE,
-                        related_name="profile",
-                        to=settings.AUTH_USER_MODEL,
-                    ),
-                ),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("nickname", models.CharField(help_text="Unique display name", max_length=15, unique=True)),
+                ("avatar_url", models.URLField(blank=True, help_text="Avatar URL (optional)")),
+                ("pronouns", models.CharField(blank=True, help_text="Pronouns (optional)", max_length=100)),
+                ("show_forum_posts_publicly", models.BooleanField(default=True, help_text="Show my forum posts publicly")),
+                ("show_forum_post_comments_publicly", models.BooleanField(default=True, help_text="Show my forum comments publicly")),
+                ("show_course_reviews_publicly", models.BooleanField(default=True, help_text="Show my course reviews publicly")),
+                ("last_nickname_updated_at", models.DateTimeField(blank=True, help_text="Last nickname change time", null=True)),
+                ("is_account_active", models.BooleanField(default=True, help_text="Account is active (can log in)")),
+                ("user", models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name="profile", to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'verbose_name': 'Profile',
