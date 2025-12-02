@@ -65,7 +65,7 @@ class Migration(migrations.Migration):
                 ('attr_gain', models.CharField(choices=[('low', 'low'), ('decent', 'decent'), ('high', 'high')], default='decent', max_length=10)),
                 ('content', models.TextField()),
                 ('is_anonymous', models.BooleanField(default=False)),
-                ('only_text', models.BooleanField(default=False, help_text='如果为真，则仅文本评价（不含星级/维度）')),
+                ('only_text', models.BooleanField(default=False, help_text='If true, only text reviews (no rating and attributes)')),
                 ('likes_count', models.PositiveIntegerField(default=0)),
                 ('is_edited', models.BooleanField(default=False)),
                 ('created_at', models.DateTimeField(db_index=True, default=django.utils.timezone.now)),
