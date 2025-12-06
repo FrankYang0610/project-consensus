@@ -49,11 +49,9 @@ export function LoginModal({ className, onLoginSuccess }: LoginModalProps) {
     setError('');
   };
 
-  // Backend Login API, Incomplete!
+  // Backend Login API
   const handleLogin = async (email: string, password: string): Promise<LoginResponse> => {
     try {
-      // TODO: Actual server address (backend)
-      // TODO：实际服务器地址（后端）
       // Ensure CSRF cookie exists (safe GET)
       await fetch(`${getAPIBaseUrl()}/api/accounts/csrf/`, { method: 'GET', credentials: 'include' });
       const csrfToken = getCookie('csrftoken');
