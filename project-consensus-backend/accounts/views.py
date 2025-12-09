@@ -379,7 +379,13 @@ def register(request):
 @api_view(["GET"])
 @ensure_csrf_cookie
 def csrf(request):
-    """Ensure a CSRF cookie is set on the client."""
+    """
+    Ensure a CSRF cookie is set on the client.
+
+    Django's CSRF middleware injects `Set-Cookie: csrftoken=...` here; the frontend
+    later reads that cookie and sends it back as `X-CSRFToken` on POST/PATCH/etc.
+    We don't return the header directly - only the cookie is issued.
+    """
     return Response({"success": True})
 
 
