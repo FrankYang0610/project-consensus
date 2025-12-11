@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 def delete_post_and_cleanup_images(*, post: ForumPost) -> None:
     """Hard delete a forum post and cleanup related images."""
     try:
-        delete_images_in_html(getattr(post, "content", ""), owner_user_id=post.author_id)
+        delete_images_in_html(post.content or "", owner_user_id=post.author_id)
     except Exception as e:
         logger.warning(f"Failed to delete images in forum post {post.pk}: {e}", exc_info=True)
     # Also cleanup images embedded in all comments (including replies) under this post
@@ -42,7 +42,7 @@ def delete_post_and_cleanup_images(*, post: ForumPost) -> None:
 def cleanup_removed_images_for_post(*, before_html: str, post_after_update: ForumPost) -> None:
     """Schedule cleanup for images removed during a post update via on_commit callback."""
     old_srcs = extract_image_srcs_from_html(before_html)
-    new_srcs = extract_image_srcs_from_html(getattr(post_after_update, "content", ""))
+    new_srcs = extract_image_srcs_from_html(post_after_update.content or "")
     removed_srcs = old_srcs - new_srcs
     author_id = post_after_update.author_id
     post_pk = post_after_update.pk
@@ -59,10 +59,10 @@ def cleanup_removed_images_for_post(*, before_html: str, post_after_update: Foru
 
 def soft_delete_comment_and_cleanup_images(*, comment: ForumPostComment) -> None:
     """Soft delete a comment and cleanup embedded images."""
-    if getattr(comment, "is_deleted", False):
+    if comment.is_deleted:
         return
     try:
-        delete_images_in_html(getattr(comment, "content", ""), owner_user_id=comment.author_id)
+        delete_images_in_html(comment.content or "", owner_user_id=comment.author_id)
     except Exception as e:
         logger.warning(f"Failed to delete images in forum comment {comment.pk}: {e}", exc_info=True)
     with transaction.atomic():

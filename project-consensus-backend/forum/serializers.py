@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import logging
+
+from django.db import transaction
 from rest_framework import serializers
 from typing import override
 
@@ -7,6 +10,11 @@ from .models import ForumPost, ForumPostComment
 from .utils import generate_anonymous_id
 from forum.security.html import sanitize_forum_html
 from forum.presentation.author import build_forum_author_payload
+from .services.forum_miscellaneous import cleanup_removed_images_for_post, mark_post_edited_if_fields_changed
+from .services.forum_notification import emit_notifications_for_new_comment
+
+
+logger = logging.getLogger(__name__)
 
 
 def _generate_anonymous_id() -> str:
@@ -27,6 +35,7 @@ class ForumPostSerializer(serializers.ModelSerializer):
     to provide defense-in-depth against XSS attacks.
     """
 
+    id = serializers.UUIDField(read_only=True)
     author = serializers.SerializerMethodField()
     likesCount = serializers.IntegerField(source="likes_count", read_only=True)
     commentsCount = serializers.SerializerMethodField()
@@ -38,19 +47,10 @@ class ForumPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = ForumPost
         fields = [
-            "id",
-            "title",
-            "content",
-            "author",
-            "createdAt",
-            "tags",
-            "likesCount",
-            "commentsCount",
-            "isLiked",
-            "isAnonymous",
-            "isEdited",
+            "id", "title", "content", "author", "createdAt",
+            "tags", "likesCount", "commentsCount", "isLiked",
+            "isAnonymous", "isEdited",
         ]
-        read_only_fields = ["id", "createdAt", "author", "isEdited"]
     
     @override
     def to_representation(self, instance):
@@ -65,8 +65,20 @@ class ForumPostSerializer(serializers.ModelSerializer):
             data['content'] = sanitize_forum_html(data['content'])
         return data
 
+    @override
+    def create(self, validated_data):  # type: ignore[override]
+        # Never trust author from payload/save(kwargs)
+        validated_data.pop("author", None)
+
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        if not user or not getattr(user, "is_authenticated", False):
+            raise serializers.ValidationError({"detail": "Authentication required"})
+
+        return ForumPost.objects.create(author=user, **validated_data)
+
     def get_author(self, obj: ForumPost) -> dict:
-        if getattr(obj, "is_anonymous", False):
+        if obj.is_anonymous:
             # Check if current user is the author of this anonymous post
             request = self.context.get("request")
             user = getattr(request, "user", None)
@@ -114,8 +126,16 @@ class ForumPostSerializer(serializers.ModelSerializer):
 
     @override
     def update(self, instance: ForumPost, validated_data):  # type: ignore[override]
-        """Update post fields only; editing side-effects handled in services/views."""
-        return super().update(instance, validated_data)
+        incoming_keys = set(validated_data.keys())
+        before_html = instance.content or ""
+
+        with transaction.atomic():
+            # Mark edited on the instance before saving so it persists in the same write
+            mark_post_edited_if_fields_changed(post=instance, incoming_keys=incoming_keys)
+            instance = super().update(instance, validated_data)
+            cleanup_removed_images_for_post(before_html=before_html, post_after_update=instance)
+
+        return instance
 
 
 class ForumPostCommentSerializer(serializers.ModelSerializer):
@@ -127,6 +147,7 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
     to provide defense-in-depth against XSS attacks.
     """
 
+    id = serializers.UUIDField(read_only=True)
     author = serializers.SerializerMethodField()
     likesCount = serializers.IntegerField(source="likes_count", read_only=True)
     isLiked = serializers.SerializerMethodField()
@@ -140,20 +161,11 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = ForumPostComment
         fields = [
-            "id",
-            "content",
-            "author",
-            "createdAt",
-            "likesCount",
-            "isLiked",
-            "isDeleted",
-            "replyTo",
-            "postId",
-            "repliesCount",
-            "isAnonymous",
+            "id", "content", "author", "createdAt", "likesCount",
+            "isLiked", "isDeleted", "replyTo", "postId",
+            "repliesCount", "isAnonymous",
         ]
         extra_kwargs = {}
-        read_only_fields = ["id", "createdAt", "author", "isDeleted", "likesCount", "isLiked"]
     
     @override
     def to_representation(self, instance):
@@ -169,7 +181,7 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
         return data
 
     def get_author(self, obj: ForumPostComment) -> dict:
-        if getattr(obj, "is_anonymous", False):
+        if obj.is_anonymous:
             # Check if current user is the author of this anonymous comment
             request = self.context.get("request")
             user = getattr(request, "user", None)
@@ -219,11 +231,31 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
                 reply_to_obj = ForumPostComment.objects.get(pk=reply_to_id)
             except ForumPostComment.DoesNotExist:
                 raise serializers.ValidationError({"replyTo": "invalid reply target id"})
-            if getattr(reply_to_obj, "is_deleted", False):
+            if reply_to_obj.is_deleted:
                 raise serializers.ValidationError({"replyTo": "reply target has been deleted"})
             # Ensure reply target belongs to the same post when post_id is present
             if post_id is not None and str(reply_to_obj.post_id) != str(post_id):
                 raise serializers.ValidationError({"replyTo": "reply target does not belong to the given postId"})
 
         return attrs
-    
+
+    @override
+    def create(self, validated_data):  # type: ignore[override]
+        # Never trust author from payload/save(kwargs)
+        validated_data.pop("author", None)
+
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        if not user or not getattr(user, "is_authenticated", False):
+            raise serializers.ValidationError({"detail": "Authentication required"})
+
+        comment = ForumPostComment.objects.create(author=user, **validated_data)
+
+        # Best-effort notification; errors should not block comment creation
+        try:
+            emit_notifications_for_new_comment(comment=comment, actor=user)
+        except Exception:  # pragma: no cover
+            logger.warning("Failed to emit notifications for new forum comment %s", comment.pk, exc_info=True)
+
+        return comment
+
