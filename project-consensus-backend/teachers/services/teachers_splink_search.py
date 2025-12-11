@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import List, Tuple
 import logging
 import re
@@ -60,19 +61,21 @@ def _sort_name_tokens(normalized: str) -> str:
     return " ".join(sorted(tokens))
 
 
-def search_teachers_with_splink(query: str, top_k: int = 20) -> List[Tuple[Teacher, float]]:
+@dataclass
+class SplinkSearchResult:
+    """Structured result for Splink-backed teacher search."""
+
+    teachers: List[Teacher]
+    total_fetched: int
+    has_more: bool
+
+
+def _raw_splink_query(query: str, top_k: int) -> List[Tuple[Teacher, float]]:
     """
-    Use Splink (DuckDB backend) to perform approximate matching for teachers.
+    Low-level Splink search that returns up to ``top_k`` (Teacher, score) pairs.
 
-    Returns a list of (Teacher, match_probability) sorted by probability desc.
-
-    Matching signals considered (both Splink path and fallback path):
-    - Name and its components (normalized, reversed 2-token, token-sorted)
-    - Department (exact and fuzzy)
-    - Tags (joined into a normalized string and compared fuzzily)
-
-    If Splink is not available or errors, gracefully falls back to a
-    token-based icontains filter that considers name, department and tags.
+    This encapsulates all interaction with Splink / DuckDB and the fallback
+    queryset logic. Callers should layer pagination logic on top of this.
     """
     cleaned_query = (query or "").strip()
     if not cleaned_query:
@@ -236,4 +239,42 @@ def search_teachers_with_splink(query: str, top_k: int = 20) -> List[Tuple[Teach
         )
         return [(t, 0.0) for t in fallback_qs]
 
+
+def search_teachers_with_splink(
+    query: str,
+    page: int = 1,
+    page_size: int = 20,
+) -> SplinkSearchResult:
+    """
+    High-level Splink search that understands pagination.
+
+    View layer passes in ``page`` and ``page_size``; this function hides
+    the underlying ``top_k`` and slicing math, returning a structured
+    result that can be fed directly into response builders.
+    """
+    # Defensive guards; views already sanitize but keep this robust for reuse.
+    page = max(page, 1)
+    page_size = max(page_size, 1)
+
+    top_k = page * page_size + 1
+    pairs = _raw_splink_query(query, top_k=top_k)
+    total_fetched = len(pairs)
+
+    has_more = total_fetched > (top_k - 1)
+
+    start = (page - 1) * page_size
+    end = start + page_size
+
+    if start >= total_fetched:
+        current_page_pairs: List[Tuple[Teacher, float]] = []
+    else:
+        current_page_pairs = pairs[start:min(end, total_fetched)]
+
+    page_teachers = [t for (t, _score) in current_page_pairs]
+
+    return SplinkSearchResult(
+        teachers=page_teachers,
+        total_fetched=total_fetched,
+        has_more=has_more,
+    )
 

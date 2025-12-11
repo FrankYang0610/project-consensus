@@ -1,17 +1,19 @@
 from __future__ import annotations
 
-from typing import List
-from urllib.parse import urlencode
-
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.pagination import PageNumberPagination
 
+from courses.models import Course
+
+from django.db.models import Q
+
 from .models import Teacher
 from .serializers import TeacherSerializer, TeacherCourseRefSerializer
-from django.db.models import Q
+from .services.teachers_splink_search import search_teachers_with_splink
+from .services.teachers_build_search_response import build_teachers_splink_response
 
 
 class TeacherPagination(PageNumberPagination):
@@ -22,7 +24,8 @@ class TeacherPagination(PageNumberPagination):
 
 
 class TeacherViewSet(viewsets.ReadOnlyModelViewSet):
-    """Read-only endpoints for teachers.
+    """
+    Read-only endpoints for teachers.
 
     Endpoints:
     - GET /api/teachers/            (list, search via ?q=, paginated)
@@ -49,7 +52,8 @@ class TeacherViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="search-splink")
     def search_splink(self, request):
-        """Approximate search powered by Splink (DuckDB).
+        """
+        Approximate search powered by Splink (DuckDB).
 
         Query params:
         - q: search text (required)
@@ -62,85 +66,42 @@ class TeacherViewSet(viewsets.ReadOnlyModelViewSet):
         if not q:
             return Response({"detail": "Missing query parameter 'q'"}, status=status.HTTP_400_BAD_REQUEST)
 
-        page_param = request.query_params.get("page")
-        page_size_param = request.query_params.get("page_size")
+        # Resolve pagination params with DRF's paginator helpers
+        paginator = self.pagination_class()
 
-        from .services.splink_search import search_teachers_with_splink
-
-        # Resolve pagination params with sane bounds
+        # Page number: coerce to int and clamp to >= 1
         try:
-            page = max(int(page_param) if page_param else 1, 1)
+            page = int(request.query_params.get("page", 1))
         except (TypeError, ValueError):
             page = 1
-        default_page_size = getattr(self.pagination_class, "page_size", 20) or 20
-        max_page_size = getattr(self.pagination_class, "max_page_size", 100) or 100
-        try:
-            page_size = int(page_size_param) if page_size_param else int(default_page_size)
-        except (TypeError, ValueError):
-            page_size = int(default_page_size)
-        page_size = max(1, min(page_size, int(max_page_size)))
+        page = max(page, 1)
 
-        # Fetch one extra item to determine if a next page exists
-        top_k = page * page_size + 1
-        pairs = search_teachers_with_splink(q, top_k=top_k)
-        total_fetched = len(pairs)
-        start = (page - 1) * page_size
-        end = start + page_size
-        has_more = total_fetched > end
+        # Page size: let paginator enforce bounds (page_size_query_param, max_page_size)
+        page_size = paginator.get_page_size(request)
+        if not page_size:
+            page_size = paginator.page_size
 
-        # Slice to current page (guard against short results)
-        page_pairs = pairs[start:min(end, total_fetched)] if start < total_fetched else []
-        page_teachers = [t for (t, _score) in page_pairs]
+        search_result = search_teachers_with_splink(q, page=page, page_size=page_size)
 
-        # Serialize teacher objects only (consistent with other list endpoints)
-        data_results = [TeacherSerializer(instance=t).data for t in page_teachers]
+        response_data = build_teachers_splink_response(
+            request=request,
+            teachers=search_result.teachers,
+            query=q,
+            page=page,
+            page_size=page_size,
+            has_more=search_result.has_more,
+            total_fetched=search_result.total_fetched,
+        )
 
-        # Build pagination links (relative URLs are sufficient for clients that only test truthiness)
-        def build_url(p: int) -> str:
-            query = urlencode({"q": q, "page": p, "page_size": page_size})
-            return f"/api/teachers/search-splink/?{query}"
-
-        next_url = build_url(page + 1) if has_more else None
-        prev_url = build_url(page - 1) if page > 1 else None
-
-        # We cannot know the true total from Splink; provide a conservative lower bound
-        conservative_count = (end + 1) if has_more else total_fetched
-
-        return Response({
-            "count": int(conservative_count),
-            "next": next_url,
-            "previous": prev_url,
-            "results": data_results,
-        })
+        return Response(response_data)
 
     @action(detail=True, methods=["get"], url_path="courses")
     def courses(self, request, pk=None):
-        """Return lightweight course refs taught by the teacher via M2M relation.
-
+        """
+        Return lightweight course refs taught by the teacher via M2M relation.
         Uses the Course.teachers M2M field to fetch all courses associated with this teacher.
         """
-        # Lazy import to avoid hard dependency at import time
-        from courses.models import Course
-
-        try:
-            teacher = Teacher.objects.get(pk=pk)
-        except Teacher.DoesNotExist:
-            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        # Use M2M relation to fetch courses taught by this teacher (optimized query)
-        qs = (
-            Course.objects
-            .filter(teachers=teacher)
-            .only('course_id', 'subject_code', 'title')
-        )
-        data = [
-            {
-                "courseId": str(c.course_id),
-                "subjectCode": c.subject_code,
-                "title": c.title,
-            }
-            for c in qs
-        ]
-        serializer = TeacherCourseRefSerializer(data=data, many=True)
-        serializer.is_valid(raise_exception=True)
+        teacher = self.get_object()  # automatically handle pk lookup and 404
+        qs = Course.objects.filter(teachers=teacher).only('course_id', 'subject_code', 'title')
+        serializer = TeacherCourseRefSerializer(qs, many=True)
         return Response(serializer.data)
