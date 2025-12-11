@@ -160,7 +160,7 @@ _MAIN_TYPES = {"LEC", "SEM", "LTL"}
 def _match_teacher_by_name(apps, raw_name: str, dept: str | None = None, min_score: float | None = None):
     """Return the best-matching Teacher object for the given raw name, or None.
 
-    Similar in spirit to teachers.services.splink_search.search_teachers_with_splink,
+    Similar in spirit to teachers.services.teachers_splink_search.search_teachers_with_splink,
     but implemented inline with stdlib heuristics to keep migration deterministic.
     """
     Teacher = apps.get_model("teachers", "Teacher")
