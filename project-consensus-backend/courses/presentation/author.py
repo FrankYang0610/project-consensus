@@ -56,7 +56,7 @@ def get_course_review_author_display(review: Any, request_user: Optional[Any] = 
     Returns:
         Author payload dict
     """
-    if getattr(review, "is_anonymous", False) and (not request_user or request_user != review.author):
+    if review.is_anonymous and (not request_user or request_user != review.author):
         return get_anonymous_author_payload()
     return build_course_author_payload(review.author)
 

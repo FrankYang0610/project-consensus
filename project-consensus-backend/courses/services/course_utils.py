@@ -33,10 +33,18 @@ def get_related_teacher_courses(course: Course) -> list[dict[str, Any]]:
     result = []
     for c in qs:
         teacher = next(iter(c.teachers.all()), None)
+
+        if teacher is not None:
+            teacher_name = teacher.name
+            teacher_avatar_url = teacher.avatar_url or None
+        else:
+            teacher_name = "Unknown"
+            teacher_avatar_url = None
+
         payload = {
             "courseId": str(c.course_id),
-            "teacherName": getattr(teacher, "name", "Unknown"),
-            "teacherAvatarUrl": (getattr(teacher, "avatar_url", None) or None) if teacher else None,
+            "teacherName": teacher_name,
+            "teacherAvatarUrl": teacher_avatar_url,
             "rating": {
                 "score": c.rating_score,
                 "reviewsCount": c.rating_reviews_count,

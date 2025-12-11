@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from ..models import Course
 from typing import TypedDict
+from django.db.models import Count
 
 
 class DepartmentCount(TypedDict):
@@ -15,8 +16,6 @@ def get_departments_with_counts() -> list[DepartmentCount]:
     Performs a single aggregation grouped by `department`, then merges
     case variants in Python while preserving the first-seen casing.
     """
-    from django.db.models import Count
-
     departments_qs = (
         Course.objects
         .exclude(department="")
@@ -52,8 +51,6 @@ def get_department_level_distribution(department_name: str) -> list[dict[str, in
     Returns:
         List of dictionaries with 'level' and 'count' keys, sorted by level
     """
-    from django.db.models import Count
-
     # Get level distribution for the specified department
     levels_qs = (
         Course.objects

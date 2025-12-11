@@ -77,10 +77,9 @@ class CourseFilter:
 
 class CourseReviewFilter:
     """Encapsulate parsing/validation of course review list query params.
-
+    
     Supported params:
-    - course: numeric PK of course
-    - courseId|course_id: UUID of course
+    - courseId: UUID of course
     - mine: truthy to filter current user's reviews
     - minRating|maxRating: numeric range filters
     - termYear, termSemester: term filters
@@ -94,11 +93,7 @@ class CourseReviewFilter:
         return self.params.get(key)
 
     def apply(self, qs: QuerySet) -> QuerySet:
-        course_pk = self._get("course")
-        if course_pk:
-            qs = qs.filter(course_id=course_pk)
-
-        course_uuid = self._get("courseId") or self._get("course_id")
+        course_uuid = self._get("courseId")
         if course_uuid:
             qs = qs.filter(course__course_id=course_uuid)
 

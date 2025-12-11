@@ -44,7 +44,7 @@ def emit_notifications_for_new_reply(*, reply: CourseReviewReply, actor) -> None
                 },
                 content_preview=reply.content,
                 referenced_content_preview=review.content,
-                created_at=getattr(reply, "created_at", None),
+                created_at=reply.created_at,
             )
         )
     except Exception:
@@ -71,7 +71,7 @@ def emit_notification_for_review_like(*, review: CourseReview, user, like) -> No
                         "courseTitle": f"{review.course.subject_code} {review.course.title}",
                     },
                     referenced_content_preview=f"{review.course.subject_code} {review.course.title}",
-                    created_at=getattr(like, "created_at", timezone.now()),
+                    created_at=like.created_at,
                 )
             )
         except Exception:  # pragma: no cover - best effort
@@ -98,7 +98,7 @@ def emit_notification_for_reply_like(*, reply: CourseReviewReply, user, like) ->
                         "courseTitle": f"{reply.review.course.subject_code} {reply.review.course.title}",
                     },
                     referenced_content_preview=reply.content,
-                    created_at=getattr(like, "created_at", timezone.now()),
+                    created_at=like.created_at,
                 )
             )
         except Exception:  # pragma: no cover - best effort
