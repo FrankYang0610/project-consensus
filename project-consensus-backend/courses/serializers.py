@@ -160,6 +160,7 @@ class CourseReviewSerializer(serializers.ModelSerializer):
     """
 
     # fields contains both writable review content (courseId, ratings, content, term, anonymity flags) and read-only metadata. 
+    id = serializers.UUIDField(read_only=True)
     courseId = serializers.PrimaryKeyRelatedField(
         # For reads, exposes the course UUID; for writes, accepts `courseId` or uses context-provided `course`.
         queryset=Course.objects.all(),
@@ -335,6 +336,7 @@ class CourseReviewReplySerializer(serializers.ModelSerializer):
     """
 
     # reviewId/content/replyToUserId are writable for creating replies; everything else is read-only metadata.
+    id = serializers.UUIDField(read_only=True)
     reviewId = serializers.PrimaryKeyRelatedField(
         queryset=CourseReview.objects.all(),
         source="review",
