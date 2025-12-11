@@ -37,56 +37,39 @@ class CourseSerializer(serializers.ModelSerializer):
         - userHasReviewByCourseId: dict[UUID, bool] - Whether user has review by course ID
     """
 
-    courseId = serializers.CharField(source="course_id")
-    subjectCode = serializers.CharField(source="subject_code")
+    # This serializer is read-only; all exposed fields are also marked read-only.
+    courseId = serializers.CharField(source="course_id", read_only=True)
+    subjectCode = serializers.CharField(source="subject_code", read_only=True)
+    title = serializers.CharField(read_only=True)
     term = serializers.SerializerMethodField()
     terms = serializers.SerializerMethodField()
     rating = serializers.SerializerMethodField()
     attributes = serializers.SerializerMethodField()
     teachers = serializers.SerializerMethodField()
-    lastUpdated = serializers.DateTimeField(source="last_updated")
-    aiSummary = serializers.CharField(source="ai_summary", required=False, allow_blank=True)
-    teachingType = serializers.CharField(source="teaching_type", required=False, allow_blank=True)
-    courseCategory = serializers.CharField(source="course_category", required=False, allow_blank=True)
-    offeringDepartment = serializers.CharField(source="offering_department", required=False, allow_blank=True)
-    level = serializers.CharField(required=False, allow_blank=True)
-    credits = serializers.CharField(required=False, allow_blank=True)
-    courseHomepageUrl = serializers.URLField(source="course_homepage_url", required=False, allow_blank=True)
-    syllabusUrl = serializers.URLField(source="syllabus_url", required=False, allow_blank=True)
+    department = serializers.CharField(read_only=True)
+    lastUpdated = serializers.DateTimeField(source="last_updated", read_only=True)
+    aiSummary = serializers.CharField(source="ai_summary", required=False, allow_blank=True, read_only=True)
+    teachingType = serializers.CharField(source="teaching_type", required=False, allow_blank=True, read_only=True)
+    courseCategory = serializers.CharField(source="course_category", required=False, allow_blank=True, read_only=True)
+    offeringDepartment = serializers.CharField(source="offering_department", required=False, allow_blank=True, read_only=True)
+    level = serializers.CharField(required=False, allow_blank=True, read_only=True)
+    credits = serializers.CharField(required=False, allow_blank=True, read_only=True)
+    courseHomepageUrl = serializers.URLField(source="course_homepage_url", required=False, allow_blank=True, read_only=True)
+    syllabusUrl = serializers.URLField(source="syllabus_url", required=False, allow_blank=True, read_only=True)
     otherTeacherCourses = serializers.SerializerMethodField()
-    curriculum = serializers.JSONField(required=False)
-    # Per-user vote state (read-only): 'recommend' | 'notRecommend' | None
-    userVote = serializers.SerializerMethodField()
-    # Whether current user has posted a review for this course
-    userHasReview = serializers.SerializerMethodField()
+    curriculum = serializers.JSONField(required=False, read_only=True)
+    userVote = serializers.SerializerMethodField()  # Per-user vote state (read-only): 'recommend' | 'notRecommend' | None
+    userHasReview = serializers.SerializerMethodField()  # Whether current user has posted a review for this course
 
     class Meta:
         model = Course
         fields = [
-            "courseId",
-            "subjectCode",
-            "title",
-            "term",
-            "terms",
-            "rating",
-            "attributes",
-            "teachers",
-            "department",
-            "lastUpdated",
-            "aiSummary",
-            "teachingType",
-            "courseCategory",
-            "offeringDepartment",
-            "level",
-            "credits",
-            "courseHomepageUrl",
-            "syllabusUrl",
-            "curriculum",
-            "otherTeacherCourses",
-            "userVote",
-            "userHasReview",
+            "courseId", "subjectCode", "title", "term", "terms", "rating",
+            "attributes", "teachers", "department", "lastUpdated", "aiSummary",
+            "teachingType", "courseCategory", "offeringDepartment", "level",
+            "credits", "courseHomepageUrl", "syllabusUrl", "curriculum",
+            "otherTeacherCourses", "userVote", "userHasReview",
         ]
-        read_only_fields = ["lastUpdated"]
 
     def __init__(self, *args, **kwargs):  # type: ignore[override]
         super().__init__(*args, **kwargs)
@@ -176,8 +159,9 @@ class CourseReviewSerializer(serializers.ModelSerializer):
         - authorByReviewId: dict[UUID, dict] - Precomputed author display data by review ID
     """
 
-    # For reads, exposes the course UUID; for writes, accepts `courseId` or uses context-provided `course`.
+    # fields contains both writable review content (courseId, ratings, content, term, anonymity flags) and read-only metadata. 
     courseId = serializers.PrimaryKeyRelatedField(
+        # For reads, exposes the course UUID; for writes, accepts `courseId` or uses context-provided `course`.
         queryset=Course.objects.all(),
         source="course",
         required=False,
@@ -202,25 +186,11 @@ class CourseReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = CourseReview
         fields = [
-            "id",
-            "courseId",
-            "courseSubjectCode",
-            "courseTitle",
-            "author",
-            "overallRating",
-            "attributes",
-            "content",
-            "likesCount",
-            "createdAt",
-            "updatedAt",
-            "term",
-            "repliesCount",
-            "isLiked",
-            "isAnonymous",
-            "onlyText",
-            "isEdited",
+            "id", "courseId", "courseSubjectCode", "courseTitle", "author",
+            "overallRating", "attributes", "content", "likesCount",
+            "createdAt", "updatedAt", "term", "repliesCount", "isLiked",
+            "isAnonymous", "onlyText", "isEdited",
         ]
-        read_only_fields = ["id", "courseSubjectCode", "courseTitle", "likesCount", "createdAt", "updatedAt", "repliesCount", "isEdited"]
     
     def get_author(self, obj: CourseReview) -> dict:
         """
@@ -364,6 +334,7 @@ class CourseReviewReplySerializer(serializers.ModelSerializer):
         - replyToUserByReplyId: dict[UUID, dict] - Precomputed reply-to-user display data by reply ID
     """
 
+    # reviewId/content/replyToUserId are writable for creating replies; everything else is read-only metadata.
     reviewId = serializers.PrimaryKeyRelatedField(
         queryset=CourseReview.objects.all(),
         source="review",
@@ -384,18 +355,10 @@ class CourseReviewReplySerializer(serializers.ModelSerializer):
     class Meta:
         model = CourseReviewReply
         fields = [
-            "id",
-            "reviewId",
-            "author",
-            "content",
-            "createdAt",
-            "likes",
-            "isLiked",
-            "replyToUser",
-            "isDeleted",
+            "id", "reviewId", "author", "content", "createdAt",
+            "likes", "isLiked", "replyToUser", "isDeleted",
             "replyToUserId",
         ]
-        read_only_fields = ["id", "createdAt", "likes", "isDeleted"]
     
     def get_author(self, obj: CourseReviewReply) -> dict:
         # Priority 1: Check annotated data (most efficient)
