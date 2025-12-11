@@ -9,7 +9,14 @@ class TeacherSerializer(serializers.ModelSerializer):
     """Serializer mapping to frontend Teacher type (camelCase)."""
 
     # Coalesce empty string to None for consistent frontend handling
+    id = serializers.UUIDField(read_only=True)
     avatarUrl = serializers.SerializerMethodField()
+    name = serializers.CharField(read_only=True)
+    title = serializers.CharField(read_only=True)
+    department = serializers.CharField(read_only=True)
+    email = serializers.EmailField(read_only=True)
+    phone = serializers.CharField(read_only=True)
+    office = serializers.CharField(read_only=True)
     officeHours = serializers.CharField(source="office_hours", required=False, allow_blank=True, read_only=True)
     websiteName = serializers.CharField(source="website_name", required=False, allow_blank=True, read_only=True)
     websiteUrl = serializers.URLField(source="website_url", required=False, allow_null=True, read_only=True)
@@ -19,6 +26,8 @@ class TeacherSerializer(serializers.ModelSerializer):
     researchInterests = serializers.CharField(source="research_interests", required=False, allow_blank=True, read_only=True)
     academicAndProfessionalExperience = serializers.CharField(source="academic_and_professional_experience", required=False, allow_blank=True, read_only=True)
     professionalQualifications = serializers.CharField(source="professional_qualifications", required=False, allow_blank=True, read_only=True)
+    tags = serializers.JSONField(read_only=True)
+    languages = serializers.JSONField(read_only=True)
     yearsExperience = serializers.IntegerField(source="years_experience", required=False, allow_null=True, read_only=True)
     createdAt = serializers.DateTimeField(source="created_at", read_only=True)
     updatedAt = serializers.DateTimeField(source="updated_at", read_only=True)
@@ -31,62 +40,16 @@ class TeacherSerializer(serializers.ModelSerializer):
     class Meta:
         model = Teacher
         fields = [
-            "id",
-            "name",
-            "title",
-            "department",
-            "avatarUrl",
-            "email",
-            "phone",
-            "office",
-            "officeHours",
-            "websiteName",
-            "websiteUrl",
-            "profileUrl",
-            "scholarsHubUrl",
-            "biography",
-            "researchInterests",
-            "academicAndProfessionalExperience",
-            "professionalQualifications",
-            "tags",
-            "languages",
-            "yearsExperience",
-            "orcid",
-            "scopus",
-            "researchId",
-            "rating",
-            "createdAt",
-            "updatedAt",
+            "id", "name", "title", "department", "avatarUrl",
+            "email", "phone", "office", "officeHours", "websiteName",
+            "websiteUrl", "profileUrl", "scholarsHubUrl", "biography",
+            "researchInterests", "academicAndProfessionalExperience",
+            "professionalQualifications", "tags", "languages",
+            "yearsExperience", "orcid", "scopus", "researchId",
+            "rating", "createdAt", "updatedAt",
         ]
-        read_only_fields = [
-            "id",
-            "createdAt",
-            "updatedAt",
-            # Computed/derived fields
-            "avatarUrl",
-            "rating",
-            "orcid",
-            "scopus",
-            "researchId",
-            # Source fields we do not allow writing via this API
-            "name",
-            "title",
-            "department",
-            "email",
-            "phone",
-            "office",
-            "officeHours",
-            "websiteName",
-            "websiteUrl",
-            "profileUrl",
-            "scholarsHubUrl",
-            "biography",
-            "researchInterests",
-            "academicAndProfessionalExperience",
-            "professionalQualifications",
-            "tags",
-            "languages",
-            "yearsExperience",
+        read_only_fields = [  # Computed/derived fields
+            "avatarUrl", "rating", "orcid", "scopus", "researchId",
         ]
 
     def get_rating(self, obj: Teacher):

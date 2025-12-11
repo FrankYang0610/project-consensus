@@ -1,20 +1,20 @@
-# Forum Posts & Forum Post Comments
+## Forum Posts & Forum Post Comments
 
 This document describes the initial backend/frontend behavior for forum posts and comments.
 
-## Data model
+### Data model
 - Post: `id`, `title`, `content` (HTML), `author`, `createdAt`, `tags`, `likesCount`, `commentsCount`, `isLiked`, `isAnonymous`, `isEdited`
 - Comment: `id`, `postId`, `replyTo` (optional comment id), `content` (HTML), `author`, `createdAt`, `likesCount`, `isLiked`, `isDeleted`, `isAnonymous`, `repliesCount`
 
-## Create
+### Create
 - Post: authenticated users can create; HTML is sanitized (forum-specific allowlist; links/images allowed with limited attributes).
 - Comment: authenticated users can create on non-deleted posts; replies require a valid non-deleted target comment; invalid `postId` returns 400 `{ postId: "invalid post id" }`; HTML is sanitized.
 
-## Update
+### Update
 - Post: author can update `title` / `content` / `tags` / `isAnonymous`. When updated, `isEdited` is set to true.
 - Comment: editing is not allowed.
 
-## Delete
+### Delete
 - Post: author can hard-delete. Behavior: remove the post row; all related comments/replies/likes are deleted via DB CASCADE. Additionally, images embedded in the post content and in all its comments/replies are cleaned up from storage on delete. Notifications remain intact because they store snapshots and do not depend on FK relations.
   > **Post Deletion Complexity Analysis**
   > 
@@ -51,46 +51,46 @@ This document describes the initial backend/frontend behavior for forum posts an
 
 - Comment: author can soft-delete. Behavior: set `isDeleted=true`, clear `content`, keep the row and thread structure (used as a placeholder in UI). Associated images embedded in the comment content are cleaned up from storage.
 
-## Toggle Like
+### Toggle Like
 - **Toggle Like**: `POST /api/forum/posts/{id}/toggle_like/` or `POST /api/forum/comments/{id}/toggle_like/` - Smart toggle: if not liked, creates like; if already liked, removes like. Returns updated object with current `isLiked` and `likesCount`.
 
-### Benefits of Toggle Like:
+#### Benefits of Toggle Like:
 - **Simplified Frontend Logic**: Single button that toggles between "like" and "unlike" states without tracking the current state client-side.
 - **Consistent UX**: Provides predictable behavior regardless of the current like state.
 - **Reduced API Complexity**: Eliminates the need for separate like/unlike endpoints and client-side state management.
 
-### Notification Behavior:
+#### Notification Behavior:
 - Toggle operations that result in a like send notifications to the content author (excluding self-notifications).
 - Toggle operations that result in an unlike do not send notifications.
 
-## Cascading behavior and operations on deleted content
+### Cascading behavior and operations on deleted content
 - Creating new comments is blocked on deleted posts.
 - Replying to a deleted comment is not allowed.
 - Toggle liking deleted comments is not allowed.
 - When a post is deleted, all of its comments (including replies of replies, etc.) are removed entirely, and images embedded in both the post and its comments are deleted from storage (best-effort, owner-verified).
 - Soft-deleted comments remain as placeholders in the UI (content cleared, `isDeleted=true`).
 
-## Frontend notes
+### Frontend notes
 - Use list/retrieve APIs to display posts (hard-deleted posts are not returned).
 - Render deleted comments as placeholders without interactive actions.
 
-### Anonymous author/comment behavior
+#### Anonymous author/comment behavior
 - When `isAnonymous=true`:
   - For other users, the author is masked as `{ id: anonymous_<random>, name: "Anonymous", avatar: null }`.
   - For the author themselves (authenticated, same `author_id`), the real profile is returned.
 
-### `isLiked` semantics
+#### `isLiked` semantics
 - Returned as a computed, user-scoped flag for both posts and comments.
 - Efficiently annotated in list/detail responses for authenticated users to avoid N+1 queries; otherwise `false`.
 
-## Notifications & navigation
+### Notifications & navigation
 - Notifications are decoupled from forum tables (no FKs) and store `content_preview`/`referenced_content_preview` snapshots plus `metadata`.
 - Deleting a post or any comment does NOT delete notifications.
 - Clicking a notification targeting a deleted post should show a clear message that the item no longer exists and navigate to a Not Found page for posts.
 
-## Endpoints
+### Endpoints
 
-### Posts
+#### Posts
 - List: `GET /api/forum/posts/` (supports `search`, `ordering`, `tags`, `author`, `mine`)
 - Retrieve: `GET /api/forum/posts/{id}/`
 - Create: `POST /api/forum/posts/`
@@ -98,7 +98,7 @@ This document describes the initial backend/frontend behavior for forum posts an
 - Delete: `DELETE /api/forum/posts/{id}/` (hard delete; cleans up embedded images in the post and all its comments, owner-verified)
 - Toggle Like: `POST /api/forum/posts/{id}/toggle_like/` (smart toggle: creates like if not liked, removes like if already liked)
 
-### Comments
+#### Comments
 - List by post: `GET /api/forum/comments/?postId=<uuid>` (404 if post missing)
 - List replies of a comment: `GET /api/forum/comments/?replyTo=<uuid>`
 - Create: `POST /api/forum/comments/` (requires `postId`; optional `replyTo`)
@@ -106,11 +106,11 @@ This document describes the initial backend/frontend behavior for forum posts an
 - Edit: not allowed → `PUT/PATCH` return 405
 - Toggle Like: `POST /api/forum/comments/{id}/toggle_like/` (smart toggle: creates like if not liked, removes like if already liked; not allowed on deleted comments)
 
-### Comment position helper
+#### Comment position helper
 - `GET /api/forum/comments/position/?postId=<uuid>&commentId=<uuid>&page_size=<int>`
   - Returns the zero-based index, page number, page size, total count, and convenience page URLs to load up to the anchor.
 
-## Edit & Delete Logic Summary
+### Edit & Delete Logic Summary
 
 | Type | Edit Permission | Edit Method | Delete Permission | Delete Method | Special Handling |
 |------|----------------|-------------|------------------|---------------|------------------|
@@ -118,7 +118,7 @@ This document describes the initial backend/frontend behavior for forum posts an
 | Forum Post Comment | None | Forbidden | Author | Soft Delete | Clear content, preserve structure |
 | Cleanups | n/a | n/a | n/a | n/a | On post delete, delete images in the post and all its comments; on comment soft delete, delete comment images |
 
-### Key Design Principles:
+#### Key Design Principles:
 1. **Permission Control**: All edit/delete operations require user permission validation
 2. **Transaction Safety**: All write operations are executed within transactions
 3. **Data Consistency**: Related aggregate data is updated after delete/modify operations

@@ -25,7 +25,7 @@ def cleanup_removed_images_for_review(*, before_html: str, review_after_update: 
     DB transaction commits successfully.
     """
     old_srcs = extract_image_srcs_from_html(before_html)
-    new_srcs = extract_image_srcs_from_html(getattr(review_after_update, "content", ""))
+    new_srcs = extract_image_srcs_from_html(review_after_update.content)
     removed_srcs = old_srcs - new_srcs
     author_id = review_after_update.author_id
     review_pk = review_after_update.pk
@@ -49,7 +49,7 @@ def cleanup_removed_images_for_reply(*, before_html: str, reply_after_update: Co
     This follows the same pattern as review image cleanup.
     """
     old_srcs = extract_image_srcs_from_html(before_html)
-    new_srcs = extract_image_srcs_from_html(getattr(reply_after_update, "content", ""))
+    new_srcs = extract_image_srcs_from_html(reply_after_update.content)
     removed_srcs = old_srcs - new_srcs
     author_id = reply_after_update.author_id
     reply_pk = reply_after_update.pk
@@ -73,7 +73,7 @@ def delete_review_images(*, review: CourseReview) -> None:
     This is used when hard deleting a review.
     """
     try:
-        delete_images_in_html(getattr(review, "content", ""), owner_user_id=review.author_id)
+        delete_images_in_html(review.content, owner_user_id=review.author_id)
     except Exception as e:
         logger.warning(
             f"Failed to delete images in course review {review.pk}: {e}",
@@ -91,7 +91,7 @@ def delete_reply_images(*, reply: CourseReviewReply) -> None:
     but this cleanup function is kept for potential future use.
     """
     try:
-        delete_images_in_html(getattr(reply, "content", ""), owner_user_id=reply.author_id)
+        delete_images_in_html(reply.content, owner_user_id=reply.author_id)
     except Exception as e:
         logger.warning(
             f"Failed to delete images in course review reply {reply.pk}: {e}",

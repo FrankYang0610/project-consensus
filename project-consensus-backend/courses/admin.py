@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import strip_tags
 
 from .models import Course, CourseReview, CourseReviewReply, CourseReviewLike, CourseReviewReplyLike, CourseVote
 
@@ -170,7 +171,6 @@ class CourseReviewReplyAdmin(admin.ModelAdmin):
     reply_to_name.short_description = "Reply To"
     
     def content_preview(self, obj):
-        from django.utils.html import strip_tags
         text = strip_tags(obj.content)
         return text[:50] + "..." if len(text) > 50 else text
     content_preview.short_description = "Content Preview"

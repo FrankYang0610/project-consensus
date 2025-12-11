@@ -4,6 +4,9 @@ import logging
 from django.db import transaction
 
 from ..models import CourseReview, CourseReviewReply, Course
+from teachers.services import recompute_teacher_aggregates
+
+from .course_image_cleanup import delete_review_images
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +27,6 @@ def recompute_teachers_aggregates(course: Course) -> None:
     This should be called after any course review is created, updated, or deleted
     to keep teacher ratings in sync with their course reviews.
     """
-    from teachers.services import recompute_teacher_aggregates
 
     for teacher in course.teachers.all():
         recompute_teacher_aggregates(teacher)
@@ -47,8 +49,7 @@ def delete_review_and_cleanup_images_and_recompute_aggregates(*, review: CourseR
 
     Also recomputes course and teacher aggregates inside the same transaction.
     """
-    from .course_image_cleanup import delete_review_images
-    
+
     course: Course = review.course
     delete_review_images(review=review)
     with transaction.atomic():

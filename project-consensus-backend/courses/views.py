@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import logging
-from typing import TypedDict
+from typing import TypedDict, override
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter, OrderingFilter
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied
 from core.permissions import IsAuthorOrReadOnly
 from .pagination import CourseReviewPagination, CourseListPagination
 from .annotations import annotate_is_liked, annotate_user_vote, annotate_user_has_review
@@ -34,12 +34,9 @@ from .services import (
     find_review_for_reply_id,
     
     # Course Review CRUD
-    create_course_review,
-    update_course_review,
     delete_course_review,
     
     # Course Review Reply CRUD
-    create_course_review_reply,
     delete_course_review_reply,
     
     # Like/Vote operations
@@ -48,17 +45,8 @@ from .services import (
     toggle_course_vote,
 )
 from .services.course_filters import CourseFilter, CourseReviewFilter
-from .services.course_exceptions import (
-    ServiceError, 
-    AlreadyReviewedError, 
-    ValidationError as ServiceValidationError,
-    NotFoundError
-)
+from .services.course_exceptions import ServiceError, NotFoundError
 
-class DepartmentInfo(TypedDict):
-    """Type definition for department information with count."""
-    name: str
-    count: int
 
 logger = logging.getLogger(__name__)
 
@@ -74,8 +62,6 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = Course.objects.all().prefetch_related("teachers").order_by("-last_updated")
     serializer_class = CourseSerializer
-    # Read: allow anyone; Write (e.g., nested POST actions): require authentication
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     # Use course_id as the resource identifier (e.g., /api/courses/{uuid}/)
     lookup_field = "course_id"
@@ -90,6 +76,7 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
     # Enable pagination for the courses list endpoint so the frontend can lazy‑load
     pagination_class = CourseListPagination
 
+    @override
     def get_queryset(self):  # type: ignore[override]
         qs = super().get_queryset()
         # Apply query-parameter filters only for the list action.
@@ -106,6 +93,7 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
         # Always prefetch teachers to avoid N+1 in serializers
         return qs.prefetch_related("teachers")
 
+    @override
     def get_serializer_context(self):  # type: ignore[override]
         ctx = super().get_serializer_context()
         # Include userVote/userHasReview/otherTeacherCourses only for detail retrieve responses
@@ -115,58 +103,10 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
         ctx["include_other_teachers"] = is_detail
         return ctx
 
-    def retrieve(self, request, *args, **kwargs):  # type: ignore[override]
-        instance: Course = self.get_object()
-
-        current_teacher_ids = set(instance.teachers.values_list("id", flat=True))
-        others_qs = (
-            Course.objects
-            .filter(subject_code=instance.subject_code)
-            .exclude(course_id=instance.course_id)
-            .order_by("-rating_score", "-rating_reviews_count", "-last_updated")
-            .prefetch_related("teachers")
-        )
-
-        other_teacher_courses: list[dict] = []
-        for c in others_qs:
-            teachers = list(c.teachers.all())
-            chosen = None
-            if teachers:
-                for t in teachers:
-                    if t.id not in current_teacher_ids:
-                        chosen = t
-                        break
-                if chosen is None:
-                    chosen = teachers[0]
-                teacher_name = chosen.name
-                teacher_avatar = getattr(chosen, "avatar_url", None)
-            else:
-                teacher_name = ""
-                teacher_avatar = None
-
-            other_teacher_courses.append({
-                "courseId": str(c.course_id),
-                "teacherName": teacher_name,
-                "teacherAvatarUrl": teacher_avatar,
-                "rating": {
-                    "score": c.rating_score,
-                    "reviewsCount": c.rating_reviews_count,
-                },
-                "attributes": {
-                    "difficulty": c.attr_difficulty or None,
-                    "workload": c.attr_workload or None,
-                    "grading": c.attr_grading or None,
-                    "gain": c.attr_gain or None,
-                },
-            })
-
-        setattr(instance, "_other_teacher_courses", other_teacher_courses)
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
-    
     @action(detail=False, methods=["get"], url_path="departments")
     def departments(self, request):
-        """Return distinct department names for filtering (case-insensitive).
+        """
+        Return distinct department names for filtering (case-insensitive).
 
         This endpoint is used by the frontend to populate the Department filter
         with values that actually exist in the database, avoiding code/name
@@ -226,42 +166,19 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True, methods=["post"], url_path="reviews", permission_classes=[permissions.IsAuthenticated])
     def reviews(self, request, course_id=None):
-        """Create a review for a course (convenience endpoint for frontend).
-        
-        This is a convenience proxy to the CourseReviewViewSet for easier frontend integration.
-        The actual business logic is handled by the service layer.
-        """
-        # Use DRF's lookup to avoid accidental filtering by list query params
+        """Create a review for a course."""
         course = self.get_object()
-
-        serializer = CourseReviewSerializer(data=request.data, context={"request": request})
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Apply business logic validation for creation
-        from .validators import validate_course_review_creation
-        try:
-            validated_data = validate_course_review_creation(serializer.validated_data, request.data)
-        except ValidationError as e:
-            return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            instance = create_course_review(
-                user=request.user, 
-                course=course, 
-                payload=validated_data
-            )
-            out = CourseReviewSerializer(instance, context={"request": request})
-            return Response(out.data, status=status.HTTP_201_CREATED)
-        except AlreadyReviewedError:
-            return Response(
-                {"detail": "You have already reviewed this course.", "code": "already_reviewed"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        context = self.get_serializer_context()  # keep any common context fields
+        context["course"] = course  # add the course object which is specific to this action
+        serializer = CourseReviewSerializer(data=request.data, context=context)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["POST"], url_path="vote", permission_classes=[permissions.IsAuthenticated])
     def vote(self, request, course_id=None):
-        """Toggle/switch course vote for current user.
+        """
+        Toggle/switch course vote for current user.
 
         Body: { "voteType": "recommend" | "notRecommend" }
         Behavior:
@@ -313,6 +230,7 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
     search_fields = ["content"]
     pagination_class = CourseReviewPagination
 
+    @override
     def get_queryset(self):  # type: ignore[override]
         qs = super().get_queryset()
         qs = CourseReviewFilter(self.request.query_params, user=getattr(self.request, "user", None)).apply(qs)
@@ -321,39 +239,6 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
         user = getattr(self.request, "user", None)
         qs = annotate_is_liked(qs, CourseReviewLike, "review", user)
         return qs
-
-    def list(self, request, *args, **kwargs):  # type: ignore[override]
-        """List course reviews with proper author display."""
-        from .services.course_review_read import prepare_course_review_for_serialization
-        
-        queryset = self.filter_queryset(self.get_queryset())
-        page = self.paginate_queryset(queryset)
-        
-        if page is not None:
-            # Prepare each review for serialization
-            prepared_reviews = [
-                prepare_course_review_for_serialization(review, request.user)
-                for review in page
-            ]
-            serializer = self.get_serializer(prepared_reviews, many=True)
-            return self.get_paginated_response(serializer.data)
-        
-        # Prepare all reviews for serialization
-        prepared_reviews = [
-            prepare_course_review_for_serialization(review, request.user)
-            for review in queryset
-        ]
-        serializer = self.get_serializer(prepared_reviews, many=True)
-        return Response(serializer.data)
-
-    def retrieve(self, request, *args, **kwargs):  # type: ignore[override]
-        """Retrieve a single course review with proper author display."""
-        from .services.course_review_read import prepare_course_review_for_serialization
-        
-        instance = self.get_object()
-        prepared_instance = prepare_course_review_for_serialization(instance, request.user)
-        serializer = self.get_serializer(prepared_instance)
-        return Response(serializer.data)
 
     @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
     def toggle_like(self, request, pk: str | None = None):
@@ -376,83 +261,18 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
         except Exception as e:  # pragma: no cover
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
-    def perform_create(self, serializer):  # type: ignore[override]
-        user = self.request.user
-        course_id = self.request.data.get("courseId") or self.request.data.get("course_id")
-        if not course_id:
-            raise ValidationError({"courseId": "required"})
-        
-        try:
-            course = Course.objects.get(course_id=course_id)
-        except Course.DoesNotExist:
-            raise ValidationError({"courseId": "invalid course courseId"})
-        
-        # Apply business logic validation for creation
-        from .validators import validate_course_review_creation
-        try:
-            validated_data = validate_course_review_creation(serializer.validated_data, self.request.data)
-        except ValidationError as e:
-            raise e
-        
-        try:
-            instance = create_course_review(
-                user=user, 
-                course=course, 
-                payload=validated_data
-            )
-            serializer.instance = instance # Set the created instance on the serializer so DRF can serialize it properly
-        except AlreadyReviewedError:
-            raise ValidationError({
-                "detail": "You have already reviewed this course.",
-                "code": "already_reviewed",
-            })
-
-    def update(self, request, *args, **kwargs):  # type: ignore[override]
-        """Allow only the author to update their review.
-
-        On successful update, mark the review as edited and recompute aggregates.
+    @override
+    def perform_destroy(self, instance: CourseReview) -> None:  # type: ignore[override]
         """
-        partial = kwargs.pop("partial", False)
-        instance: CourseReview = self.get_object()
-
-        serializer = CourseReviewSerializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        
-        # Apply business logic validation for update
-        from .validators import validate_course_review_update
-        try:
-            validated_data = validate_course_review_update(serializer.validated_data, request.data, instance)
-        except ValidationError as e:
-            return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            updated_instance = update_course_review(
-                user=request.user,
-                review=instance,
-                payload=validated_data
-            )
-            return Response(CourseReviewSerializer(updated_instance, context={"request": request}).data)
-        except PermissionError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
-
-    def partial_update(self, request, *args, **kwargs):  # type: ignore[override]
-        kwargs["partial"] = True
-        return self.update(request, *args, **kwargs)
-
-    def destroy(self, request, *args, **kwargs):  # type: ignore[override]
-        """Hard delete a course review: only the author may delete.
-
-        Behavior:
+        Hard delete a course review (via service layer).
         - Hard-delete the review row; database CASCADE removes all related replies and likes
         - Recompute course and teacher aggregates after deletion
         """
-        instance: CourseReview = self.get_object()
-        
         try:
-            delete_course_review(user=request.user, review=instance)
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            delete_course_review(user=self.request.user, review=instance)
         except PermissionError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
+            # Let DRF's exception handling generate a 403 response.
+            raise PermissionDenied(detail=str(e))
 
 
 class CourseReviewReplyViewSet(viewsets.ModelViewSet):
@@ -475,6 +295,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
     search_fields = ["content"]
     pagination_class = CourseReviewPagination
 
+    @override
     def get_queryset(self):  # type: ignore[override]
         qs = super().get_queryset().filter(is_deleted=False)
         review_id = self.request.query_params.get("review")
@@ -485,39 +306,17 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
         qs = annotate_is_liked(qs, CourseReviewReplyLike, "reply", user)
         return qs
     
-    def perform_create(self, serializer):  # type: ignore[override]
-        user = self.request.user
-        review_id = self.request.data.get("reviewId") or self.request.data.get("review")
-        if not review_id:
-            raise ValidationError({"reviewId": "required"})
-        
-        try:
-            review = CourseReview.objects.get(pk=review_id)
-        except CourseReview.DoesNotExist:
-            raise ValidationError({"reviewId": "invalid"})
-        
-        reply_to_user_id = self.request.data.get("replyToUserId")
-        try:
-            instance = create_course_review_reply(
-                user=user,
-                review=review,
-                payload=serializer.validated_data,
-                reply_to_user_id=reply_to_user_id,
-            )
-            serializer.instance = instance # Set the created instance on the serializer so DRF can serialize it properly
-        except ServiceError as e:
-            if isinstance(e, NotFoundError):
-                raise ValidationError({"replyToUserId": str(e)})
-            raise ValidationError({"detail": str(e)})
-
+    @override
     def update(self, request, *args, **kwargs):  # type: ignore[override]
         return Response({"detail": "Reply editing is not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    @override
     def partial_update(self, request, *args, **kwargs):  # type: ignore[override]
         return Response({"detail": "Reply editing is not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def destroy(self, request, *args, **kwargs):  # type: ignore[override]
-        """Soft delete a course review reply: only the author may delete.
+    @override
+    def perform_destroy(self, instance: CourseReviewReply) -> None:  # type: ignore[override]
+        """Soft delete a course review reply (via service layer).
 
         Behavior:
         - Mark is_deleted=True
@@ -525,13 +324,11 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
         - Keep the row to preserve thread structure
         - Recompute reply count for the parent review
         """
-        instance: CourseReviewReply = self.get_object()
-        
         try:
-            delete_course_review_reply(user=request.user, reply=instance)
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            delete_course_review_reply(user=self.request.user, reply=instance)
         except PermissionError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_403_FORBIDDEN)
+            # Let DRF's exception handling generate a 403 response.
+            raise PermissionDenied(detail=str(e))
 
     @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
     def toggle_like(self, request, pk: str | None = None):

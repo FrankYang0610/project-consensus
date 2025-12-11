@@ -1,17 +1,25 @@
 from __future__ import annotations
 
 from django.contrib.auth import get_user_model
-import re
+from typing import override
 from rest_framework import serializers
+from rest_framework.exceptions import PermissionDenied
+
+from accounts.models import Profile
 
 from .models import Course, CourseReview, CourseReviewReply, CourseReviewLike, CourseReviewReplyLike, CourseVote
-from .validators import validate_curriculum_structure, validate_course_attributes_enum
+from .presentation.author import get_course_review_author_display
+from .services import create_course_review, create_course_review_reply, update_course_review
+from .services.course_exceptions import AlreadyReviewedError, ServiceError, NotFoundError
+from .services.course_get_teachers import sort_teachers_by_surname
+from .services.course_get_other_teacher_courses import get_other_teacher_courses_for_course
+from .validators import (
+    validate_curriculum_structure,
+    validate_course_review_creation,
+    validate_course_review_update,
+    validate_course_review_reply_creation,
+)
 
-
-TITLE_PREFIXES = frozenset({
-    "prof", "professor", "dr", "mr", "mrs", "ms", "miss",
-    "assoc", "associate", "asst", "assistant", "ir", "capt",
-})
 
 User = get_user_model()
 
@@ -29,64 +37,47 @@ class CourseSerializer(serializers.ModelSerializer):
         - userHasReviewByCourseId: dict[UUID, bool] - Whether user has review by course ID
     """
 
-    courseId = serializers.CharField(source="course_id")
-    subjectCode = serializers.CharField(source="subject_code")
+    # This serializer is read-only; all exposed fields are also marked read-only.
+    courseId = serializers.CharField(source="course_id", read_only=True)
+    subjectCode = serializers.CharField(source="subject_code", read_only=True)
+    title = serializers.CharField(read_only=True)
     term = serializers.SerializerMethodField()
     terms = serializers.SerializerMethodField()
     rating = serializers.SerializerMethodField()
     attributes = serializers.SerializerMethodField()
     teachers = serializers.SerializerMethodField()
-    lastUpdated = serializers.DateTimeField(source="last_updated")
-    aiSummary = serializers.CharField(source="ai_summary", required=False, allow_blank=True)
-    teachingType = serializers.CharField(source="teaching_type", required=False, allow_blank=True)
-    courseCategory = serializers.CharField(source="course_category", required=False, allow_blank=True)
-    offeringDepartment = serializers.CharField(source="offering_department", required=False, allow_blank=True)
-    level = serializers.CharField(required=False, allow_blank=True)
-    credits = serializers.CharField(required=False, allow_blank=True)
-    courseHomepageUrl = serializers.URLField(source="course_homepage_url", required=False, allow_blank=True)
-    syllabusUrl = serializers.URLField(source="syllabus_url", required=False, allow_blank=True)
+    department = serializers.CharField(read_only=True)
+    lastUpdated = serializers.DateTimeField(source="last_updated", read_only=True)
+    aiSummary = serializers.CharField(source="ai_summary", required=False, allow_blank=True, read_only=True)
+    teachingType = serializers.CharField(source="teaching_type", required=False, allow_blank=True, read_only=True)
+    courseCategory = serializers.CharField(source="course_category", required=False, allow_blank=True, read_only=True)
+    offeringDepartment = serializers.CharField(source="offering_department", required=False, allow_blank=True, read_only=True)
+    level = serializers.CharField(required=False, allow_blank=True, read_only=True)
+    credits = serializers.CharField(required=False, allow_blank=True, read_only=True)
+    courseHomepageUrl = serializers.URLField(source="course_homepage_url", required=False, allow_blank=True, read_only=True)
+    syllabusUrl = serializers.URLField(source="syllabus_url", required=False, allow_blank=True, read_only=True)
     otherTeacherCourses = serializers.SerializerMethodField()
-    curriculum = serializers.JSONField(required=False)
-    # Per-user vote state (read-only): 'recommend' | 'notRecommend' | None
-    userVote = serializers.SerializerMethodField()
-    # Whether current user has posted a review for this course
-    userHasReview = serializers.SerializerMethodField()
+    curriculum = serializers.JSONField(required=False, read_only=True)
+    userVote = serializers.SerializerMethodField()  # Per-user vote state (read-only): 'recommend' | 'notRecommend' | None
+    userHasReview = serializers.SerializerMethodField()  # Whether current user has posted a review for this course
 
     class Meta:
         model = Course
         fields = [
-            "courseId",
-            "subjectCode",
-            "title",
-            "term",
-            "terms",
-            "rating",
-            "attributes",
-            "teachers",
-            "department",
-            "lastUpdated",
-            "aiSummary",
-            "teachingType",
-            "courseCategory",
-            "offeringDepartment",
-            "level",
-            "credits",
-            "courseHomepageUrl",
-            "syllabusUrl",
-            "curriculum",
-            "otherTeacherCourses",
-            "userVote",
-            "userHasReview",
+            "courseId", "subjectCode", "title", "term", "terms", "rating",
+            "attributes", "teachers", "department", "lastUpdated", "aiSummary",
+            "teachingType", "courseCategory", "offeringDepartment", "level",
+            "credits", "courseHomepageUrl", "syllabusUrl", "curriculum",
+            "otherTeacherCourses", "userVote", "userHasReview",
         ]
-        read_only_fields = ["lastUpdated"]
 
     def __init__(self, *args, **kwargs):  # type: ignore[override]
         super().__init__(*args, **kwargs)
         # Only include userVote/userHasReview/otherTeacherCourses in detail responses when explicitly requested
         # This allows for efficient list views that don't need per-user data
-        include_user_vote = bool(getattr(self, "context", {}).get("include_user_vote"))
-        include_user_review = bool(getattr(self, "context", {}).get("include_user_review"))
-        include_other_teachers = bool(getattr(self, "context", {}).get("include_other_teachers"))
+        include_user_vote = bool(self.context.get("include_user_vote"))
+        include_user_review = bool(self.context.get("include_user_review"))
+        include_other_teachers = bool(self.context.get("include_other_teachers"))
         if not include_user_vote:
             self.fields.pop("userVote", None)
         if not include_user_review:
@@ -107,8 +98,8 @@ class CourseSerializer(serializers.ModelSerializer):
         return {
             "score": obj.rating_score,
             "reviewsCount": obj.rating_reviews_count,
-            "recommendCount": getattr(obj, "rating_recommend_count", 0),
-            "notRecommendCount": getattr(obj, "rating_not_recommend_count", 0),
+            "recommendCount": obj.rating_recommend_count,
+            "notRecommendCount": obj.rating_not_recommend_count,
         }
 
     def get_attributes(self, obj: Course):
@@ -122,48 +113,11 @@ class CourseSerializer(serializers.ModelSerializer):
         }
 
     def get_teachers(self, obj: Course):
-        # Order teachers by surname (alphabetical), stripping common titles and handling comma-separated names
-        def strip_titles(name: str) -> str:
-            if not name:
-                return ""
-            tokens = str(name).strip().split()
-            i = 0
-            while i < len(tokens):
-                raw = re.sub(r"[\.,;:()\[\]{}'`]+", "", tokens[i]).strip().lower()
-                if raw in TITLE_PREFIXES:
-                    i += 1
-                else:
-                    break
-            return " ".join(tokens[i:]).strip()
-
-        def surname_key(name: str) -> tuple[str, str]:
-            base = strip_titles(name)
-            if not base:
-                return ("", "")
-            if "," in base:
-                # "CHEUNG, Wan Chuen" -> surname = "CHEUNG"
-                parts = base.split(",", 1)
-                surname = parts[0].strip()
-                rest = parts[1].strip() if len(parts) > 1 else ""
-            else:
-                parts = base.split()
-                if len(parts) >= 2:
-                    first = parts[0]
-                    tail = " ".join(parts[1:])
-                    # Heuristic: if first token is ALLCAPS and tail has lowercase, assume surname-first style
-                    if first.isupper() and any(ch.islower() for ch in tail):
-                        surname = first
-                        rest = tail
-                    else:
-                        surname = parts[-1]
-                        rest = " ".join(parts[:-1])
-                else:
-                    surname = parts[-1] if parts else base
-                    rest = ""
-            return (surname.lower(), f"{surname} {rest}".lower())
-
-        teachers = list(obj.teachers.all())
-        teachers_sorted = sorted(teachers, key=lambda t: surname_key(t.name or ""))
+        """
+        Returns all teachers associated with this course, sorted by surname (alphabetically).
+        Title stripping and name normalization are handled by `services.course_get_teachers`.
+        """
+        teachers_sorted = sort_teachers_by_surname(obj.teachers.all())
         return [
             {"id": str(t.id), "name": t.name, "avatarUrl": t.avatar_url or None, "department": (t.department or None)}
             for t in teachers_sorted
@@ -171,19 +125,13 @@ class CourseSerializer(serializers.ModelSerializer):
 
     def get_otherTeacherCourses(self, obj: Course):
         """
-        Return other teacher courses from annotations or serializer context.
+        Compute other teacher courses for the current course.
 
-        This serializer does not perform service/database lookups. Views should
-        annotate the instance with `_other_teacher_courses` or provide a
-        `otherTeacherCoursesByCourseId` mapping in the serializer context.
-        
-        Priority: 1) Annotated data, 2) Context mapping, 3) Empty list
+        Returns a list of simplified course dicts that the frontend expects,
+        matching the shape used in the course detail page. The core query and
+        data-shaping logic is implemented in `services.course_get_other_teacher_courses`.
         """
-        annotated = getattr(obj, "_other_teacher_courses", None)
-        if annotated is not None:
-            return annotated
-        mapping = (self.context.get("otherTeacherCoursesByCourseId") or {}) if hasattr(self, "context") else {}
-        return mapping.get(obj.course_id, [])
+        return get_other_teacher_courses_for_course(obj)
 
     def validate_curriculum(self, value):
         return validate_curriculum_structure(value)
@@ -192,14 +140,14 @@ class CourseSerializer(serializers.ModelSerializer):
         annotated = getattr(obj, "_user_vote", None)
         if annotated:
             return annotated
-        user_vote_map = (self.context.get("userVoteByCourseId") or {}) if hasattr(self, "context") else {}
+        user_vote_map = self.context.get("userVoteByCourseId") or {}
         return user_vote_map.get(obj.course_id)
 
     def get_userHasReview(self, obj: Course) -> bool:
         annotated = getattr(obj, "_user_has_review", None)
         if annotated is not None:
             return bool(annotated)
-        has_review_map = (self.context.get("userHasReviewByCourseId") or {}) if hasattr(self, "context") else {}
+        has_review_map = self.context.get("userHasReviewByCourseId") or {}
         return bool(has_review_map.get(obj.course_id, False))
 
 
@@ -211,7 +159,15 @@ class CourseReviewSerializer(serializers.ModelSerializer):
         - authorByReviewId: dict[UUID, dict] - Precomputed author display data by review ID
     """
 
-    courseId = serializers.CharField(source="course.course_id", read_only=True)
+    # fields contains both writable review content (courseId, ratings, content, term, anonymity flags) and read-only metadata. 
+    id = serializers.UUIDField(read_only=True)
+    courseId = serializers.PrimaryKeyRelatedField(
+        # For reads, exposes the course UUID; for writes, accepts `courseId` or uses context-provided `course`.
+        queryset=Course.objects.all(),
+        source="course",
+        required=False,
+        error_messages={"does_not_exist": "invalid course courseId"},
+    )
     courseSubjectCode = serializers.CharField(source="course.subject_code", read_only=True)
     courseTitle = serializers.CharField(source="course.title", read_only=True)
     author = serializers.SerializerMethodField()
@@ -231,65 +187,40 @@ class CourseReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = CourseReview
         fields = [
-            "id",
-            "courseId",
-            "courseSubjectCode",
-            "courseTitle",
-            "author",
-            "overallRating",
-            "attributes",
-            "content",
-            "likesCount",
-            "createdAt",
-            "updatedAt",
-            "term",
-            "repliesCount",
-            "isLiked",
-            "isAnonymous",
-            "onlyText",
-            "isEdited",
+            "id", "courseId", "courseSubjectCode", "courseTitle", "author",
+            "overallRating", "attributes", "content", "likesCount",
+            "createdAt", "updatedAt", "term", "repliesCount", "isLiked",
+            "isAnonymous", "onlyText", "isEdited",
         ]
-        read_only_fields = ["id", "courseId", "courseSubjectCode", "courseTitle", "likesCount", "createdAt", "updatedAt", "repliesCount", "isEdited"]
     
     def get_author(self, obj: CourseReview) -> dict:
         """
-        Get author display information with fallback hierarchy.
-        
-        Priority: 1) Annotated data, 2) Context mapping, 3) Direct object access
+        Resolve the author payload for a review.
+
+        Uses the shared presentation-layer helper `get_course_review_author_display`
+        so that anonymous review rules are applied consistently across all endpoints.
         """
-        # Prefer precomputed author display from annotations or context.
+        # Priority 1: Check annotated/precomputed data (most efficient, optional)
         annotated = getattr(obj, "_author_display", None)
         if annotated is not None:
             return annotated
-        author_map = (self.context.get("authorByReviewId") or {}) if hasattr(self, "context") else {}
+        
+        # Priority 2: Check context mapping (batch precomputed, optional)
+        author_map = self.context.get("authorByReviewId") or {}
         mapped = author_map.get(obj.id)
         if mapped is not None:
             return mapped
-        # Minimal fallback without invoking presentation builders.
-        author = getattr(obj, "author", None)
-        if author is None:
-            return {"id": "", "name": "", "avatarUrl": None}
-        # Use Profile nickname instead of email/username
-        try:
-            from accounts.models import Profile
-            profile = author.profile
-            display_name = profile.nickname or author.get_username()
-            avatar_url = profile.avatar_url or None
-        except Profile.DoesNotExist:
-            display_name = author.get_username()
-            avatar_url = None
-        return {"id": str(getattr(author, "pk", "")), "name": display_name, "avatarUrl": avatar_url}
+        
+        # Priority 3: Compute based on current request user and review flags
+        request = self.context.get("request")
+        request_user = getattr(request, "user", None) if request is not None else None
+        return get_course_review_author_display(obj, request_user)
 
     def get_attributes(self, obj: CourseReview) -> dict | None:
-        """
-        Get review attributes, returning None for text-only reviews.
-        
-        Text-only reviews don't have meaningful attribute values, so we return None
-        to let the frontend handle the display appropriately.
-        """
         # Return None for text-only reviews to avoid showing meaningless default values
-        if getattr(obj, "only_text", False):
+        if obj.only_text:
             return None
+
         return {
             "difficulty": obj.attr_difficulty,
             "workload": obj.attr_workload,
@@ -303,28 +234,96 @@ class CourseReviewSerializer(serializers.ModelSerializer):
         return None
 
     def get_isLiked(self, obj: CourseReview) -> bool:
-        """
-        Check if current user has liked this review.
-        
-        Priority: 1) Annotated flag, 2) Fallback exists() by current user
-        """
-        request = getattr(self, "context", {}).get("request")
+        request = self.context.get("request")
         user = getattr(request, "user", None)
         if not user or not getattr(user, "is_authenticated", False):
             return False
+        
+        # Priority 1: Check annotated data (most efficient)
         annotated = getattr(obj, "is_liked", None)
         if annotated is not None:
             return bool(annotated)
-        return obj.likes.filter(user=user).exists()
-
-    def validate(self, attrs):  # type: ignore[override]
-        """
-        Basic field-level validation for course review data.
         
-        Business logic validation is handled at the view/service layer
-        to maintain proper separation of concerns.
-        """
-        return attrs
+        # Priority 2: Fallback to database query (least efficient)
+        return obj.likes.filter(user=user).exists()
+    
+    @override
+    def validate(self, attrs):  # type: ignore[override]
+        # Validate course review data for creation or update.
+
+        initial_data = getattr(self, "initial_data", {}) or {}
+
+        # Update existing review
+        if self.instance is not None:
+            return validate_course_review_update(attrs, initial_data, self.instance)
+
+        # Creation path: ensure we have a `course` in attrs.
+        course = attrs.get("course")
+        if course is None:
+            context_course = self.context.get("course")
+            if context_course is not None:
+                attrs["course"] = context_course
+                course = context_course
+
+        if course is None:
+            raw_course_id = initial_data.get("courseId")
+            if raw_course_id:
+                try:
+                    course = Course.objects.get(course_id=raw_course_id)
+                    attrs["course"] = course
+                except Course.DoesNotExist:
+                    raise serializers.ValidationError({"courseId": "invalid course courseId"})
+
+        if course is None:
+            # At this point we still don't have course information. Treat as validation error.
+            raise serializers.ValidationError({"courseId": "required"})
+        
+        return validate_course_review_creation(attrs, initial_data)
+    
+    @override
+    def create(self, validated_data):  # type: ignore[override]
+        # Note: The authenticated user is taken from serializer context (request.user).
+
+        # Drop any author passed via serializer.save(author=...)
+        validated_data.pop("author", None)
+
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        course = validated_data.pop("course", None)
+
+        if not user or not getattr(user, "is_authenticated", False):
+            raise serializers.ValidationError({"detail": "Authentication required"})
+        if course is None:
+            raise serializers.ValidationError({"courseId": "required"})
+
+        try:
+            return create_course_review(
+                user=user,
+                course=course,
+                payload=validated_data,
+            )
+        except AlreadyReviewedError:
+            raise serializers.ValidationError(
+                {
+                    "detail": "You have already reviewed this course.",
+                    "code": "already_reviewed",
+                }
+            )
+    
+    @override
+    def update(self, instance: CourseReview, validated_data):  # type: ignore[override]
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+
+        if not user or not getattr(user, "is_authenticated", False):
+            raise serializers.ValidationError({"detail": "Authentication required"})
+
+        try:
+            return update_course_review(user=user, review=instance, payload=validated_data)
+        except PermissionError as e:
+            # Map domain-level permission failures to DRF's permission exception
+            # so the standard exception handler returns HTTP 403.
+            raise PermissionDenied(detail=str(e))
 
 
 class CourseReviewReplySerializer(serializers.ModelSerializer):
@@ -336,9 +335,20 @@ class CourseReviewReplySerializer(serializers.ModelSerializer):
         - replyToUserByReplyId: dict[UUID, dict] - Precomputed reply-to-user display data by reply ID
     """
 
-    reviewId = serializers.CharField(source="review_id", read_only=True)
+    # reviewId/content/replyToUserId are writable for creating replies; everything else is read-only metadata.
+    id = serializers.UUIDField(read_only=True)
+    reviewId = serializers.PrimaryKeyRelatedField(
+        queryset=CourseReview.objects.all(),
+        source="review",
+        required=False,
+        error_messages={
+            "required": "required",
+            "does_not_exist": "invalid",
+        },
+    )
     author = serializers.SerializerMethodField()
     replyToUser = serializers.SerializerMethodField()
+    replyToUserId = serializers.CharField(write_only=True, required=False, allow_blank=False)  # Write-only field for specifying the user being replied to.
     createdAt = serializers.DateTimeField(source="created_at", read_only=True)
     likes = serializers.IntegerField(source="likes_count", read_only=True)
     isLiked = serializers.SerializerMethodField()
@@ -347,112 +357,162 @@ class CourseReviewReplySerializer(serializers.ModelSerializer):
     class Meta:
         model = CourseReviewReply
         fields = [
-            "id",
-            "reviewId",
-            "author",
-            "content",
-            "createdAt",
-            "likes",
-            "isLiked",
-            "replyToUser",
-            "isDeleted",
+            "id", "reviewId", "author", "content", "createdAt",
+            "likes", "isLiked", "replyToUser", "isDeleted",
+            "replyToUserId",
         ]
-        read_only_fields = ["id", "reviewId", "createdAt", "likes", "isDeleted"]
     
     def get_author(self, obj: CourseReviewReply) -> dict:
-        """
-        Get reply author display information with fallback hierarchy.
-        
-        Priority: 1) Annotated data, 2) Context mapping, 3) Direct object access
-        """
+        # Priority 1: Check annotated data (most efficient)
         annotated = getattr(obj, "_author_display", None)
         if annotated is not None:
             return annotated
-        author_map = (self.context.get("authorByReplyId") or {}) if hasattr(self, "context") else {}
+        
+        # Priority 2: Check context mapping (batch precomputed)
+        author_map = self.context.get("authorByReplyId") or {}
         mapped = author_map.get(obj.id)
         if mapped is not None:
             return mapped
-        user = getattr(obj, "author", None)
+        
+        # Priority 3: Direct object access (fallback, may cause N+1)
+        user = obj.author
         if user is None:
             return {"id": "", "name": "", "avatarUrl": None}
-        # Use Profile nickname
+        
         try:
-            from accounts.models import Profile
             profile = user.profile
             display_name = profile.nickname or user.get_username()
             avatar_url = profile.avatar_url or None
         except Profile.DoesNotExist:
             display_name = user.get_username()
             avatar_url = None
-        return {"id": str(getattr(user, "pk", "")), "name": display_name, "avatarUrl": avatar_url}
+        return {
+            "id": str(user.pk),
+            "name": display_name,
+            "avatarUrl": avatar_url,
+        }
 
     def get_replyToUser(self, obj: CourseReviewReply):
-        """
-        Get the user being replied to, if this is a reply to another user.
-        
-        Returns None if not a reply to user, otherwise returns user display info.
-        Priority: 1) Annotated data, 2) Context mapping, 3) Direct object access
-        """
+        # Get the user being replied to, if this is a reply to another user.
         if not obj.reply_to_user_id:
             return None
+        
+        # Priority 1: Check annotated data (most efficient)
         annotated = getattr(obj, "_reply_to_user_display", None)
         if annotated is not None:
             return annotated
-        reply_map = (self.context.get("replyToUserByReplyId") or {}) if hasattr(self, "context") else {}
+        
+        # Priority 2: Check context mapping (batch precomputed)
+        reply_map = self.context.get("replyToUserByReplyId") or {}
         mapped = reply_map.get(obj.id)
         if mapped is not None:
             return mapped
-        user = getattr(obj, "reply_to_user", None)
+        
+        # Priority 3: Direct object access (fallback, may cause N+1)
+        user = obj.reply_to_user
         if user is None:
             return {"id": "", "name": "", "avatarUrl": None}
+        
         # Use Profile nickname
         try:
-            from accounts.models import Profile
             profile = user.profile
             display_name = profile.nickname or user.get_username()
             avatar_url = profile.avatar_url or None
         except Profile.DoesNotExist:
             display_name = user.get_username()
             avatar_url = None
-        return {"id": str(getattr(user, "pk", "")), "name": display_name, "avatarUrl": avatar_url}
+        return {
+            "id": str(user.pk),
+            "name": display_name,
+            "avatarUrl": avatar_url,
+        }
 
     def get_isLiked(self, obj: CourseReviewReply) -> bool:
-        """
-        Check if current user has liked this reply.
-        
-        Priority: 1) Annotated flag, 2) Fallback exists() by current user
-        """
-        request = getattr(self, "context", {}).get("request")
+        request = self.context.get("request")
+
         user = getattr(request, "user", None)
         if not user or not getattr(user, "is_authenticated", False):
             return False
+        
+        # Priority 1: Check annotated data (most efficient)
         annotated = getattr(obj, "is_liked", None)
         if annotated is not None:
             return bool(annotated)
+        
+        # Priority 2: Fallback to database query (least efficient)
         return obj.likes.filter(user=user).exists()
-
+    
+    @override
     def validate(self, attrs):  # type: ignore[override]
-        """
-        Validate reply data using business rules.
-        
-        Only supports creation - updates are not allowed for replies.
-        """
-        # Business validation for reply creation
-        from .validators import validate_course_review_reply_creation
-        return validate_course_review_reply_creation(attrs, self.initial_data)
+        # Validate reply data for creation, updates are blocked at the view layer.
 
+        initial_data = getattr(self, "initial_data", {}) or {}
+
+        # Only support creation
+        if self.instance is not None:
+            return attrs
+
+        # Ensure we have a `review` in attrs.
+        review = attrs.get("review")
+        if review is None:
+            context_review = self.context.get("review")
+            if context_review is not None:
+                attrs["review"] = context_review
+                review = context_review
+
+        if review is None:
+            raw_review_id = initial_data.get("reviewId")
+            if raw_review_id:
+                try:
+                    review = CourseReview.objects.get(pk=raw_review_id)
+                    attrs["review"] = review
+                except CourseReview.DoesNotExist:
+                    raise serializers.ValidationError({"reviewId": "invalid"})
+
+        if review is None:
+            raise serializers.ValidationError({"reviewId": "required"})
+
+        # Validate reply creation
+        return validate_course_review_reply_creation(attrs, initial_data)
+    
+    @override
+    def create(self, validated_data):  # type: ignore[override]
+        # Drop any author passed via serializer.save(author=...)
+        # This is a security measure: ensure the author is always taken from the request context (the authenticated user), preventing clients from forging author identity via `save()` method
+        validated_data.pop("author", None)
+
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        review = validated_data.pop("review", None)
+        reply_to_user_id = validated_data.pop("replyToUserId", None)
+
+        if not user or not getattr(user, "is_authenticated", False):
+            raise serializers.ValidationError({"detail": "Authentication required"})
+        if review is None:
+            raise serializers.ValidationError({"reviewId": "required"})
+
+        try:
+            return create_course_review_reply(
+                user=user,
+                review=review,
+                payload=validated_data,
+                reply_to_user_id=reply_to_user_id,
+            )
+        except ServiceError as e:
+            if isinstance(e, NotFoundError):
+                # Currently used for reply_to_user resolution
+                raise serializers.ValidationError({"replyToUserId": str(e)})
+            raise serializers.ValidationError({"detail": str(e)})
+    
+    @override
     def update(self, instance: CourseReviewReply, validated_data):  # type: ignore[override]
-        """
-        Reply updates are not allowed - always raises validation error.
-        
-        This enforces the business rule that replies cannot be edited once created.
-        """
+        # Reply updates are not allowed
         raise serializers.ValidationError({"detail": "reply editing is not allowed"})
+
 
 class CourseVoteInputSerializer(serializers.Serializer):
     """
     Serializer for course voting input.
-    
     Used for creating/updating course votes. No context keys expected.
     """
     voteType = serializers.ChoiceField(choices=[CourseVote.Value.RECOMMEND, CourseVote.Value.NOT_RECOMMEND])

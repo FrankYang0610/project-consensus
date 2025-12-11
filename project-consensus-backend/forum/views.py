@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-from django.db import transaction
 from django.db.models import Count, Exists, OuterRef, Value
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
@@ -19,12 +18,13 @@ from .services.forum_like import (
     toggle_forum_comment_like,
 )
 from .services.forum_miscellaneous import (
-    cleanup_removed_images_for_post,
     delete_post_and_cleanup_images,
-    mark_post_edited_if_fields_changed,
     soft_delete_comment_and_cleanup_images,
 )
-from .services.forum_notification import emit_notifications_for_new_comment
+from .services.forum_post_comment_position import (
+    CommentDoesNotBelongToPostError,
+    compute_forum_post_comment_position,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,8 @@ class DefaultPageNumberPagination(PageNumberPagination):
 
 
 class ForumPostViewSet(viewsets.ModelViewSet):
-    """CRUD endpoints for posts.
+    """
+    CRUD endpoints for posts.
 
     - GET /api/forum/posts/          list
     - POST /api/forum/posts/         create
@@ -104,34 +105,9 @@ class ForumPostViewSet(viewsets.ModelViewSet):
         return qs
 
     @override
-    def perform_create(self, serializer):  # type: ignore[override]
-        # Force the author to the current user
-        serializer.save(author=self.request.user)
-
-    @override
     def perform_destroy(self, instance: ForumPost):  # type: ignore[override]
         """Hard delete a forum post and cleanup related images (delegated)."""
         delete_post_and_cleanup_images(post=instance)
-
-    @override
-    def destroy(self, request: Request, *args, **kwargs):  # type: ignore[override]
-        """Explicitly return 204 after performing destroy for clarity and consistency."""
-        instance: ForumPost = self.get_object()
-        self.perform_destroy(instance)
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-    @override
-    def perform_update(self, serializer):  # type: ignore[override]
-        """Update a post, then delegate cleanup and edited marking to services."""
-        instance: ForumPost = serializer.instance
-        before_html = getattr(instance, "content", "")
-        incoming_keys = set(serializer.validated_data.keys())
-
-        with transaction.atomic():
-            # Mark edited on the instance before saving so it persists in the same write
-            mark_post_edited_if_fields_changed(post=instance, incoming_keys=incoming_keys)
-            serializer.save()
-            cleanup_removed_images_for_post(before_html=before_html, post_after_update=instance)
 
     @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
     def toggle_like(self, request: Request, pk: str | None = None):
@@ -149,7 +125,8 @@ class ForumPostViewSet(viewsets.ModelViewSet):
 
 
 class ForumPostCommentViewSet(viewsets.ModelViewSet):
-    """CRUD endpoints for comments (filter by postId/replyTo).
+    """
+    CRUD endpoints for comments (filter by postId/replyTo).
 
     - GET /api/forum/comments/?postId=<uuid>          filter by post
     - GET /api/forum/comments/?replyTo=<uuid>         filter by reply target (parent comment)
@@ -203,28 +180,18 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
         return Response({"detail": "Comment editing is not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     @override
-    def perform_create(self, serializer):  # type: ignore[override]
-        # Always set the author to current user; relation validation handled by serializer
-        comment: ForumPostComment = serializer.save(author=self.request.user)
-        emit_notifications_for_new_comment(comment=comment, actor=self.request.user)
-
-    @override
     def perform_destroy(self, instance: ForumPostComment):  # type: ignore[override]
-        """Soft delete a comment and cleanup embedded images (delegated)."""
+        """Soft delete a comment and cleanup embedded images (idempotent)."""
+        # If the comment is already soft-deleted, do nothing so that the default
+        # `destroy` implementation remains idempotent and still returns 204.
+        if instance.is_deleted:
+            return
         soft_delete_comment_and_cleanup_images(comment=instance)
-
-    @override
-    def destroy(self, request: Request, *args, **kwargs):  # type: ignore[override]
-        """Soft delete comments and always return 204 (idempotent)."""
-        instance: ForumPostComment = self.get_object()
-        if getattr(instance, "is_deleted", False):
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        self.perform_destroy(instance)
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=["GET"], url_path="position", permission_classes=[permissions.AllowAny])
     def position(self, request: Request):
-        """Compute the anchor position of a comment within its post feed.
+        """
+        Compute the anchor position of a comment within its post feed.
 
         Request query params:
         - postId: UUID of the post
@@ -242,64 +209,34 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
                 {"detail": "postId and commentId are required"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        try:
-            target = ForumPostComment.objects.only("id", "created_at", "post_id").get(pk=comment_id)
-        except ForumPostComment.DoesNotExist:
-            return Response({"detail": "Comment not found"}, status=status.HTTP_404_NOT_FOUND)
-
-        if str(target.post_id) != str(post_id):
-            return Response(
-                {"detail": "commentId does not belong to the given postId"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Ensure the parent post exists
-        if not ForumPost.objects.filter(pk=post_id).exists():
-            return Response({"detail": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
-
-        base_qs = ForumPostComment.objects.filter(post_id=post_id)
-        # Count of items strictly before the target by ordering (created_at asc, id asc)
-        less_count = base_qs.filter(created_at__lt=target.created_at).count()
-        tie_count = base_qs.filter(created_at=target.created_at, id__lte=target.id).count()
-        index = max(less_count + tie_count - 1, 0)
-
-        total_count = base_qs.count()
-
-        # Determine page size
         default_page_size = getattr(self.pagination_class, "page_size", 20) or 20
         max_page_size = getattr(self.pagination_class, "max_page_size", 100) or 100
         try:
-            page_size = int(page_size_param) if page_size_param else int(default_page_size)
-        except (TypeError, ValueError):
-            page_size = int(default_page_size)
-        page_size = max(1, min(page_size, int(max_page_size)))
+            payload = compute_forum_post_comment_position(
+                post_id=post_id,
+                comment_id=comment_id,
+                page_size_param=page_size_param,
+                default_page_size=int(default_page_size),
+                max_page_size=int(max_page_size),
+            )
+        except ForumPostComment.DoesNotExist:
+            return Response({"detail": "Comment not found"}, status=status.HTTP_404_NOT_FOUND)
+        except CommentDoesNotBelongToPostError:
+            return Response(
+                {"detail": "commentId does not belong to the given postId"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except ForumPost.DoesNotExist:
+            return Response({"detail": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        page = index // page_size + 1
-        pages_before = max(page - 1, 0)
-
-        # Convenience URLs for pages 1..page (relative path)
-        page_urls = [
-            f"/api/forum/comments/?postId={post_id}&page={i}&page_size={page_size}"
-            for i in range(1, page + 1)
-        ]
-
-        payload = {
-            "index": index,
-            "page": page,
-            "pageSize": page_size,
-            "countBefore": index,
-            "pagesBefore": pages_before,
-            "totalCount": total_count,
-            "pageUrls": page_urls,
-        }
         return Response(payload, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
     def toggle_like(self, request: Request, pk: str | None = None):
-        """Toggle like status for the comment. If not liked, creates like; if already liked, removes like."""
+        # Toggle like status for the comment. If not liked, creates like; if already liked, removes like.
         assert pk is not None
         comment = self.get_object()
-        # Disallow liking a deleted comment
-        if getattr(comment, "is_deleted", False):
+        if comment.is_deleted:  # Disallow liking a deleted comment
             return Response({"detail": "Cannot like a deleted comment"}, status=status.HTTP_400_BAD_REQUEST)
         user = request.user
         try:
