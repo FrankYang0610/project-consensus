@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import logging
-from django.db.models import Count, Exists, OuterRef, Value
+
+from django.contrib.auth import get_user_model
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
@@ -10,8 +11,13 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import override
 
+from accounts.services.privacy_service import (
+    can_view_forum_comments,
+    can_view_forum_posts,
+)
 from core.permissions import IsAuthorOrReadOnly
-from .models import ForumPost, ForumPostComment, ForumPostLike, ForumCommentLike
+from core.views import BaseUserContentListView
+from .models import ForumPost, ForumPostComment
 from .serializers import ForumPostCommentSerializer, ForumPostSerializer
 from .services.forum_like import (
     toggle_forum_post_like,
@@ -62,23 +68,15 @@ class ForumPostViewSet(viewsets.ModelViewSet):
 
     @override
     def get_queryset(self):  # type: ignore[override]
-        qs = super().get_queryset()
-        # Annotate derived fields used by serializer and ordering
-        # - comments_count: total number of comments on the post
-        qs = qs.annotate(comments_count=Count("comments"))
-
-        # Annotate is_liked for authenticated users to avoid N+1 queries
-        if self.request.user.is_authenticated:
-            qs = qs.annotate(
-                is_liked=Exists(
-                    ForumPostLike.objects.filter(
-                        post_id=OuterRef("id"),
-                        user=self.request.user
-                    )
-                )
-            )
-        else:
-            qs = qs.annotate(is_liked=Value(False))
+        # Start from a DRY, well‑annotated queryset:
+        # - with_details(): author/profile, comments, likes
+        # - with_comments_count(): total number of comments
+        # - with_user_interaction(): per-user is_liked flag
+        qs = (
+            ForumPost.objects.with_details()
+            .with_comments_count()
+            .with_user_interaction(getattr(self.request, "user", None))
+        )
 
         # Filters
         params = self.request.query_params
@@ -141,7 +139,13 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
 
     @override
     def get_queryset(self):  # type: ignore[override]
-        qs = super().get_queryset()
+        # Base queryset with common eager-loading and annotations.
+        qs = (
+            ForumPostComment.objects.with_details()
+            .with_replies_count()
+            .with_user_interaction(getattr(self.request, "user", None))
+        )
+
         post_id = self.request.query_params.get("postId")
         reply_to_id = self.request.query_params.get("replyTo")
         if post_id:
@@ -151,23 +155,9 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
             qs = qs.filter(post_id=post_id)
         if reply_to_id:
             qs = qs.filter(reply_to_id=reply_to_id)
+
         # Consistent ordering: oldest first (ascending)
-        qs = qs.order_by("created_at", "id")
-        # Annotate direct replies count (include soft-deleted replies)
-        qs = qs.annotate(replies_count=Count("replies"))
-        # Annotate is_liked for authenticated users to avoid N+1 queries
-        if self.request.user.is_authenticated:
-            qs = qs.annotate(
-                is_liked=Exists(
-                    ForumCommentLike.objects.filter(
-                        comment_id=OuterRef("id"),
-                        user=self.request.user
-                    )
-                )
-            )
-        else:
-            qs = qs.annotate(is_liked=Value(False))
-        return qs
+        return qs.order_by("created_at", "id")
 
     # Because forum post comments are not editable, we don't need to implement `perform_update`
     @override
@@ -246,3 +236,55 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:  # pragma: no cover
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserPostsListView(BaseUserContentListView):
+    """
+    Unified handler for:
+    - /api/accounts/my-posts/                 (current user's posts)
+    - /api/accounts/users/<user_id>/posts/    (public posts of a specific user)
+
+    This view lives in the forum app to avoid cross-app coupling in accounts.views.
+    """
+
+    serializer_class = ForumPostSerializer
+    pagination_class = DefaultPageNumberPagination
+    privacy_checker = staticmethod(can_view_forum_posts)
+
+    def get_content_queryset(self, target_user):
+        """
+        Build base queryset with common annotations.
+        """
+        return (
+            ForumPost.objects.with_details()
+            .with_comments_count()
+            .with_user_interaction(self.request.user)
+            .filter(author=target_user)
+            .order_by("-created_at")
+        )
+
+
+class UserCommentsListView(BaseUserContentListView):
+    """
+    Unified handler for:
+    - /api/accounts/my-comments/                 (current user's comments)
+    - /api/accounts/users/<user_id>/comments/    (public comments of a specific user)
+
+    Also lives in the forum app to keep accounts/views.py focused on auth/profile only.
+    """
+
+    serializer_class = ForumPostCommentSerializer
+    pagination_class = DefaultPageNumberPagination
+    privacy_checker = staticmethod(can_view_forum_comments)
+
+    def get_content_queryset(self, target_user):
+        """
+        Build base queryset with common annotations.
+        """
+        return (
+            ForumPostComment.objects.with_details()
+            .with_replies_count()
+            .with_user_interaction(self.request.user)
+            .filter(author=target_user, is_deleted=False)
+            .order_by("-created_at")
+        )

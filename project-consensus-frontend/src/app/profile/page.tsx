@@ -49,13 +49,13 @@ export default function ProfilePage() {
     joinedDays: 0
   };
 
-  // Fetch user's posts, comments, and reviews
+  // Fetch user's posts, comments, and reviews (first page, small page size for dashboard)
   useEffect(() => {
     if (isLoggedIn) {
       // Fetch posts
-      getMyPosts()
+      getMyPosts({ page: 1, pageSize: 5 })
         .then(data => {
-          setPosts(data);
+          setPosts(data.results ?? []);
           setLoadingPosts(false);
         })
         .catch(error => {
@@ -64,9 +64,9 @@ export default function ProfilePage() {
         });
 
       // Fetch comments
-      getMyComments()
+      getMyComments({ page: 1, pageSize: 5 })
         .then(data => {
-          setComments(data);
+          setComments(data.results ?? []);
           setLoadingComments(false);
         })
         .catch(error => {
@@ -75,9 +75,9 @@ export default function ProfilePage() {
         });
 
       // Fetch reviews
-      getMyReviews()
+      getMyReviews({ page: 1, pageSize: 5 })
         .then(data => {
-          setReviews(data);
+          setReviews(data.results ?? []);
           setLoadingReviews(false);
         })
         .catch(error => {

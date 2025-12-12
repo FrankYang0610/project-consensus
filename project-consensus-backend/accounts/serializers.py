@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import bleach
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError as DjangoValidationError
-from rest_framework import serializers
-from core.validators import validate_https_url_in_allowed_hosts
 from django.contrib.auth.password_validation import validate_password as dj_validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils import timezone
+from rest_framework import serializers
 
+from core.validators import validate_https_url_in_allowed_hosts
+from accounts import error_codes
 from .models import Profile
-from . import error_codes
 
 
 User = get_user_model()
@@ -36,23 +37,20 @@ def validate_and_sanitize_nickname(value: str) -> str:
     # Nicknames should be plain text, so no tags are allowed
     sanitized = bleach.clean(
         value,
-        tags=[],  # No HTML tags allowed / 不允许任何 HTML 标签
-        attributes={},  # No attributes allowed / 不允许任何属性
-        protocols=[],  # No protocols needed / 不需要任何协议
-        strip=True  # Strip disallowed tags / 去除不允许的标签
+        tags=[],            # No HTML tags allowed
+        attributes={},      # No attributes allowed
+        protocols=[],       # No protocols needed
+        strip=True          # Strip disallowed tags
     )
     
     # Strip whitespace after bleach cleaning
-    # bleach 清理后去除首尾空格
     sanitized = sanitized.strip()
     
     # Check minimum length (after sanitization)
-    # 检查最小长度（消毒后）
     if not sanitized:
         raise serializers.ValidationError(error_codes.NICKNAME_REQUIRED)
     
     # Check maximum length
-    # 检查最大长度
     if len(sanitized) > 15:
         raise serializers.ValidationError(error_codes.NICKNAME_TOO_LONG)
     
@@ -66,16 +64,23 @@ def validate_polyu_email(value: str) -> str:
     Rules:
     - Must end with @connect.polyu.hk
     - Returns lowercase version for consistency
-    
-    校验邮箱是否来自理大域名。
-    
-    规则：
-    - 必须以 @connect.polyu.hk 结尾
-    - 返回小写版本以保持一致性
     """
     if not value.lower().endswith('@connect.polyu.hk'):
         raise serializers.ValidationError(error_codes.EMAIL_POLYU_ONLY)
     return value.lower()
+
+
+def validate_password_with_django(value: str) -> str:
+    """
+    Validate password strength using Django's validators and map errors
+    to API-level i18n error codes.
+    """
+    try:
+        dj_validate_password(value)
+    except DjangoValidationError as e:
+        error_codes_list = [error_codes.map_django_password_error(msg) for msg in e.messages]
+        raise serializers.ValidationError(error_codes_list)
+    return value
 
 
 class AuthorSerializer(serializers.Serializer):
@@ -162,11 +167,9 @@ class RegisterSerializer(serializers.Serializer):
     def validate_nickname(self, value):
         """Validate and sanitize nickname, check uniqueness."""
         # Validate and sanitize
-        # 验证和消毒
         sanitized_value = validate_and_sanitize_nickname(value)
         
         # Check uniqueness for registration
-        # 检查注册时的唯一性
         if Profile.objects.filter(nickname=sanitized_value).exists():
             raise serializers.ValidationError(error_codes.NICKNAME_ALREADY_TAKEN)
         
@@ -174,14 +177,7 @@ class RegisterSerializer(serializers.Serializer):
 
     def validate_password(self, value):
         """Validate password strength using Django's password validators."""
-        try:
-            dj_validate_password(value)
-        except DjangoValidationError as e:
-            # Convert Django ValidationError to DRF ValidationError
-            # Map Django error messages to i18n error codes
-            error_codes_list = [error_codes.map_django_password_error(msg) for msg in e.messages]
-            raise serializers.ValidationError(error_codes_list)
-        return value
+        return validate_password_with_django(value)
 
     def validate(self, attrs):
         password = attrs.get('password')
@@ -243,14 +239,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     
     def validate_new_password(self, value):
         """Validate password strength using Django's password validators."""
-        try:
-            dj_validate_password(value)
-        except DjangoValidationError as e:
-            # Convert Django ValidationError to DRF ValidationError
-            # Map Django error messages to i18n error codes
-            error_codes_list = [error_codes.map_django_password_error(msg) for msg in e.messages]
-            raise serializers.ValidationError(error_codes_list)
-        return value
+        return validate_password_with_django(value)
     
     def validate(self, attrs):
         """Validate that both passwords match."""
@@ -263,3 +252,148 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
             })
         
         return attrs
+
+
+class UserDetailSerializer(serializers.ModelSerializer):
+    """
+    Read-only serializer for the current user, matching the frontend `User` type.
+    Produces the same shape as the previous `build_user_payload` helper.
+    """
+
+    id = serializers.CharField(source="pk", read_only=True)
+    name = serializers.SerializerMethodField()
+    avatar = serializers.SerializerMethodField()
+    pronouns = serializers.SerializerMethodField()
+    showForumPostsPublicly = serializers.SerializerMethodField()
+    showForumPostCommentsPublicly = serializers.SerializerMethodField()
+    showCourseReviewsPublicly = serializers.SerializerMethodField()
+    isAccountActive = serializers.SerializerMethodField()
+    lastProfileUpdatedAt = serializers.SerializerMethodField()
+    daysUntilNextUpdate = serializers.SerializerMethodField()
+    stats = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = [
+            "id", "email", "name", "avatar", "pronouns",
+            "showForumPostsPublicly", "showForumPostCommentsPublicly",
+            "showCourseReviewsPublicly", "isAccountActive",
+            "lastProfileUpdatedAt", "daysUntilNextUpdate", "stats",
+        ]
+        read_only_fields = fields
+
+    def _get_profile(self, obj: User) -> Profile | None:
+        """Return related profile if present, otherwise None."""
+        try:
+            return obj.profile
+        except Profile.DoesNotExist:
+            return None
+
+    def get_name(self, obj: User) -> str:
+        profile = self._get_profile(obj)
+        if profile and profile.nickname:
+            return profile.nickname
+        return obj.get_username()
+
+    def get_avatar(self, obj: User) -> str | None:
+        profile = self._get_profile(obj)
+        if not profile:
+            return None
+        return profile.avatar_url or None
+
+    def get_pronouns(self, obj: User) -> str:
+        """Return pronouns, defaulting to 'prefer_not_to_say' when empty."""
+        profile = self._get_profile(obj)
+        pronouns = profile.pronouns if profile else None
+        return pronouns or "prefer_not_to_say"
+
+    def get_showForumPostsPublicly(self, obj: User) -> bool:
+        profile = self._get_profile(obj)
+        return profile.show_forum_posts_publicly if profile else True
+
+    def get_showForumPostCommentsPublicly(self, obj: User) -> bool:
+        profile = self._get_profile(obj)
+        return profile.show_forum_post_comments_publicly if profile else True
+
+    def get_showCourseReviewsPublicly(self, obj: User) -> bool:
+        profile = self._get_profile(obj)
+        return profile.show_course_reviews_publicly if profile else True
+
+    def get_isAccountActive(self, obj: User) -> bool:
+        profile = self._get_profile(obj)
+        return profile.is_account_active if profile else True
+
+    def get_lastProfileUpdatedAt(self, obj: User) -> str | None:
+        profile = self._get_profile(obj)
+        last_updated = profile.last_nickname_updated_at if profile else None
+        return last_updated.isoformat() if last_updated else None
+
+    def get_daysUntilNextUpdate(self, obj: User) -> int | None:
+        """
+        Return remaining days before nickname can be updated again.
+        Mirrors the 14‑day rule previously implemented in the view.
+        """
+        profile = self._get_profile(obj)
+        if not profile:
+            return None
+
+        # Prefer a domain method on Profile when available (keeps rule in the model)
+        if hasattr(profile, "days_until_nickname_update_allowed"):
+            return profile.days_until_nickname_update_allowed()
+
+        last_updated = profile.last_nickname_updated_at
+        if not last_updated:
+            return None
+
+        days_since_update = (timezone.now() - last_updated).days
+        if days_since_update >= 14:
+            return None
+        return 14 - days_since_update
+
+    def get_stats(self, obj: User) -> dict:
+        """
+        Aggregate per-user activity stats.
+        Uses annotated counts when available to avoid N+1 queries.
+        """
+        if hasattr(obj, "posts_count"):
+            posts_count = obj.posts_count
+        else:
+            posts_count = obj.forum_posts.count()
+
+        if hasattr(obj, "comments_count"):
+            comments_count = obj.comments_count
+        else:
+            comments_count = obj.forum_comments.count()
+
+        if hasattr(obj, "reviews_count"):
+            reviews_count = obj.reviews_count
+        else:
+            reviews_count = obj.course_reviews.count()
+
+        joined_days = 0
+        if obj.date_joined:
+            joined_days = (timezone.now() - obj.date_joined).days
+
+        return {
+            "posts": posts_count,
+            "comments": comments_count,
+            "reviews": reviews_count,
+            "joinedDays": joined_days,
+        }
+
+
+class PublicUserSerializer(UserDetailSerializer):
+    """
+    Read-only serializer for public user profile responses.
+    Same as `UserDetailSerializer` but without the email field.
+    """
+
+    class Meta(UserDetailSerializer.Meta):
+        model = User
+        fields = [
+            "id", "name", "avatar", "pronouns",
+            "showForumPostsPublicly", "showForumPostCommentsPublicly",
+            "showCourseReviewsPublicly", "isAccountActive",
+            "lastProfileUpdatedAt", "daysUntilNextUpdate", "stats",
+        ]
+        read_only_fields = fields

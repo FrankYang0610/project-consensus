@@ -3,9 +3,59 @@ from __future__ import annotations
 import uuid
 from django.conf import settings
 from django.db import models
-from django.db.models import Case, F, IntegerField, Value, When
+from django.db.models import (
+    BooleanField,
+    Case,
+    Count,
+    Exists,
+    F,
+    IntegerField,
+    OuterRef,
+    Value,
+    When,
+)
 from django.utils import timezone
  
+class ForumPostQuerySet(models.QuerySet):
+    """
+    Custom queryset for ForumPost to encapsulate common select/annotate patterns.
+
+    This keeps list/detail/user-activity views DRY and ensures that any future
+    changes to the eager-loading strategy only need to be updated in one place.
+    """
+
+    def with_details(self) -> "ForumPostQuerySet":
+        """
+        Attach common related objects used by serializers and views:
+        - author and author.profile
+        - comments and likes relations
+        """
+        return (
+            self.select_related("author", "author__profile")
+            .prefetch_related("comments", "likes")
+        )
+
+    def with_comments_count(self) -> "ForumPostQuerySet":
+        """Annotate total comments_count for each post."""
+        return self.annotate(comments_count=Count("comments", distinct=True))
+
+    def with_user_interaction(self, user) -> "ForumPostQuerySet":
+        """
+        Annotate is_liked for a given user.
+
+        - For authenticated users: exists subquery on ForumPostLike
+        - For anonymous users: constant False (BooleanField)
+        """
+        if user is not None and getattr(user, "is_authenticated", False):
+            return self.annotate(
+                is_liked=Exists(
+                    ForumPostLike.objects.filter(
+                        post_id=OuterRef("id"),
+                        user=user,
+                    )
+                )
+            )
+        return self.annotate(is_liked=Value(False, output_field=BooleanField()))
 
 
 class ForumPost(models.Model):
@@ -31,6 +81,8 @@ class ForumPost(models.Model):
     is_anonymous = models.BooleanField(default=False) # Whether the post should display the author as Anonymous on the client
     is_edited = models.BooleanField(default=False)  # Whether the post has been edited after creation
 
+    objects: ForumPostQuerySet = ForumPostQuerySet.as_manager()
+
     class Meta:
         ordering = ["-created_at"]
         verbose_name = "ForumPost"
@@ -52,6 +104,45 @@ class ForumPost(models.Model):
                 output_field=IntegerField(),
             )
         )
+class ForumPostCommentQuerySet(models.QuerySet):
+    """
+    Custom queryset for ForumPostComment to share common eager-loading
+    and per-user interaction annotations.
+    """
+
+    def with_details(self) -> "ForumPostCommentQuerySet":
+        """
+        Attach common related objects used by serializers:
+        - author, author.profile
+        - post
+        - likes
+        """
+        return (
+            self.select_related("author", "author__profile", "post", "reply_to")
+            .prefetch_related("likes")
+        )
+
+    def with_replies_count(self) -> "ForumPostCommentQuerySet":
+        """Annotate direct replies_count (including soft-deleted replies)."""
+        return self.annotate(replies_count=Count("replies", distinct=True))
+
+    def with_user_interaction(self, user) -> "ForumPostCommentQuerySet":
+        """
+        Annotate is_liked for a given user.
+
+        - For authenticated users: exists subquery on ForumCommentLike
+        - For anonymous users: constant False (BooleanField)
+        """
+        if user is not None and getattr(user, "is_authenticated", False):
+            return self.annotate(
+                is_liked=Exists(
+                    ForumCommentLike.objects.filter(
+                        comment_id=OuterRef("id"),
+                        user=user,
+                    )
+                )
+            )
+        return self.annotate(is_liked=Value(False, output_field=BooleanField()))
 
 
 class ForumPostComment(models.Model):
@@ -73,6 +164,8 @@ class ForumPostComment(models.Model):
     is_deleted = models.BooleanField(default=False)
     likes_count = models.PositiveIntegerField(default=0)
     is_anonymous = models.BooleanField(default=False)  # Whether the comment should display the author as Anonymous on the client
+
+    objects: ForumPostCommentQuerySet = ForumPostCommentQuerySet.as_manager()
 
     class Meta:
         # Default to oldest-first for comments / 评论按时间正序（最早在前）

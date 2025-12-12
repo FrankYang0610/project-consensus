@@ -50,3 +50,19 @@ class Profile(models.Model):
             "avatar": self.avatar_url or None,
         }
 
+    def days_until_nickname_update_allowed(self) -> int | None:
+        """
+        Return remaining days before the nickname can be changed again.
+
+        Business rule:
+        - Nickname can be updated at most once every 14 days.
+        - Returns None when there is no active restriction.
+        """
+        if not self.last_nickname_updated_at:
+            return None
+
+        days_since_update = (timezone.now() - self.last_nickname_updated_at).days
+        if days_since_update >= 14:
+            return None
+        return 14 - days_since_update
+

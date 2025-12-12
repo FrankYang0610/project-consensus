@@ -5,10 +5,16 @@ This module provides HTTP endpoints for global search and health checks.
 Business logic is delegated to the service layer.
 """
 
-from rest_framework.decorators import api_view, throttle_classes
-from rest_framework.response import Response
+from django.contrib.auth import get_user_model
+
 from rest_framework import status
+from rest_framework.decorators import api_view, throttle_classes
+from rest_framework.exceptions import NotAuthenticated, NotFound, PermissionDenied
+from rest_framework.generics import ListAPIView
+from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
+
+from accounts import error_codes as accounts_error_codes
 
 from .search_services import (
     perform_global_search,
@@ -20,6 +26,8 @@ from .search_services import (
 # Result limits
 MAX_PAGE_SIZE = 100          # Maximum results per page
 DEFAULT_PAGE_SIZE = 20       # Default results per page
+
+User = get_user_model()
 
 
 class SearchRateThrottle(UserRateThrottle):
@@ -134,3 +142,79 @@ def search(request):
             "page": 1,
             "page_size": DEFAULT_PAGE_SIZE
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class BaseUserContentListView(ListAPIView):
+    """
+    Generic base view for listing user-generated content (posts, comments, reviews).
+
+    It centralizes the shared control flow for:
+    - /api/accounts/my-*/                    (current user's content)
+    - /api/accounts/users/<user_id>/*/       (public content of a specific user)
+
+    Subclasses must:
+    - set `serializer_class`
+    - set `pagination_class`
+    - set `privacy_checker` to a callable(viewer, owner) -> bool
+    - implement `get_content_queryset(target_user)`
+    """
+
+    # Callable with signature privacy_checker(*, viewer, owner) -> bool
+    privacy_checker = None
+
+    def get_target_user_and_mode(self):
+        """
+        Return (target_user, is_public_mode).
+
+        is_public_mode:
+        - False when viewing own content (including via /users/<self_id>/...)
+        - True when viewing someone else's content via /users/<user_id>/...
+        """
+        user_id = self.kwargs.get("user_id")
+        request_user = getattr(self.request, "user", None)
+
+        # Mode 1: /my-*/ – must be authenticated
+        if user_id is None:
+            if not getattr(request_user, "is_authenticated", False):
+                # Keep using our i18n error code for consistency with other auth endpoints.
+                raise NotAuthenticated(detail=accounts_error_codes.AUTHENTICATION_REQUIRED)
+            return request_user, False
+
+        # Mode 2: /users/<user_id>/* – public profile content
+        try:
+            target_user = User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            # Preserve existing error message used across accounts APIs.
+            raise NotFound(detail="User not found")
+
+        is_self = (
+            getattr(request_user, "is_authenticated", False)
+            and request_user.pk == target_user.pk
+        )
+
+        # When viewing someone else, enforce per-resource privacy.
+        if not is_self:
+            checker = self.privacy_checker
+            if checker is not None and not checker(viewer=request_user, owner=target_user):
+                # Normalize the privacy error message; specific wording is not important to the frontend.
+                raise PermissionDenied(detail="Content is private")
+            return target_user, True
+
+        # Owner always sees full content (including anonymous) regardless of URL pattern.
+        return target_user, False
+
+    def get_content_queryset(self, target_user):
+        """
+        Subclasses must implement this to return the base queryset for the given target_user.
+        """
+        raise NotImplementedError("Subclasses must implement get_content_queryset(target_user)")
+
+    def get_queryset(self):  # type: ignore[override]
+        target_user, is_public = self.get_target_user_and_mode()
+        qs = self.get_content_queryset(target_user)
+
+        # In public mode, hide anonymous content consistently across all user-activity endpoints.
+        if is_public:
+            qs = qs.filter(is_anonymous=False)
+
+        return qs
