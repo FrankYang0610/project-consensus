@@ -650,22 +650,22 @@
     "activity": {
       "title": "Recent Activity",
       "subtitle": "Latest contributions to the community",
-      "myPosts": {
-        "title": "Posts",
-        "subtitle": "Forum posts created",
+      "recentPosts": {
+        "title": "Recent Posts",
+        "subtitle": "The 5 most recent forum posts",
         "empty": "No posts yet",
         "viewPost": "View Post"
       },
-      "myComments": {
-        "title": "Comments",
-        "subtitle": "Comments on forum posts",
+      "recentComments": {
+        "title": "Recent Comments",
+        "subtitle": "The 5 most recent comments on forum posts",
         "empty": "No comments yet",
         "inReplyTo": "In reply to",
         "onPost": "On post:"
       },
-      "myReviews": {
-        "title": "Reviews",
-        "subtitle": "Course reviews written",
+      "recentReviews": {
+        "title": "Recent Reviews",
+        "subtitle": "The 5 most recent course reviews",
         "empty": "No reviews yet",
         "viewCourse": "View Course"
       },
