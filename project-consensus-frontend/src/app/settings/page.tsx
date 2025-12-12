@@ -93,9 +93,9 @@ export default function SettingsPage() {
 
   // Language options (keep in sync with SiteNavigation)
   const languageOptions = [
-    { code: 'zh-HK' as Language, name: '繁體中文', flag: '🇭🇰' },
-    { code: 'zh-CN' as Language, name: '简体中文', flag: '🇨🇳' },
-    { code: 'en-US' as Language, name: 'English', flag: '🇺🇸' },
+    { code: 'zh-HK' as Language, name: '繁體中文' },
+    { code: 'zh-CN' as Language, name: '简体中文' },
+    { code: 'en-US' as Language, name: 'English' },
   ];
 
   const getCurrentLanguage = () =>
@@ -342,7 +342,6 @@ export default function SettingsPage() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="flex items-center gap-2 h-9 px-3">
-                  <span className="text-sm">{getCurrentLanguage().flag}</span>
                   <span className="text-sm">{getCurrentLanguage().name}</span>
                   <ChevronDown size={12} className="opacity-50" />
                 </Button>
@@ -356,7 +355,6 @@ export default function SettingsPage() {
                       language === langOption.code ? 'bg-accent text-accent-foreground' : ''
                     }
                   >
-                    <span className="mr-2">{langOption.flag}</span>
                     <span className="text-sm">{langOption.name}</span>
                     {language === langOption.code && (
                       <span className="ml-auto text-xs">✓</span>

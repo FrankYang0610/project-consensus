@@ -651,22 +651,22 @@
     "activity": {
       "title": "最近活動",
       "subtitle": "最新的社區貢獻",
-      "myPosts": {
-        "title": "帖子",
-        "subtitle": "建立的論壇帖子",
+      "recentPosts": {
+        "title": "最近帖子",
+        "subtitle": "最近 5 條建立的論壇帖子",
         "empty": "還沒有發布帖子",
         "viewPost": "查看帖子"
       },
-      "myComments": {
-        "title": "帖子評論",
-        "subtitle": "在論壇帖子中的評論",
+      "recentComments": {
+        "title": "最近評論",
+        "subtitle": "最近 5 條在論壇帖子中的評論",
         "empty": "還沒有發表評論",
         "inReplyTo": "回覆",
         "onPost": "在帖子："
       },
-      "myReviews": {
-        "title": "課程評價",
-        "subtitle": "撰寫的課程評價",
+      "recentReviews": {
+        "title": "最近課程評價",
+        "subtitle": "最近 5 條撰寫的課程評價",
         "empty": "還沒有發表評價",
         "viewCourse": "查看課程"
       },

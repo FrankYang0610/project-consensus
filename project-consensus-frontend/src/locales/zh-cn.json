@@ -650,22 +650,22 @@
     "activity": {
       "title": "最近活动",
       "subtitle": "最新的社区贡献",
-      "myPosts": {
-        "title": "帖子",
-        "subtitle": "创建的论坛帖子",
+      "recentPosts": {
+        "title": "最近帖子",
+        "subtitle": "最近 5 条创建的论坛帖子",
         "empty": "还没有发布帖子",
         "viewPost": "查看帖子"
       },
-      "myComments": {
-        "title": "帖子评论",
-        "subtitle": "在论坛帖子中的评论",
+      "recentComments": {
+        "title": "最近评论",
+        "subtitle": "最近 5 条在论坛帖子中的评论",
         "empty": "还没有发表评论",
         "inReplyTo": "回复",
         "onPost": "在帖子："
       },
-      "myReviews": {
-        "title": "课程评价",
-        "subtitle": "撰写的课程评价",
+      "recentReviews": {
+        "title": "最近课程评价",
+        "subtitle": "最近 5 条撰写的课程评价",
         "empty": "还没有发表评价",
         "viewCourse": "查看课程"
       },

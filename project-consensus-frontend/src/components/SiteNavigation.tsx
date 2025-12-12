@@ -39,17 +39,14 @@ const languageOptions = [
   {
     code: 'zh-HK' as Language,
     name: '繁體中文',
-    flag: '🇭🇰',
   },
   {
     code: 'zh-CN' as Language,
     name: '简体中文',
-    flag: '🇨🇳',
   },
   {
     code: 'en-US' as Language,
     name: 'English',
-    flag: '🇺🇸',
   },
 ];
 
@@ -334,9 +331,7 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="flex items-center gap-2 h-9 px-3">
-                    <span className="text-sm">{getCurrentLanguage().flag}</span>
-                    <span className="hidden lg:inline text-sm">{getCurrentLanguage().name}</span>
-                    <span className="lg:hidden">{getCurrentLanguage().flag}</span>
+                    <span className="text-sm">{getCurrentLanguage().name}</span>
                     <ChevronDown size={12} className="opacity-50" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -350,7 +345,6 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                         language === langOption.code && "bg-accent text-accent-foreground"
                       )}
                     >
-                      <span>{langOption.flag}</span>
                       <span className="text-sm">{langOption.name}</span>
                       {language === langOption.code && (
                         <span className="ml-auto text-xs">✓</span>
@@ -557,7 +551,6 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                           : ""
                       )}
                     >
-                      <span className="text-base">{langOption.flag}</span>
                       <span>{langOption.name}</span>
                       {language === langOption.code && (
                         <span className="ml-auto text-xs">✓</span>

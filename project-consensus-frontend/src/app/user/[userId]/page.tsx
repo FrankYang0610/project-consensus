@@ -234,18 +234,18 @@ export default function PublicUserPage() {
 
             {/* Right Column - Activity & Content */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Posts */}
+              {/* Recent Posts */}
               {user.showForumPostsPublicly && (
                 <Card className="shadow-lg border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
                   <CardHeader>
-                    <CardTitle className="text-xl flex items-center gap-2"><FileText className="w-5 h-5" /> {t('profile.activity.myPosts.title')}</CardTitle>
-                    <CardDescription>{t('profile.activity.myPosts.subtitle')}</CardDescription>
+                    <CardTitle className="text-xl flex items-center gap-2"><FileText className="w-5 h-5" /> {t('profile.activity.recentPosts.title')}</CardTitle>
+                    <CardDescription>{t('profile.activity.recentPosts.subtitle')}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     {loadingPosts ? (
                       <div className="text-center py-8 text-muted-foreground">Loading...</div>
                     ) : posts.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">{t('profile.activity.myPosts.empty')}</div>
+                      <div className="text-center py-8 text-muted-foreground">{t('profile.activity.recentPosts.empty')}</div>
                     ) : (
                       <div className="space-y-3">
                         {posts.slice(0, 5).map((post) => (
@@ -286,18 +286,18 @@ export default function PublicUserPage() {
                 </Card>
               )}
 
-              {/* Comments */}
+              {/* Recent Comments */}
               {user.showForumPostCommentsPublicly && (
                 <Card className="shadow-lg border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
                   <CardHeader>
-                    <CardTitle className="text-xl flex items-center gap-2"><MessageSquare className="w-5 h-5" /> {t('profile.activity.myComments.title')}</CardTitle>
-                    <CardDescription>{t('profile.activity.myComments.subtitle')}</CardDescription>
+                    <CardTitle className="text-xl flex items-center gap-2"><MessageSquare className="w-5 h-5" /> {t('profile.activity.recentComments.title')}</CardTitle>
+                    <CardDescription>{t('profile.activity.recentComments.subtitle')}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     {loadingComments ? (
                       <div className="text-center py-8 text-muted-foreground">Loading...</div>
                     ) : comments.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">{t('profile.activity.myComments.empty')}</div>
+                      <div className="text-center py-8 text-muted-foreground">{t('profile.activity.recentComments.empty')}</div>
                     ) : (
                       <div className="space-y-3">
                         {comments.slice(0, 5).map((comment) => (
@@ -319,7 +319,7 @@ export default function PublicUserPage() {
                                   <Heart className={cn("w-3 h-3", comment.isLiked && "fill-current")} />
                                   {comment.likesCount}
                                 </span>
-                                {comment.replyTo && <span className="text-gray-500 dark:text-gray-400">{t('profile.activity.myComments.inReplyTo')}</span>}
+                                {comment.replyTo && <span className="text-gray-500 dark:text-gray-400">{t('profile.activity.recentComments.inReplyTo')}</span>}
                               </div>
                             </div>
                           </Link>
@@ -330,18 +330,18 @@ export default function PublicUserPage() {
                 </Card>
               )}
 
-              {/* Reviews */}
+              {/* Recent Reviews */}
               {user.showCourseReviewsPublicly && (
                 <Card className="shadow-lg border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
                   <CardHeader>
-                    <CardTitle className="text-xl flex items-center gap-2"><Star className="w-5 h-5" /> {t('profile.activity.myReviews.title')}</CardTitle>
-                    <CardDescription>{t('profile.activity.myReviews.subtitle')}</CardDescription>
+                    <CardTitle className="text-xl flex items-center gap-2"><Star className="w-5 h-5" /> {t('profile.activity.recentReviews.title')}</CardTitle>
+                    <CardDescription>{t('profile.activity.recentReviews.subtitle')}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     {loadingReviews ? (
                       <div className="text-center py-8 text-muted-foreground">Loading...</div>
                     ) : reviews.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">{t('profile.activity.myReviews.empty')}</div>
+                      <div className="text-center py-8 text-muted-foreground">{t('profile.activity.recentReviews.empty')}</div>
                     ) : (
                       <div className="space-y-3">
                         {reviews.slice(0, 5).map((review) => (
