@@ -7,6 +7,7 @@ from django.contrib.auth import (
     get_user_model,
     login as django_login,
     logout as django_logout,
+    update_session_auth_hash,
 )
 from django.db import transaction
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -20,6 +21,7 @@ from accounts.models import Profile
 from .selectors import get_user_with_stats
 from .serializers import (
     LoginSerializer,
+    PasswordChangeSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
     ProfileSerializer,
@@ -346,4 +348,23 @@ def confirm_password_reset(request):
         },
         status=status.HTTP_200_OK,
     )
+
+
+@api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated])
+def change_password(request):
+    """
+    Allow an authenticated user to change their password by providing the
+    current password and a new password.
+    """
+    serializer = PasswordChangeSerializer(
+        data=request.data,
+        context={"request": request},
+    )
+    serializer.is_valid(raise_exception=True)
+
+    user = serializer.save()
+    update_session_auth_hash(request, user)
+
+    return Response({"success": True}, status=status.HTTP_200_OK)
 

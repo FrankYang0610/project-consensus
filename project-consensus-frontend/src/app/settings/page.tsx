@@ -25,7 +25,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ChevronDown } from 'lucide-react';
 import { Language, User } from '@/types';
-import { updateProfile, updatePrivacySettings } from '@/lib/api/user-profile';
+import { updateProfile, updatePrivacySettings, changePassword } from '@/lib/api/user-profile';
+import { HttpError } from '@/lib/api/api-utils';
 import { PronounsSelector } from '@/components/PronounsSelector';
 import { validateNickname } from '@/lib/utils';
 import { AvatarUpload } from '@/components/AvatarUpload';
@@ -203,19 +204,20 @@ export default function SettingsPage() {
 
     setPwdSaving(true);
     try {
-      // TODO: integrate backend endpoint
-      // Example:
-      // const resp = await fetch('/api/auth/change_password/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }) });
-      // if (!resp.ok) throw new Error('Failed');
-
-      // For now, simulate success
-      await new Promise((r) => setTimeout(r, 600));
+      await changePassword({
+        current_password: currentPassword,
+        new_password: newPassword,
+        new_password_confirm: confirmPassword,
+      });
       setPwdMsg(t('settings.account.changed'));
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-    } catch (e) {
+    } catch (e: unknown) {
       console.error(e);
+      if (e instanceof HttpError) {
+        // Additional logging or handling could go here if needed
+      }
       setPwdErr(t('settings.account.changeFailed'));
     } finally {
       setPwdSaving(false);

@@ -1,4 +1,4 @@
-import { apiPatch } from './api-utils';
+import { apiPatch, apiPost } from './api-utils';
 import type { User } from '@/types/user';
 
 /**
@@ -25,6 +25,20 @@ export async function updatePrivacySettings(data: {
 }): Promise<{ success: boolean; user: User }> {
   return await apiPatch<{ success: boolean; user: User }>(
     '/api/accounts/profile/',
+    data
+  );
+}
+
+/**
+ * Change password for the currently authenticated user.
+ */
+export async function changePassword(data: {
+  current_password: string;
+  new_password: string;
+  new_password_confirm: string;
+}): Promise<{ success: boolean }> {
+  return await apiPost<{ success: boolean }>(
+    '/api/accounts/password-change/',
     data
   );
 }

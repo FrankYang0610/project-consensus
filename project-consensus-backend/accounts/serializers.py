@@ -254,6 +254,71 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         return attrs
 
 
+class PasswordChangeSerializer(serializers.Serializer):
+    """
+    Request body for authenticated password change endpoint.
+    
+    Fields:
+    - current_password: user's existing password (for verification)
+    - new_password: new password
+    - new_password_confirm: password confirmation
+    """
+
+    current_password = serializers.CharField(write_only=True, required=True)
+    new_password = serializers.CharField(write_only=True, required=True)
+    new_password_confirm = serializers.CharField(write_only=True, required=True)
+
+    def validate_current_password(self, value: str) -> str:
+        """
+        Ensure the provided current password matches the authenticated user.
+        """
+        request = self.context.get("request")
+        user = request.user if request is not None else None
+
+        if not user or not user.is_authenticated:
+            raise serializers.ValidationError(error_codes.AUTHENTICATION_REQUIRED)
+
+        if not user.check_password(value):
+            # Reuse existing i18n key for invalid credentials.
+            raise serializers.ValidationError("auth.invalidCredentials")
+
+        return value
+
+    def validate_new_password(self, value: str) -> str:
+        """Validate password strength using Django's password validators."""
+        return validate_password_with_django(value)
+
+    def validate(self, attrs):
+        """Validate that both new password fields match."""
+        new_password = attrs.get("new_password")
+        new_password_confirm = attrs.get("new_password_confirm")
+
+        if new_password != new_password_confirm:
+            raise serializers.ValidationError(
+                {"new_password_confirm": error_codes.PASSWORD_MISMATCH}
+            )
+
+        return attrs
+
+    def save(self, **kwargs):
+        """
+        Persist the new password for the authenticated user.
+
+        The view layer is responsible for enforcing authentication via
+        DRF permission classes; this method focuses purely on data changes.
+        """
+        request = self.context.get("request")
+        user = request.user if request is not None else None
+
+        if not user or not user.is_authenticated:
+            # Defensive guard; normally enforced by IsAuthenticated on the view.
+            raise serializers.ValidationError(error_codes.AUTHENTICATION_REQUIRED)
+
+        user.set_password(self.validated_data["new_password"])
+        user.save()
+        return user
+
+
 class UserDetailSerializer(serializers.ModelSerializer):
     """
     Read-only serializer for the current user, matching the frontend `User` type.
