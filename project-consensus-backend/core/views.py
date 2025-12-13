@@ -171,11 +171,11 @@ class BaseUserContentListView(ListAPIView):
         - True when viewing someone else's content via /users/<user_id>/...
         """
         user_id = self.kwargs.get("user_id")
-        request_user = getattr(self.request, "user", None)
+        request_user = self.request.user
 
         # Mode 1: /my-*/ – must be authenticated
         if user_id is None:
-            if not getattr(request_user, "is_authenticated", False):
+            if not request_user.is_authenticated:
                 # Keep using our i18n error code for consistency with other auth endpoints.
                 raise NotAuthenticated(detail=accounts_error_codes.AUTHENTICATION_REQUIRED)
             return request_user, False
@@ -187,15 +187,14 @@ class BaseUserContentListView(ListAPIView):
             # Preserve existing error message used across accounts APIs.
             raise NotFound(detail="User not found")
 
-        is_self = (
-            getattr(request_user, "is_authenticated", False)
-            and request_user.pk == target_user.pk
-        )
+        is_self = request_user.is_authenticated and request_user.pk == target_user.pk
 
         # When viewing someone else, enforce per-resource privacy.
         if not is_self:
             checker = self.privacy_checker
-            if checker is not None and not checker(viewer=request_user, owner=target_user):
+            if checker is None:
+                raise NotImplementedError("Subclasses of BaseUserContentListView must define `privacy_checker(viewer, owner) -> bool`")
+            if not checker(viewer=request_user, owner=target_user):
                 # Normalize the privacy error message; specific wording is not important to the frontend.
                 raise PermissionDenied(detail="Content is private")
             return target_user, True

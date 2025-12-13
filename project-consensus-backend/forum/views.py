@@ -74,7 +74,7 @@ class ForumPostViewSet(viewsets.ModelViewSet):
         qs = (
             ForumPost.objects.with_details()
             .with_comments_count()
-            .with_user_interaction(getattr(self.request, "user", None))
+            .with_user_interaction(self.request.user)
         )
 
         # Filters
@@ -142,7 +142,7 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
         qs = (
             ForumPostComment.objects.with_details()
             .with_replies_count()
-            .with_user_interaction(getattr(self.request, "user", None))
+            .with_user_interaction(self.request.user)
         )
 
         post_id = self.request.query_params.get("postId")

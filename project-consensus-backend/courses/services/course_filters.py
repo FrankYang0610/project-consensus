@@ -98,7 +98,7 @@ class CourseReviewFilter:
             qs = qs.filter(course__course_id=course_uuid)
 
         mine = self._get("mine")
-        if mine and self.user is not None and getattr(self.user, "is_authenticated", False):
+        if mine and self.user is not None and self.user.is_authenticated:
             qs = qs.filter(author=self.user)
 
         try:

@@ -28,7 +28,6 @@ import {
 import { ChevronDown } from 'lucide-react';
 import { Language, User } from '@/types';
 import { updateProfile, updatePrivacySettings, changePassword } from '@/lib/api/user-profile';
-import { HttpError } from '@/lib/api/api-utils';
 import { PronounsSelector } from '@/components/PronounsSelector';
 import { validateNickname } from '@/lib/utils';
 import { AvatarUpload } from '@/components/AvatarUpload';

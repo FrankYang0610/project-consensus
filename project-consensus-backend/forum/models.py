@@ -46,7 +46,7 @@ class ForumPostQuerySet(models.QuerySet):
         - For authenticated users: exists subquery on ForumPostLike
         - For anonymous users: constant False (BooleanField)
         """
-        if user is not None and getattr(user, "is_authenticated", False):
+        if user is not None and user.is_authenticated:
             return self.annotate(
                 is_liked=Exists(
                     ForumPostLike.objects.filter(
@@ -133,7 +133,7 @@ class ForumPostCommentQuerySet(models.QuerySet):
         - For authenticated users: exists subquery on ForumCommentLike
         - For anonymous users: constant False (BooleanField)
         """
-        if user is not None and getattr(user, "is_authenticated", False):
+        if user is not None and user.is_authenticated:
             return self.annotate(
                 is_liked=Exists(
                     ForumCommentLike.objects.filter(

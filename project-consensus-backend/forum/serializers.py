@@ -71,8 +71,8 @@ class ForumPostSerializer(serializers.ModelSerializer):
         validated_data.pop("author", None)
 
         request = self.context.get("request")
-        user = getattr(request, "user", None)
-        if not user or not getattr(user, "is_authenticated", False):
+        user = request.user if request is not None else None
+        if not user or not user.is_authenticated:
             raise serializers.ValidationError({"detail": "Authentication required"})
 
         return ForumPost.objects.create(author=user, **validated_data)
@@ -81,8 +81,8 @@ class ForumPostSerializer(serializers.ModelSerializer):
         if obj.is_anonymous:
             # Check if current user is the author of this anonymous post
             request = self.context.get("request")
-            user = getattr(request, "user", None)
-            if user is not None and getattr(user, "is_authenticated", False) and user.pk == obj.author_id:
+            user = request.user if request is not None else None
+            if user is not None and user.is_authenticated and user.pk == obj.author_id:
                 # Current user is the author of this anonymous post, show real author info
                 real_author = build_forum_author_payload(obj.author)
                 return {
@@ -106,8 +106,8 @@ class ForumPostSerializer(serializers.ModelSerializer):
 
     def get_isLiked(self, obj: ForumPost) -> bool:
         request = self.context.get("request")
-        user = getattr(request, "user", None)
-        if not user or not getattr(user, "is_authenticated", False):
+        user = request.user if request is not None else None
+        if not user or not user.is_authenticated:
             return False
         # Prefer annotated flag to avoid per-object queries
         annotated = getattr(obj, "is_liked", None)
@@ -184,8 +184,8 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
         if obj.is_anonymous:
             # Check if current user is the author of this anonymous comment
             request = self.context.get("request")
-            user = getattr(request, "user", None)
-            if user is not None and getattr(user, "is_authenticated", False) and user.pk == obj.author_id:
+            user = request.user if request is not None else None
+            if user is not None and user.is_authenticated and user.pk == obj.author_id:
                 # Current user is the author of this anonymous comment, show real author info
                 real_author = build_forum_author_payload(obj.author)
                 return {
@@ -202,8 +202,8 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
 
     def get_isLiked(self, obj: ForumPostComment) -> bool:
         request = self.context.get("request")
-        user = getattr(request, "user", None)
-        if not user or not getattr(user, "is_authenticated", False):
+        user = request.user if request is not None else None
+        if not user or not user.is_authenticated:
             return False
         # Prefer annotated flag to avoid per-object queries
         annotated = getattr(obj, "is_liked", None)
@@ -245,8 +245,8 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
         validated_data.pop("author", None)
 
         request = self.context.get("request")
-        user = getattr(request, "user", None)
-        if not user or not getattr(user, "is_authenticated", False):
+        user = request.user if request is not None else None
+        if not user or not user.is_authenticated:
             raise serializers.ValidationError({"detail": "Authentication required"})
 
         comment = ForumPostComment.objects.create(author=user, **validated_data)

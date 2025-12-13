@@ -91,7 +91,7 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
 
         # Only annotate per-user info on retrieve to avoid extra work on list
         if self.action == "retrieve":
-            user = getattr(self.request, "user", None)
+            user = self.request.user
             qs = annotate_user_vote(qs, CourseVote, "course", user)
             qs = annotate_user_has_review(qs, CourseReview, "course", user)
         # Always prefetch teachers to avoid N+1 in serializers
@@ -237,10 +237,10 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
     @override
     def get_queryset(self):  # type: ignore[override]
         qs = super().get_queryset()
-        qs = CourseReviewFilter(self.request.query_params, user=getattr(self.request, "user", None)).apply(qs)
+        qs = CourseReviewFilter(self.request.query_params, user=self.request.user).apply(qs)
 
         # Annotate per-user isLiked to avoid N+1 exists() calls in serializer
-        user = getattr(self.request, "user", None)
+        user = self.request.user
         qs = annotate_is_liked(qs, CourseReviewLike, "review", user)
         return qs
 
@@ -306,7 +306,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
         if review_id:
             qs = qs.filter(review_id=review_id)
         # Annotate per-user isLiked to avoid N+1 exists() calls in serializer
-        user = getattr(self.request, "user", None)
+        user = self.request.user
         qs = annotate_is_liked(qs, CourseReviewReplyLike, "reply", user)
         return qs
     
@@ -411,5 +411,5 @@ class UserReviewsListView(BaseUserContentListView):
         )
 
         # Annotate per-user isLiked to avoid N+1 exists() calls in serializers
-        user = getattr(self.request, "user", None)
+        user = self.request.user
         return annotate_is_liked(queryset, CourseReviewLike, "review", user)

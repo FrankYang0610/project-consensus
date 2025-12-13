@@ -71,7 +71,7 @@ def get_user_vote_for_course(course: Course, user: User | None) -> str | None:
     Returns:
         The vote value ('recommend' or 'notRecommend') or None if no vote
     """
-    if not user or not getattr(user, "is_authenticated", False):
+    if not user or not user.is_authenticated:
         return None
     
     # Prefer annotated value to avoid N+1 in lists
@@ -99,7 +99,7 @@ def get_user_has_review_for_course(course: Course, user: User | None) -> bool:
     Returns:
         True if user has a review for this course, False otherwise
     """
-    if not user or not getattr(user, "is_authenticated", False):
+    if not user or not user.is_authenticated:
         return False
     
     # Prefer annotated value to avoid extra query
@@ -121,7 +121,7 @@ def get_user_liked_review(review: CourseReview, user: User | None) -> bool:
     Returns:
         True if user has liked this review, False otherwise
     """
-    if not user or not getattr(user, "is_authenticated", False):
+    if not user or not user.is_authenticated:
         return False
     
     # Prefer annotated flag to avoid per-object queries
@@ -142,7 +142,7 @@ def get_user_liked_reply(reply: CourseReviewReply, user: User | None) -> bool:
     Returns:
         True if user has liked this reply, False otherwise
     """
-    if not user or not getattr(user, "is_authenticated", False):
+    if not user or not user.is_authenticated:
         return False
     
     # Prefer annotated flag to avoid per-object queries
