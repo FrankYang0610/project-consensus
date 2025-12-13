@@ -57,7 +57,7 @@ export default function SettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [pwdSaving, setPwdSaving] = useState(false);
   const [pwdMsg, setPwdMsg] = useState<string | null>(null);
-  const [pwdErr, setPwdErr] = useState<string | null>(null);
+  const [pwdErrors, setPwdErrors] = useState<string[]>([]);
 
   // Privacy form
   const [privacy, setPrivacy] = useState<PrivacySettings>({
@@ -196,11 +196,11 @@ export default function SettingsPage() {
   };
 
   const handleChangePassword = async () => {
-    setPwdErr(null);
+    setPwdErrors([]);
     setPwdMsg(null);
 
     if (!newPassword || newPassword !== confirmPassword) {
-      setPwdErr(t('settings.account.passwordMismatch'));
+      setPwdErrors([t('settings.account.passwordMismatch')]);
       return;
     }
 
@@ -217,25 +217,53 @@ export default function SettingsPage() {
       setConfirmPassword('');
     } catch (e: unknown) {
       console.error(e);
-      if (e instanceof HttpError) {
+
+      const messages: string[] = [];
+
+      // Try to parse structured error response from our API helpers (HttpError or similar)
+      const body = (e as any)?.body;
+      if (typeof body === 'string' && body.trim().startsWith('{')) {
         try {
-          const data: ErrorResponse = JSON.parse(e.body ?? '{}');
+          const data: ErrorResponse = JSON.parse(body);
 
-          // Extract a primary error message or i18n code
-          let message = extractErrorMessage(data, 'settings.account.changeFailed');
+          const collectFieldErrors = (field: string) => {
+            const raw = (data as any)[field];
+            if (!raw) return;
+            const arr = Array.isArray(raw) ? raw : [raw];
+            for (const err of arr) {
+              if (typeof err === 'string') {
+                if (err.startsWith('validation.') || err.startsWith('auth.')) {
+                  messages.push(t(err));
+                } else {
+                  messages.push(err);
+                }
+              }
+            }
+          };
 
-          // If this looks like an i18n key (validation.* or auth.*), translate it
-          if (typeof message === 'string' && (message.startsWith('validation.') || message.startsWith('auth.'))) {
-            message = t(message);
+          // Old password incorrect, etc.
+          collectFieldErrors('current_password');
+          // New password strength / reuse errors (may contain multiple i18n codes)
+          collectFieldErrors('new_password');
+
+          if (messages.length === 0) {
+            // Extract a primary error message or i18n code as fallback
+            let message = extractErrorMessage(data, 'settings.account.changeFailed');
+            if (typeof message === 'string' && (message.startsWith('validation.') || message.startsWith('auth.'))) {
+              message = t(message);
+            }
+            messages.push(message || t('settings.account.changeFailed'));
           }
-          
-          setPwdErr(message || t('settings.account.changeFailed'));  // Fallback
+
+          setPwdErrors(messages);
           return;
         } catch {
-          // Fallback to generic error below
+          // Ignore parse errors and fall through to generic handling
         }
       }
-      setPwdErr(t('settings.account.changeFailed'));
+
+      // Fallback: generic error message
+      setPwdErrors([t('settings.account.changeFailed')]);
     } finally {
       setPwdSaving(false);
     }
@@ -394,8 +422,20 @@ export default function SettingsPage() {
           <CardDescription>{t('settings.account.desc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {pwdErr && (
-            <Alert variant="destructive"><AlertDescription>{pwdErr}</AlertDescription></Alert>
+          {pwdErrors.length > 0 && (
+            <Alert variant="destructive">
+              <AlertDescription>
+                {pwdErrors.length === 1 ? (
+                  pwdErrors[0]
+                ) : (
+                  <ul className="list-disc list-inside space-y-1">
+                    {pwdErrors.map((msg, idx) => (
+                      <li key={idx}>{msg}</li>
+                    ))}
+                  </ul>
+                )}
+              </AlertDescription>
+            </Alert>
           )}
           {pwdMsg && (
             <Alert><AlertDescription>{pwdMsg}</AlertDescription></Alert>

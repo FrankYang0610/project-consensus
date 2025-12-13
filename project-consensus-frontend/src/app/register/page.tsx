@@ -159,23 +159,32 @@ export default function RegisterPage() {
         const data: ErrorResponse = await res.json().catch(() => ({ message: 'Register failed' } as ErrorResponse));
         
         // Handle specific error cases
-        // 处理特定错误情况
         if (res.status === 429) {
           const msg = (data.message || '').toString();
           const localized429 = msg.startsWith('auth.') || msg.startsWith('validation.') ? t(msg) : t('auth.errorTooManyAttempts');
           throw new Error(localized429);
         }
         
-        // Extract error message using utility function
-        // 使用工具函数提取错误信息
+        // Extract error message
         let errorMessage = extractErrorMessage(data, 'Register failed');
+
+        // If backend returned field-level password errors, collect and translate all of them
+        if (data.password) {
+          const raw = Array.isArray(data.password) ? data.password : [data.password];
+          const passwordErrors = raw
+            .filter((err): err is string => typeof err === 'string')
+            .map((err) =>
+              err.startsWith('validation.') || err.startsWith('auth.') ? t(err) : err
+            );
+          if (passwordErrors.length > 0) {
+            errorMessage = passwordErrors.join(', ');
+          }
+        }
         
-        // If error message looks like an i18n key (e.g. "validation.password.tooShort"), translate it
-        // 如果错误消息看起来像 i18n key，则翻译它
         if (errorMessage.startsWith('validation.') || errorMessage.startsWith('auth.')) {
           errorMessage = t(errorMessage);
         }
-        
+
         throw new Error(errorMessage);
       }
       

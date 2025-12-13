@@ -285,13 +285,29 @@ class PasswordChangeSerializer(serializers.Serializer):
         return value
 
     def validate_new_password(self, value: str) -> str:
-        """Validate password strength using Django's password validators."""
-        return validate_password_with_django(value)
+        """
+        Defer password strength validation to `validate`.
+
+        We intentionally do NOT run Django's password validators here so that
+        strength checks (too short / too common / entirely numeric, etc.)
+        only execute after the current password has been verified as correct.
+        """
+        return value
 
     def validate(self, attrs):
         """
-        - Ensure new_password and new_password_confirm match.
+        Combined validation for new password fields.
+
+        This method is only called after all field-level validation has
+        succeeded (including `validate_current_password`). That means if the
+        current password is incorrect, we short‑circuit and *do not* perform
+        any new password checks.
+
+        Responsibilities:
+        - Ensure `new_password` and `new_password_confirm` match.
         - Ensure the new password is not identical to the current password.
+        - Run Django's password validators and surface *all* mapped i18n
+          error codes (tooShort / tooCommon / entirelyNumeric / tooSimilar).
         """
         request = self.context.get("request")
         user = request.user if request is not None else None
@@ -299,16 +315,37 @@ class PasswordChangeSerializer(serializers.Serializer):
         new_password = attrs.get("new_password")
         new_password_confirm = attrs.get("new_password_confirm")
 
+        errors: dict[str, list[str]] = {}
+
+        # Ensure the confirmation matches
         if new_password != new_password_confirm:
-            raise serializers.ValidationError(
-                {"new_password_confirm": error_codes.PASSWORD_MISMATCH}
+            errors.setdefault("new_password_confirm", []).append(
+                error_codes.PASSWORD_MISMATCH
             )
 
-        # Prevent reusing the same password.
-        if user and user.is_authenticated and user.check_password(new_password):
-            raise serializers.ValidationError(
-                {"new_password": error_codes.PASSWORD_SAME_AS_OLD}
+        # Prevent reusing the same password
+        if user and user.is_authenticated and new_password and user.check_password(new_password):
+            errors.setdefault("new_password", []).append(
+                error_codes.PASSWORD_SAME_AS_OLD
             )
+
+        # Run Django's password validators to collect strength errors
+        if new_password:
+            try:
+                validate_password_with_django(new_password)
+            except serializers.ValidationError as exc:
+                detail = exc.detail
+                if isinstance(detail, (list, tuple)):
+                    errors.setdefault("new_password", []).extend(
+                        [str(code) for code in detail]
+                    )
+                else:
+                    errors.setdefault("new_password", []).append(str(detail))
+
+        if errors:
+            # Raise all collected errors at once so the frontend can display
+            # every relevant password rule violation together.
+            raise serializers.ValidationError(errors)
 
         return attrs
 
