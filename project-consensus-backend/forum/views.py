@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 
-from django.contrib.auth import get_user_model
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
