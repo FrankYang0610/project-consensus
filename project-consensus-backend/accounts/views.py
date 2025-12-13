@@ -39,6 +39,7 @@ from .services.profile_service import (
     NicknameRateLimitError,
     ProfileService,
 )
+from .services.session_service import session_service
 
 
 User = get_user_model()
@@ -361,7 +362,15 @@ def change_password(request):
     serializer.is_valid(raise_exception=True)
 
     user = serializer.save()
+
+    # Keep the current session authenticated but invalidate all other
+    # active sessions for this user for better security (e.g. log out
+    # other devices/browsers that were using the old password).
     update_session_auth_hash(request, user)
+    session_service.invalidate_user_sessions(
+        user=user,
+        keep_session_key=request.session.session_key,
+    )
 
     return Response({"success": True}, status=status.HTTP_200_OK)
 

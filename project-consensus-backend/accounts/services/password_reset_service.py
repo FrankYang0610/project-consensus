@@ -9,17 +9,16 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password as dj_validate_password
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.contrib.sessions.models import Session
 from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
-from django.utils import timezone
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.translation import get_language_from_request
 
 from accounts import error_codes
 from accounts.services.email_service import EmailService
+from accounts.services.session_service import session_service
 from accounts.tasks import send_password_reset_email_async
 
 
@@ -220,7 +219,7 @@ class PasswordResetService:
             cache.delete(session_cache_key)
 
             # Invalidate existing sessions for this user for security
-            self._invalidate_user_sessions(user)
+            session_service.invalidate_user_sessions(user=user)
 
         logger.info(
             "Password reset successful",
@@ -252,23 +251,4 @@ class PasswordResetService:
         except DjangoValidationError as e:
             error_codes_list = [error_codes.map_django_password_error(msg) for msg in e.messages]
             raise PasswordResetError("weak_password", password_errors=error_codes_list)
-
-    def _invalidate_user_sessions(self, user: User) -> None:
-        """
-        Best-effort invalidation of all active sessions for the given user.
-
-        Any errors are logged but do not block password reset completion.
-        """
-        try:
-            active_sessions = Session.objects.filter(expire_date__gte=timezone.now())
-            for session in active_sessions:
-                data = session.get_decoded()
-                if str(data.get("_auth_user_id")) == str(user.pk):
-                    session.delete()
-        except Exception as e:  # pragma: no cover - defensive logging
-            logger.warning(
-                "Failed to invalidate user sessions after password reset",
-                extra={"user_id": user.pk, "error": str(e), "error_type": type(e).__name__},
-                exc_info=True,
-            )
 
