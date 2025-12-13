@@ -9,7 +9,6 @@ from django.contrib.auth import (
     logout as django_logout,
     update_session_auth_hash,
 )
-from django.db import transaction
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
@@ -224,7 +223,6 @@ def me(request):
 
 
 @api_view(["PATCH"])
-@transaction.atomic
 def update_profile(request):
     if not request.user.is_authenticated:
         return Response({"message": "Not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
@@ -303,7 +301,6 @@ def request_password_reset(request):
 
 @api_view(["POST"])
 @throttle_classes([PasswordResetConfirmRateThrottle])
-@transaction.atomic
 def confirm_password_reset(request):
     """
     Confirm password reset with token and set new password.

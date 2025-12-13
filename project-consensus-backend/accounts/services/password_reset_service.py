@@ -12,6 +12,7 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.contrib.sessions.models import Session
 from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import transaction
 from django.utils import timezone
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
@@ -209,16 +210,17 @@ class PasswordResetService:
         self._validate_reset_token(user=user, token=token)
         self._validate_new_password(user=user, new_password=new_password)
 
-        # Set new password and persist
-        user.set_password(new_password)
-        user.save()
+        with transaction.atomic():
+            # Set new password and persist
+            user.set_password(new_password)
+            user.save()
 
-        # Invalidate this reset session so the link cannot be reused
-        session_cache_key = f"accounts:pwdreset:session:{user.pk}"
-        cache.delete(session_cache_key)
+            # Invalidate this reset session so the link cannot be reused
+            session_cache_key = f"accounts:pwdreset:session:{user.pk}"
+            cache.delete(session_cache_key)
 
-        # Invalidate existing sessions for this user for security
-        self._invalidate_user_sessions(user)
+            # Invalidate existing sessions for this user for security
+            self._invalidate_user_sessions(user)
 
         logger.info(
             "Password reset successful",

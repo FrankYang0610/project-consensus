@@ -4,6 +4,7 @@ import logging
 from typing import Any, Mapping
 
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.utils import timezone
 
 from accounts.models import Profile
@@ -42,34 +43,41 @@ class ProfileService:
         if not user or not user.is_authenticated:
             return None
 
-        profile, _ = Profile.objects.get_or_create(user=user)
+        with transaction.atomic():
+            profile, _ = Profile.objects.get_or_create(user=user)
 
-        # Nickname cooldown rule
-        new_nickname = data.get("nickname")
-        is_nickname_changed = (
-            new_nickname is not None
-            and new_nickname != profile.nickname
-        )
+            # Nickname cooldown rule
+            new_nickname = data.get("nickname")
+            is_nickname_changed = (
+                new_nickname is not None
+                and new_nickname != profile.nickname
+            )
 
-        if is_nickname_changed:
-            days_remaining = profile.days_until_nickname_update_allowed()
-            if days_remaining is not None and days_remaining > 0:
-                raise NicknameRateLimitError(days_remaining=days_remaining)
+            if is_nickname_changed:
+                days_remaining = profile.days_until_nickname_update_allowed()
+                if days_remaining is not None and days_remaining > 0:
+                    raise NicknameRateLimitError(days_remaining=days_remaining)
 
-        old_avatar_url = profile.avatar_url or ""
+            old_avatar_url = profile.avatar_url or ""
 
-        serializer = ProfileSerializer(
-            profile,
-            data=data,
-            partial=True,
-            context={"request": request},
-        )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+            serializer = ProfileSerializer(
+                profile,
+                data=data,
+                partial=True,
+                context={"request": request},
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+
+            # Update last_nickname_updated_at if nickname actually changed
+            if is_nickname_changed:
+                profile.last_nickname_updated_at = timezone.now()
+                profile.save(update_fields=["last_nickname_updated_at"])
+
+            new_avatar_url = profile.avatar_url or ""
 
         # Handle avatar cleanup best-effort (never fail the request because of it)
         try:
-            new_avatar_url = profile.avatar_url or ""
             if old_avatar_url and old_avatar_url != new_avatar_url:
                 delete_storage_object_by_url(
                     old_avatar_url,
@@ -82,11 +90,6 @@ class ProfileService:
                 exc,
                 exc_info=True,
             )
-
-        # Update last_nickname_updated_at if nickname actually changed
-        if is_nickname_changed:
-            profile.last_nickname_updated_at = timezone.now()
-            profile.save(update_fields=["last_nickname_updated_at"])
 
         # Return user with optimized stats for serializers
         return get_user_with_stats(user.pk)
