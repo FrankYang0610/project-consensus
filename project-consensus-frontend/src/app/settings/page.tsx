@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import type { ErrorResponse } from '@/types';
+import { extractErrorMessage } from '@/lib/api/error-utils';
 import { useI18n } from '@/hooks/use-i18n';
 import { SiteNavigation } from '@/components/SiteNavigation';
 import {
@@ -216,7 +218,22 @@ export default function SettingsPage() {
     } catch (e: unknown) {
       console.error(e);
       if (e instanceof HttpError) {
-        // Additional logging or handling could go here if needed
+        try {
+          const data: ErrorResponse = JSON.parse(e.body ?? '{}');
+
+          // Extract a primary error message or i18n code
+          let message = extractErrorMessage(data, 'settings.account.changeFailed');
+
+          // If this looks like an i18n key (validation.* or auth.*), translate it
+          if (typeof message === 'string' && (message.startsWith('validation.') || message.startsWith('auth.'))) {
+            message = t(message);
+          }
+          
+          setPwdErr(message || t('settings.account.changeFailed'));  // Fallback
+          return;
+        } catch {
+          // Fallback to generic error below
+        }
       }
       setPwdErr(t('settings.account.changeFailed'));
     } finally {

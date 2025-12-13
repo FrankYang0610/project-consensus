@@ -620,7 +620,8 @@
       "tooCommon": "This password is too common. Please choose a more unique password",
       "entirelyNumeric": "Password cannot be entirely numeric",
       "tooSimilar": "Password is too similar to your personal information",
-      "mismatch": "Passwords do not match"
+      "mismatch": "Passwords do not match",
+      "sameAsOld": "New password cannot be the same as your current password"
     },
     "verificationCode": {
       "required": "Verification code is required",

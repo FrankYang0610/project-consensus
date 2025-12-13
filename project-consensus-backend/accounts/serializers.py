@@ -289,13 +289,25 @@ class PasswordChangeSerializer(serializers.Serializer):
         return validate_password_with_django(value)
 
     def validate(self, attrs):
-        """Validate that both new password fields match."""
+        """
+        - Ensure new_password and new_password_confirm match.
+        - Ensure the new password is not identical to the current password.
+        """
+        request = self.context.get("request")
+        user = request.user if request is not None else None
+
         new_password = attrs.get("new_password")
         new_password_confirm = attrs.get("new_password_confirm")
 
         if new_password != new_password_confirm:
             raise serializers.ValidationError(
                 {"new_password_confirm": error_codes.PASSWORD_MISMATCH}
+            )
+
+        # Prevent reusing the same password.
+        if user and user.is_authenticated and user.check_password(new_password):
+            raise serializers.ValidationError(
+                {"new_password": error_codes.PASSWORD_SAME_AS_OLD}
             )
 
         return attrs

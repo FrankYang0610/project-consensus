@@ -7,7 +7,7 @@ from accounts.models import Profile
 
 
 User = get_user_model()
-UserLike = User | AnonymousUser
+UserLike = User | AnonymousUser | None
 
 
 def _get_profile(user: User | None) -> Profile | None:
@@ -21,7 +21,7 @@ def _get_profile(user: User | None) -> Profile | None:
 
 def can_view_forum_posts(*, viewer: UserLike, owner: User) -> bool:
     """Return True if `viewer` is allowed to see `owner`'s forum posts."""
-    if viewer.is_authenticated and viewer.pk == owner.pk:
+    if viewer is not None and viewer.is_authenticated and viewer.pk == owner.pk:
         return True
     profile = _get_profile(owner)
     return profile.show_forum_posts_publicly if profile else True
@@ -29,7 +29,7 @@ def can_view_forum_posts(*, viewer: UserLike, owner: User) -> bool:
 
 def can_view_forum_comments(*, viewer: UserLike, owner: User) -> bool:
     """Return True if `viewer` is allowed to see `owner`'s forum comments."""
-    if viewer.is_authenticated and viewer.pk == owner.pk:
+    if viewer is not None and viewer.is_authenticated and viewer.pk == owner.pk:
         return True
     profile = _get_profile(owner)
     return profile.show_forum_post_comments_publicly if profile else True
@@ -37,7 +37,7 @@ def can_view_forum_comments(*, viewer: UserLike, owner: User) -> bool:
 
 def can_view_course_reviews(*, viewer: UserLike, owner: User) -> bool:
     """Return True if `viewer` is allowed to see `owner`'s course reviews."""
-    if viewer.is_authenticated and viewer.pk == owner.pk:
+    if viewer is not None and viewer.is_authenticated and viewer.pk == owner.pk:
         return True
     profile = _get_profile(owner)
     return profile.show_course_reviews_publicly if profile else True

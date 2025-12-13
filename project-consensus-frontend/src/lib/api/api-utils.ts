@@ -7,6 +7,15 @@ export function getAPIBaseUrl(): string {
   return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 }
 
+// Build a standard pagination query string from page and pageSize
+export function buildPaginationQuery(params?: { page?: number; pageSize?: number }): string {
+  const q = new URLSearchParams();
+  if (params?.page) q.set('page', String(params.page));
+  if (params?.pageSize) q.set('page_size', String(params.pageSize));
+  const qs = q.toString();
+  return qs ? `?${qs}` : '';
+}
+
 // Read a cookie value by name. Used for CSRF token.
 export function getCookie(name: string): string | null {
   if (typeof document === 'undefined') return null;
