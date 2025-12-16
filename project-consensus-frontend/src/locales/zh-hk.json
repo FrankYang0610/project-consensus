@@ -89,7 +89,7 @@
     "registerConsent": "點擊註冊即代表你同意我們的",
     "termsOfService": "服務條款",
     "verificationCodeSent": "驗證碼已發送至 {{email}}，請查收郵件。若未收到，請檢查垃圾郵件文件夾。",
-    "errorTooManyAttempts": "嘗試次數過多，請稍後再試或請求新的驗證碼",
+    "errorTooManyAttempts": "請求過於頻繁，請稍後（約5分鐘後）再試",
     "passwordRequirements": "密碼必須滿足以下要求：",
     "passwordRequirement1": "至少8個字符",
     "passwordRequirement2": "不能是常見弱密碼",

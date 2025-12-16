@@ -7,7 +7,6 @@ from django.contrib.auth import (
     get_user_model,
     login as django_login,
     logout as django_logout,
-    update_session_auth_hash,
 )
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import permissions, status
@@ -39,7 +38,10 @@ from .services.profile_service import (
     NicknameRateLimitError,
     ProfileService,
 )
-from .services.session_service import session_service
+from .services.password_change_service import (
+    PasswordChangeRateLimitError,
+    PasswordChangeService,
+)
 
 
 User = get_user_model()
@@ -49,6 +51,7 @@ logger = logging.getLogger(__name__)
 auth_service = AuthService()
 password_reset_service = PasswordResetService()
 profile_service = ProfileService()
+password_change_service = PasswordChangeService()
 
 
 # Custom throttle classes for authentication endpoints
@@ -355,22 +358,22 @@ def change_password(request):
     Allow an authenticated user to change their password by providing the
     current password and a new password.
     """
-    serializer = PasswordChangeSerializer(
-        data=request.data,
-        context={"request": request},
-    )
-    serializer.is_valid(raise_exception=True)
+    try:
+        user = password_change_service.change_password(
+            request=request,
+            data=request.data,
+        )
+    except PasswordChangeRateLimitError:
+        return Response(
+            {"message": error_codes.AUTH_TOO_MANY_ATTEMPTS},
+            status=status.HTTP_429_TOO_MANY_REQUESTS,
+        )
 
-    user = serializer.save()
-
-    # Keep the current session authenticated but invalidate all other
-    # active sessions for this user for better security (e.g. log out
-    # other devices/browsers that were using the old password).
-    update_session_auth_hash(request, user)
-    session_service.invalidate_user_sessions(
-        user=user,
-        keep_session_key=request.session.session_key,
-    )
+    if not user:
+        return Response(
+            {"message": error_codes.AUTHENTICATION_REQUIRED},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
 
     return Response({"success": True}, status=status.HTTP_200_OK)
 
