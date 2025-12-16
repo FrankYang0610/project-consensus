@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import type { ErrorResponse } from '@/types';
-import { extractErrorMessage } from '@/lib/api/error-utils';
 import { useI18n } from '@/hooks/use-i18n';
 import { SiteNavigation } from '@/components/SiteNavigation';
 import {
@@ -217,52 +216,42 @@ export default function SettingsPage() {
     } catch (e: unknown) {
       console.error(e);
 
+      // Narrow to errors that carry a JSON body string (our HttpError shape)
+      const hasJsonBody = (error: unknown): error is { body: string } => {
+        return typeof (error as { body?: unknown })?.body === 'string';
+      };
+
+      const translateError = (msg: string): string =>
+        msg.startsWith('validation.') || msg.startsWith('auth.') ? t(msg) : msg;
+
       const messages: string[] = [];
 
-      // Try to parse structured error response from our API helpers (HttpError or similar)
-      const body = (e as any)?.body;
-      if (typeof body === 'string' && body.trim().startsWith('{')) {
-        try {
-          const data: ErrorResponse = JSON.parse(body);
+      if (hasJsonBody(e)) {
+        const rawBody = e.body.trim();
+        if (rawBody.startsWith('{')) {
+          try {
+            const data: ErrorResponse = JSON.parse(rawBody);
 
-          const collectFieldErrors = (field: string) => {
-            const raw = (data as any)[field];
-            if (!raw) return;
-            const arr = Array.isArray(raw) ? raw : [raw];
-            for (const err of arr) {
-              if (typeof err === 'string') {
-                if (err.startsWith('validation.') || err.startsWith('auth.')) {
-                  messages.push(t(err));
-                } else {
-                  messages.push(err);
+            // Collect all string errors from the error response
+            for (const value of Object.values(data)) {
+              if (!value) continue;
+              const arr = Array.isArray(value) ? value : [value];
+              for (const item of arr) {
+                if (typeof item === 'string') {
+                  messages.push(translateError(item));
                 }
               }
             }
-          };
-
-          // Old password incorrect, etc.
-          collectFieldErrors('current_password');
-          // New password strength / reuse errors (may contain multiple i18n codes)
-          collectFieldErrors('new_password');
-
-          if (messages.length === 0) {
-            // Extract a primary error message or i18n code as fallback
-            let message = extractErrorMessage(data, 'settings.account.changeFailed');
-            if (typeof message === 'string' && (message.startsWith('validation.') || message.startsWith('auth.'))) {
-              message = t(message);
-            }
-            messages.push(message || t('settings.account.changeFailed'));
+          } catch {
+            // Ignore parse errors and fall through to generic handling
           }
-
-          setPwdErrors(messages);
-          return;
-        } catch {
-          // Ignore parse errors and fall through to generic handling
         }
       }
 
-      // Fallback: generic error message
-      setPwdErrors([t('settings.account.changeFailed')]);
+      // If backend returned no usable error strings, use a generic translated fallback
+      setPwdErrors(
+        messages.length > 0 ? messages : [t('settings.account.changeFailed')]
+      );
     } finally {
       setPwdSaving(false);
     }
