@@ -44,7 +44,7 @@ class CourseFilter:
         if teaching_types:
             qs = qs.filter(teaching_type__in=teaching_types)
 
-        departments = self._collect_multi("department")
+        departments = self._collect_multi("departments")
         if departments:
             MAX_DEPARTMENTS = 20
             MAX_DEPT_LENGTH = 200

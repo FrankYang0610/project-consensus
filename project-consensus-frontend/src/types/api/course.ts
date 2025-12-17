@@ -6,7 +6,7 @@ export interface FetchCoursesParams {
   pageSize?: number;
   ordering?: string;
   subjectCode?: string;
-  department?: string[];
+  departments?: string[];
   category?: string;
   categories?: string[];
   level?: string[];

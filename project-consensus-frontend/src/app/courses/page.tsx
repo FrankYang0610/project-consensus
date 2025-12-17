@@ -164,7 +164,7 @@ export default function CourseBrowsePage() {
       const response = await fetchCourses({
         page: 1,
         pageSize: 100, // Should be enough for one level
-        department: [deptName],
+        departments: [deptName],
         level: [level === "Other" ? "" : level], // Handle "Other" case
         ordering: "-rating_score",
       }, { signal: abortController.signal });
