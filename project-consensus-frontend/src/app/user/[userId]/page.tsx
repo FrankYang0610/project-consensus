@@ -71,9 +71,9 @@ export default function PublicUserPage() {
   // Fetch user's posts
   useEffect(() => {
     if (userId && user?.showForumPostsPublicly) {
-      getPublicUserPosts(userId)
+      getPublicUserPosts(userId, { page: 1, pageSize: 5 })
         .then(data => {
-          setPosts(data);
+          setPosts(data.results ?? []);
           setLoadingPosts(false);
         })
         .catch(error => {
@@ -88,9 +88,9 @@ export default function PublicUserPage() {
   // Fetch user's comments
   useEffect(() => {
     if (userId && user?.showForumPostCommentsPublicly) {
-      getPublicUserComments(userId)
+      getPublicUserComments(userId, { page: 1, pageSize: 5 })
         .then(data => {
-          setComments(data);
+          setComments(data.results ?? []);
           setLoadingComments(false);
         })
         .catch(error => {
@@ -105,9 +105,9 @@ export default function PublicUserPage() {
   // Fetch user's reviews
   useEffect(() => {
     if (userId && user?.showCourseReviewsPublicly) {
-      getPublicUserReviews(userId)
+      getPublicUserReviews(userId, { page: 1, pageSize: 5 })
         .then(data => {
-          setReviews(data);
+          setReviews(data.results ?? []);
           setLoadingReviews(false);
         })
         .catch(error => {

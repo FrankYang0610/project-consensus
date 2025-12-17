@@ -89,7 +89,7 @@
     "registerConsent": "点击注册即代表您同意我们的",
     "termsOfService": "服务条款",
     "verificationCodeSent": "验证码已发送至 {{email}}，请查收邮件。若未收到，请检查垃圾邮件文件夹。",
-    "errorTooManyAttempts": "尝试次数过多，请稍后再试或请求新的验证码",
+    "errorTooManyAttempts": "请求过于频繁，请稍后（约5分钟后）再试",
     "passwordRequirements": "密码必须满足以下要求：",
     "passwordRequirement1": "至少8个字符",
     "passwordRequirement2": "不能是常见弱密码",
@@ -257,8 +257,7 @@
         "pg": "研究生",
         "all": "全部"
       }
-    }
-  ,
+    },
     "card": {
       "term": "学期",
       "semester": {
@@ -299,12 +298,11 @@
       },
       "teachers": "老师：{{names}}",
       "lastUpdated": "最近更新：{{date}}",
-      "viewDetails": "查看详情"
-    ,
-    "labels": {
-      "teachers": "老师",
-      "department": "部门"
-    }
+      "viewDetails": "查看详情",
+      "labels": {
+        "teachers": "老师",
+        "department": "部门"
+      }
     },
     "detail": {
       "curriculumPlan": {
@@ -357,7 +355,7 @@
         "writeReview": "写点评",
         "editReview": "编辑点评",
         "deletedNotice": "本课程有 {{count}} 位用户曾删除过点评。",
-          "totalReviews": "一共 {{count}} 条 点评",
+        "totalReviews": "一共 {{count}} 条 点评",
         "sort": {
           "label": "排序",
           "options": {
@@ -620,7 +618,8 @@
       "tooCommon": "该密码过于常见，请选择更独特的密码",
       "entirelyNumeric": "密码不能全部为数字",
       "tooSimilar": "密码与您的个人信息过于相似",
-      "mismatch": "两次输入的密码不一致"
+      "mismatch": "两次输入的密码不一致",
+      "sameAsOld": "新密码不能与当前密码相同"
     },
     "verificationCode": {
       "required": "验证码不能为空",

@@ -89,7 +89,7 @@
     "registerConsent": "點擊註冊即代表你同意我們的",
     "termsOfService": "服務條款",
     "verificationCodeSent": "驗證碼已發送至 {{email}}，請查收郵件。若未收到，請檢查垃圾郵件文件夾。",
-    "errorTooManyAttempts": "嘗試次數過多，請稍後再試或請求新的驗證碼",
+    "errorTooManyAttempts": "請求過於頻繁，請稍後（約5分鐘後）再試",
     "passwordRequirements": "密碼必須滿足以下要求：",
     "passwordRequirement1": "至少8個字符",
     "passwordRequirement2": "不能是常見弱密碼",
@@ -257,8 +257,7 @@
         "pg": "研究生",
         "all": "全部"
       }
-    }
-  ,
+    },
     "card": {
       "term": "學期",
       "semester": {
@@ -299,12 +298,11 @@
       },
       "teachers": "老師：{{names}}",
       "lastUpdated": "最近更新：{{date}}",
-      "viewDetails": "查看詳情"
-    ,
-    "labels": {
-      "teachers": "老師",
-      "department": "部門"
-    }
+      "viewDetails": "查看詳情",
+      "labels": {
+        "teachers": "老師",
+        "department": "部門"
+      }
     },
     "detail": {
       "curriculumPlan": {
@@ -357,7 +355,7 @@
         "writeReview": "寫點評",
         "editReview": "編輯點評",
         "deletedNotice": "本課程有 {{count}} 位用戶曾刪除過點評。",
-          "totalReviews": "一共 {{count}} 條 點評",
+        "totalReviews": "一共 {{count}} 條 點評",
         "sort": {
           "label": "排序",
           "options": {
@@ -454,8 +452,7 @@
       "viewCourse": "查看課程詳情",
       "totalReviews": "共 {{count}} 條點評"
     }
-  }
-,
+  },
   "about": {
     "title": "關於",
     "subtitle": "了解更多關於項目的資訊、其目的以及背後的團隊。",
@@ -596,7 +593,7 @@
     }
   },
   "pronouns": {
-    "info": "polyu.life 是一個重視多元與共融的社群，我們支持你以真實的方式表達自我。如果你在預設代稱列表中找不到合適的選項，可以選擇 \\\"custom\\\" 並設定你的專屬代稱。",
+    "info": "polyu.life 是一個重視多元與共融的社群，我們支持你以真實的方式表達自我。如果你在預設代稱列表中找不到合適的選項，可以選擇 \"custom\" 並設定你的專屬代稱。",
     "share": "在個人主頁展示代稱"
   },
   "validation": {
@@ -621,7 +618,8 @@
       "tooCommon": "該密碼過於常見，請選擇更獨特的密碼",
       "entirelyNumeric": "密碼不能全部為數字",
       "tooSimilar": "密碼與您的個人信息過於相似",
-      "mismatch": "兩次輸入的密碼不一致"
+      "mismatch": "兩次輸入的密碼不一致",
+      "sameAsOld": "新密碼不能與當前密碼相同"
     },
     "verificationCode": {
       "required": "驗證碼不能為空",

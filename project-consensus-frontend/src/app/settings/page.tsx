@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
+import type { ErrorResponse } from '@/types';
 import { useI18n } from '@/hooks/use-i18n';
 import { SiteNavigation } from '@/components/SiteNavigation';
 import {
@@ -25,7 +26,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ChevronDown } from 'lucide-react';
 import { Language, User } from '@/types';
-import { updateProfile, updatePrivacySettings } from '@/lib/api/user-profile';
+import { updateProfile, updatePrivacySettings, changePassword } from '@/lib/api/user-profile';
 import { PronounsSelector } from '@/components/PronounsSelector';
 import { validateNickname } from '@/lib/utils';
 import { AvatarUpload } from '@/components/AvatarUpload';
@@ -54,7 +55,7 @@ export default function SettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [pwdSaving, setPwdSaving] = useState(false);
   const [pwdMsg, setPwdMsg] = useState<string | null>(null);
-  const [pwdErr, setPwdErr] = useState<string | null>(null);
+  const [pwdErrors, setPwdErrors] = useState<string[]>([]);
 
   // Privacy form
   const [privacy, setPrivacy] = useState<PrivacySettings>({
@@ -193,30 +194,64 @@ export default function SettingsPage() {
   };
 
   const handleChangePassword = async () => {
-    setPwdErr(null);
+    setPwdErrors([]);
     setPwdMsg(null);
 
     if (!newPassword || newPassword !== confirmPassword) {
-      setPwdErr(t('settings.account.passwordMismatch'));
+      setPwdErrors([t('settings.account.passwordMismatch')]);
       return;
     }
 
     setPwdSaving(true);
     try {
-      // TODO: integrate backend endpoint
-      // Example:
-      // const resp = await fetch('/api/auth/change_password/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }) });
-      // if (!resp.ok) throw new Error('Failed');
-
-      // For now, simulate success
-      await new Promise((r) => setTimeout(r, 600));
+      await changePassword({
+        current_password: currentPassword,
+        new_password: newPassword,
+        new_password_confirm: confirmPassword,
+      });
       setPwdMsg(t('settings.account.changed'));
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-    } catch (e) {
+    } catch (e: unknown) {
       console.error(e);
-      setPwdErr(t('settings.account.changeFailed'));
+
+      // Narrow to errors that carry a JSON body string (our HttpError shape)
+      const hasJsonBody = (error: unknown): error is { body: string } => {
+        return typeof (error as { body?: unknown })?.body === 'string';
+      };
+
+      const translateError = (msg: string): string =>
+        msg.startsWith('validation.') || msg.startsWith('auth.') ? t(msg) : msg;
+
+      const messages: string[] = [];
+
+      if (hasJsonBody(e)) {
+        const rawBody = e.body.trim();
+        if (rawBody.startsWith('{')) {
+          try {
+            const data: ErrorResponse = JSON.parse(rawBody);
+
+            // Collect all string errors from the error response
+            for (const value of Object.values(data)) {
+              if (!value) continue;
+              const arr = Array.isArray(value) ? value : [value];
+              for (const item of arr) {
+                if (typeof item === 'string') {
+                  messages.push(translateError(item));
+                }
+              }
+            }
+          } catch {
+            // Ignore parse errors and fall through to generic handling
+          }
+        }
+      }
+
+      // If backend returned no usable error strings, use a generic translated fallback
+      setPwdErrors(
+        messages.length > 0 ? messages : [t('settings.account.changeFailed')]
+      );
     } finally {
       setPwdSaving(false);
     }
@@ -375,8 +410,20 @@ export default function SettingsPage() {
           <CardDescription>{t('settings.account.desc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {pwdErr && (
-            <Alert variant="destructive"><AlertDescription>{pwdErr}</AlertDescription></Alert>
+          {pwdErrors.length > 0 && (
+            <Alert variant="destructive">
+              <AlertDescription>
+                {pwdErrors.length === 1 ? (
+                  pwdErrors[0]
+                ) : (
+                  <ul className="list-disc list-inside space-y-1">
+                    {pwdErrors.map((msg, idx) => (
+                      <li key={idx}>{msg}</li>
+                    ))}
+                  </ul>
+                )}
+              </AlertDescription>
+            </Alert>
           )}
           {pwdMsg && (
             <Alert><AlertDescription>{pwdMsg}</AlertDescription></Alert>

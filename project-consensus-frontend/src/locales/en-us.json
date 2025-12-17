@@ -91,7 +91,7 @@
     "registerConsent": "By clicking Register you agree to our",
     "termsOfService": "Terms of Service",
     "verificationCodeSent": "Verification code sent to {{email}}, please check your email. If you don't receive it, please check your spam folder.",
-    "errorTooManyAttempts": "Too many attempts. Please try again later or request a new code",
+    "errorTooManyAttempts": "Too many requests. Please try again in about 5 minutes.",
     "passwordRequirements": "Password must meet the following requirements:",
     "passwordRequirement1": "At least 8 characters long",
     "passwordRequirement2": "Cannot be a commonly used password",
@@ -620,7 +620,8 @@
       "tooCommon": "This password is too common. Please choose a more unique password",
       "entirelyNumeric": "Password cannot be entirely numeric",
       "tooSimilar": "Password is too similar to your personal information",
-      "mismatch": "Passwords do not match"
+      "mismatch": "Passwords do not match",
+      "sameAsOld": "New password cannot be the same as your current password"
     },
     "verificationCode": {
       "required": "Verification code is required",

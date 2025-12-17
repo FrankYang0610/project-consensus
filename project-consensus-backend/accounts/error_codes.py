@@ -24,6 +24,7 @@ PASSWORD_TOO_COMMON = "validation.password.tooCommon"
 PASSWORD_ENTIRELY_NUMERIC = "validation.password.entirelyNumeric"
 PASSWORD_TOO_SIMILAR = "validation.password.tooSimilar"
 PASSWORD_MISMATCH = "validation.password.mismatch"
+PASSWORD_SAME_AS_OLD = "validation.password.sameAsOld"
 
 # Verification code errors
 VERIFICATION_CODE_REQUIRED = "validation.verificationCode.required"

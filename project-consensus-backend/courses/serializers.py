@@ -213,7 +213,7 @@ class CourseReviewSerializer(serializers.ModelSerializer):
         
         # Priority 3: Compute based on current request user and review flags
         request = self.context.get("request")
-        request_user = getattr(request, "user", None) if request is not None else None
+        request_user = request.user if request is not None else None
         return get_course_review_author_display(obj, request_user)
 
     def get_attributes(self, obj: CourseReview) -> dict | None:
@@ -235,8 +235,8 @@ class CourseReviewSerializer(serializers.ModelSerializer):
 
     def get_isLiked(self, obj: CourseReview) -> bool:
         request = self.context.get("request")
-        user = getattr(request, "user", None)
-        if not user or not getattr(user, "is_authenticated", False):
+        user = request.user if request is not None else None
+        if not user or not user.is_authenticated:
             return False
         
         # Priority 1: Check annotated data (most efficient)
@@ -288,10 +288,10 @@ class CourseReviewSerializer(serializers.ModelSerializer):
         validated_data.pop("author", None)
 
         request = self.context.get("request")
-        user = getattr(request, "user", None)
+        user = request.user if request is not None else None
         course = validated_data.pop("course", None)
 
-        if not user or not getattr(user, "is_authenticated", False):
+        if not user or not user.is_authenticated:
             raise serializers.ValidationError({"detail": "Authentication required"})
         if course is None:
             raise serializers.ValidationError({"courseId": "required"})
@@ -313,9 +313,9 @@ class CourseReviewSerializer(serializers.ModelSerializer):
     @override
     def update(self, instance: CourseReview, validated_data):  # type: ignore[override]
         request = self.context.get("request")
-        user = getattr(request, "user", None)
+        user = request.user if request is not None else None
 
-        if not user or not getattr(user, "is_authenticated", False):
+        if not user or not user.is_authenticated:
             raise serializers.ValidationError({"detail": "Authentication required"})
 
         try:
@@ -430,8 +430,8 @@ class CourseReviewReplySerializer(serializers.ModelSerializer):
     def get_isLiked(self, obj: CourseReviewReply) -> bool:
         request = self.context.get("request")
 
-        user = getattr(request, "user", None)
-        if not user or not getattr(user, "is_authenticated", False):
+        user = request.user if request is not None else None
+        if not user or not user.is_authenticated:
             return False
         
         # Priority 1: Check annotated data (most efficient)
@@ -482,11 +482,11 @@ class CourseReviewReplySerializer(serializers.ModelSerializer):
         validated_data.pop("author", None)
 
         request = self.context.get("request")
-        user = getattr(request, "user", None)
+        user = request.user if request is not None else None
         review = validated_data.pop("review", None)
         reply_to_user_id = validated_data.pop("replyToUserId", None)
 
-        if not user or not getattr(user, "is_authenticated", False):
+        if not user or not user.is_authenticated:
             raise serializers.ValidationError({"detail": "Authentication required"})
         if review is None:
             raise serializers.ValidationError({"reviewId": "required"})

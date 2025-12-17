@@ -2,12 +2,16 @@ from __future__ import annotations
 
 import logging
 from typing import TypedDict, override
+
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
-from rest_framework.response import Response
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.response import Response
+
+from accounts.services.privacy_service import can_view_course_reviews
 from core.permissions import IsAuthorOrReadOnly
+from core.views import BaseUserContentListView
 from .pagination import CourseReviewPagination, CourseListPagination
 from .annotations import annotate_is_liked, annotate_user_vote, annotate_user_has_review
 
@@ -21,8 +25,8 @@ from .models import (
     CourseVote,
 )
 from .serializers import (
-    CourseSerializer, 
-    CourseReviewSerializer, 
+    CourseSerializer,
+    CourseReviewSerializer,
     CourseReviewReplySerializer,
     CourseVoteInputSerializer,
 )
@@ -32,13 +36,13 @@ from .services import (
     get_department_level_distribution,
     get_distinct_departments_case_insensitive,
     find_review_for_reply_id,
-    
+
     # Course Review CRUD
     delete_course_review,
-    
+
     # Course Review Reply CRUD
     delete_course_review_reply,
-    
+
     # Like/Vote operations
     toggle_course_review_like,
     toggle_course_review_reply_like,
@@ -87,7 +91,7 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
 
         # Only annotate per-user info on retrieve to avoid extra work on list
         if self.action == "retrieve":
-            user = getattr(self.request, "user", None)
+            user = self.request.user
             qs = annotate_user_vote(qs, CourseVote, "course", user)
             qs = annotate_user_has_review(qs, CourseReview, "course", user)
         # Always prefetch teachers to avoid N+1 in serializers
@@ -233,10 +237,10 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
     @override
     def get_queryset(self):  # type: ignore[override]
         qs = super().get_queryset()
-        qs = CourseReviewFilter(self.request.query_params, user=getattr(self.request, "user", None)).apply(qs)
+        qs = CourseReviewFilter(self.request.query_params, user=self.request.user).apply(qs)
 
         # Annotate per-user isLiked to avoid N+1 exists() calls in serializer
-        user = getattr(self.request, "user", None)
+        user = self.request.user
         qs = annotate_is_liked(qs, CourseReviewLike, "review", user)
         return qs
 
@@ -302,7 +306,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
         if review_id:
             qs = qs.filter(review_id=review_id)
         # Annotate per-user isLiked to avoid N+1 exists() calls in serializer
-        user = getattr(self.request, "user", None)
+        user = self.request.user
         qs = annotate_is_liked(qs, CourseReviewReplyLike, "reply", user)
         return qs
     
@@ -379,3 +383,33 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
             if isinstance(e, NotFoundError):
                 return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserReviewsListView(BaseUserContentListView):
+    """
+    Unified handler for:
+    - /api/accounts/my-reviews/                 (current user's course reviews)
+    - /api/accounts/users/<user_id>/reviews/    (public reviews of a specific user)
+
+    Lives in the courses app to avoid cross-app coupling in accounts.views.
+    """
+
+    serializer_class = CourseReviewSerializer
+    pagination_class = CourseReviewPagination
+    privacy_checker = staticmethod(can_view_course_reviews)
+
+    def get_content_queryset(self, target_user):
+        """
+        Build base queryset with common eager-loading and per-user annotations.
+        """
+        queryset = (
+            CourseReview.objects
+            .select_related("course", "author")
+            .prefetch_related("author__profile", "likes")
+            .filter(author=target_user)
+            .order_by("-created_at")
+        )
+
+        # Annotate per-user isLiked to avoid N+1 exists() calls in serializers
+        user = self.request.user
+        return annotate_is_liked(queryset, CourseReviewLike, "review", user)

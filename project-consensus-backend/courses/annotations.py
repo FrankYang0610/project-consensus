@@ -24,7 +24,7 @@ def annotate_is_liked(
     Returns:
         Annotated queryset with is_liked field
     """
-    if not user or not getattr(user, "is_authenticated", False):
+    if not user or not user.is_authenticated:
         return qs.annotate(is_liked=Value(False, output_field=BooleanField()))
     
     like_exists = like_model.objects.filter(**{fk_name: OuterRef("pk")}, user=user)
@@ -50,7 +50,7 @@ def annotate_user_vote(
     Returns:
         Annotated queryset with user vote field
     """
-    if not user or not getattr(user, "is_authenticated", False):
+    if not user or not user.is_authenticated:
         return qs.annotate(_user_vote=Value(None, output_field=CharField(max_length=20)))
     
     vote_sq = (
@@ -78,7 +78,7 @@ def annotate_user_has_review(
     Returns:
         Annotated queryset with user_has_review field
     """
-    if not user or not getattr(user, "is_authenticated", False):
+    if not user or not user.is_authenticated:
         return qs.annotate(_user_has_review=Value(False, output_field=BooleanField()))
     
     has_review_exists = review_model.objects.filter(**{fk_name: OuterRef("pk")}, author=user)
