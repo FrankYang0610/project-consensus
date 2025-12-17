@@ -64,7 +64,7 @@ export default function CourseAdvancedSearchPage() {
                         pageSize: 20,
                         ordering,
                         ...(subjectCode ? { subjectCode } : {}),
-                        ...(departments.length ? { department: departments } : {}),
+                        ...(departments.length ? { departments: departments } : {}),
                         ...(category && category !== 'all' ? { category } : {}),
                         ...(categories.length ? { categories } : {}),
                         ...(levels.length ? { level: levels } : {}),

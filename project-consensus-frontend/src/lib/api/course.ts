@@ -21,7 +21,7 @@ export async function fetchCourses(params: FetchCoursesParams, init?: RequestIni
   if (params.pageSize) q.set('page_size', String(params.pageSize));
   if (params.ordering) q.set('ordering', params.ordering);
   if (params.subjectCode) q.set('subjectCode', params.subjectCode);
-  (params.department || []).forEach((d) => q.append('department', d));
+  (params.departments || []).forEach((d) => q.append('departments', d));
   if (params.category) q.set('category', params.category);
   (params.categories || []).forEach((c) => q.append('categories', c));
   (params.level || []).forEach((lv) => q.append('level', lv));
