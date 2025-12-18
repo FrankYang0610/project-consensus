@@ -96,6 +96,7 @@
     "passwordRequirement1": "At least 8 characters long",
     "passwordRequirement2": "Cannot be a commonly used password",
     "passwordRequirement3": "Cannot be entirely numeric",
+    "passwordPolyUWarning": "This platform is an independent, student-run project and is not operated by The Hong Kong Polytechnic University. Please do not set your password here to be the same as your PolyU NetID password.",
     "passwordReset": {
       "title": "Reset Password",
       "forgotPasswordTitle": "Forgot Password",
