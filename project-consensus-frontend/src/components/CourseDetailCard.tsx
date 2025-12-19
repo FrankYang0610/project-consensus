@@ -955,19 +955,8 @@ export function CourseDetailCard({
                 {title}
               </CardTitle>
             </div>
-            {/* Follow Button */}
             <div className="flex gap-2">
               {Array.isArray(curriculum) && curriculum.length > 0 ? <CurriculumPlanButton /> : null}
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1"
-                onClick={(e) => {
-                  if (!isLoggedIn) { e.preventDefault(); openLoginModal(); }
-                }}
-              >
-                <Star className="w-4 h-4" /> {t("courses.detail.follow")}
-              </Button>
             </div>
           </div>
 
