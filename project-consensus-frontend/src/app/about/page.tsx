@@ -76,14 +76,24 @@ export default function AboutPage() {
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-md border p-4">
+              <a
+                href="https://github.com/FivespeedDoc"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-md border p-4 transition-colors hover:bg-muted/60"
+              >
                 <div className="font-medium">Jim Yang</div>
                 <div className="text-sm text-muted-foreground">{t('about.coCreator')}</div>
-              </div>
-              <div className="rounded-md border p-4">
+              </a>
+              <a
+                href="https://github.com/FrankYang0610"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-md border p-4 transition-colors hover:bg-muted/60"
+              >
                 <div className="font-medium">Frank Yang</div>
                 <div className="text-sm text-muted-foreground">{t('about.coCreator')}</div>
-              </div>
+              </a>
             </div>
           </CardContent>
 
