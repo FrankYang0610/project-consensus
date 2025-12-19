@@ -90,9 +90,3 @@ class Teacher(models.Model):
         # Fallback if something went wrong
         return initials if initials else "?"
 
-    @classmethod
-    def get_stats(cls) -> dict[str, int]:
-        return {
-            "teachers": cls.objects.count(),
-        }
-

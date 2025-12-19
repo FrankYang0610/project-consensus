@@ -106,12 +106,6 @@ class ForumPost(models.Model):
             )
         )
     
-    @classmethod
-    def get_stats(cls) -> dict[str, int]:
-        return {
-            "forumPosts": cls.objects.count(),
-        }
-
 
 class ForumPostCommentQuerySet(models.QuerySet):
     """

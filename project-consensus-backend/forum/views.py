@@ -30,6 +30,7 @@ from .services.forum_post_comment_position import (
     CommentDoesNotBelongToPostError,
     compute_forum_post_comment_position,
 )
+from .services import get_forum_post_stats
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +123,7 @@ class ForumPostViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=["GET"], url_path="stats", permission_classes=[permissions.AllowAny])
     def stats(self, request: Request):
-        return Response(ForumPost.get_stats(), status=status.HTTP_200_OK)
+        return Response(get_forum_post_stats(), status=status.HTTP_200_OK)
 
 
 class ForumPostCommentViewSet(viewsets.ModelViewSet):

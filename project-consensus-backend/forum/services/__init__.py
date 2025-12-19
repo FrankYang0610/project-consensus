@@ -8,6 +8,7 @@ from .forum_miscellaneous import (
     mark_post_edited_if_fields_changed,
 )
 from .forum_notification import emit_notifications_for_new_comment
+from .forum_stats import get_forum_post_stats
 
 __all__ = [
     "toggle_forum_post_like",
@@ -17,6 +18,7 @@ __all__ = [
     "emit_notifications_for_new_comment",
     "soft_delete_comment_and_cleanup_images",
     "mark_post_edited_if_fields_changed",
+    "get_forum_post_stats",
 ]
 
 

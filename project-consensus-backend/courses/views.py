@@ -47,6 +47,10 @@ from .services import (
     toggle_course_review_like,
     toggle_course_review_reply_like,
     toggle_course_vote,
+
+    # Stats
+    get_course_stats,
+    get_course_review_stats,
 )
 from .services.course_filters import CourseFilter, CourseReviewFilter
 from .services.course_exceptions import ServiceError, NotFoundError
@@ -216,7 +220,7 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=False, methods=["GET"], url_path="stats", permission_classes=[permissions.AllowAny])
     def stats(self, request):
         # GET /api/courses/stats/
-        return Response(Course.get_stats(), status=status.HTTP_200_OK)
+        return Response(get_course_stats(), status=status.HTTP_200_OK)
 
 
 class CourseReviewViewSet(viewsets.ModelViewSet):
@@ -286,7 +290,7 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["GET"], url_path="stats", permission_classes=[permissions.AllowAny])
     def stats(self, request):
         # GET /api/reviews/stats/
-        return Response(CourseReview.get_stats(), status=status.HTTP_200_OK)
+        return Response(get_course_review_stats(), status=status.HTTP_200_OK)
 
 
 class CourseReviewReplyViewSet(viewsets.ModelViewSet):

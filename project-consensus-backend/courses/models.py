@@ -216,11 +216,6 @@ class Course(models.Model):
             "attr_gain",
         ])
 
-    @classmethod
-    def get_stats(cls) -> dict[str, int]:
-        return {
-            "courses": cls.objects.count(),
-        }
 
 
 class CourseReview(models.Model):
@@ -274,12 +269,6 @@ class CourseReview(models.Model):
                 output_field=IntegerField(),
             )
         )
-
-    @classmethod
-    def get_stats(cls) -> dict[str, int]:
-        return {
-            "courseReviews": cls.objects.count(),
-        }
 
 
 class CourseReviewReply(models.Model):
