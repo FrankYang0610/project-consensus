@@ -176,6 +176,7 @@ def seed_forum_data(apps, schema_editor):
             created_at=now - timezone.timedelta(days=created_shift_days, hours=created_shift_hours),
             tags=topic["tags"],
             likes_count=random.randint(0, 24),
+            has_content_warning=random.random() < 0.2,  # Randomly mark some demo posts with a content warning
         )
 
     # Create discussion with nested replies

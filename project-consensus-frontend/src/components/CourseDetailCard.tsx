@@ -106,6 +106,7 @@ export interface CourseDetailCardProps {
     reviewsCount: number;
     recommendCount?: number;
     notRecommendCount?: number;
+    deletedReviewsCount?: number;
   };
   attributes: {
     difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard' | null;
@@ -954,19 +955,8 @@ export function CourseDetailCard({
                 {title}
               </CardTitle>
             </div>
-            {/* Follow Button */}
             <div className="flex gap-2">
               {Array.isArray(curriculum) && curriculum.length > 0 ? <CurriculumPlanButton /> : null}
-              <Button
-                size="sm"
-                variant="outline"
-                className="gap-1"
-                onClick={(e) => {
-                  if (!isLoggedIn) { e.preventDefault(); openLoginModal(); }
-                }}
-              >
-                <Star className="w-4 h-4" /> {t("courses.detail.follow")}
-              </Button>
             </div>
           </div>
 
@@ -1186,7 +1176,9 @@ export function CourseDetailCard({
           {/* Alert Bar */}
           <Alert>
             <AlertDescription>
-              {t("courses.detail.reviews.deletedNotice", { count: 0 })}
+              {t("courses.detail.reviews.deletedNotice", {
+                count: rating.deletedReviewsCount ?? 0,
+              })}
             </AlertDescription>
           </Alert>
 

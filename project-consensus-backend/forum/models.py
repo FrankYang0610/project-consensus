@@ -80,6 +80,7 @@ class ForumPost(models.Model):
     likes_count = models.PositiveIntegerField(default=0)
     is_anonymous = models.BooleanField(default=False) # Whether the post should display the author as Anonymous on the client
     is_edited = models.BooleanField(default=False)  # Whether the post has been edited after creation
+    has_content_warning = models.BooleanField(default=False)  # Whether the post is marked with a content warning (e.g. misleading or uncomfortable)
 
     objects: ForumPostQuerySet = ForumPostQuerySet.as_manager()
 

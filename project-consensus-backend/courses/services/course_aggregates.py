@@ -40,34 +40,3 @@ def recompute_review_replies_count(*, review: CourseReview) -> None:
     review.recompute_replies_count()
 
 
-# =============================================================================
-# Review Management Functions
-# =============================================================================
-
-def delete_review_and_cleanup_images_and_recompute_aggregates(*, review: CourseReview) -> None:
-    """Hard delete a course review and cleanup related images.
-
-    Also recomputes course and teacher aggregates inside the same transaction.
-    """
-
-    course: Course = review.course
-    delete_review_images(review=review)
-    with transaction.atomic():
-        review.delete()
-        course.recompute_aggregates()
-        recompute_teachers_aggregates(course)
-
-
-def soft_delete_reply_and_recompute_counts(*, reply: CourseReviewReply) -> None:
-    """Soft delete a review reply and recompute parent review's replies_count.
-
-    For parity with forum comments, we keep the row and clear content.
-    """
-    if reply.is_deleted:
-        return
-    review = reply.review
-    with transaction.atomic():
-        CourseReviewReply.objects.filter(pk=reply.pk).update(is_deleted=True, content="")
-        review.recompute_replies_count()
-
-

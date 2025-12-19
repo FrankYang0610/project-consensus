@@ -15,7 +15,7 @@ This document describes the initial behavior for course reviews and replies.
 - Reply: editing is not allowed.
 
 ### Delete
-- Review: author can hard-delete. Behavior: remove the review row; all related replies/likes are deleted via DB CASCADE. Course/teacher aggregates are recomputed.
+- Review: author can hard-delete. Behavior: remove the review row; all related replies/likes are deleted via DB CASCADE; recompute the course/teacher aggregates; increment the `Course.deleted_reviews_count` counter.
 - Reply: author can soft-delete. Behavior: set `isDeleted=true`, clear `content`, keep the row; the parent review's `repliesCount` is recomputed.
 
 ### Toggle Like
