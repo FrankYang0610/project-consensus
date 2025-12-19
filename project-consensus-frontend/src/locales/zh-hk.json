@@ -80,12 +80,10 @@
     "resendCode": "重新發送",
     "confirmPassword": "確認密碼",
     "alreadyHaveAccount": "已經有帳戶？",
-    "polyuEmail": "理大電郵",
-    "emailVerificationHint": "請使用理大電郵（@connect.polyu.hk）",
+    "emailVerificationHint": "我哋建議你使用理大電郵註冊，不過你當然亦可以使用其他電郵註冊。",
     "codeInputDisabledHint": "請先點擊發送驗證碼以啟用",
     "errorPasswordMismatch": "兩次輸入的密碼不一致",
-    "errorPolyuEmail": "請使用有效的理大電郵（@connect.polyu.hk）",
-    "emailPrivacyNotice": "您的電郵只用於關聯您的 polyu.life 帳戶並確認您是 PolyU 學生。您的學校相關內容、電郵相關內容均不會被讀取您的個人隱私信息不會被分享。",
+    "emailPrivacyNotice": "您的電郵僅用於建立和保護您的 polyu.life 帳戶。您的個人私隱資訊不會被分享。",
     "registerConsent": "點擊註冊即代表你同意我們的",
     "termsOfService": "服務條款",
     "verificationCodeSent": "驗證碼已發送至 {{email}}，請查收郵件。若未收到，請檢查垃圾郵件文件夾。",
@@ -98,7 +96,7 @@
     "passwordReset": {
       "title": "重設密碼",
       "forgotPasswordTitle": "忘記密碼",
-      "forgotPasswordDescription": "輸入你的理大電郵，我們將發送重設連結",
+      "forgotPasswordDescription": "輸入你的電郵，我們將發送重設連結",
       "resetPasswordDescription": "請在下方輸入新密碼",
       "sendResetLink": "發送重設連結",
       "sending": "發送中...",
@@ -609,7 +607,6 @@
     "email": {
       "required": "郵箱不能為空",
       "invalid": "請輸入有效的郵箱地址",
-      "polyuOnly": "僅允許使用理大郵箱（@connect.polyu.hk）",
       "alreadyRegistered": "此郵箱已被註冊，請直接登入。"
     },
     "password": {

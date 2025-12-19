@@ -82,12 +82,10 @@
     "resendCode": "Resend Code",
     "confirmPassword": "Confirm Password",
     "alreadyHaveAccount": "Already have an account?",
-    "polyuEmail": "PolyU Email",
-    "emailVerificationHint": "Use your PolyU email (@connect.polyu.hk)",
+    "emailVerificationHint": "We recommend using your PolyU email to register, but you can also use any other email address.",
     "codeInputDisabledHint": "Click Send Code first to enable",
     "errorPasswordMismatch": "Passwords do not match",
-    "errorPolyuEmail": "Please use a valid PolyU email (@connect.polyu.hk)",
-    "emailPrivacyNotice": "Your email is only used to link your polyu.life account and verify that you are a PolyU student. Your personal information will not be shared.",
+    "emailPrivacyNotice": "Your email is only used to create and secure your polyu.life account. Your personal information will not be shared.",
     "registerConsent": "By clicking Register you agree to our",
     "termsOfService": "Terms of Service",
     "verificationCodeSent": "Verification code sent to {{email}}, please check your email. If you don't receive it, please check your spam folder.",
@@ -100,7 +98,7 @@
     "passwordReset": {
       "title": "Reset Password",
       "forgotPasswordTitle": "Forgot Password",
-      "forgotPasswordDescription": "Enter your PolyU email and we'll send you a reset link",
+      "forgotPasswordDescription": "Enter your email and we'll send you a reset link",
       "resetPasswordDescription": "Enter your new password below",
       "sendResetLink": "Send Reset Link",
       "sending": "Sending...",
@@ -611,7 +609,6 @@
     "email": {
       "required": "Email is required",
       "invalid": "Please enter a valid email address",
-      "polyuOnly": "Only PolyU email addresses (@connect.polyu.hk) are allowed",
       "alreadyRegistered": "This email is already registered. Please login instead."
     },
     "password": {

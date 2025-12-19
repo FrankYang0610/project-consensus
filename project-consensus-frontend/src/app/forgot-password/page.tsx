@@ -20,7 +20,7 @@ import Link from 'next/link';
 import { ErrorResponse } from '@/types';
 import { getCookie, getAPIBaseUrl } from '@/lib/api/api-utils';
 import { extractErrorMessage } from '@/lib/api/error-utils';
-import { validatePolyuEmail } from '@/lib/utils';
+import { validateEmail } from '@/lib/utils';
 import { useApp } from '@/contexts/AppContext';
 
 export default function ForgotPasswordPage() {
@@ -45,10 +45,10 @@ export default function ForgotPasswordPage() {
     setError('');
     setSuccess(false);
 
-    // Validate PolyU email
-    const emailValidation = validatePolyuEmail(email);
+    // Validate email
+    const emailValidation = validateEmail(email);
     if (!emailValidation.isValid) {
-      setError(t(emailValidation.error || 'auth.errorPolyuEmail'));
+      setError(t(emailValidation.error || 'auth.errorInvalidEmail'));
       return;
     }
 

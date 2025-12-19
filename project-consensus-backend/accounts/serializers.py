@@ -57,19 +57,6 @@ def validate_and_sanitize_nickname(value: str) -> str:
     return sanitized
 
 
-def validate_polyu_email(value: str) -> str:
-    """
-    Validate that email is from PolyU domain.
-    
-    Rules:
-    - Must end with @connect.polyu.hk
-    - Returns lowercase version for consistency
-    """
-    if not value.lower().endswith('@connect.polyu.hk'):
-        raise serializers.ValidationError(error_codes.EMAIL_POLYU_ONLY)
-    return value.lower()
-
-
 def validate_password_with_django(value: str) -> str:
     """
     Validate password strength using Django's validators and map errors
@@ -137,11 +124,12 @@ class ProfileSerializer(serializers.ModelSerializer):
 class SendCodeSerializer(serializers.Serializer):
     """Request body for sending a verification code."""
 
-    email = serializers.EmailField()
-    
-    def validate_email(self, value):
-        """Validate that email is from PolyU domain."""
-        return validate_polyu_email(value)
+    email = serializers.EmailField(
+        error_messages={
+            "invalid": error_codes.EMAIL_INVALID,
+            "required": error_codes.EMAIL_REQUIRED,
+        }
+    )
 
 
 class RegisterSerializer(serializers.Serializer):
@@ -149,20 +137,22 @@ class RegisterSerializer(serializers.Serializer):
 
     Fields:
     - nickname: nickname (max 15 characters after sanitization)
-    - email: university email (must be @connect.polyu.hk)
+    - email: email address
     - verification_code: email verification code
     - password: password
     """
 
     nickname = serializers.CharField(max_length=100, required=True)
-    email = serializers.EmailField(required=True)
+    email = serializers.EmailField(
+        required=True,
+        error_messages={
+            "invalid": error_codes.EMAIL_INVALID,
+            "required": error_codes.EMAIL_REQUIRED,
+        },
+    )
     verification_code = serializers.RegexField(regex=r'^\d{6}$', max_length=6, min_length=6, required=True)
     password = serializers.CharField(write_only=True, required=True)
     password_confirm = serializers.CharField(write_only=True, required=True)
-    
-    def validate_email(self, value):
-        """Validate that email is from PolyU domain."""
-        return validate_polyu_email(value)
     
     def validate_nickname(self, value):
         """Validate and sanitize nickname, check uniqueness."""
@@ -191,33 +181,36 @@ class LoginSerializer(serializers.Serializer):
     """Request body for login endpoint.
 
     Fields:
-    - email: user email (must be @connect.polyu.hk)
+    - email: user email
     - password: user password
     """
 
-    email = serializers.EmailField()
+    email = serializers.EmailField(
+        error_messages={
+            "invalid": error_codes.EMAIL_INVALID,
+            "required": error_codes.EMAIL_REQUIRED,
+        }
+    )
     password = serializers.CharField(write_only=True)
-    
-    def validate_email(self, value):
-        """Validate that email is from PolyU domain."""
-        return validate_polyu_email(value)
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
     """Request body for password reset request endpoint.
     
     Fields:
-    - email: user email (must be @connect.polyu.hk)
+    - email: user email
     
     Note: This serializer does not check if the email exists in the database
     to prevent user enumeration attacks. The view will handle this silently.
     """
     
-    email = serializers.EmailField(required=True)
-    
-    def validate_email(self, value):
-        """Validate that email is from PolyU domain."""
-        return validate_polyu_email(value)
+    email = serializers.EmailField(
+        required=True,
+        error_messages={
+            "invalid": error_codes.EMAIL_INVALID,
+            "required": error_codes.EMAIL_REQUIRED,
+        },
+    )
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
