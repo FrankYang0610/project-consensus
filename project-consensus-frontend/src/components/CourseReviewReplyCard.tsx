@@ -79,7 +79,7 @@ export function CourseReviewReplyCard({
 
   return (
     <Card className={cn("transition-all duration-200 hover:shadow-sm", className)}>
-      <CardContent className="px-2 py-0.5">
+      <CardContent className="pl-5 pr-5 py-0.5">
         <div className="flex items-start gap-2 group">
           {/* Avatar (initials only, no image) */}
           <div className="flex-shrink-0">

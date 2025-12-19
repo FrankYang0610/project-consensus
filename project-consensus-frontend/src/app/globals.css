@@ -417,4 +417,14 @@ body,
       @apply px-2 py-1;
     }
   }
+
+  /* Limit image height inside rich text (forum posts, course reviews, replies) */
+  .prose img {
+    max-height: 350px;
+    max-width: 100%;
+    height: auto;
+    width: auto;
+    object-fit: contain;
+    display: block;
+  }
 }
