@@ -30,17 +30,6 @@ export default function AboutPage() {
   return (
     <>
       <SiteNavigation />
-      <div className="w-full p-6">
-        <div className="max-w-7xl mx-auto mb-1">
-          <Alert>
-            <AlertTitle>{t('common.note')}</AlertTitle>
-            <AlertDescription>
-              {t('common.developmentNotice')}
-            </AlertDescription>
-          </Alert>
-        </div>
-      </div>
-
       <main className={cn('mx-auto max-w-5xl p-8 space-y-8')}>
         <div className="space-y-2">
           <h1 className="text-4xl font-semibold tracking-tight">{t('about.title')}</h1>
