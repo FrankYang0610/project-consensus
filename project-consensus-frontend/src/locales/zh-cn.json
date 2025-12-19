@@ -14,7 +14,7 @@
   "menu": {
     "wiki": "Wiki",
     "wikiDesc": "浏览社区 Wiki 页面",
-    "about": "关于",
+    "about": "关于与统计",
     "announcements": "公告",
     "announcementsDesc": "获取最新消息",
     "resources": "资源",
@@ -452,8 +452,8 @@
     }
   },
   "about": {
-    "title": "关于",
-    "subtitle": "了解更多关于项目的信息、其目的以及背后的团队。",
+    "title": "关于与统计",
+    "subtitle": "了解 polyu.life、project-consensus 开发项目，以及当前社区的关键统计数据。",
     "whatIsTitle": "什么是 polyu.life？",
     "whatIsDescription": "校园论坛和课程评价社区",
     "whatIsContent": "polyu.life 是由 Frank Yang 和 Jim Yang 设计的校园论坛和课程评价社区。它旨在帮助学生分享见解、讨论课程并建立协作社区。",
