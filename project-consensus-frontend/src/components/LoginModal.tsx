@@ -20,7 +20,7 @@ import { LoginResponse, LoginApiResponse, ErrorResponse, LoginSuccessResponse } 
 import { getCookie, getAPIBaseUrl } from '@/lib/api/api-utils';
 import { extractErrorMessage } from '@/lib/api/error-utils';
 import { useI18n } from '@/hooks/use-i18n';
-import { cn, validatePolyuEmail } from '@/lib/utils';
+import { cn, validateEmail } from '@/lib/utils';
 
 /**
  * 登录模态框属性 / Login modal props
@@ -117,11 +117,11 @@ export function LoginModal({ className, onLoginSuccess }: LoginModalProps) {
       return;
     }
 
-    // Validate PolyU email
-    // 验证理大邮箱
-    const emailValidation = validatePolyuEmail(email);
+    // Validate email
+    // 验证邮箱
+    const emailValidation = validateEmail(email);
     if (!emailValidation.isValid) {
-      setError(t(emailValidation.error || 'auth.errorPolyuEmail'));
+      setError(t(emailValidation.error || 'auth.errorInvalidEmail'));
       setIsLoading(false);
       return;
     }
@@ -216,7 +216,7 @@ export function LoginModal({ className, onLoginSuccess }: LoginModalProps) {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="@connect.polyu.hk"
+                    placeholder="name@connect.polyu.hk"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={isLoading}

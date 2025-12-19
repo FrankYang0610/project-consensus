@@ -14,7 +14,6 @@ NICKNAME_INVALID = "validation.nickname.invalid"
 # Email validation errors
 EMAIL_REQUIRED = "validation.email.required"
 EMAIL_INVALID = "validation.email.invalid"
-EMAIL_POLYU_ONLY = "validation.email.polyuOnly"
 EMAIL_ALREADY_REGISTERED = "validation.email.alreadyRegistered"
 
 # Password validation errors

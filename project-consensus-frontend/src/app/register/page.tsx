@@ -22,7 +22,7 @@ import { ErrorResponse, RegisterSuccessResponse, SendVerificationCodeResponse } 
 import { getCookie, getAPIBaseUrl } from '@/lib/api/api-utils';
 import { extractErrorMessage } from '@/lib/api/error-utils';
 import { useApp } from '@/contexts/AppContext';
-import { validateNickname, validatePolyuEmail } from '@/lib/utils';
+import { validateNickname, validateEmail } from '@/lib/utils';
 
 export default function RegisterPage() {
   const { t } = useI18n();
@@ -63,11 +63,11 @@ export default function RegisterPage() {
     setError('');
     setSuccess('');
 
-    // Validate PolyU email
-    // 验证理大邮箱
-    const emailValidation = validatePolyuEmail(email);
+    // Validate email
+    // 验证邮箱
+    const emailValidation = validateEmail(email);
     if (!emailValidation.isValid) {
-      setError(t(emailValidation.error || 'auth.errorPolyuEmail'));
+      setError(t(emailValidation.error || 'auth.errorInvalidEmail'));
       return;
     }
     
@@ -127,11 +127,11 @@ export default function RegisterPage() {
       return;
     }
     
-    // Validate PolyU email
-    // 验证理大邮箱
-    const emailValidation = validatePolyuEmail(email);
+    // Validate email
+    // 验证邮箱
+    const emailValidation = validateEmail(email);
     if (!emailValidation.isValid) {
-      setError(t(emailValidation.error || 'auth.errorPolyuEmail'));
+      setError(t(emailValidation.error || 'auth.errorInvalidEmail'));
       return;
     }
     if (password !== confirmPassword) {
@@ -230,10 +230,6 @@ export default function RegisterPage() {
         <Card>
           <CardHeader className="text-center">
             <CardTitle>{t('auth.register')}</CardTitle>
-            <CardDescription>{t('auth.emailVerificationHint')}</CardDescription>
-            <p className="mt-2 text-xs text-muted-foreground">
-              {t('auth.emailPrivacyNotice')}
-            </p>
           </CardHeader>
           <CardContent>
             {error && (
@@ -266,16 +262,20 @@ export default function RegisterPage() {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="email">{t('auth.polyuEmail')}</Label>
+                <Label htmlFor="email">{t('auth.email')}</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="@connect.polyu.hk"
+                  placeholder="name@connect.polyu.hk"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isRegistering}
                   required
                 />
+                <p className="text-sm text-muted-foreground">
+                  {t('auth.emailVerificationHint')}{' '}
+                  {t('auth.emailPrivacyNotice')}
+                </p>
               </div>
 
               <div className="grid gap-2">
@@ -328,9 +328,6 @@ export default function RegisterPage() {
                     <li>{t('auth.passwordRequirement3')}</li>
                   </ul>
                 </div>
-                <Alert variant="warning" className="mt-2">
-                  <AlertDescription>{t('auth.passwordPolyUWarning')}</AlertDescription>
-                </Alert>
               </div>
 
               <div className="grid gap-2">
@@ -343,6 +340,9 @@ export default function RegisterPage() {
                   disabled={isRegistering}
                   required
                 />
+                <Alert variant="warning" className="mt-2">
+                  <AlertDescription>{t('auth.passwordPolyUWarning')}</AlertDescription>
+                </Alert>
               </div>
 
               <Button type="submit" className="w-full" disabled={isRegistering}>

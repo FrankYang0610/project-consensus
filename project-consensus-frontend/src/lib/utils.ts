@@ -18,51 +18,39 @@ export function isContentEmpty(content: string | null | undefined): boolean {
 }
 
 /**
- * Validate PolyU email address
- * 验证理大邮箱地址
+ * Validate email address
  * 
- * Rules / 规则:
- * - Must be a valid email format / 必须是有效的邮箱格式
- * - Must end with @connect.polyu.hk / 必须以 @connect.polyu.hk 结尾
+ * Rules:
+ * - Must be a valid email format
+ * - Normalizes to lowercase
+ * - Recommend to use PolyU email (e.g. name@connect.polyu.hk)
  * 
  * @param email - The email to validate
  * @returns ValidationResult with sanitized value or error message
  */
-export function validatePolyuEmail(email: string): ValidationResult {
-  // Check if empty
-  // 检查是否为空
+export function validateEmail(email: string): ValidationResult {
   if (!email) {
     return {
       isValid: false,
-      error: 'auth.errorPolyuEmail',
+      error: 'validation.email.required',
     };
   }
 
   // Normalize and sanitize email
-  // 标准化和消毒邮箱
-  const sanitized = validator.normalizeEmail(email, {
-    gmail_remove_dots: false,
-    gmail_remove_subaddress: false,
-    outlookdotcom_remove_subaddress: false,
-    yahoo_remove_subaddress: false,
-    icloud_remove_subaddress: false,
-  }) || email.trim().toLowerCase();
+  const sanitized =
+    validator.normalizeEmail(email, {
+      gmail_remove_dots: false,
+      gmail_remove_subaddress: false,
+      outlookdotcom_remove_subaddress: false,
+      yahoo_remove_subaddress: false,
+      icloud_remove_subaddress: false,
+    }) || email.trim().toLowerCase();
 
   // Validate email format
-  // 验证邮箱格式
   if (!validator.isEmail(sanitized)) {
     return {
       isValid: false,
-      error: 'auth.errorPolyuEmail',
-    };
-  }
-
-  // Check if it's a PolyU email
-  // 检查是否是理大邮箱
-  if (!sanitized.endsWith('@connect.polyu.hk')) {
-    return {
-      isValid: false,
-      error: 'auth.errorPolyuEmail',
+      error: 'validation.email.invalid',
     };
   }
 
