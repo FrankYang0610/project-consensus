@@ -465,7 +465,7 @@
     "repositoryContent": "The development project behind polyu.life is named project-consensus. The project is open-source. Check out the repository and feel free to open issues or submit pull requests.",
     "githubRepository": "GitHub Repository",
     "viewIssues": "View Issues",
-    "statsTitle": "Community stats",
+    "statsTitle": "Community Stats",
     "statsDescription": "Current content counts across the polyu.life community.",
     "stats": {
       "forumPosts": "Forum posts",
