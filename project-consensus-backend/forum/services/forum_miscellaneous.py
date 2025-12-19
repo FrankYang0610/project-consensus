@@ -70,7 +70,12 @@ def soft_delete_comment_and_cleanup_images(*, comment: ForumPostComment) -> None
 
 
 def mark_post_edited_if_fields_changed(*, post: ForumPost, incoming_keys: set[str]) -> None:
-    """Mark post as edited when editable fields are changed."""
+    """
+    Mark post as edited when editable fields are changed.
+
+    Note: Only user-editable content fields should trigger the `edited` badge. 
+    Admin-only flags like has_content_warning must NOT mark the post as edited.
+    """
     editable_fields = {"title", "content", "tags", "is_anonymous"}
     if incoming_keys & editable_fields:
         # Set on the instance so a subsequent save() persists it without

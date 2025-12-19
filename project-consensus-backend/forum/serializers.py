@@ -117,11 +117,18 @@ class ForumPostSerializer(serializers.ModelSerializer):
 
     @override
     def validate(self, attrs):  # type: ignore[override]
-        """Validate and sanitize content."""
+        """Validate and sanitize content and enforce admin-only fields."""
         # Sanitize content (always sanitize if provided)
         if "content" in attrs:
             raw = attrs.get("content")
             attrs["content"] = sanitize_forum_html(raw)
+
+        # Enforce that `has_content_warning` can only be modified by admins.
+        request = self.context.get("request")
+        user = request.user if request is not None else None
+        if not (user and (user.is_staff or user.is_superuser)):
+            attrs.pop("has_content_warning", None)
+
         return attrs
 
     @override
