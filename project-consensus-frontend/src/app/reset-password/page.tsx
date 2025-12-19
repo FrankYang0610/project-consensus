@@ -252,6 +252,10 @@ function ResetPasswordForm() {
                   </ul>
                 </div>
 
+                <Alert variant="warning" className="text-sm">
+                  <AlertDescription>{t('auth.passwordPolyUWarning')}</AlertDescription>
+                </Alert>
+
                 {/* Submit Button */}
                 <Button type="submit" disabled={isLoading || success} className="w-full">
                   {isLoading ? (

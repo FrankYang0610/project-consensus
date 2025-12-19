@@ -94,6 +94,7 @@
     "passwordRequirement1": "至少8個字符",
     "passwordRequirement2": "不能是常見弱密碼",
     "passwordRequirement3": "不能全部為數字",
+    "passwordPolyUWarning": "本平台為學生自發營運的獨立項目，並非由香港理工大學營運或管理。請不要將此處的登入密碼設定為與你的 PolyU NetID 相同的密碼。",
     "passwordReset": {
       "title": "重設密碼",
       "forgotPasswordTitle": "忘記密碼",

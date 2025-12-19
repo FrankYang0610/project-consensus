@@ -459,6 +459,10 @@ export default function SettingsPage() {
             />
           </div>
 
+          <Alert variant="warning">
+            <AlertDescription>{t('auth.passwordPolyUWarning')}</AlertDescription>
+          </Alert>
+
           <div className="pt-2">
             <Button onClick={handleChangePassword} disabled={pwdSaving}>
               {pwdSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

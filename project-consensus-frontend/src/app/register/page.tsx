@@ -328,6 +328,9 @@ export default function RegisterPage() {
                     <li>{t('auth.passwordRequirement3')}</li>
                   </ul>
                 </div>
+                <Alert variant="warning" className="mt-2">
+                  <AlertDescription>{t('auth.passwordPolyUWarning')}</AlertDescription>
+                </Alert>
               </div>
 
               <div className="grid gap-2">
