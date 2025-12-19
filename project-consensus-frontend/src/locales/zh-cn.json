@@ -463,6 +463,14 @@
     "repositoryContent": "该项目是开源的。查看仓库并随时提交问题或拉取请求。",
     "githubRepository": "GitHub 仓库",
     "viewIssues": "查看问题",
+    "statsTitle": "社区统计",
+    "statsDescription": "当前 polyu.life 上的内容规模。",
+    "stats": {
+      "forumPosts": "论坛帖子",
+      "courses": "课程",
+      "courseReviews": "课程评价",
+      "teachers": "教师"
+    },
     "teamTitle": "团队",
     "teamDescription": "认识 polyu.life 背后的团队",
     "coCreator": "联合创始人"

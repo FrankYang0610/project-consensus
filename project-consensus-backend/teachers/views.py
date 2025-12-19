@@ -105,3 +105,7 @@ class TeacherViewSet(viewsets.ReadOnlyModelViewSet):
         qs = Course.objects.filter(teachers=teacher).only('course_id', 'subject_code', 'title')
         serializer = TeacherCourseRefSerializer(qs, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=["get"], url_path="stats")
+    def stats(self, request):
+        return Response(Teacher.get_stats(), status=status.HTTP_200_OK)

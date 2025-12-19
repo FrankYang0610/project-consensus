@@ -119,6 +119,10 @@ class ForumPostViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:  # pragma: no cover
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=["GET"], url_path="stats", permission_classes=[permissions.AllowAny])
+    def stats(self, request: Request):
+        return Response(ForumPost.get_stats(), status=status.HTTP_200_OK)
 
 
 class ForumPostCommentViewSet(viewsets.ModelViewSet):

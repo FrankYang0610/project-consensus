@@ -105,6 +105,14 @@ class ForumPost(models.Model):
                 output_field=IntegerField(),
             )
         )
+    
+    @classmethod
+    def get_stats(cls) -> dict[str, int]:
+        return {
+            "forumPosts": cls.objects.count(),
+        }
+
+
 class ForumPostCommentQuerySet(models.QuerySet):
     """
     Custom queryset for ForumPostComment to share common eager-loading

@@ -463,6 +463,14 @@
     "repositoryContent": "該項目是開源的。查看倉庫並隨時提交問題或拉取請求。",
     "githubRepository": "GitHub 倉庫",
     "viewIssues": "查看問題",
+    "statsTitle": "社群統計",
+    "statsDescription": "目前 polyu.life 上的內容規模。",
+    "stats": {
+      "forumPosts": "論壇帖子",
+      "courses": "課程",
+      "courseReviews": "課程評價",
+      "teachers": "老師"
+    },
     "teamTitle": "團隊",
     "teamDescription": "認識 polyu.life 背後的團隊",
     "coCreator": "聯合創始人"
