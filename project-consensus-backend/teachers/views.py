@@ -14,6 +14,7 @@ from .models import Teacher
 from .serializers import TeacherSerializer, TeacherCourseRefSerializer
 from .services.teachers_splink_search import search_teachers_with_splink
 from .services.teachers_build_search_response import build_teachers_splink_response
+from .services import get_teacher_stats
 
 
 class TeacherPagination(PageNumberPagination):
@@ -105,3 +106,7 @@ class TeacherViewSet(viewsets.ReadOnlyModelViewSet):
         qs = Course.objects.filter(teachers=teacher).only('course_id', 'subject_code', 'title')
         serializer = TeacherCourseRefSerializer(qs, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=["GET"], url_path="stats")
+    def stats(self, request):
+        return Response(get_teacher_stats(), status=status.HTTP_200_OK)

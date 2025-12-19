@@ -14,7 +14,7 @@
   "menu": {
     "wiki": "Wiki",
     "wikiDesc": "Browse community wiki pages",
-    "about": "About",
+    "about": "About and Statistics",
     "announcements": "Announcements",
     "announcementsDesc": "Stay updated with latest news",
     "resources": "Resources",
@@ -454,17 +454,25 @@
     }
   },
   "about": {
-    "title": "About",
-    "subtitle": "Learn more about the project, its purpose, and the team behind it.",
+    "title": "About and Statistics",
+    "subtitle": "Learn about polyu.life, the project-consensus codebase, and key community statistics.",
     "whatIsTitle": "What is polyu.life?",
     "whatIsDescription": "Campus forum and course review community",
     "whatIsContent": "polyu.life is a campus forum and course review community designed by Frank Yang and Jim Yang. It aims to help students share insights, discuss courses, and build a collaborative community.",
     "goToHome": "Go to Home",
     "repositoryTitle": "Open-Source Repository",
     "repositoryDescription": "Explore the source code and contribute",
-    "repositoryContent": "The project is open-source. Check out the repository and feel free to open issues or submit pull requests.",
+    "repositoryContent": "The development project behind polyu.life is named project-consensus. The project is open-source. Check out the repository and feel free to open issues or submit pull requests.",
     "githubRepository": "GitHub Repository",
     "viewIssues": "View Issues",
+    "statsTitle": "Community Stats",
+    "statsDescription": "Current content counts across the polyu.life community.",
+    "stats": {
+      "forumPosts": "Forum posts",
+      "courses": "Courses",
+      "courseReviews": "Course reviews",
+      "teachers": "Teachers"
+    },
     "teamTitle": "Team",
     "teamDescription": "Meet the people behind polyu.life",
     "coCreator": "Co-creator"

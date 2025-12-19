@@ -1,30 +1,35 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { SiteNavigation } from '@/components/SiteNavigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/hooks/use-i18n';
+import { fetchSiteStats, type SiteStats } from '@/lib/api/site-stats';
 import Link from 'next/link';
 
 export default function AboutPage() {
   const { t } = useI18n();
+  const [stats, setStats] = useState<SiteStats | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchSiteStats()
+      .then((data) => { if (!cancelled) { setStats(data); } })
+      .catch(() => { /* Fail silently; the stats block will fallback to placeholders */ });
+    return () => { cancelled = true; };
+  }, []);
+
+  const formatCount = (value: number | null | undefined): string => {
+    if (typeof value !== 'number' || Number.isNaN(value)) { return '—'; }
+    try { return value.toLocaleString(); } catch { return String(value); }
+  };
 
   return (
     <>
       <SiteNavigation />
-      <div className="w-full p-6">
-        <div className="max-w-7xl mx-auto mb-1">
-          <Alert>
-            <AlertTitle>{t('common.note')}</AlertTitle>
-            <AlertDescription>
-              {t('common.developmentNotice')}
-            </AlertDescription>
-          </Alert>
-        </div>
-      </div>
-
       <main className={cn('mx-auto max-w-5xl p-8 space-y-8')}>
         <div className="space-y-2">
           <h1 className="text-4xl font-semibold tracking-tight">{t('about.title')}</h1>
@@ -71,22 +76,74 @@ export default function AboutPage() {
 
         <Card>
           <CardHeader>
+            <CardTitle>{t('about.statsTitle')}</CardTitle>
+            <CardDescription>{t('about.statsDescription')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-4">
+              <div className="space-y-1">
+                <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {t('about.stats.forumPosts')}
+                </div>
+                <div className="text-2xl font-semibold tabular-nums">
+                  {formatCount(stats?.forumPosts)}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {t('about.stats.courses')}
+                </div>
+                <div className="text-2xl font-semibold tabular-nums">
+                  {formatCount(stats?.courses)}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {t('about.stats.courseReviews')}
+                </div>
+                <div className="text-2xl font-semibold tabular-nums">
+                  {formatCount(stats?.courseReviews)}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {t('about.stats.teachers')}
+                </div>
+                <div className="text-2xl font-semibold tabular-nums">
+                  {formatCount(stats?.teachers)}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>{t('about.teamTitle')}</CardTitle>
             <CardDescription>{t('about.teamDescription')}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-md border p-4">
+              <a
+                href="https://github.com/FivespeedDoc"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-md border p-4 transition-colors hover:bg-muted/60"
+              >
                 <div className="font-medium">Jim Yang</div>
                 <div className="text-sm text-muted-foreground">{t('about.coCreator')}</div>
-              </div>
-              <div className="rounded-md border p-4">
+              </a>
+              <a
+                href="https://github.com/FrankYang0610"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-md border p-4 transition-colors hover:bg-muted/60"
+              >
                 <div className="font-medium">Frank Yang</div>
                 <div className="text-sm text-muted-foreground">{t('about.coCreator')}</div>
-              </div>
+              </a>
             </div>
           </CardContent>
-
         </Card>
       </main>
     </>

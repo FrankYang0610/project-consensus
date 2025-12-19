@@ -47,6 +47,10 @@ from .services import (
     toggle_course_review_like,
     toggle_course_review_reply_like,
     toggle_course_vote,
+
+    # Stats
+    get_course_stats,
+    get_course_review_stats,
 )
 from .services.course_filters import CourseFilter, CourseReviewFilter
 from .services.course_exceptions import ServiceError, NotFoundError
@@ -212,6 +216,11 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
             },
             status=status.HTTP_200_OK,
         )
+    
+    @action(detail=False, methods=["GET"], url_path="stats", permission_classes=[permissions.AllowAny])
+    def stats(self, request):
+        # GET /api/courses/stats/
+        return Response(get_course_stats(), status=status.HTTP_200_OK)
 
 
 class CourseReviewViewSet(viewsets.ModelViewSet):
@@ -277,6 +286,11 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
         except PermissionError as e:
             # Let DRF's exception handling generate a 403 response.
             raise PermissionDenied(detail=str(e))
+
+    @action(detail=False, methods=["GET"], url_path="stats", permission_classes=[permissions.AllowAny])
+    def stats(self, request):
+        # GET /api/reviews/stats/
+        return Response(get_course_review_stats(), status=status.HTTP_200_OK)
 
 
 class CourseReviewReplyViewSet(viewsets.ModelViewSet):
@@ -413,3 +427,4 @@ class UserReviewsListView(BaseUserContentListView):
         # Annotate per-user isLiked to avoid N+1 exists() calls in serializers
         user = self.request.user
         return annotate_is_liked(queryset, CourseReviewLike, "review", user)
+

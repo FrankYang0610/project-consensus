@@ -105,6 +105,8 @@ class ForumPost(models.Model):
                 output_field=IntegerField(),
             )
         )
+    
+
 class ForumPostCommentQuerySet(models.QuerySet):
     """
     Custom queryset for ForumPostComment to share common eager-loading

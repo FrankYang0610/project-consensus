@@ -30,6 +30,7 @@ from .services.forum_post_comment_position import (
     CommentDoesNotBelongToPostError,
     compute_forum_post_comment_position,
 )
+from .services import get_forum_post_stats
 
 logger = logging.getLogger(__name__)
 
@@ -119,6 +120,10 @@ class ForumPostViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Exception as e:  # pragma: no cover
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=["GET"], url_path="stats", permission_classes=[permissions.AllowAny])
+    def stats(self, request: Request):
+        return Response(get_forum_post_stats(), status=status.HTTP_200_OK)
 
 
 class ForumPostCommentViewSet(viewsets.ModelViewSet):

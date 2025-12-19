@@ -217,6 +217,7 @@ class Course(models.Model):
         ])
 
 
+
 class CourseReview(models.Model):
     """Course review model."""
 

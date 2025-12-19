@@ -44,6 +44,8 @@ from .course_review_reply_like import (
     toggle_course_review_reply_like,
 )
 from .course_voting import toggle_course_vote
+from .course_stats import get_course_stats
+from .course_review_stats import get_course_review_stats
 
 __all__ = [
     # Course Review CRUD
@@ -75,5 +77,9 @@ __all__ = [
     "get_departments_with_counts",
     "get_department_level_distribution",
     "get_distinct_departments_case_insensitive",
+
+    # Stats
+    "get_course_stats",
+    "get_course_review_stats",
 ]
 

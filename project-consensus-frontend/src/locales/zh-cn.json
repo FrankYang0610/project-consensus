@@ -14,7 +14,7 @@
   "menu": {
     "wiki": "Wiki",
     "wikiDesc": "浏览社区 Wiki 页面",
-    "about": "关于",
+    "about": "关于与统计",
     "announcements": "公告",
     "announcementsDesc": "获取最新消息",
     "resources": "资源",
@@ -452,17 +452,25 @@
     }
   },
   "about": {
-    "title": "关于",
-    "subtitle": "了解更多关于项目的信息、其目的以及背后的团队。",
+    "title": "关于与统计",
+    "subtitle": "了解 polyu.life、project-consensus 开发项目，以及当前社区的关键统计数据。",
     "whatIsTitle": "什么是 polyu.life？",
     "whatIsDescription": "校园论坛和课程评价社区",
     "whatIsContent": "polyu.life 是由 Frank Yang 和 Jim Yang 设计的校园论坛和课程评价社区。它旨在帮助学生分享见解、讨论课程并建立协作社区。",
     "goToHome": "返回首页",
     "repositoryTitle": "开源仓库",
     "repositoryDescription": "探索源代码并参与贡献",
-    "repositoryContent": "该项目是开源的。查看仓库并随时提交问题或拉取请求。",
+    "repositoryContent": "polyu.life 的开发项目名称为 project-consensus。该项目是开源的。欢迎随时来查看仓库并提交问题或拉取请求。",
     "githubRepository": "GitHub 仓库",
     "viewIssues": "查看问题",
+    "statsTitle": "社区统计",
+    "statsDescription": "当前 polyu.life 上的内容规模。",
+    "stats": {
+      "forumPosts": "论坛帖子",
+      "courses": "课程",
+      "courseReviews": "课程评价",
+      "teachers": "教师"
+    },
     "teamTitle": "团队",
     "teamDescription": "认识 polyu.life 背后的团队",
     "coCreator": "联合创始人"
