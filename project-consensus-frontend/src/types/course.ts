@@ -123,6 +123,7 @@ export interface Course {
     reviewsCount: number;
     recommendCount?: number;
     notRecommendCount?: number;
+    deletedReviewsCount?: number;
   };
   attributes: {
     difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard' | null;

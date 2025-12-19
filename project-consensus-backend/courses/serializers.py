@@ -100,6 +100,7 @@ class CourseSerializer(serializers.ModelSerializer):
             "reviewsCount": obj.rating_reviews_count,
             "recommendCount": obj.rating_recommend_count,
             "notRecommendCount": obj.rating_not_recommend_count,
+            "deletedReviewsCount": obj.deleted_reviews_count,
         }
 
     def get_attributes(self, obj: Course):

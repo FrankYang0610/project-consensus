@@ -57,6 +57,7 @@ class Course(models.Model):
 
     rating_score = models.FloatField(default=0)
     rating_reviews_count = models.PositiveIntegerField(default=0)
+    deleted_reviews_count = models.PositiveIntegerField(default=0)  # Counter of how many reviews have been deleted for this course.
     # Extra rating counters used by frontend voting UI
     rating_recommend_count = models.PositiveIntegerField(default=0)
     rating_not_recommend_count = models.PositiveIntegerField(default=0)
@@ -109,6 +110,10 @@ class Course(models.Model):
 
     def __str__(self) -> str:  # pragma: no cover
         return f"{self.subject_code} {self.title}"
+
+    def increment_deleted_reviews_count(self) -> None:
+        # Atomically increment deleted_reviews_count for this course.
+        Course.objects.filter(pk=self.pk).update(deleted_reviews_count=F("deleted_reviews_count") + 1)
 
     def recompute_aggregates(self) -> None:
         """Recompute rating score, reviews count, and attribute aggregates.

@@ -28,6 +28,7 @@ class Migration(migrations.Migration):
                 ('term_semester', models.CharField(choices=[('spring', 'spring'), ('summer', 'summer'), ('fall', 'fall')], max_length=10)),
                 ('rating_score', models.FloatField(default=0)),
                 ('rating_reviews_count', models.PositiveIntegerField(default=0)),
+                ('deleted_reviews_count', models.PositiveIntegerField(default=0)),
                 ('rating_recommend_count', models.PositiveIntegerField(default=0)),
                 ('rating_not_recommend_count', models.PositiveIntegerField(default=0)),
                 ('attr_difficulty', models.CharField(blank=True, choices=[('veryEasy', 'veryEasy'), ('easy', 'easy'), ('medium', 'medium'), ('hard', 'hard'), ('veryHard', 'veryHard')], max_length=10, null=True)),

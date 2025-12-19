@@ -357,7 +357,7 @@
         "title": "Reviews",
         "writeReview": "Write a review",
         "editReview": "Edit your review",
-        "deletedNotice": "For this course, {{count}} users have deleted their reviews.",
+        "deletedNotice": "For this course, {{count}} reviews have been deleted by their authors.",
         "totalReviews": "Total {{count}} reviews",
         "sort": {
           "label": "Sort",

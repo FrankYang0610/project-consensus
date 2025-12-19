@@ -106,6 +106,7 @@ export interface CourseDetailCardProps {
     reviewsCount: number;
     recommendCount?: number;
     notRecommendCount?: number;
+    deletedReviewsCount?: number;
   };
   attributes: {
     difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard' | null;
@@ -1186,7 +1187,9 @@ export function CourseDetailCard({
           {/* Alert Bar */}
           <Alert>
             <AlertDescription>
-              {t("courses.detail.reviews.deletedNotice", { count: 0 })}
+              {t("courses.detail.reviews.deletedNotice", {
+                count: rating.deletedReviewsCount ?? 0,
+              })}
             </AlertDescription>
           </Alert>
 

@@ -6,8 +6,6 @@ from .course_queries import (
     get_distinct_departments_case_insensitive,
 )
 from .course_aggregates import (
-    delete_review_and_cleanup_images_and_recompute_aggregates,
-    soft_delete_reply_and_recompute_counts,
     recompute_course_aggregates_after_review_change,
     recompute_review_replies_count,
     recompute_teachers_aggregates,
@@ -71,8 +69,6 @@ __all__ = [
     "recompute_teachers_aggregates",
     "recompute_course_aggregates_after_review_change",
     "recompute_review_replies_count",
-    "delete_review_and_cleanup_images_and_recompute_aggregates",
-    "soft_delete_reply_and_recompute_counts",
     "cleanup_removed_images_for_review",
     
     # Queries
