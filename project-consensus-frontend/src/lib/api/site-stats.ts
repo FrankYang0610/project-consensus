@@ -32,15 +32,11 @@ type TeacherStatsResponse = {
  * - Teachers: GET /api/teachers/stats/
  */
 export async function fetchSiteStats(init?: RequestInit): Promise<SiteStats> {
-  const commonInit: RequestInit | undefined = init
-    ? { ...init }
-    : undefined;
-
   const [forum, course, courseReview, teacher] = await Promise.all([
-    apiGet<ForumStatsResponse>('/api/forum/posts/stats/', commonInit).catch(() => null),
-    apiGet<CourseStatsResponse>('/api/courses/stats/', commonInit).catch(() => null),
-    apiGet<CourseReviewStatsResponse>('/api/reviews/stats/', commonInit).catch(() => null),
-    apiGet<TeacherStatsResponse>('/api/teachers/stats/', commonInit).catch(() => null),
+    apiGet<ForumStatsResponse>('/api/forum/posts/stats/', init).catch(() => null),
+    apiGet<CourseStatsResponse>('/api/courses/stats/', init).catch(() => null),
+    apiGet<CourseReviewStatsResponse>('/api/reviews/stats/', init).catch(() => null),
+    apiGet<TeacherStatsResponse>('/api/teachers/stats/', init).catch(() => null),
   ]);
 
   return {
