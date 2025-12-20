@@ -11,7 +11,7 @@ import { useApp } from "@/contexts/AppContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { toggleLikeForumPost, fetchForumPosts } from "@/lib/api/forum-post";
-import { fetchCourseReviews, toggleLikeReview } from "@/lib/api/course";
+import { fetchCourseReviews } from "@/lib/api/course";
 import { ForumPost, CourseReview } from "@/types";
 import { useInfiniteList } from "@/hooks/use-infinite-list";
 import { ForumFilterBar } from "@/components/ForumFilterBar";
@@ -134,17 +134,6 @@ function HomePageContent() {
     return () => { cancelled = true; };
   }, []);
 
-  const handleLikeLatestReview = React.useCallback(async (reviewId: string) => {
-    try {
-      const updated = await toggleLikeReview(reviewId);
-      setLatestReviews((prev) =>
-        prev.map((r) => (r.id === reviewId ? updated : r)),
-      );
-    } catch (err) {
-      console.error("Failed to like course review:", err);
-    }
-  }, []);
-
   const goToLatestReviewsPage = React.useCallback(() => {
     router.push("/courses/latest-reviews");
   }, [router]);
@@ -200,7 +189,6 @@ function HomePageContent() {
                       <CourseReviewPreviewCard
                         key={review.id}
                         review={review}
-                        onLike={handleLikeLatestReview}
                         className="h-full"
                         compactMeta
                       />
