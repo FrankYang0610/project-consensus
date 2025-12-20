@@ -59,6 +59,8 @@ The hook uses DRF’s `next`/`previous` as the single source of truth for pagina
 ```tsx
 import { useInfiniteList } from "@/hooks/use-infinite-list";
 import { fetchCourses } from "@/lib/api/course"; // returns DRF-style pages
+import type { Course } from "@/types";
+import type { FetchCoursesParams } from "@/lib/api/course";
 
 export default function CoursesPage() {
   const {
@@ -70,7 +72,7 @@ export default function CoursesPage() {
     setError,
     loadMore,
     reset,
-  } = useInfiniteList<Course, import("@/lib/api/course").FetchCoursesParams>({
+  } = useInfiniteList<Course, FetchCoursesParams>({
     pageFetcher: fetchCourses,
     initialParams: { page: 1, pageSize: 20, ordering: "-last_updated" },
     pageSize: 20,

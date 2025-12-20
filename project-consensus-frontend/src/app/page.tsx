@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { toggleLikeForumPost, fetchForumPosts } from "@/lib/api/forum-post";
 import { fetchCourseReviews } from "@/lib/api/course";
-import { ForumPost, CourseReview } from "@/types";
+import type { ForumPost, CourseReview, FetchForumPostsParams } from "@/types";
 import { useInfiniteList } from "@/hooks/use-infinite-list";
 import { ForumFilterBar } from "@/components/ForumFilterBar";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -37,7 +37,7 @@ function HomePageContent() {
     setError: setLoadError,
     loadMore,
     reset,
-  } = useInfiniteList<ForumPost, import("@/types").FetchForumPostsParams>({
+  } = useInfiniteList<ForumPost, FetchForumPostsParams>({
     pageFetcher: fetchForumPosts,
     // Initialize from URL to avoid a redundant first reset
     initialParams: {
@@ -141,7 +141,7 @@ function HomePageContent() {
   // React to URL changes by resetting the list (skip initial run to avoid duplicate fetch)
   const didInitRef = React.useRef(false);
   React.useEffect(() => {
-    const nextParams: import("@/types").FetchForumPostsParams = {
+    const nextParams: FetchForumPostsParams = {
       page: 1,
       pageSize: 12,
       ...(orderingParam ? { ordering: orderingParam } : {}),

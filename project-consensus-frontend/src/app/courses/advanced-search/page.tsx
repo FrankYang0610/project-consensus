@@ -6,7 +6,7 @@ import { useI18n } from "@/hooks/use-i18n";
 import { CourseBackgroundCard } from "@/components/CourseBackgroundCard";
 import { CourseFilterBar } from "@/components/CourseFilterBar";
 import { CoursePreviewCard } from "@/components/CoursePreviewCard";
-import type { Course } from "@/types";
+import type { Course, FetchCoursesParams } from "@/types";
 import { useInfiniteList } from "@/hooks/use-infinite-list";
 import { fetchCourses } from "@/lib/api/course";
 
@@ -21,7 +21,7 @@ export default function CourseAdvancedSearchPage() {
     setError: setLoadError,
     loadMore,
     reset,
-  } = useInfiniteList<Course, import("@/types").FetchCoursesParams>({
+  } = useInfiniteList<Course, FetchCoursesParams>({
     pageFetcher: fetchCourses,
     initialParams: { page: 1, pageSize: 20, ordering: '-last_updated' },
     pageSize: 20,
