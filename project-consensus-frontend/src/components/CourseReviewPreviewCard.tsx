@@ -231,7 +231,12 @@ export function CourseReviewPreviewCard({
       >
         <CardContent className="space-y-3 px-4">
           {/* Course information header */}
-          <div className="flex items-center gap-3 pb-3 border-b border-muted/30">
+          <div
+            className={cn(
+              "flex items-center gap-3",
+              !compactMeta && "pb-3 border-b border-muted/30"
+            )}
+          >
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <div className="flex-shrink-0 p-1.5 rounded-md bg-primary/10 group-hover:bg-primary/20 transition-colors">
                 <BookOpen className="w-4 h-4 text-primary" />
