@@ -112,7 +112,7 @@ function HomePageContent() {
 
   // Fetch latest course reviews (top 10 by created_at desc)
   React.useEffect(() => {
-    let cancelled = false
+    let cancelled = false;
     async function loadLatestReviews() {
       setLatestReviewsLoading(true);
       setLatestReviewsError(false);
