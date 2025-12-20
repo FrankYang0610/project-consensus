@@ -30,6 +30,11 @@ export interface CourseReviewPreviewCardProps {
   review: CourseReview;
   onLike?: (reviewId: string) => void; // Like callback
   className?: string;
+  /**
+   * Compact meta layout for homepage carousel:
+   * hide avatar, author name and date, only show term + rating.
+   */
+  compactMeta?: boolean;
 }
 
 /**
@@ -128,6 +133,7 @@ export function CourseReviewPreviewCard({
   review,
   onLike,
   className,
+  compactMeta = false,
 }: CourseReviewPreviewCardProps) {
   const { t, language } = useI18n();
   const router = useRouter();
@@ -240,38 +246,44 @@ export function CourseReviewPreviewCard({
 
           {/* Author information and rating */}
           <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-2 min-w-0 flex-1 group/author">
-              <UserAvatar 
-                name={displayName} 
-                avatarUrl={review.author.avatarUrl}
-                userId={review.author.id}
-                isAnonymous={review.isAnonymous}
-              />
-              <div className="flex flex-col gap-1 min-w-0 flex-1">
-                {review.isAnonymous ? (
-                  <div className="font-medium text-sm truncate">{displayName}</div>
-                ) : (
-                  <Link
-                    href={`/user/${review.author.id}`}
-                    className="font-medium text-sm group-hover/author:text-primary group-hover/author:underline underline-offset-2 transition-colors truncate"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {displayName}
-                  </Link>
-                )}
-                <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-                  <Calendar className="w-3 h-3 shrink-0" />
-                  <span className="shrink-0">{createdAtFormatted}</span>
-                  {termElement && (
-                    <>
-                      <span>•</span>
-                      {termElement}
-                    </>
+            {compactMeta ? (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap min-w-0 flex-1">
+                {termElement}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 min-w-0 flex-1 group/author">
+                <UserAvatar 
+                  name={displayName} 
+                  avatarUrl={review.author.avatarUrl}
+                  userId={review.author.id}
+                  isAnonymous={review.isAnonymous}
+                />
+                <div className="flex flex-col gap-1 min-w-0 flex-1">
+                  {review.isAnonymous ? (
+                    <div className="font-medium text-sm truncate">{displayName}</div>
+                  ) : (
+                    <Link
+                      href={`/user/${review.author.id}`}
+                      className="font-medium text-sm group-hover/author:text-primary group-hover/author:underline underline-offset-2 transition-colors truncate"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {displayName}
+                    </Link>
                   )}
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                    <Calendar className="w-3 h-3 shrink-0" />
+                    <span className="shrink-0">{createdAtFormatted}</span>
+                    {termElement && (
+                      <>
+                        <span>•</span>
+                        {termElement}
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-            
+            )}
+
             {/* Rating display */}
             {!review.onlyText && review.overallRating !== undefined && (
               <div className="flex items-center gap-2 flex-shrink-0">
@@ -305,7 +317,7 @@ export function CourseReviewPreviewCard({
             </div>
           )}
 
-          {/* Review content preview + like button on the right */}
+          {/* Review content preview + like button on the right (hidden in compact mode) */}
           <div className="rounded-md bg-muted/20 border border-muted/30 p-3">
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
@@ -314,18 +326,20 @@ export function CourseReviewPreviewCard({
                   dangerouslySetInnerHTML={{ __html: reviewContentHtml }}
                 />
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  "gap-1.5 h-8 px-2 shrink-0",
-                  review.isLiked ? "text-red-500 hover:text-red-600" : "text-muted-foreground hover:text-foreground"
-                )}
-                onClick={handleLike}
-              >
-                <ThumbsUp className={cn("w-3.5 h-3.5", review.isLiked && "fill-current")} />
-                <span className="text-xs font-medium">{review.likesCount}</span>
-              </Button>
+              {!compactMeta && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "gap-1.5 h-8 px-2 shrink-0",
+                    review.isLiked ? "text-red-500 hover:text-red-600" : "text-muted-foreground hover:text-foreground"
+                  )}
+                  onClick={handleLike}
+                >
+                  <ThumbsUp className={cn("w-3.5 h-3.5", review.isLiked && "fill-current")} />
+                  <span className="text-xs font-medium">{review.likesCount}</span>
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
