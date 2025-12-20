@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { SiteNavigation } from "@/components/SiteNavigation";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useI18n } from "@/hooks/use-i18n";
 import { CourseBackgroundCard } from "@/components/CourseBackgroundCard";
 import { CourseFilterBar } from "@/components/CourseFilterBar";
@@ -35,14 +34,6 @@ export default function CourseAdvancedSearchPage() {
       <div className="min-h-screen bg-background">
         <main className="w-full py-8">
           <div className="w-full p-6">
-            <div className="max-w-7xl mx-auto mb-1">
-              <Alert>
-                <AlertTitle>{t('common.note')}</AlertTitle>
-                <AlertDescription>
-                  {t('common.developmentNotice')}
-                </AlertDescription>
-              </Alert>
-            </div>
             <div className="max-w-7xl mx-auto grid grid-cols-1 gap-6 pt-4">
               <CourseBackgroundCard>
                 <div className="space-y-4">

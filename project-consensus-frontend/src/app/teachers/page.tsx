@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { SiteNavigation } from "@/components/SiteNavigation";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -111,14 +110,6 @@ function TeachersPageContent() {
 
   return (
     <>
-      {/* Notice Alert */}
-      <Alert className="mb-6">
-        <AlertTitle>{t("common.note")}</AlertTitle>
-        <AlertDescription>
-          {t("common.developmentNotice")}
-        </AlertDescription>
-      </Alert>
-
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold mb-2">{t("teachers.title")}</h1>

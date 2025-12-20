@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { SiteNavigation } from "@/components/SiteNavigation";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CourseBackgroundCard } from "@/components/CourseBackgroundCard";
 import { CourseReviewPreviewCard } from "@/components/CourseReviewPreviewCard";
 import { useI18n } from "@/hooks/use-i18n";

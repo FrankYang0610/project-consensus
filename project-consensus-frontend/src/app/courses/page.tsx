@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { SiteNavigation } from "@/components/SiteNavigation";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CourseBackgroundCard } from "@/components/CourseBackgroundCard";
 import { CoursePreviewCard } from "@/components/CoursePreviewCard";
 import { useI18n } from "@/hooks/use-i18n";
@@ -359,15 +358,6 @@ export default function CourseBrowsePage() {
       <div className="min-h-screen bg-background">
         <main className="w-full py-6 sm:py-8">
           <div className="w-full px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto mb-6">
-              <Alert>
-                <AlertTitle>{t("common.note")}</AlertTitle>
-                <AlertDescription>
-                  {t("common.developmentNotice")}
-                </AlertDescription>
-              </Alert>
-            </div>
-
             <div className="max-w-7xl mx-auto">
               <CourseBackgroundCard>
                 {/* Page Header */}
