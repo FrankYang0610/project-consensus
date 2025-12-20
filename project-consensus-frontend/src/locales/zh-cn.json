@@ -448,7 +448,8 @@
       "loadMore": "加载更多",
       "course": "课程",
       "viewCourse": "查看课程详情",
-      "totalReviews": "共 {{count}} 条点评"
+      "totalReviews": "共 {{count}} 条点评",
+      "viewMoreCourseReviews": "查看更多课程点评"
     }
   },
   "about": {

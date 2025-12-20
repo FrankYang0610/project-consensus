@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { SiteNavigation } from "@/components/SiteNavigation";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useI18n } from "@/hooks/use-i18n";
 
 export default function TosPage() {
@@ -15,12 +14,6 @@ export default function TosPage() {
         <main className="w-full py-8">
           <div className="w-full p-6">
             <div className="max-w-7xl mx-auto mb-6">
-              <Alert className="mb-6">
-                <AlertTitle>{t('common.note')}</AlertTitle>
-                <AlertDescription>
-                  {t('common.developmentNotice')}
-                </AlertDescription>
-              </Alert>
               <h1 className="text-2xl font-bold">{t("tos.title")}</h1>
               <p className="text-sm text-muted-foreground mt-2">
                 {t("tos.updatedAt", { date: "2025-09-16" })}

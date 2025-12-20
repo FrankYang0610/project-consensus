@@ -450,7 +450,8 @@
       "loadMore": "Load More",
       "course": "Course",
       "viewCourse": "View Course Details",
-      "totalReviews": "{{count}} reviews in total"
+      "totalReviews": "{{count}} reviews in total",
+      "viewMoreCourseReviews": "View more course reviews"
     }
   },
   "about": {

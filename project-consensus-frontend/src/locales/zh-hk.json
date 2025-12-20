@@ -448,7 +448,8 @@
       "loadMore": "載入更多",
       "course": "課程",
       "viewCourse": "查看課程詳情",
-      "totalReviews": "共 {{count}} 條點評"
+      "totalReviews": "共 {{count}} 條點評",
+      "viewMoreCourseReviews": "查看更多課程點評"
     }
   },
   "about": {

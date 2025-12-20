@@ -8,7 +8,6 @@ import {
   ThumbsUp,
   Calendar,
   BookOpen,
-  ArrowRight,
 } from "lucide-react";
 
 import {
@@ -24,13 +23,18 @@ import { sanitizeHtml, stripHtmlTags } from "@/lib/html-utils";
 import type { CourseReview } from "@/types";
 
 /**
- * Props for LatestReviewCard component
+ * Props for CourseReviewPreviewCard component
  * Simplified review card specifically designed for the latest reviews page
  */
-export interface LatestReviewCardProps {
+export interface CourseReviewPreviewCardProps {
   review: CourseReview;
   onLike?: (reviewId: string) => void; // Like callback
   className?: string;
+  /**
+   * Compact meta layout for homepage carousel:
+   * hide avatar, author name and date, only show term + rating.
+   */
+  compactMeta?: boolean;
 }
 
 /**
@@ -122,14 +126,15 @@ const AttributeItem = React.memo(({ label, value }: { label: string; value: stri
 AttributeItem.displayName = 'AttributeItem';
 
 /**
- * LatestReviewCard component - specifically designed for the latest reviews page
+ * CourseReviewPreviewCard component - specifically designed for the latest reviews page
  * Simplified design with clickable card that navigates to specific review in course details
  */
-export function LatestReviewCard({
+export function CourseReviewPreviewCard({
   review,
   onLike,
   className,
-}: LatestReviewCardProps) {
+  compactMeta = false,
+}: CourseReviewPreviewCardProps) {
   const { t, language } = useI18n();
   const router = useRouter();
   const { user, isLoggedIn, openLoginModal } = useApp();
@@ -220,12 +225,18 @@ export function LatestReviewCard({
         className={cn(
           "overflow-hidden border-muted/30 shadow-sm hover:shadow-md transition-all duration-200 bg-background/50 backdrop-blur-sm cursor-pointer group",
           "hover:border-primary/30",
+          "py-5",
           className
         )}
       >
-        <CardContent className="space-y-3 p-4">
+        <CardContent className="space-y-3 px-4">
           {/* Course information header */}
-          <div className="flex items-center justify-between gap-3 pb-3 border-b border-muted/30">
+          <div
+            className={cn(
+              "flex items-center gap-3",
+              !compactMeta && "pb-3 border-b border-muted/30"
+            )}
+          >
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <div className="flex-shrink-0 p-1.5 rounded-md bg-primary/10 group-hover:bg-primary/20 transition-colors">
                 <BookOpen className="w-4 h-4 text-primary" />
@@ -236,43 +247,48 @@ export function LatestReviewCard({
                 </h3>
               </div>
             </div>
-            <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
           </div>
 
           {/* Author information and rating */}
           <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-2 min-w-0 flex-1 group/author">
-              <UserAvatar 
-                name={displayName} 
-                avatarUrl={review.author.avatarUrl}
-                userId={review.author.id}
-                isAnonymous={review.isAnonymous}
-              />
-              <div className="flex flex-col gap-1 min-w-0 flex-1">
-                {review.isAnonymous ? (
-                  <div className="font-medium text-sm truncate">{displayName}</div>
-                ) : (
-                  <Link
-                    href={`/user/${review.author.id}`}
-                    className="font-medium text-sm group-hover/author:text-primary group-hover/author:underline underline-offset-2 transition-colors truncate"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {displayName}
-                  </Link>
-                )}
-                <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-                  <Calendar className="w-3 h-3 shrink-0" />
-                  <span className="shrink-0">{createdAtFormatted}</span>
-                  {termElement && (
-                    <>
-                      <span>•</span>
-                      {termElement}
-                    </>
+            {compactMeta ? (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap min-w-0 flex-1">
+                {termElement}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 min-w-0 flex-1 group/author">
+                <UserAvatar 
+                  name={displayName} 
+                  avatarUrl={review.author.avatarUrl}
+                  userId={review.author.id}
+                  isAnonymous={review.isAnonymous}
+                />
+                <div className="flex flex-col gap-1 min-w-0 flex-1">
+                  {review.isAnonymous ? (
+                    <div className="font-medium text-sm truncate">{displayName}</div>
+                  ) : (
+                    <Link
+                      href={`/user/${review.author.id}`}
+                      className="font-medium text-sm group-hover/author:text-primary group-hover/author:underline underline-offset-2 transition-colors truncate"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {displayName}
+                    </Link>
                   )}
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                    <Calendar className="w-3 h-3 shrink-0" />
+                    <span className="shrink-0">{createdAtFormatted}</span>
+                    {termElement && (
+                      <>
+                        <span>•</span>
+                        {termElement}
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-            
+            )}
+
             {/* Rating display */}
             {!review.onlyText && review.overallRating !== undefined && (
               <div className="flex items-center gap-2 flex-shrink-0">
@@ -306,36 +322,34 @@ export function LatestReviewCard({
             </div>
           )}
 
-          {/* Review content preview */}
+          {/* Review content preview + like button on the right (hidden in compact mode) */}
           <div className="rounded-md bg-muted/20 border border-muted/30 p-3">
-            <div
-              className="prose prose-zinc dark:prose-invert max-w-none text-sm leading-relaxed line-clamp-3"
-              dangerouslySetInnerHTML={{ __html: reviewContentHtml }}
-            />
-          </div>
-
-          {/* Bottom action bar */}
-          <div className="flex items-center justify-between pt-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn(
-                "gap-2 h-8 px-3",
-                review.isLiked ? "text-red-500 hover:text-red-600" : "text-muted-foreground hover:text-foreground"
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div
+                  className="prose prose-zinc dark:prose-invert max-w-none text-sm leading-relaxed line-clamp-2"
+                  dangerouslySetInnerHTML={{ __html: reviewContentHtml }}
+                />
+              </div>
+              {!compactMeta && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "gap-1.5 h-8 px-2 shrink-0",
+                    review.isLiked ? "text-red-500 hover:text-red-600" : "text-muted-foreground hover:text-foreground"
+                  )}
+                  onClick={handleLike}
+                >
+                  <ThumbsUp className={cn("w-3.5 h-3.5", review.isLiked && "fill-current")} />
+                  <span className="text-xs font-medium">{review.likesCount}</span>
+                </Button>
               )}
-              onClick={handleLike}
-            >
-              <ThumbsUp className={cn("w-3.5 h-3.5", review.isLiked && "fill-current")} />
-              <span className="text-xs font-medium">{review.likesCount}</span>
-            </Button>
-
-            <span className="text-xs text-muted-foreground">
-              {t("courses.latestReviews.viewCourse")}
-            </span>
+            </div>
           </div>
         </CardContent>
       </Card>
   );
 }
 
-export default LatestReviewCard;
+export default CourseReviewPreviewCard;
