@@ -4,7 +4,7 @@ import * as React from "react";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CourseBackgroundCard } from "@/components/CourseBackgroundCard";
-import { LatestReviewCard } from "@/components/LatestReviewCard";
+import { CourseReviewPreviewCard } from "@/components/CourseReviewPreviewCard";
 import { useI18n } from "@/hooks/use-i18n";
 import { useApp } from "@/contexts/AppContext";
 import { fetchCourseReviews, toggleLikeReview } from "@/lib/api/course";
@@ -13,8 +13,7 @@ import { useInfiniteList } from "@/hooks/use-infinite-list";
 import { MessageSquare, Loader2 } from "lucide-react";
 
 /**
- * 最新点评页面 - Latest Course Reviews Page
- * 
+ * Latest Course Reviews Page
  * Display the latest course reviews from the community with infinite scroll loading
  */
 export default function LatestReviewsPage() {
@@ -63,16 +62,6 @@ export default function LatestReviewsPage() {
       <div className="min-h-screen bg-background">
         <main className="w-full py-6 sm:py-8">
           <div className="w-full px-4 sm:px-6 lg:px-8">
-            {/* Development notice */}
-            <div className="max-w-7xl mx-auto mb-6">
-              <Alert>
-                <AlertTitle>{t("common.note")}</AlertTitle>
-                <AlertDescription>
-                  {t("common.developmentNotice")}
-                </AlertDescription>
-              </Alert>
-            </div>
-
             <div className="max-w-7xl mx-auto">
               <CourseBackgroundCard>
                 {/* Page title */}
@@ -138,7 +127,7 @@ export default function LatestReviewsPage() {
                 {reviews.length > 0 && (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {reviews.map((review) => (
-                      <LatestReviewCard
+                      <CourseReviewPreviewCard
                         key={review.id}
                         review={review}
                         onLike={handleLike}
