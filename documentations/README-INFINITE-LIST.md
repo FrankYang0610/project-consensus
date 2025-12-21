@@ -7,7 +7,7 @@ It is designed to work well with **Django REST Framework (DRF) pagination**.
 ### Key ideas (how it works)
 - The hook loads items page by page using your fetch function (`pageFetcher`).
 - It merges new items into the existing list, removes duplicates (via `dedupeKey`), and can optionally sort them (`sortFn`).
-- It relies on the server’s pagination signal to know whether there are more pages: if the server returns `next` (DRF-style), `hasMore` is true; otherwise `hasMore` is false.
+- It relies on the server's pagination signal to know whether there are more pages: if the server returns `next` (DRF-style), `hasMore` is true; otherwise `hasMore` is false.
 - It exposes a `loaderRef` you can attach to a small, empty div at the bottom of your list. When it comes into view, the hook automatically calls `loadMore()`.
 - You can also call `loadMore()` manually, or `reset(params)` to clear the list and start over with new filters.
 
@@ -18,7 +18,7 @@ It is designed to work well with **Django REST Framework (DRF) pagination**.
 #### 2. First response
 - The hook merges the page `results` into `items` (removing duplicates via `dedupeKey`).
 - It sets `totalCount` when `count` is provided by the server.
-- It sets `hasMore` from the server’s `next` field (`truthy` → `true`, otherwise `false`).
+- It sets `hasMore` from the server's `next` field (`truthy` → `true`, otherwise `false`).
 - If `hasMore` is `true`, `nextPage` advances to the next page number.
 
 #### 3. Scrolling (automatic pagination)
@@ -40,14 +40,14 @@ It is designed to work well with **Django REST Framework (DRF) pagination**.
 - Typical retry pattern: when `error && hasMore`, call `setError(false); loadMore();`.
 
 #### 7. Edge cases to expect
-- Empty first page: if the server returns `results: []` and `next: null`, the list stays empty and `hasMore` is `false`. The sentinel won’t trigger further requests—render an empty state instead.
+- Empty first page: if the server returns `results: []` and `next: null`, the list stays empty and `hasMore` is `false`. The sentinel won't trigger further requests—render an empty state instead.
 - Rapid filter changes: debounce in your component (e.g., search input) and call `reset()` with the final params; the hook will handle a single initial request per reset.
 
 ### Server expectations
 Your `pageFetcher` must return a DRF-style paginated response:
 `{ count: number, next: string | null, previous: string | null, results: T[] }`
 
-The hook uses DRF’s `next`/`previous` as the single source of truth for pagination. `hasMore` is set from `next` only.
+The hook uses DRF's `next`/`previous` as the single source of truth for pagination. `hasMore` is set from `next` only.
 
 #### DRF pagination fields explained
 - **`count`:** total number of items across all pages (integer). The hook exposes this as `totalCount` when provided.
@@ -154,7 +154,7 @@ If a request fails, `error` becomes true. Show a Retry button and call `setError
 ### `IntersectionObserver` details
 - The hook creates an observer with `{ root: null, rootMargin: "200px 0px", threshold: 0 }`.
 - When the sentinel (`loaderRef`) enters the viewport and `hasMore` is true (and not already loading), it triggers `loadMore()`.
-- If you prefer manual pagination (e.g., “Load more” button), you can ignore `loaderRef` and call `loadMore()` yourself.
+- If you prefer manual pagination (e.g., "Load more" button), you can ignore `loaderRef` and call `loadMore()` yourself.
 
 ### Common patterns
 1) Basic infinite list with retry button (see Quick start).
@@ -162,10 +162,11 @@ If a request fails, `error` becomes true. Show a Retry button and call `setError
 3) Optimistic updates: use `setItems(prev => /* modify prev */)` to reflect user actions instantly, then reconcile with server.
 
 ### Design choices (why rely on `next`)
-- The hook uses the server’s `next` to decide `hasMore`. This avoids client-side guesswork (like counting items), works with server-side dedup/filter logic, and matches industry practice (DRF, GraphQL `hasNextPage`, etc.).
+- The hook uses the server's `next` to decide `hasMore`. This avoids client-side guesswork (like counting items), works with server-side dedup/filter logic, and matches industry practice (DRF, GraphQL `hasNextPage`, etc.).
 
 ### Troubleshooting
 - `loadMore` never fires: make sure the sentinel element with `ref={loaderRef}` actually renders and can intersect the viewport; check CSS height and parent overflow.
 - Items repeat: verify `dedupeKey` is stable and unique across pages.
 - Wrong sort order: provide a `sortFn` or have the backend return the desired order.
 - Nothing loads on mount: ensure `autoLoad` is true (default) and `enabled` is true; also that `pageFetcher` is a stable function reference (not recreated every render).
+
