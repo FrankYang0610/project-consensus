@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/hooks/use-i18n";
 import { useApp } from "@/contexts/AppContext";
@@ -18,6 +17,11 @@ export default function NotificationsPage() {
   const router = useRouter();
   const { isLoggedIn, openLoginModal } = useApp();
   const [busy, setBusy] = React.useState<boolean>(false);
+
+  const openInNewTab = React.useCallback((url: string) => {
+    const w = window.open(url, "_blank", "noopener,noreferrer");
+    if (w) w.opener = null;
+  }, []);
 
   const {
     items,
@@ -46,15 +50,15 @@ export default function NotificationsPage() {
       } else if (n.courseReviewId) {
         hash = `#review-${n.courseReviewId}`;
       }
-      router.push(`/courses/${n.courseId}${hash}`);
+      openInNewTab(`/courses/${n.courseId}${hash}`);
       return;
     }
     if (n.forumPostId) {
       const hash = n.forumPostCommentId ? `#comment-${n.forumPostCommentId}` : '';
-      router.push(`/post/${n.forumPostId}${hash}`);
+      openInNewTab(`/post/${n.forumPostId}${hash}`);
       return;
     }
-  }, [router]);
+  }, [openInNewTab]);
 
   const displayActor = (n: NotificationItem): string => {
     return n.actor?.name || 'Someone';
@@ -107,10 +111,15 @@ export default function NotificationsPage() {
   };
 
   const handleClickItem = async (n: NotificationItem) => {
-    if (!n.isRead) {
-      try { await markRead(n.id); setItems(prev => (prev || []).map(it => it.id === n.id ? { ...it, isRead: true } : it)); } catch { }
-    }
+    // Open target immediately (avoid popup blockers due to async work)
     navigateToTarget(n);
+
+    if (!n.isRead) {
+      try {
+        await markRead(n.id);
+        setItems(prev => (prev || []).map(it => it.id === n.id ? { ...it, isRead: true } : it));
+      } catch { }
+    }
   };
 
   return (

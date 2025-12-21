@@ -252,6 +252,8 @@ export default function PublicUserPage() {
                           <Link 
                             key={post.id} 
                             href={`/post/${post.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="block p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors border border-gray-100 dark:border-slate-700"
                           >
                             <div className="flex items-start justify-between gap-3">
@@ -304,6 +306,8 @@ export default function PublicUserPage() {
                           <Link 
                             key={comment.id} 
                             href={`/post/${comment.postId}#comment-${comment.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="block p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors border border-gray-100 dark:border-slate-700"
                           >
                             <div className="flex-1 min-w-0">
