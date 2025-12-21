@@ -3,7 +3,6 @@
 import { useParams, useRouter } from "next/navigation";
 import * as React from "react";
 import dynamic from "next/dynamic";
-import { Card, CardContent } from "@/components/ui/card";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { ForumPostDetailCard } from "@/components/ForumPostDetailCard";
 import { ForumPostCommentList } from "@/components/ForumPostCommentList";
@@ -12,10 +11,6 @@ import { createForumComment } from "@/lib/api/forum-comment";
 import { isContentEmpty } from "@/lib/utils";
 import { useApp } from "@/contexts/AppContext";
 import { ForumPost } from "@/types";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import type { ForumPostComment } from "@/types/forum";
 
 // Dynamic import for client-only CKEditor component
 const RichTextEditor = dynamic(() => import("@/components/RichTextEditor"), { ssr: false });
@@ -95,10 +90,6 @@ export default function PostPage() {
     return () => window.removeEventListener('hashchange', parseHash);
   }, [postId]);
 
-  const handleBackClick = () => {
-    router.back();
-  };
-
   const handleCommentLike = (commentId: string) => {
     // Optimistic toggle like state for comment within the list via custom event update
     const toggleEvent = new CustomEvent('pc:toggle-comment-like', { detail: { id: commentId } });
@@ -175,7 +166,7 @@ export default function PostPage() {
 
   return (
     <>
-      <SiteNavigation showBackButton={true} onBackClick={handleBackClick} />
+      <SiteNavigation />
       <div className="min-h-screen bg-background overflow-x-hidden">
         <main className="w-full py-4 sm:py-8">
           <div className="container mx-auto px-4 max-w-4xl">

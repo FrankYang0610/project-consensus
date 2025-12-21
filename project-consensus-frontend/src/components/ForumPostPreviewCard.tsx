@@ -182,7 +182,12 @@ export function ForumPostPreviewCard({
         </div>
       </CardHeader>
 
-      <Link href={`/post/${post.id}`} className="block">
+      <Link
+        href={`/post/${post.id}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block"
+      >
         <CardContent className="pt-0 pb-0 px-4 flex flex-col cursor-pointer gap-1">
           <div className="flex items-center justify-between">
             <h3 className="text-base font-semibold line-clamp-1 flex-1">
