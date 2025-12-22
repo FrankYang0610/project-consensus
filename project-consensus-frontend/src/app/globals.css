@@ -427,4 +427,21 @@ body,
     object-fit: contain;
     display: block;
   }
+
+  /* Hyperlinks inside rich text content (forum posts, course reviews, replies) */
+  .prose a {
+    /* Use the design system blue as the unified link color */
+    color: var(--chart-2);
+    text-decoration: underline;
+    text-underline-offset: 0.12em;
+    text-decoration-thickness: 0.08em;
+  }
+
+  .prose a:hover,
+  .prose a:focus-visible {
+    color: color-mix(in oklch, var(--chart-2) 85%, var(--foreground) 15%);
+    text-decoration: underline;
+    text-underline-offset: 0.12em;
+    text-decoration-thickness: 0.1em;
+  }
 }
