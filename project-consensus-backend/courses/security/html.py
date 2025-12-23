@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import bleach
 
-# Course review: allow images; replies/comments may reuse text-only if desired
+# Course review: allow images and safe hyperlinks; replies/comments may reuse text-only if desired
 _COURSE_REVIEW_TAGS = [
     'p', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'br',
     'strong', 'em', 'code', 'pre', 'blockquote',
     'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th',
     'img',
+    'a',  # Safe hyperlinks for course reviews
 ]
 _COURSE_REVIEW_ATTRS: dict[str, list[str]] = {
     'td': ['colspan', 'rowspan', 'align'],
@@ -16,6 +17,7 @@ _COURSE_REVIEW_ATTRS: dict[str, list[str]] = {
     'pre': ['class'],
     'ol': ['start'],
     'img': ['src', 'alt', 'title', 'width', 'height'],
+    'a': ['href', 'title', 'target', 'rel'],
 }
 
 _COURSE_TEXT_TAGS = [

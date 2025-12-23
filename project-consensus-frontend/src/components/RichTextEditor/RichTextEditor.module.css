@@ -227,7 +227,20 @@
 /* 用于：内容中的 <a> 链接元素
    Used in: <a> links within the content */
 .container :global(.ck-content a) {
-  color: var(--primary) !important;
+  /* Use the design system blue as the unified link color */
+  color: var(--chart-2) !important;
+  text-decoration: underline !important;
+  text-underline-offset: 0.12em !important;
+  text-decoration-thickness: 0.08em !important;
+}
+
+/* Content link hover & keyboard focus state */
+.container :global(.ck-content a:hover),
+.container :global(.ck-content a:focus-visible) {
+  color: color-mix(in oklch, var(--chart-2) 85%, var(--foreground) 15%) !important;
+  text-decoration: underline !important;
+  text-underline-offset: 0.12em !important;
+  text-decoration-thickness: 0.1em !important;
 }
 
 /* 引用样式 / Blockquote */
