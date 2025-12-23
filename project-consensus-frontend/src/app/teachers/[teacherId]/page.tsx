@@ -7,6 +7,7 @@ import { SiteNavigation } from "@/components/SiteNavigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useI18n } from "@/hooks/use-i18n";
 import { fetchTeacherById, fetchTeacherCourses } from "@/lib/api/teacher";
+import { formatTerm, sortTerms } from "@/lib/course-utils";
 import type { Teacher, TeacherCourseRef } from "@/types";
 
 /**
@@ -50,7 +51,7 @@ function TeacherAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string }
 }
 
 export default function TeacherDetailPage() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const params = useParams();
   const router = useRouter();
   const teacherId = params.teacherId as string;
@@ -326,14 +327,34 @@ export default function TeacherDetailPage() {
                   <div className="text-sm text-muted-foreground">{t('teacher.noCourses')}</div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {courses.map(course => (
-                      <Link key={course.courseId} href={`/courses/${course.courseId}`}>
-                        <div className="border rounded p-3 hover:border-primary transition-colors">
-                          <div className="text-sm text-muted-foreground">{course.subjectCode}</div>
-                          <div className="font-medium truncate">{course.title}</div>
-                        </div>
-                      </Link>
-                    ))}
+                    {courses.map((course) => {
+                      const sourceTerms =
+                        (course.terms && course.terms.length > 0)
+                          ? course.terms
+                          : (course.term ? [course.term] : []);
+                      const orderedTerms = sourceTerms.length > 0 ? sortTerms(sourceTerms) : [];
+
+                      return (
+                        <Link key={course.courseId} href={`/courses/${course.courseId}`}>
+                          <div className="border rounded p-3 hover:border-primary transition-colors">
+                            <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
+                              <span className="text-sm">
+                                {course.subjectCode}
+                              </span>
+                              {orderedTerms.map((tm, idx) => (
+                                <span
+                                  key={`${tm.year}-${tm.semester}-${idx}`}
+                                  className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted text-muted-foreground text-xs"
+                                >
+                                  {formatTerm(tm.year, tm.semester, t, language)}
+                                </span>
+                              ))}
+                            </div>
+                            <div className="font-medium truncate mt-1">{course.title}</div>
+                          </div>
+                        </Link>
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>

@@ -100,10 +100,20 @@ class TeacherViewSet(viewsets.ReadOnlyModelViewSet):
     def courses(self, request, pk=None):
         """
         Return lightweight course refs taught by the teacher via M2M relation.
+
         Uses the Course.teachers M2M field to fetch all courses associated with this teacher.
+        Includes current term (term_year/term_semester) and historical terms list to align
+        with the frontend Course/TeacherCourseRef types.
         """
         teacher = self.get_object()  # automatically handle pk lookup and 404
-        qs = Course.objects.filter(teachers=teacher).only('course_id', 'subject_code', 'title')
+        qs = Course.objects.filter(teachers=teacher).only(
+            "course_id",
+            "subject_code",
+            "title",
+            "term_year",
+            "term_semester",
+            "terms",
+        )
         serializer = TeacherCourseRefSerializer(qs, many=True)
         return Response(serializer.data)
 

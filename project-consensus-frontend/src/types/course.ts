@@ -1,22 +1,20 @@
 /**
- * 课程与课程详情相关类型定义 / Course-related type definitions
- * 这些类型用于前端与后端API交互
+ * Course-related type definitions
  */
 
 /**
- * 学期键 / Semester key
+ * Semester key
  */
 export type SemesterKey = "spring" | "summer" | "fall";
 
 /**
- * 教师信息 / Teacher information
+ * Teacher information
  */
 export interface TeacherInfo {
-  id: string; // Teacher UUID
+  id: string;             // Teacher UUID
   name: string;
   avatarUrl?: string;
   department?: string;
-  // Note: teacher homepage URL removed; we navigate by UUID to internal profile page
 }
 
 // Curriculum types (Phase 1 JSON field)
@@ -43,7 +41,7 @@ export interface CurriculumCollege {
 }
 
 /**
- * 其他教师的同课程信息 / Other teacher's course info
+ * Other teacher's course info on the same course
  */
 export interface OtherTeacherCourse {
   courseId: string;
@@ -62,52 +60,46 @@ export interface OtherTeacherCourse {
 }
 
 /**
- * 课程评价信息 / Course review information
+ * Course review information
  */
 export interface CourseReview {
-  id: string; // 评价唯一标识符（UUID） / Review unique identifier (UUID)
-  courseId: string; // 课程ID（后端为 UUID 字符串） / Course ID (UUID string)
-  courseSubjectCode?: string; // 课程代码 / Course subject code (e.g., APSS1A01)
-  courseTitle?: string; // 课程标题 / Course title
+  id: string;                   // Review unique identifier (UUID)
+  courseId: string;             // Course ID (UUID string)
+  courseSubjectCode?: string;   // Course subject code (e.g., APSS1A01)
+  courseTitle?: string;         // Course title
   author: {
-    id: string; // 作者ID / Author ID
-    name: string; // 作者姓名 / Author name  
-    avatarUrl?: string; // 头像URL / Avatar URL
+    id: string;                 // Author ID
+    name: string;               // Author name  
+    avatarUrl?: string;         // Avatar URL
   };
-  /**
-   * 是否匿名 / Whether this review is anonymous.
-   * If true and current viewer is not the author, backend will redact author.id to "".
-   * Frontend should display localized anonymous label accordingly.
-   */
-  isAnonymous?: boolean;
-  /**
-   * 仅文本评价（不含评分/维度） / Text-only review (no scores/dimensions)
-   */
-  onlyText?: boolean;
-  overallRating?: number; // 总体评分 0.0 - 10.0 / Overall rating (undefined or 0 for onlyText reviews)
+  isAnonymous?: boolean;        // Whether this review is anonymous. 
+                                // If true and current viewer is not the author, backend will redact author.id to "".
+                                // Frontend should display localized anonymous label accordingly.
+  onlyText?: boolean;           // Text-only review (no scores/dimensions)
+  overallRating?: number;       // Overall rating (undefined or 0 for onlyText reviews)
   attributes?: {
     difficulty: 'veryEasy' | 'easy' | 'medium' | 'hard' | 'veryHard';
     workload: 'light' | 'moderate' | 'heavy' | 'veryHeavy';
     grading: 'lenient' | 'balanced' | 'strict' | 'killer';
     gain: 'low' | 'decent' | 'high';
   } | null;
-  content: string; // 评价正文 / Review content
-  likesCount: number; // 点赞数 / Number of likes
-  createdAt: string; // 发布时间 / Creation time
-  updatedAt?: string; // 编辑时间 / Last updated time
-  isLiked?: boolean; // 当前用户是否点赞 / Whether current user liked
-  term?: {
+  content: string;              // Review content
+  likesCount: number;           // Number of likes
+  createdAt: string;            // Creation time
+  updatedAt?: string;           // Last updated time
+  isLiked?: boolean;            // Whether current user liked
+  term?: {                      // Course term
     year: number;
     semester: SemesterKey;
-  }; // 上课学期 / Course term
-  repliesCount?: number; // 回复数量 / Number of replies
+  };
+  repliesCount?: number;        // Number of replies
 }
 
 /**
- * 课程基础信息 / Course basic information
+ * Course basic information
  */
 export interface Course {
-  courseId: string; // 后端为 UUID 字符串 / Backend UUID string
+  courseId: string;             // Backend UUID string
   subjectCode: string;
   title: string;
   term: {
@@ -131,16 +123,11 @@ export interface Course {
     grading: 'lenient' | 'balanced' | 'strict' | 'killer' | null;
     gain: 'low' | 'decent' | 'high' | null;
   };
-  // Backend should return teachers with both id and name for display and routing
-  // Note: transitional `teacherIds` has been removed; use `teachers[].id` instead
-  teachers?: TeacherInfo[];
+  teachers?: TeacherInfo[];     // Backend should return teachers with both id and name for display and routing
   department?: string;
   lastUpdated?: string | Date;
-  /**
-   * AI generated course summary text. When empty or missing, UI should show a fallback.
-   */
-  aiSummary?: string;
-  // Course metadata
+  aiSummary?: string;           // AI generated course summary text. When empty or missing, UI should show a fallback.
+  /* Course metadata */
   teachingType?: string;
   courseCategory?: string;
   offeringDepartment?: string;
@@ -148,31 +135,27 @@ export interface Course {
   credits?: number | string;
   courseHomepageUrl?: string;
   syllabusUrl?: string;
-  // Other teachers teaching the same course
-  otherTeacherCourses?: OtherTeacherCourse[];
-  // Curriculum colleges/majors/semesters
-  curriculum?: CurriculumCollege[];
-  // Current user's vote on this course (detail only)
-  userVote?: 'recommend' | 'notRecommend' | null;
-  // Whether current user has already posted a review for this course (detail only)
-  userHasReview?: boolean;
+  otherTeacherCourses?: OtherTeacherCourse[];      // Other teachers teaching the same course
+  curriculum?: CurriculumCollege[];                // Curriculum colleges/majors/semesters
+  userVote?: 'recommend' | 'notRecommend' | null;  // Current user's vote on this course (detail only)
+  userHasReview?: boolean;                         // Whether current user has already posted a review for this course (detail only)
 }
 
 /**
  * Course review reply information
  */
 export interface CourseReviewReply {
-  id: string; // Reply unique identifier
-  reviewId: string; // Parent course review ID
+  id: string;             // Reply unique identifier
+  reviewId: string;       // Parent course review ID
   author: {
-    id: string; // Author ID
-    name: string; // Author name
-    avatarUrl?: string; // Optional avatar URL
+    id: string;           // Author ID
+    name: string;         // Author name
+    avatarUrl?: string;   // Optional avatar URL
   };
-  content: string; // Reply content (basic HTML allowed)
-  createdAt: string; // Creation time
-  likes: number; // Number of likes
-  isLiked?: boolean; // Whether current user liked this reply
-  replyToUser?: { id: string; name: string }; // Optional: reply target
-  isDeleted?: boolean; // Whether the reply is deleted
+  content: string;        // Reply content (basic HTML allowed)
+  createdAt: string;      // Creation time
+  likes: number;          // Number of likes
+  isLiked?: boolean;      // Whether current user liked this reply
+  replyToUser?: { id: string; name: string };   // Optional: reply to which user (if any)
+  isDeleted?: boolean;    // Whether the reply is deleted
 }
