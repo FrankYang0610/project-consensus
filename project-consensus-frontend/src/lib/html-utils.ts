@@ -80,15 +80,31 @@ export function sanitizeHtml(html: string): string {
       data.keepAttr = false;
     }
 
-    // Validate <a href> to http/https only
+    // Normalize and validate <a href> to http/https only
     if (node.nodeName === 'A' && data.attrName === 'href') {
+      let value = (data.attrValue || '').trim();
+
+      // If user typed a bare domain like "apple.com" or "www.apple.com",
+      // treat it as an https URL instead of a relative path.
+      // Conditions:
+      // - no explicit scheme (no leading "<scheme>:" such as "http:", "https:", "file:")
+      // - does not start with "/", "#", "?", or "."
+      // - looks like "domain.tld" optionally with a path suffix
+      const hasScheme = /^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(value);
+      const startsWithSpecial = value.startsWith('/') || value.startsWith('#') || value.startsWith('?') || value.startsWith('.');
+      const looksLikeDomain = /^[^/\s]+\.[^/\s]+(\/[^\s]*)?$/.test(value);
+
+      if (value && !hasScheme && !startsWithSpecial && looksLikeDomain) {
+        value = `https://${value}`;
+        data.attrValue = value;
+      }
+
       try {
-        // Use configured site URL or localhost as fallback for base URL resolution
         const baseUrl = typeof window !== 'undefined' 
           ? window.location.origin 
           : (process.env.NEXT_PUBLIC_SITE_URL || 'https://polyu.life');
-        const u = new URL(data.attrValue, baseUrl);
-        if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+        const url = new URL(value, baseUrl);
+        if (url.protocol !== 'http:' && url.protocol !== 'https:') {
           data.keepAttr = false;
         }
       } catch {
@@ -100,18 +116,19 @@ export function sanitizeHtml(html: string): string {
     if (node.nodeName === 'IMG' && data.attrName === 'src') {
       const raw = (data.attrValue || '').trim();
       try {
-        // Use configured site URL or localhost as fallback for base URL resolution
+        // Base URL is only used for resolving relative paths in both browser and SSR. 
+        // Absolute http/https URLs will ignore Base URL.
         const baseUrl = typeof window !== 'undefined' 
           ? window.location.origin 
           : (process.env.NEXT_PUBLIC_SITE_URL || 'https://polyu.life');
-        const u = new URL(raw, baseUrl);
+        const url = new URL(raw, baseUrl);
         const allowedHosts = (process.env.NEXT_PUBLIC_ALLOWED_IMAGE_HOSTS || 'image.polyu.life')
           .split(',')
           .map(h => h.trim().toLowerCase())
           .filter(Boolean);
-        const host = u.host.toLowerCase();
+        const host = url.host.toLowerCase();
         // Only https and within allowlist
-        if (u.protocol !== 'https:' || !allowedHosts.includes(host)) {
+        if (url.protocol !== 'https:' || !allowedHosts.includes(host)) {
           data.keepAttr = false;
         }
       } catch {
@@ -123,19 +140,20 @@ export function sanitizeHtml(html: string): string {
   // Add hook to this isolated instance only
   purify.addHook('uponSanitizeAttribute', attributeHook);
 
-  // Ensure external links open safely
+  // Ensure all links open in a new tab with safe rel attributes
   purify.addHook('afterSanitizeAttributes', (node: Element) => {
     if (node.nodeName === 'A') {
       const href = (node.getAttribute('href') || '').trim();
       if (href) {
-        const target = node.getAttribute('target');
-        if (target === '_blank') {
-          const rel = (node.getAttribute('rel') || '').toLowerCase();
-          const needed = ['noopener', 'noreferrer', 'nofollow'];
-          const parts = new Set(rel.split(/\s+/).filter(Boolean));
-          needed.forEach((t) => parts.add(t));
-          node.setAttribute('rel', Array.from(parts).join(' '));
-        }
+        // Force opening in a new tab
+        node.setAttribute('target', '_blank');
+
+        // Always ensure safe rel attributes
+        const rel = (node.getAttribute('rel') || '').toLowerCase();
+        const needed = ['noopener', 'noreferrer', 'nofollow'];
+        const parts = new Set(rel.split(/\s+/).filter(Boolean));
+        needed.forEach((t) => parts.add(t));
+        node.setAttribute('rel', Array.from(parts).join(' '));
       }
     }
   });

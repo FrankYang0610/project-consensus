@@ -17,7 +17,7 @@ _COURSE_REVIEW_ATTRS: dict[str, list[str]] = {
     'pre': ['class'],
     'ol': ['start'],
     'img': ['src', 'alt', 'title', 'width', 'height'],
-    'a': ['href', 'title', 'target', 'rel'],  # Restrict link attributes to a minimal safe set; protocols are enforced via _PROTOCOLS.
+    'a': ['href', 'title', 'target', 'rel'],
 }
 
 _COURSE_TEXT_TAGS = [
