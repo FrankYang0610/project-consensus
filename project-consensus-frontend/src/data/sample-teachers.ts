@@ -198,7 +198,13 @@ export function getCoursesByTeacherId(id: string): TeacherCourseRef[] {
   if (!teacher) return [];
   return sampleCourses
     .filter(c => Array.isArray(c.teachers) && c.teachers!.some(t => t.id === id || t.name === teacher.name))
-    .map<TeacherCourseRef>(c => ({ courseId: c.courseId, subjectCode: c.subjectCode, title: c.title }));
+    .map<TeacherCourseRef>(c => ({
+      courseId: c.courseId,
+      subjectCode: c.subjectCode,
+      title: c.title,
+      term: c.term,
+      terms: c.terms,
+    }));
 }
 
 /**

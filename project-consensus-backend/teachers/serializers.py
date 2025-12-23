@@ -94,7 +94,25 @@ class TeacherSerializer(serializers.ModelSerializer):
 
 
 class TeacherCourseRefSerializer(serializers.Serializer):
-    # Lightweight course reference taught by a teacher, for /teachers/{id}/courses/ endpoint.
+    # Course reference taught by a teacher, for /teachers/{id}/courses/ endpoint.
     courseId = serializers.CharField(source="course_id")
     subjectCode = serializers.CharField(source="subject_code")
     title = serializers.CharField()
+    term = serializers.SerializerMethodField()
+    terms = serializers.SerializerMethodField()
+
+    def get_term(self, obj):
+        """
+        Return the primary term for this course, matching the `CourseSerializer` shape:
+        { "year": term_year, "semester": term_semester }
+        """
+        return {"year": obj.term_year, "semester": obj.term_semester}
+
+    def get_terms(self, obj):
+        """
+        Return the full list of offered terms for this course.
+        If the JSONField `terms` is populated, return it as-is; otherwise, fall back to a single-item list containing the primary term.
+        """
+        if obj.terms:
+            return obj.terms
+        return [{"year": obj.term_year, "semester": obj.term_semester}]

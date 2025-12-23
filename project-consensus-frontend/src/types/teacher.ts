@@ -2,6 +2,8 @@
  * Teacher-related type definitions
  */
 
+import type { SemesterKey } from "./course";
+
 /**
  * Teacher rating metrics (0.0 - 10.0 where applicable)
  */
@@ -21,6 +23,20 @@ export interface TeacherCourseRef {
   courseId: string;
   subjectCode?: string;
   title?: string;
+  /**
+   * Primary term for this course (mirrors Course.term)
+   */
+  term?: {
+    year: number;
+    semester: SemesterKey;
+  };
+  /**
+   * Historical terms list (mirrors Course.terms)
+   */
+  terms?: Array<{
+    year: number;
+    semester: SemesterKey;
+  }>;
 }
 
 /**
