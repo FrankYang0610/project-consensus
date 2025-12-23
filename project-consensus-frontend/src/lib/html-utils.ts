@@ -90,7 +90,7 @@ export function sanitizeHtml(html: string): string {
       // - no explicit scheme (no leading "<scheme>:" such as "http:", "https:", "file:")
       // - does not start with "/", "#", "?", or "."
       // - looks like "domain.tld" optionally with a path suffix
-      const hasScheme = /^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(value);
+      const hasScheme = /^[a-zA-Z][a-zA-Z\d+\-]*:/.test(value);
       const startsWithSpecial = value.startsWith('/') || value.startsWith('#') || value.startsWith('?') || value.startsWith('.');
       const looksLikeDomain = /^[^/\s]+\.[^/\s]+(\/[^\s]*)?$/.test(value);
 
