@@ -26,6 +26,9 @@ def _download(url: str, *, headers: dict[str, str], out_path: Path) -> None:
         except Exception:
             pass
         raise RuntimeError(f"Download failed: {e.code} {e.reason} {body}") from e
+    except urllib.error.URLError as e:
+        # Handle non-HTTP network-related errors (DNS failures, connection issues, etc.)
+        raise RuntimeError(f"Network error while downloading {url}: {e.reason}") from e
 
 
 def _safe_write_path(base_dir: Path, rel_path: Path) -> Path:
