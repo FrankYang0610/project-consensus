@@ -154,6 +154,10 @@ class Migration(migrations.Migration):
             model_name='course',
             index=GinIndex(fields=['department'], name='courses_department_trgm_idx', opclasses=['gin_trgm_ops']),
         ),
+        migrations.AddIndex(
+            model_name='course',
+            index=models.Index(fields=['-last_updated'], name='course_last_updated_idx'),
+        ),
         migrations.AddConstraint(
             model_name='coursereview',
             constraint=models.UniqueConstraint(fields=('author', 'course'), name='unique_course_review_per_user'),

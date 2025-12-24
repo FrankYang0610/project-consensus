@@ -64,4 +64,8 @@ class Migration(migrations.Migration):
             model_name='teacher',
             index=GinIndex(fields=['department'], name='teacher_department_trgm_idx', opclasses=['gin_trgm_ops']),
         ),
+        migrations.AddIndex(
+            model_name='teacher',
+            index=models.Index(fields=['-updated_at'], name='teacher_updated_at_idx'),
+        ),
     ]

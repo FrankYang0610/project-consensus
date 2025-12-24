@@ -119,6 +119,10 @@ class Course(models.Model):
                 name="courses_department_trgm_idx",
                 opclasses=["gin_trgm_ops"],
             ),
+            models.Index(
+                fields=["-last_updated"],
+                name="course_last_updated_idx",
+            ),
         ]
         verbose_name = "Course"
         verbose_name_plural = "Courses"
