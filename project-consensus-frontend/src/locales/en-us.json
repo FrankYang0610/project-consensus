@@ -755,6 +755,12 @@
       "unknownType": "Unknown notification type ({{type}}) from {{actor}}"
     }
   },
+  "resources": {
+    "copyLink": "Copy link",
+    "open": "Open",
+    "officialTitle": "PolyU official websites",
+    "officialDesc": "Official university-operated resources from The Hong Kong Polytechnic University"
+  },
   "welcome": {
     "title": "Welcome to PolyU.life!",
     "subtitle": "Get started by exploring these options",
