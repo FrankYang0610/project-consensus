@@ -23,15 +23,21 @@ pip install -r requirements.txt
 #### 3. **Configure environment variables**:
 ```bash
 # Copy example environment file
-cp .env.example .env
+cp env.example .env
 
 # Edit .env and configure at minimum:
 #   DEBUG=True
 #   SECRET_KEY=your-secret-key-here
+#   SEED_DEMO_DATA=true  # optional: create demo user + sample content (dev/staging only)
 #   ALLOWED_HOSTS=127.0.0.1,localhost
 #   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/appdb
 #   CORS_ALLOWED_ORIGINS=http://localhost:3000
 #   CSRF_TRUSTED_ORIGINS=http://localhost:3000
+#   R2_ACCOUNT_ID=...
+#   R2_BUCKET_NAME=...
+#   R2_ACCESS_KEY_ID=...
+#   R2_SECRET_ACCESS_KEY=...
+#   R2_PUBLIC_DOMAIN=...
 ```
 
 #### 4. **Start PostgreSQL database** (using Docker):
@@ -332,6 +338,11 @@ project-consensus-backend/
 - `DEBUG=True` - Enable debug mode (development)
 - `SECRET_KEY=...` - Django secret key (use strong random in production)
 - `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/appdb` - PostgreSQL connection string
+- `R2_ACCOUNT_ID=...` - Cloudflare R2 account id
+- `R2_BUCKET_NAME=...` - Cloudflare R2 bucket name
+- `R2_ACCESS_KEY_ID=...` - Cloudflare R2 access key id
+- `R2_SECRET_ACCESS_KEY=...` - Cloudflare R2 secret access key
+- `R2_PUBLIC_DOMAIN=...` - Public domain for serving uploaded files (e.g. `*.r2.dev` or your CDN domain)
 
 **Optional:**
 - `ALLOWED_HOSTS=127.0.0.1,localhost` - Allowed host headers
@@ -339,28 +350,34 @@ project-consensus-backend/
 - `TIME_ZONE=Asia/Shanghai` - Timezone (e.g., `UTC`, `Europe/Berlin`)
 - `CORS_ALLOWED_ORIGINS=http://localhost:3000` - CORS allowed origins (comma-separated)
 - `CSRF_TRUSTED_ORIGINS=http://localhost:3000` - CSRF trusted origins (comma-separated)
+- `SEED_DEMO_DATA=true` - Enable demo seed migrations (dev/staging only; keep disabled in production)
 
 **Email Configuration (for Resend API):**
 - `RESEND_API_KEY=...` - Resend API key for transactional emails
 
 **Storage Configuration (for Cloudflare R2):**
-- `AWS_ACCESS_KEY_ID=...` - R2 access key ID
-- `AWS_SECRET_ACCESS_KEY=...` - R2 secret access key
-- `AWS_STORAGE_BUCKET_NAME=...` - R2 bucket name
-- `AWS_S3_ENDPOINT_URL=...` - R2 endpoint URL
+- `R2_ACCOUNT_ID=...` - R2 account id
+- `R2_BUCKET_NAME=...` - R2 bucket name
+- `R2_ACCESS_KEY_ID=...` - R2 access key id
+- `R2_SECRET_ACCESS_KEY=...` - R2 secret access key
+- `R2_PUBLIC_DOMAIN=...` - Public domain (for building public URLs)
 
 **Celery Configuration (for async tasks):**
-- `CELERY_BROKER_URL=redis://localhost:6379/0` - Redis broker URL
+- `CELERY_BROKER_URL=redis://:password@host:6379/0` - Redis broker URL
+- `NOTIFICATIONS_REDIS_URL=redis://:password@host:6379/1` - Redis URL for notifications SSE runtime
 - `CELERY_RESULT_BACKEND=rpc://` - Result backend (default: RPC)
 
 #### Docker Compose
 
-The `docker-compose.yml` file configures PostgreSQL 17:
+The `docker-compose.yml` file configures PostgreSQL 17 and Redis:
 - Container name: `dj_db17`
 - Port: `5432:5432` (change if port is occupied)
 - Username: `postgres`
 - Password: `postgres`
 - Database: `appdb`
+- Redis container: `dj_redis`
+- Port: `6379:6379`
+- Password: `redis_secure_password` (set via `--requirepass`)
 
 If port 5432 is occupied, modify `docker-compose.yml`:
 ```yaml

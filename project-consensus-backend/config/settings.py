@@ -23,6 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Keep secrets out of source control and configure per environment.
 env = environ.Env(
     DEBUG=(bool, False),  # DEBUG defaults to False and is cast to bool
+    SEED_DEMO_DATA=(bool, False),  # Demo seed migrations are opt-in
 )
 environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 
@@ -36,6 +37,10 @@ SECRET_KEY = env("SECRET_KEY")  # Raises error if missing (good for early fail)
 
 # Never run with DEBUG=True in production. Configure via .env or system env.
 DEBUG = env("DEBUG")
+
+# Demo data seeding is opt-in (disabled by default, especially for production safety).
+# Used by a few data migrations that create a demo user and sample content.
+SEED_DEMO_DATA = env.bool("SEED_DEMO_DATA", default=False)
 
 # Comma-separated hostnames/IPs that this Django instance will serve.
 # Example: "127.0.0.1,localhost,api.example.com"

@@ -31,10 +31,30 @@ if [ ! -f .env ]; then
   cat > .env << 'EOF'
 SECRET_KEY=dev-secret
 DEBUG=True
+SEED_DEMO_DATA=true
 ALLOWED_HOSTS=127.0.0.1,localhost
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/appdb
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/appdb
 CORS_ALLOWED_ORIGINS=http://localhost:3000
 CSRF_TRUSTED_ORIGINS=http://localhost:3000
+
+# For password reset links, etc.
+FRONTEND_BASE_URL=http://localhost:3000
+
+# Redis (docker-compose.yml enables requirepass=redis_secure_password)
+CELERY_BROKER_URL=redis://:redis_secure_password@localhost:6379/0
+NOTIFICATIONS_REDIS_URL=redis://:redis_secure_password@localhost:6379/1
+CACHE_URL=redis://:redis_secure_password@localhost:6379/2
+
+# Email (dev)
+EMAIL_ENABLED=false
+EMAIL_USE_CELERY=false
+
+# Cloudflare R2 (dummy defaults for local dev; set real credentials to use uploads)
+R2_ACCOUNT_ID=your_r2_account_id
+R2_BUCKET_NAME=your_bucket_name
+R2_ACCESS_KEY_ID=your_access_key_id
+R2_SECRET_ACCESS_KEY=your_secret_access_key
+R2_PUBLIC_DOMAIN=your_public_domain.r2.dev
 EOF
 fi
 

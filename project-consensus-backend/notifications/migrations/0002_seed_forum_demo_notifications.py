@@ -17,12 +17,24 @@ notifications app enabled, while still providing rich demo data when it is.
 """
 
 from django.db import migrations
+from django.conf import settings
 
 
 TITLE_MARKER = "Rossini's The Barber of Seville - What are your thoughts?"
 
+def _seed_demo_enabled() -> bool:
+    """
+    Demo data seeding is opt-in.
+
+    Production safety: do NOT create demo notifications unless explicitly enabled.
+    """
+    return bool(getattr(settings, "SEED_DEMO_DATA", False))
+
 
 def seed_forward(apps, schema_editor):
+    if not _seed_demo_enabled():
+        return
+
     Notification = apps.get_model("notifications", "Notification")
     ForumPost = apps.get_model("forum", "ForumPost")
     ForumPostComment = apps.get_model("forum", "ForumPostComment")

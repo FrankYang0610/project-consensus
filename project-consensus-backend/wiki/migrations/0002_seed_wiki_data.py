@@ -8,7 +8,30 @@ from django.db import migrations
 from django.conf import settings
 
 
+SEED_CATEGORY_SLUGS = ["getting-started", "features", "faq"]
+SEED_PAGE_SLUGS = [
+    "welcome",
+    "how-to-register",
+    "community-rules",
+    "how-to-review-courses",
+    "forum-guide",
+    "frequently-asked-questions",
+]
+
+
+def _seed_demo_enabled() -> bool:
+    """
+    Demo data seeding is opt-in.
+
+    Production safety: do NOT create demo content unless explicitly enabled.
+    """
+    return bool(getattr(settings, "SEED_DEMO_DATA", False))
+
+
 def create_sample_wiki_data(apps, schema_editor):
+    if not _seed_demo_enabled():
+        return
+
     """
     创建示例 Wiki 数据 / Create sample wiki data
     
@@ -495,8 +518,9 @@ def delete_sample_wiki_data(apps, schema_editor):
     WikiPage = apps.get_model('wiki', 'WikiPage')
     WikiCategory = apps.get_model('wiki', 'WikiCategory')
     
-    WikiPage.objects.all().delete()
-    WikiCategory.objects.all().delete()
+    # Only delete demo wiki content created by this migration.
+    WikiPage.objects.filter(slug__in=SEED_PAGE_SLUGS).delete()
+    WikiCategory.objects.filter(slug__in=SEED_CATEGORY_SLUGS).delete()
     
     print("Deleted all wiki sample data")
 
