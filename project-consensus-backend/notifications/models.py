@@ -59,8 +59,14 @@ class Notification(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=["recipient", "is_read", "is_deleted", "created_at"]),
-            models.Index(fields=["recipient", "is_read"]),
+            models.Index(
+                fields=["recipient", "is_read", "is_deleted", "created_at"],
+                name="notif_rec_read_flags_crt_idx",
+            ),
+            models.Index(
+                fields=["recipient", "is_read"],
+                name="notif_rec_read_idx",
+            ),
         ]
         ordering = ["-created_at"]
         verbose_name = "Notification"

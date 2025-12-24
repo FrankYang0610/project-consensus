@@ -37,7 +37,7 @@ class Migration(migrations.Migration):
                 ('attr_gain', models.CharField(blank=True, choices=[('low', 'low'), ('decent', 'decent'), ('high', 'high')], max_length=10, null=True)),
                 ('terms', models.JSONField(blank=True, default=list, help_text='List of offered terms')),
                 ('department', models.CharField(blank=True, max_length=200)),
-                ('last_updated', models.DateTimeField(default=django.utils.timezone.now)),
+                ('last_updated', models.DateTimeField(default=django.utils.timezone.now, db_index=True)),
                 ('ai_summary', models.TextField(blank=True)),
                 ('selection_category', models.CharField(blank=True, max_length=100)),
                 ('teaching_type', models.CharField(blank=True, max_length=100)),
@@ -141,10 +141,6 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'Course votes',
             },
         ),
-        migrations.AddIndex(
-            model_name='course',
-            index=models.Index(fields=['course_id'], name='courses_cou_course__119e53_idx'),
-        ),
         # Add trigram indexes for better search performance on Chinese text
         migrations.AddIndex(
             model_name='course',
@@ -158,11 +154,6 @@ class Migration(migrations.Migration):
             model_name='course',
             index=GinIndex(fields=['department'], name='courses_department_trgm_idx', opclasses=['gin_trgm_ops']),
         ),
-        # Add index for ordering
-        migrations.AddIndex(
-            model_name='course',
-            index=models.Index(fields=['-last_updated'], name='courses_last_updated_idx'),
-        ),
         migrations.AddConstraint(
             model_name='coursereview',
             constraint=models.UniqueConstraint(fields=('author', 'course'), name='unique_course_review_per_user'),
@@ -172,7 +163,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name='coursereview',
             constraint=models.CheckConstraint(
-                check=Q(only_text=False) | Q(overall_rating=0),
+                condition=Q(only_text=False) | Q(overall_rating=0),
                 name='coursereview_only_text_zero_rating',
             ),
         ),
@@ -180,7 +171,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name='coursereview',
             constraint=models.CheckConstraint(
-                check=Q(only_text=True) | (Q(overall_rating__gte=1) & Q(overall_rating__lte=10)),
+                condition=Q(only_text=True) | (Q(overall_rating__gte=1) & Q(overall_rating__lte=10)),
                 name='coursereview_rated_rating_range_1_10',
             ),
         ),
@@ -189,21 +180,16 @@ class Migration(migrations.Migration):
             model_name='coursereview',
             index=GinIndex(fields=['content'], name='coursereview_content_trgm_idx', opclasses=['gin_trgm_ops']),
         ),
-        # Optimize queries: order by newest
-        migrations.AddIndex(
-            model_name='coursereview',
-            index=models.Index(name='coursereview_created_idx', fields=['created_at']),
-        ),
         # Replies list filters on is_deleted and created_at
         migrations.AddIndex(
             model_name='coursereviewreply',
-            index=models.Index(name='coursereviewreply_deleted_created_idx', fields=['is_deleted', 'created_at']),
+            index=models.Index(fields=['is_deleted', 'created_at'], name='crreply_del_created_idx'),
         ),
         # Enforce soft-delete contract: deleted replies must have empty content
         migrations.AddConstraint(
             model_name='coursereviewreply',
             constraint=models.CheckConstraint(
-                check=Q(is_deleted=False) | Q(content=''),
+                condition=Q(is_deleted=False) | Q(content=''),
                 name='coursereviewreply_deleted_content_empty',
             ),
         ),

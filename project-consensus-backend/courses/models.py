@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import uuid
 from django.conf import settings
+from django.contrib.postgres.indexes import GinIndex
 from django.db import models
-from django.db.models import Avg, Count, Case, When, Value, IntegerField, F
+from django.db.models import Avg, Count, Case, When, Value, IntegerField, F, Q
 from django.utils import timezone
 
 
@@ -72,7 +73,7 @@ class Course(models.Model):
 
     teachers = models.ManyToManyField('teachers.Teacher', related_name='courses', blank=True)
     department = models.CharField(max_length=200, blank=True)
-    last_updated = models.DateTimeField(default=timezone.now)
+    last_updated = models.DateTimeField(default=timezone.now, db_index=True)
 
     # Optional metadata used by CourseDetailCard
     ai_summary = models.TextField(blank=True)
@@ -103,7 +104,21 @@ class Course(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=["course_id"]),
+            GinIndex(
+                fields=["subject_code"],
+                name="courses_subject_code_trgm_idx",
+                opclasses=["gin_trgm_ops"],
+            ),
+            GinIndex(
+                fields=["title"],
+                name="courses_title_trgm_idx",
+                opclasses=["gin_trgm_ops"],
+            ),
+            GinIndex(
+                fields=["department"],
+                name="courses_department_trgm_idx",
+                opclasses=["gin_trgm_ops"],
+            ),
         ]
         verbose_name = "Course"
         verbose_name_plural = "Courses"
@@ -248,6 +263,21 @@ class CourseReview(models.Model):
         ordering = ["-created_at"]
         constraints = [
             models.UniqueConstraint(fields=["author", "course"], name="unique_course_review_per_user"),
+            models.CheckConstraint(
+                condition=Q(only_text=False) | Q(overall_rating=0),
+                name="coursereview_only_text_zero_rating",
+            ),
+            models.CheckConstraint(
+                condition=Q(only_text=True) | (Q(overall_rating__gte=1) & Q(overall_rating__lte=10)),
+                name="coursereview_rated_rating_range_1_10",
+            ),
+        ]
+        indexes = [
+            GinIndex(
+                fields=["content"],
+                name="coursereview_content_trgm_idx",
+                opclasses=["gin_trgm_ops"],
+            ),
         ]
         verbose_name = "Course review"
         verbose_name_plural = "Course reviews"
@@ -285,6 +315,18 @@ class CourseReviewReply(models.Model):
 
     class Meta:
         ordering = ["created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(is_deleted=False) | Q(content=""),
+                name="coursereviewreply_deleted_content_empty",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["is_deleted", "created_at"],
+                name="crreply_del_created_idx",
+            ),
+        ]
         verbose_name = "Course review reply"
         verbose_name_plural = "Course review replies"
 

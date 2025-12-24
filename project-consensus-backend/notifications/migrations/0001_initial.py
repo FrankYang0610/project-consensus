@@ -52,11 +52,17 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='notification',
-            index=models.Index(fields=['recipient', 'is_read', 'is_deleted', 'created_at'], name='notifications_recipient_is__created_idx'),
+            index=models.Index(
+                fields=['recipient', 'is_read', 'is_deleted', 'created_at'],
+                name='notif_rec_read_flags_crt_idx',
+            ),
         ),
         migrations.AddIndex(
             model_name='notification',
-            index=models.Index(fields=['recipient', 'is_read'], name='notifications_recipient_is__idx'),
+            index=models.Index(
+                fields=['recipient', 'is_read'],
+                name='notif_rec_read_idx',
+            ),
         ),
     ]
 

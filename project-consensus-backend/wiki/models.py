@@ -6,6 +6,7 @@ Provides WikiCategory and WikiPage models for a Markdown-based knowledge base.
 
 from django.db import models
 from django.db.models import F
+from django.contrib.postgres.indexes import GinIndex
 from django.contrib.auth import get_user_model
 from django.utils.text import slugify
 from django.core.exceptions import ValidationError
@@ -51,7 +52,8 @@ class WikiCategory(models.Model):
         default=uuid.uuid4,
         editable=False,
         verbose_name="翻译组",
-        help_text="UUID linking translations of the same category"
+        help_text="UUID linking translations of the same category",
+        db_index=True
     )
     slug = models.SlugField(
         max_length=100,
@@ -80,7 +82,6 @@ class WikiCategory(models.Model):
         unique_together = [['slug', 'language']]  # slug unique per language
         indexes = [
             models.Index(fields=['language', 'order'], name='wiki_cat_lang_order_idx'),
-            models.Index(fields=['translation_group'], name='wiki_cat_trans_grp_idx'),
         ]
         constraints = [
             models.UniqueConstraint(fields=['translation_group', 'language'], name='wiki_cat_trans_lang_unique')
@@ -140,7 +141,8 @@ class WikiPage(models.Model):
         default=uuid.uuid4,
         editable=False,
         verbose_name="翻译组",
-        help_text="UUID linking translations of the same page"
+        help_text="UUID linking translations of the same page",
+        db_index=True,
     )
     
     # 内容 / Content
@@ -220,7 +222,10 @@ class WikiPage(models.Model):
             models.Index(fields=['status', '-updated_at'], name='wiki_page_status_updated_idx'),
             models.Index(fields=['category', 'order'], name='wiki_page_cat_order_idx'),
             models.Index(fields=['language', '-updated_at'], name='wiki_page_lang_updated_idx'),
-            models.Index(fields=['translation_group'], name='wiki_page_trans_grp_idx'),
+            GinIndex(fields=['title'], name='wikipage_title_trgm_idx', opclasses=['gin_trgm_ops']),
+            GinIndex(fields=['content'], name='wikipage_content_trgm_idx', opclasses=['gin_trgm_ops']),
+            GinIndex(fields=['summary'], name='wikipage_summary_trgm_idx', opclasses=['gin_trgm_ops']),
+            GinIndex(fields=['tags'], name='wikipage_tags_trgm_idx', opclasses=['gin_trgm_ops']),
         ]
         constraints = [
             models.UniqueConstraint(fields=['translation_group', 'language'], name='wiki_page_trans_lang_unique')

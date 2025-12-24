@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 from django.db import models
+from django.contrib.postgres.indexes import GinIndex
 
 
 class Teacher(models.Model):
@@ -19,7 +20,7 @@ class Teacher(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100, db_index=True)
     title = models.CharField(max_length=300, blank=True)
-    department = models.CharField(max_length=200, blank=True)
+    department = models.CharField(max_length=200, blank=True, db_index=True)
 
     avatar_url = models.URLField(blank=True)
     email = models.EmailField(blank=True)
@@ -56,12 +57,12 @@ class Teacher(models.Model):
     rating_reviews_count = models.PositiveIntegerField(default=0)
 
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now=True, db_index=True)
 
     class Meta:
         indexes = [
-            models.Index(fields=["name"]),
-            models.Index(fields=["department"]),
+            GinIndex(fields=["name"], name="teacher_name_trgm_idx", opclasses=["gin_trgm_ops"]),
+            GinIndex(fields=["department"], name="teacher_department_trgm_idx", opclasses=["gin_trgm_ops"]),
         ]
         verbose_name = "Teacher"
         verbose_name_plural = "Teachers"

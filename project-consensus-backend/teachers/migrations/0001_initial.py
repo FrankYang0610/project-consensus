@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('name', models.CharField(db_index=True, max_length=100)),
                 ('title', models.CharField(blank=True, max_length=300)),
-                ('department', models.CharField(blank=True, max_length=200)),
+                ('department', models.CharField(blank=True, max_length=200, db_index=True)),
                 ('avatar_url', models.URLField(blank=True)),
                 ('email', models.EmailField(blank=True, max_length=254)),
                 ('phone', models.CharField(blank=True, max_length=50)),
@@ -48,12 +48,11 @@ class Migration(migrations.Migration):
                 ('rating_grading', models.CharField(blank=True, choices=[('lenient', 'lenient'), ('balanced', 'balanced'), ('strict', 'strict')], max_length=10)),
                 ('rating_reviews_count', models.PositiveIntegerField(default=0)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                ('updated_at', models.DateTimeField(auto_now=True, db_index=True)),
             ],
             options={
                 'verbose_name': 'Teacher',
                 'verbose_name_plural': 'Teachers',
-                'indexes': [models.Index(fields=['name'], name='teachers_te_name_c63a4b_idx'), models.Index(fields=['department'], name='teachers_te_departm_3b845d_idx')],
             },
         ),
         # Add trigram indexes for better search performance
@@ -64,9 +63,5 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name='teacher',
             index=GinIndex(fields=['department'], name='teacher_department_trgm_idx', opclasses=['gin_trgm_ops']),
-        ),
-        migrations.AddIndex(
-            model_name='teacher',
-            index=models.Index(fields=['-updated_at'], name='teacher_updated_at_idx'),
         ),
     ]

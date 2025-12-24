@@ -95,11 +95,6 @@ class Migration(migrations.Migration):
             model_name='forumpost',
             index=GinIndex(fields=['content'], name='forumpost_content_trgm_idx', opclasses=['gin_trgm_ops']),
         ),
-        # Optimize feed queries: order by newest
-        migrations.AddIndex(
-            model_name='forumpost',
-            index=models.Index(name='forumpost_created_idx', fields=['created_at']),
-        ),
         migrations.AddIndex(
             model_name='forumpostcomment',
             index=GinIndex(fields=['content'], name='forumcomment_content_trgm_idx', opclasses=['gin_trgm_ops']),
@@ -107,13 +102,13 @@ class Migration(migrations.Migration):
         # Add composite index for filtering deleted comments
         migrations.AddIndex(
             model_name='forumpostcomment',
-            index=models.Index(name='forumcomment_deleted_created_idx', fields=['is_deleted', 'created_at']),
+            index=models.Index(fields=['is_deleted', 'created_at'], name='forumcmt_del_created_idx'),
         ),
         # Enforce soft-delete contract: deleted comments must have empty content
         migrations.AddConstraint(
             model_name='forumpostcomment',
             constraint=models.CheckConstraint(
-                check=Q(is_deleted=False) | Q(content=''),
+                condition=Q(is_deleted=False) | Q(content=''),
                 name='forumcomment_deleted_content_empty',
             ),
         ),

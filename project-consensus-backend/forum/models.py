@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import uuid
+
 from django.conf import settings
+from django.contrib.postgres.indexes import GinIndex
 from django.db import models
 from django.db.models import (
     BooleanField,
@@ -11,11 +13,12 @@ from django.db.models import (
     F,
     IntegerField,
     OuterRef,
+    Q,
     Value,
     When,
 )
 from django.utils import timezone
- 
+
 class ForumPostQuerySet(models.QuerySet):
     """
     Custom queryset for ForumPost to encapsulate common select/annotate patterns.
@@ -88,6 +91,19 @@ class ForumPost(models.Model):
         ordering = ["-created_at"]
         verbose_name = "ForumPost"
         verbose_name_plural = "ForumPosts"
+        indexes = [
+            # Trigram GIN indexes for full-text-like search on title/content
+            GinIndex(
+                fields=["title"],
+                name="forumpost_title_trgm_idx",
+                opclasses=["gin_trgm_ops"],
+            ),
+            GinIndex(
+                fields=["content"],
+                name="forumpost_content_trgm_idx",
+                opclasses=["gin_trgm_ops"],
+            ),
+        ]
 
     def __str__(self) -> str:  # pragma: no cover
         return f"{self.title}"
@@ -171,10 +187,30 @@ class ForumPostComment(models.Model):
     objects: ForumPostCommentQuerySet = ForumPostCommentQuerySet.as_manager()
 
     class Meta:
-        # Default to oldest-first for comments / 评论按时间正序（最早在前）
+        # Default to oldest-first for comments
         ordering = ["created_at", "id"]
         verbose_name = "ForumPostComment"
         verbose_name_plural = "ForumPostComments"
+        indexes = [
+            # Trigram GIN index to speed up text search on comment content
+            GinIndex(
+                fields=["content"],
+                name="forumcomment_content_trgm_idx",
+                opclasses=["gin_trgm_ops"],
+            ),
+            # Composite index for filtering by deletion status and time
+            models.Index(
+                fields=["is_deleted", "created_at"],
+                name="forumcmt_del_created_idx",
+            ),
+        ]
+        constraints = [
+            # Enforce soft-delete contract: deleted comments must have empty content
+            models.CheckConstraint(
+                condition=Q(is_deleted=False) | Q(content=""),
+                name="forumcomment_deleted_content_empty",
+            ),
+        ]
 
     def __str__(self) -> str:  # pragma: no cover
         return f"{self.author_id} -> {self.post_id}"
@@ -200,14 +236,9 @@ class ForumPostLike(models.Model):
     - Internal relation table; its primary key is not exposed to the frontend.
     - Uses BigAutoField as a surrogate PK for smaller/faster indexes than UUID.
       Row-level uniqueness is enforced by (post, user) unique constraint.
-
-    - 仅作为内部关联表使用，主键不对外暴露。
-    - 主键采用 BigAutoField（自增整型），索引更小、查询更快；
-      行唯一性通过 (post, user) 唯一约束保证。
     """
 
     # Surrogate primary key; lighter than UUID and sufficient for internal use only
-    # 内部用的替代主键；比 UUID 更轻量，足以满足需求
     id = models.BigAutoField(primary_key=True)
     post = models.ForeignKey(ForumPost, on_delete=models.CASCADE, related_name="likes")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="forum_post_likes")
@@ -230,10 +261,6 @@ class ForumCommentLike(models.Model):
 
     - Internal relation table; its primary key is not exposed to the frontend.
     - Uses BigAutoField as a surrogate PK; row-level uniqueness via (comment, user).
-
-    - 仅作为内部关联表使用，主键不对外暴露。
-    - 主键采用 BigAutoField（自增整型），索引更小、查询更快；
-      行唯一性通过 (comment, user) 唯一约束保证。
     """
 
     id = models.BigAutoField(primary_key=True)
