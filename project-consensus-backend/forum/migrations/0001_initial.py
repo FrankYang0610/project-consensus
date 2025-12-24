@@ -67,7 +67,7 @@ class Migration(migrations.Migration):
             options={
                 'verbose_name': 'ForumCommentLike',
                 'verbose_name_plural': 'ForumCommentLikes',
-                'indexes': [models.Index(fields=['comment', 'user'], name='forum_forum_comment_a11cb8_idx')],
+                'indexes': [models.Index(fields=['comment', 'user'], name='forumcmtlike_comment_user_idx')],
                 'unique_together': {('comment', 'user')},
             },
         ),
@@ -82,9 +82,14 @@ class Migration(migrations.Migration):
             options={
                 'verbose_name': 'ForumPostLike',
                 'verbose_name_plural': 'ForumPostLikes',
-                'indexes': [models.Index(fields=['post', 'user'], name='forum_forum_post_id_611220_idx')],
+                'indexes': [models.Index(fields=['post', 'user'], name='forumpostlike_post_user_idx')],
                 'unique_together': {('post', 'user')},
             },
+        ),
+        
+        migrations.AddIndex(
+            model_name='forumpost',
+            index=models.Index(fields=['created_at'], name='forumpost_created_idx'),
         ),
         # Add trigram indexes for better search performance
         migrations.AddIndex(
@@ -95,20 +100,19 @@ class Migration(migrations.Migration):
             model_name='forumpost',
             index=GinIndex(fields=['content'], name='forumpost_content_trgm_idx', opclasses=['gin_trgm_ops']),
         ),
+
         migrations.AddIndex(
-            model_name='forumpost',
-            index=models.Index(fields=['created_at'], name='forumpost_created_idx'),
+            model_name='forumpostcomment',
+            index=models.Index(fields=['is_deleted', 'created_at'], name='forumcmt_del_created_idx'),
+        ),
+        migrations.AddIndex(
+            model_name='forumpostcomment',
+            index=models.Index(fields=['created_at'], name='forumcmt_created_idx'),
         ),
         migrations.AddIndex(
             model_name='forumpostcomment',
             index=GinIndex(fields=['content'], name='forumcomment_content_trgm_idx', opclasses=['gin_trgm_ops']),
         ),
-        # Add composite index for filtering deleted comments
-        migrations.AddIndex(
-            model_name='forumpostcomment',
-            index=models.Index(fields=['is_deleted', 'created_at'], name='forumcmt_del_created_idx'),
-        ),
-        # Enforce soft-delete contract: deleted comments must have empty content
         migrations.AddConstraint(
             model_name='forumpostcomment',
             constraint=models.CheckConstraint(
@@ -116,14 +120,14 @@ class Migration(migrations.Migration):
                 name='forumcomment_deleted_content_empty',
             ),
         ),
-        migrations.AddIndex(
-            model_name='forumpostcomment',
-            index=models.Index(fields=['created_at'], name='forumcmt_created_idx'),
-        ),
+
+
         migrations.AddIndex(
             model_name='forumpostlike',
             index=models.Index(fields=['created_at'], name='forumpostlike_created_idx'),
         ),
+
+
         migrations.AddIndex(
             model_name='forumcommentlike',
             index=models.Index(fields=['created_at'], name='forumcmtlike_created_idx'),

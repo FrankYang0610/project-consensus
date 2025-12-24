@@ -141,7 +141,11 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'Course votes',
             },
         ),
-        # Add trigram indexes for better search performance on Chinese text
+
+        migrations.AddIndex(
+            model_name='course',
+            index=models.Index(fields=['-last_updated'], name='course_last_updated_idx'),
+        ),
         migrations.AddIndex(
             model_name='course',
             index=GinIndex(fields=['subject_code'], name='courses_subject_code_trgm_idx', opclasses=['gin_trgm_ops']),
@@ -154,95 +158,86 @@ class Migration(migrations.Migration):
             model_name='course',
             index=GinIndex(fields=['department'], name='courses_department_trgm_idx', opclasses=['gin_trgm_ops']),
         ),
+        
         migrations.AddIndex(
-            model_name='course',
-            index=models.Index(fields=['-last_updated'], name='course_last_updated_idx'),
+            model_name='coursereview',
+            index=models.Index(fields=['created_at'], name='coursereview_created_idx'),
         ),
         migrations.AddIndex(
-            model_name='course',
-            index=models.Index(fields=['last_updated'], name='course_lastupd_idx'),
+            model_name='coursereview',
+            index=GinIndex(fields=['content'], name='coursereview_content_trgm_idx', opclasses=['gin_trgm_ops']),
         ),
         migrations.AddConstraint(
             model_name='coursereview',
             constraint=models.UniqueConstraint(fields=('author', 'course'), name='unique_course_review_per_user'),
         ),
-        # Enforce rating rules at DB level:
-        # - Text-only reviews must have rating = 0
-        migrations.AddConstraint(
+        migrations.AddConstraint(  # - Text-only reviews must have rating = 0
             model_name='coursereview',
             constraint=models.CheckConstraint(
                 condition=Q(only_text=False) | Q(overall_rating=0),
                 name='coursereview_only_text_zero_rating',
             ),
         ),
-        # - Rated reviews (only_text=false) must have rating in [1, 10]
-        migrations.AddConstraint(
+        migrations.AddConstraint(  # - Rated reviews (only_text=false) must have rating in [1, 10]
             model_name='coursereview',
             constraint=models.CheckConstraint(
                 condition=Q(only_text=True) | (Q(overall_rating__gte=1) & Q(overall_rating__lte=10)),
                 name='coursereview_rated_rating_range_1_10',
             ),
         ),
-        # Add trigram index for course review content search
-        migrations.AddIndex(
-            model_name='coursereview',
-            index=GinIndex(fields=['content'], name='coursereview_content_trgm_idx', opclasses=['gin_trgm_ops']),
-        ),
-        migrations.AddIndex(
-            model_name='coursereview',
-            index=models.Index(fields=['created_at'], name='coursereview_created_idx'),
-        ),
-        # Replies list filters on is_deleted and created_at
+
         migrations.AddIndex(
             model_name='coursereviewreply',
             index=models.Index(fields=['is_deleted', 'created_at'], name='crreply_del_created_idx'),
         ),
-        # Enforce soft-delete contract: deleted replies must have empty content
-        migrations.AddConstraint(
+        migrations.AddIndex(
+            model_name='coursereviewreply',
+            index=models.Index(fields=['created_at'], name='crreply_created_idx'),
+        ),
+        migrations.AddConstraint(  # - Deleted replies must have empty content
             model_name='coursereviewreply',
             constraint=models.CheckConstraint(
                 condition=Q(is_deleted=False) | Q(content=''),
                 name='coursereviewreply_deleted_content_empty',
             ),
         ),
-        migrations.AddIndex(
-            model_name='coursereviewreply',
-            index=models.Index(fields=['created_at'], name='crreply_created_idx'),
-        ),
+
         migrations.AddIndex(
             model_name='coursereviewlike',
-            index=models.Index(fields=['review', 'user'], name='courses_cou_review__af06b5_idx'),
-        ),
-        migrations.AddConstraint(
-            model_name='coursereviewlike',
-            constraint=models.UniqueConstraint(fields=('user', 'review'), name='unique_review_like'),
+            index=models.Index(fields=['review', 'user'], name='crlike_review_user_idx'),
         ),
         migrations.AddIndex(
             model_name='coursereviewlike',
             index=models.Index(fields=['created_at'], name='crlike_created_idx'),
         ),
+        migrations.AddConstraint(
+            model_name='coursereviewlike',
+            constraint=models.UniqueConstraint(fields=('user', 'review'), name='unique_review_like'),
+        ),
+
         migrations.AddIndex(
             model_name='coursereviewreplylike',
-            index=models.Index(fields=['reply', 'user'], name='courses_cou_reply_i_c927d8_idx'),
-        ),
-        migrations.AddConstraint(
-            model_name='coursereviewreplylike',
-            constraint=models.UniqueConstraint(fields=('user', 'reply'), name='unique_reply_like'),
+            index=models.Index(fields=['reply', 'user'], name='crrplike_reply_user_idx'),
         ),
         migrations.AddIndex(
             model_name='coursereviewreplylike',
             index=models.Index(fields=['created_at'], name='crrplike_created_idx'),
         ),
+        migrations.AddConstraint(
+            model_name='coursereviewreplylike',
+            constraint=models.UniqueConstraint(fields=('user', 'reply'), name='unique_reply_like'),
+        ),
+
         migrations.AddIndex(
             model_name='coursevote',
-            index=models.Index(fields=['course', 'user'], name='courses_cou_course__c5a2d8_idx'),
-        ),
-        migrations.AddConstraint(
-            model_name='coursevote',
-            constraint=models.UniqueConstraint(fields=('user', 'course'), name='unique_course_vote'),
+            index=models.Index(fields=['course', 'user'], name='coursevote_course_user_idx'),
         ),
         migrations.AddIndex(
             model_name='coursevote',
             index=models.Index(fields=['created_at'], name='coursevote_created_idx'),
+        ),
+        migrations.AddConstraint(
+            model_name='coursevote',
+            constraint=models.UniqueConstraint(fields=('user', 'course'), name='unique_course_vote'),
         ),
     ]

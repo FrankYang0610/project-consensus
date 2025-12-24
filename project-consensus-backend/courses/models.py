@@ -104,6 +104,10 @@ class Course(models.Model):
 
     class Meta:
         indexes = [
+            models.Index(
+                fields=["-last_updated"],
+                name="course_last_updated_idx",
+            ),
             GinIndex(
                 fields=["subject_code"],
                 name="courses_subject_code_trgm_idx",
@@ -118,14 +122,6 @@ class Course(models.Model):
                 fields=["department"],
                 name="courses_department_trgm_idx",
                 opclasses=["gin_trgm_ops"],
-            ),
-            models.Index(
-                fields=["-last_updated"],
-                name="course_last_updated_idx",
-            ),
-            models.Index(
-                fields=["last_updated"],
-                name="course_lastupd_idx",
             ),
         ]
         verbose_name = "Course"
@@ -269,25 +265,28 @@ class CourseReview(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
-        constraints = [
-            models.UniqueConstraint(fields=["author", "course"], name="unique_course_review_per_user"),
-            models.CheckConstraint(
-                condition=(
-                    (Q(only_text=True) & Q(overall_rating=0))
-                    | (Q(only_text=False) & Q(overall_rating__gte=1) & Q(overall_rating__lte=10))
-                ),
-                name="coursereview_rating_rules",
-            ),
-        ]
         indexes = [
+            models.Index(
+                fields=["created_at"],
+                name="coursereview_created_idx",
+            ),
             GinIndex(
                 fields=["content"],
                 name="coursereview_content_trgm_idx",
                 opclasses=["gin_trgm_ops"],
             ),
-            models.Index(
-                fields=["created_at"],
-                name="coursereview_created_idx",
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=["author", "course"], name="unique_course_review_per_user"),
+            models.CheckConstraint(
+                # Text-only reviews must have rating = 0
+                condition=Q(only_text=False) | Q(overall_rating=0),
+                name="coursereview_only_text_zero_rating",
+            ),
+            models.CheckConstraint(
+                # Rated reviews (only_text=false) must have rating in [1, 10]
+                condition=Q(only_text=True) | (Q(overall_rating__gte=1) & Q(overall_rating__lte=10)),
+                name="coursereview_rated_rating_range_1_10",
             ),
         ]
         verbose_name = "Course review"
@@ -372,7 +371,10 @@ class CourseReviewLike(models.Model):
             models.UniqueConstraint(fields=["user", "review"], name="unique_review_like"),
         ]
         indexes = [
-            models.Index(fields=["review", "user"]),
+            models.Index(
+                fields=["review", "user"],
+                name="crlike_review_user_idx",
+            ),
             models.Index(
                 fields=["created_at"],
                 name="crlike_created_idx",
@@ -394,7 +396,10 @@ class CourseReviewReplyLike(models.Model):
             models.UniqueConstraint(fields=["user", "reply"], name="unique_reply_like"),
         ]
         indexes = [
-            models.Index(fields=["reply", "user"]),
+            models.Index(
+                fields=["reply", "user"],
+                name="crrplike_reply_user_idx",
+            ),
             models.Index(
                 fields=["created_at"],
                 name="crrplike_created_idx",
@@ -424,7 +429,10 @@ class CourseVote(models.Model):
             models.UniqueConstraint(fields=["user", "course"], name="unique_course_vote"),
         ]
         indexes = [
-            models.Index(fields=["course", "user"]),
+            models.Index(
+                fields=["course", "user"],
+                name="coursevote_course_user_idx",
+            ),
             models.Index(
                 fields=["created_at"],
                 name="coursevote_created_idx",

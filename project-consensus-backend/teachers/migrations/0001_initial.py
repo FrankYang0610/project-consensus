@@ -55,15 +55,7 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'Teachers',
             },
         ),
-        # Add trigram indexes for better search performance
-        migrations.AddIndex(
-            model_name='teacher',
-            index=GinIndex(fields=['name'], name='teacher_name_trgm_idx', opclasses=['gin_trgm_ops']),
-        ),
-        migrations.AddIndex(
-            model_name='teacher',
-            index=GinIndex(fields=['department'], name='teacher_department_trgm_idx', opclasses=['gin_trgm_ops']),
-        ),
+
         migrations.AddIndex(
             model_name='teacher',
             index=models.Index(fields=['-updated_at'], name='teacher_updated_at_idx'),
@@ -78,6 +70,10 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='teacher',
-            index=models.Index(fields=['updated_at'], name='teacher_updated_idx'),
+            index=GinIndex(fields=['name'], name='teacher_name_trgm_idx', opclasses=['gin_trgm_ops']),
+        ),
+        migrations.AddIndex(
+            model_name='teacher',
+            index=GinIndex(fields=['department'], name='teacher_department_trgm_idx', opclasses=['gin_trgm_ops']),
         ),
     ]

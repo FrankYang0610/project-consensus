@@ -196,13 +196,6 @@ class ForumPostComment(models.Model):
         verbose_name = "ForumPostComment"
         verbose_name_plural = "ForumPostComments"
         indexes = [
-            # Trigram GIN index to speed up text search on comment content
-            GinIndex(
-                fields=["content"],
-                name="forumcomment_content_trgm_idx",
-                opclasses=["gin_trgm_ops"],
-            ),
-            # Composite index for filtering by deletion status and time
             models.Index(
                 fields=["is_deleted", "created_at"],
                 name="forumcmt_del_created_idx",
@@ -211,10 +204,14 @@ class ForumPostComment(models.Model):
                 fields=["created_at"],
                 name="forumcmt_created_idx",
             ),
+            GinIndex(
+                fields=["content"],
+                name="forumcomment_content_trgm_idx",
+                opclasses=["gin_trgm_ops"],
+            ),
         ]
         constraints = [
-            # Enforce soft-delete contract: deleted comments must have empty content
-            models.CheckConstraint(
+            models.CheckConstraint(  # - Deleted comments must have empty content
                 condition=Q(is_deleted=False) | Q(content=""),
                 name="forumcomment_deleted_content_empty",
             ),
@@ -255,7 +252,10 @@ class ForumPostLike(models.Model):
     class Meta:
         unique_together = ("post", "user")
         indexes = [
-            models.Index(fields=["post", "user"]),
+            models.Index(
+                fields=["post", "user"],
+                name="forumpostlike_post_user_idx",
+            ),
             models.Index(
                 fields=["created_at"],
                 name="forumpostlike_created_idx",
@@ -283,7 +283,10 @@ class ForumCommentLike(models.Model):
     class Meta:
         unique_together = ("comment", "user")
         indexes = [
-            models.Index(fields=["comment", "user"]),
+            models.Index(
+                fields=["comment", "user"],
+                name="forumcmtlike_comment_user_idx",
+            ),
             models.Index(
                 fields=["created_at"],
                 name="forumcmtlike_created_idx",

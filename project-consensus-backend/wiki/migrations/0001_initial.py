@@ -84,18 +84,6 @@ class Migration(migrations.Migration):
             model_name='wikipage',
             index=models.Index(fields=['translation_group'], name='wikipage_transgrp_idx'),
         ),
-        migrations.AddConstraint(
-            model_name='wikicategory',
-            constraint=models.UniqueConstraint(
-                fields=['translation_group', 'language'], name='wikicat_trans_lang_unique'
-            ),
-        ),
-        migrations.AddConstraint(
-            model_name='wikipage',
-            constraint=models.UniqueConstraint(
-                fields=['translation_group', 'language'], name='wikipage_trans_lang_unique'
-            ),
-        ),
         migrations.AddIndex(
             model_name='wikipage',
             index=GinIndex(fields=['title'], name='wikipage_title_trgm_idx', opclasses=['gin_trgm_ops']),
@@ -111,5 +99,18 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name='wikipage',
             index=GinIndex(fields=['tags'], name='wikipage_tags_trgm_idx', opclasses=['gin_trgm_ops']),
+        ),
+        migrations.AddConstraint(
+            model_name='wikipage',
+            constraint=models.UniqueConstraint(
+                fields=['translation_group', 'language'], name='wikipage_trans_lang_unique'
+            ),
+        ),
+
+        migrations.AddConstraint(
+            model_name='wikicategory',
+            constraint=models.UniqueConstraint(
+                fields=['translation_group', 'language'], name='wikicat_trans_lang_unique'
+            ),
         ),
     ]

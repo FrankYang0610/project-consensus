@@ -61,12 +61,11 @@ class Teacher(models.Model):
 
     class Meta:
         indexes = [
-            GinIndex(fields=["name"], name="teacher_name_trgm_idx", opclasses=["gin_trgm_ops"]),
-            GinIndex(fields=["department"], name="teacher_department_trgm_idx", opclasses=["gin_trgm_ops"]),
             models.Index(fields=["-updated_at"], name="teacher_updated_at_idx"),
             models.Index(fields=["name"], name="teacher_name_idx"),
             models.Index(fields=["department"], name="teacher_dept_idx"),
-            models.Index(fields=["updated_at"], name="teacher_updated_idx"),
+            GinIndex(fields=["name"], name="teacher_name_trgm_idx", opclasses=["gin_trgm_ops"]),
+            GinIndex(fields=["department"], name="teacher_department_trgm_idx", opclasses=["gin_trgm_ops"]),
         ]
         verbose_name = "Teacher"
         verbose_name_plural = "Teachers"

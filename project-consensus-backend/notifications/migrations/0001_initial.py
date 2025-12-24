@@ -50,6 +50,14 @@ class Migration(migrations.Migration):
                 'ordering': ['-created_at'],
             },
         ),
+
+        migrations.AddIndex(
+            model_name='notification',
+            index=models.Index(
+                fields=['created_at'],
+                name='notif_created_idx',
+            ),
+        ),
         migrations.AddIndex(
             model_name='notification',
             index=models.Index(
@@ -62,13 +70,6 @@ class Migration(migrations.Migration):
             index=models.Index(
                 fields=['recipient', 'is_read'],
                 name='notif_rec_read_idx',
-            ),
-        ),
-        migrations.AddIndex(
-            model_name='notification',
-            index=models.Index(
-                fields=['created_at'],
-                name='notif_created_idx',
             ),
         ),
     ]
