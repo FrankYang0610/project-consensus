@@ -78,7 +78,7 @@ class ForumPost(models.Model):
     title = models.CharField(max_length=200)
     content = models.TextField()
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="forum_posts")
-    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+    created_at = models.DateTimeField(default=timezone.now)
     tags = models.JSONField(default=list, blank=True)
     likes_count = models.PositiveIntegerField(default=0)
     is_anonymous = models.BooleanField(default=False) # Whether the post should display the author as Anonymous on the client
@@ -102,6 +102,10 @@ class ForumPost(models.Model):
                 fields=["content"],
                 name="forumpost_content_trgm_idx",
                 opclasses=["gin_trgm_ops"],
+            ),
+            models.Index(
+                fields=["created_at"],
+                name="forumpost_created_idx",
             ),
         ]
 
@@ -179,7 +183,7 @@ class ForumPostComment(models.Model):
     reply_to = models.ForeignKey("self", null=True, blank=True, on_delete=models.CASCADE, related_name="replies")
     content = models.TextField()
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="forum_comments")
-    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+    created_at = models.DateTimeField(default=timezone.now)
     is_deleted = models.BooleanField(default=False)
     likes_count = models.PositiveIntegerField(default=0)
     is_anonymous = models.BooleanField(default=False)  # Whether the comment should display the author as Anonymous on the client
@@ -202,6 +206,10 @@ class ForumPostComment(models.Model):
             models.Index(
                 fields=["is_deleted", "created_at"],
                 name="forumcmt_del_created_idx",
+            ),
+            models.Index(
+                fields=["created_at"],
+                name="forumcmt_created_idx",
             ),
         ]
         constraints = [
@@ -242,12 +250,16 @@ class ForumPostLike(models.Model):
     id = models.BigAutoField(primary_key=True)
     post = models.ForeignKey(ForumPost, on_delete=models.CASCADE, related_name="likes")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="forum_post_likes")
-    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+    created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         unique_together = ("post", "user")
         indexes = [
             models.Index(fields=["post", "user"]),
+            models.Index(
+                fields=["created_at"],
+                name="forumpostlike_created_idx",
+            ),
         ]
         verbose_name = "ForumPostLike"
         verbose_name_plural = "ForumPostLikes"
@@ -266,12 +278,16 @@ class ForumCommentLike(models.Model):
     id = models.BigAutoField(primary_key=True)
     comment = models.ForeignKey(ForumPostComment, on_delete=models.CASCADE, related_name="likes")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="forum_comment_likes")
-    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+    created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         unique_together = ("comment", "user")
         indexes = [
             models.Index(fields=["comment", "user"]),
+            models.Index(
+                fields=["created_at"],
+                name="forumcmtlike_created_idx",
+            ),
         ]
         verbose_name = "ForumCommentLike"
         verbose_name_plural = "ForumCommentLikes"

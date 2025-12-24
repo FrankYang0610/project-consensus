@@ -37,7 +37,7 @@ class Migration(migrations.Migration):
                 ('attr_gain', models.CharField(blank=True, choices=[('low', 'low'), ('decent', 'decent'), ('high', 'high')], max_length=10, null=True)),
                 ('terms', models.JSONField(blank=True, default=list, help_text='List of offered terms')),
                 ('department', models.CharField(blank=True, max_length=200)),
-                ('last_updated', models.DateTimeField(default=django.utils.timezone.now, db_index=True)),
+                ('last_updated', models.DateTimeField(default=django.utils.timezone.now)),
                 ('ai_summary', models.TextField(blank=True)),
                 ('selection_category', models.CharField(blank=True, max_length=100)),
                 ('teaching_type', models.CharField(blank=True, max_length=100)),
@@ -69,7 +69,7 @@ class Migration(migrations.Migration):
                 ('only_text', models.BooleanField(default=False, help_text='If true, only text reviews (no rating and attributes)')),
                 ('likes_count', models.PositiveIntegerField(default=0)),
                 ('is_edited', models.BooleanField(default=False)),
-                ('created_at', models.DateTimeField(db_index=True, default=django.utils.timezone.now)),
+                ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('term_year', models.PositiveIntegerField(blank=True, null=True)),
                 ('term_semester', models.CharField(blank=True, choices=[('spring', 'spring'), ('summer', 'summer'), ('fall', 'fall')], max_length=10)),
@@ -87,7 +87,7 @@ class Migration(migrations.Migration):
             name='CourseReviewLike',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(db_index=True, default=django.utils.timezone.now)),
+                ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('review', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='likes', to='courses.coursereview')),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
@@ -101,7 +101,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('content', models.TextField()),
-                ('created_at', models.DateTimeField(db_index=True, default=django.utils.timezone.now)),
+                ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('likes_count', models.PositiveIntegerField(default=0)),
                 ('is_deleted', models.BooleanField(default=False)),
                 ('author', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
@@ -118,7 +118,7 @@ class Migration(migrations.Migration):
             name='CourseReviewReplyLike',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(db_index=True, default=django.utils.timezone.now)),
+                ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('reply', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='likes', to='courses.coursereviewreply')),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
@@ -132,7 +132,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('value', models.CharField(choices=[('recommend', 'recommend'), ('notRecommend', 'notRecommend')], max_length=20)),
-                ('created_at', models.DateTimeField(db_index=True, default=django.utils.timezone.now)),
+                ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('course', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='votes', to='courses.course')),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
@@ -157,6 +157,10 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name='course',
             index=models.Index(fields=['-last_updated'], name='course_last_updated_idx'),
+        ),
+        migrations.AddIndex(
+            model_name='course',
+            index=models.Index(fields=['last_updated'], name='course_lastupd_idx'),
         ),
         migrations.AddConstraint(
             model_name='coursereview',
@@ -184,6 +188,10 @@ class Migration(migrations.Migration):
             model_name='coursereview',
             index=GinIndex(fields=['content'], name='coursereview_content_trgm_idx', opclasses=['gin_trgm_ops']),
         ),
+        migrations.AddIndex(
+            model_name='coursereview',
+            index=models.Index(fields=['created_at'], name='coursereview_created_idx'),
+        ),
         # Replies list filters on is_deleted and created_at
         migrations.AddIndex(
             model_name='coursereviewreply',
@@ -198,12 +206,20 @@ class Migration(migrations.Migration):
             ),
         ),
         migrations.AddIndex(
+            model_name='coursereviewreply',
+            index=models.Index(fields=['created_at'], name='crreply_created_idx'),
+        ),
+        migrations.AddIndex(
             model_name='coursereviewlike',
             index=models.Index(fields=['review', 'user'], name='courses_cou_review__af06b5_idx'),
         ),
         migrations.AddConstraint(
             model_name='coursereviewlike',
             constraint=models.UniqueConstraint(fields=('user', 'review'), name='unique_review_like'),
+        ),
+        migrations.AddIndex(
+            model_name='coursereviewlike',
+            index=models.Index(fields=['created_at'], name='crlike_created_idx'),
         ),
         migrations.AddIndex(
             model_name='coursereviewreplylike',
@@ -214,11 +230,19 @@ class Migration(migrations.Migration):
             constraint=models.UniqueConstraint(fields=('user', 'reply'), name='unique_reply_like'),
         ),
         migrations.AddIndex(
+            model_name='coursereviewreplylike',
+            index=models.Index(fields=['created_at'], name='crrplike_created_idx'),
+        ),
+        migrations.AddIndex(
             model_name='coursevote',
             index=models.Index(fields=['course', 'user'], name='courses_cou_course__c5a2d8_idx'),
         ),
         migrations.AddConstraint(
             model_name='coursevote',
             constraint=models.UniqueConstraint(fields=('user', 'course'), name='unique_course_vote'),
+        ),
+        migrations.AddIndex(
+            model_name='coursevote',
+            index=models.Index(fields=['created_at'], name='coursevote_created_idx'),
         ),
     ]

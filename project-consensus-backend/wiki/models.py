@@ -53,7 +53,6 @@ class WikiCategory(models.Model):
         editable=False,
         verbose_name="翻译组",
         help_text="UUID linking translations of the same category",
-        db_index=True
     )
     slug = models.SlugField(
         max_length=100,
@@ -81,10 +80,11 @@ class WikiCategory(models.Model):
         ordering = ['order', 'name']
         unique_together = [['slug', 'language']]  # slug unique per language
         indexes = [
-            models.Index(fields=['language', 'order'], name='wiki_cat_lang_order_idx'),
+            models.Index(fields=['language', 'order'], name='wikicat_lang_order_idx'),
+            models.Index(fields=['translation_group'], name='wikicat_transgrp_idx'),
         ]
         constraints = [
-            models.UniqueConstraint(fields=['translation_group', 'language'], name='wiki_cat_trans_lang_unique')
+            models.UniqueConstraint(fields=['translation_group', 'language'], name='wikicat_trans_lang_unique')
         ]
     
     def __str__(self):
@@ -142,7 +142,6 @@ class WikiPage(models.Model):
         editable=False,
         verbose_name="翻译组",
         help_text="UUID linking translations of the same page",
-        db_index=True,
     )
     
     # 内容 / Content
@@ -218,17 +217,18 @@ class WikiPage(models.Model):
         ordering = ['-updated_at']
         unique_together = [['slug', 'language']]  # slug unique per language
         indexes = [
-            models.Index(fields=['slug', 'language'], name='wiki_page_slug_lang_idx'),
-            models.Index(fields=['status', '-updated_at'], name='wiki_page_status_updated_idx'),
-            models.Index(fields=['category', 'order'], name='wiki_page_cat_order_idx'),
-            models.Index(fields=['language', '-updated_at'], name='wiki_page_lang_updated_idx'),
+            models.Index(fields=['slug', 'language'], name='wikipage_slug_lang_idx'),
+            models.Index(fields=['status', '-updated_at'], name='wikipage_status_updated_idx'),
+            models.Index(fields=['category', 'order'], name='wikipage_cat_order_idx'),
+            models.Index(fields=['language', '-updated_at'], name='wikipage_lang_updated_idx'),
+            models.Index(fields=['translation_group'], name='wikipage_transgrp_idx'),
             GinIndex(fields=['title'], name='wikipage_title_trgm_idx', opclasses=['gin_trgm_ops']),
             GinIndex(fields=['content'], name='wikipage_content_trgm_idx', opclasses=['gin_trgm_ops']),
             GinIndex(fields=['summary'], name='wikipage_summary_trgm_idx', opclasses=['gin_trgm_ops']),
             GinIndex(fields=['tags'], name='wikipage_tags_trgm_idx', opclasses=['gin_trgm_ops']),
         ]
         constraints = [
-            models.UniqueConstraint(fields=['translation_group', 'language'], name='wiki_page_trans_lang_unique')
+            models.UniqueConstraint(fields=['translation_group', 'language'], name='wikipage_trans_lang_unique')
         ]
     
     def __str__(self):

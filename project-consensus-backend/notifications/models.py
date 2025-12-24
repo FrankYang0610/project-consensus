@@ -36,7 +36,7 @@ class Notification(models.Model):
     # Read/delete flags
     is_read = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
-    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+    created_at = models.DateTimeField(default=timezone.now)
 
     # Generic target and metadata (decoupled from other apps)
     # Optional description of the domain object this notification refers to.
@@ -66,6 +66,10 @@ class Notification(models.Model):
             models.Index(
                 fields=["recipient", "is_read"],
                 name="notif_rec_read_idx",
+            ),
+            models.Index(
+                fields=["created_at"],
+                name="notif_created_idx",
             ),
         ]
         ordering = ["-created_at"]

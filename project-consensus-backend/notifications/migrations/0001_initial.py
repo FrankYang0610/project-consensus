@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
                 ], max_length=50)),
                 ('is_read', models.BooleanField(default=False)),
                 ('is_deleted', models.BooleanField(default=False)),
-                ('created_at', models.DateTimeField(db_index=True, default=django.utils.timezone.now)),
+                ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('actor_is_anonymous', models.BooleanField(default=False)),
                 ('content_preview', models.TextField(blank=True)),
                 ('referenced_content_preview', models.TextField(blank=True)),
@@ -62,6 +62,13 @@ class Migration(migrations.Migration):
             index=models.Index(
                 fields=['recipient', 'is_read'],
                 name='notif_rec_read_idx',
+            ),
+        ),
+        migrations.AddIndex(
+            model_name='notification',
+            index=models.Index(
+                fields=['created_at'],
+                name='notif_created_idx',
             ),
         ),
     ]

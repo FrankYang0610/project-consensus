@@ -18,9 +18,9 @@ class Teacher(models.Model):
         STRICT = "strict", "strict"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=100, db_index=True)
+    name = models.CharField(max_length=100)
     title = models.CharField(max_length=300, blank=True)
-    department = models.CharField(max_length=200, blank=True, db_index=True)
+    department = models.CharField(max_length=200, blank=True)
 
     avatar_url = models.URLField(blank=True)
     email = models.EmailField(blank=True)
@@ -57,13 +57,16 @@ class Teacher(models.Model):
     rating_reviews_count = models.PositiveIntegerField(default=0)
 
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         indexes = [
             GinIndex(fields=["name"], name="teacher_name_trgm_idx", opclasses=["gin_trgm_ops"]),
             GinIndex(fields=["department"], name="teacher_department_trgm_idx", opclasses=["gin_trgm_ops"]),
             models.Index(fields=["-updated_at"], name="teacher_updated_at_idx"),
+            models.Index(fields=["name"], name="teacher_name_idx"),
+            models.Index(fields=["department"], name="teacher_dept_idx"),
+            models.Index(fields=["updated_at"], name="teacher_updated_idx"),
         ]
         verbose_name = "Teacher"
         verbose_name_plural = "Teachers"

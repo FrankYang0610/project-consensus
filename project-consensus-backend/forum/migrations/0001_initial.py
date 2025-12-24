@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('title', models.CharField(max_length=200)),
                 ('content', models.TextField()),
-                ('created_at', models.DateTimeField(db_index=True, default=django.utils.timezone.now)),
+                ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('tags', models.JSONField(blank=True, default=list)),
                 ('likes_count', models.PositiveIntegerField(default=0)),
                 ('is_anonymous', models.BooleanField(default=False)),
@@ -42,7 +42,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('content', models.TextField()),
-                ('created_at', models.DateTimeField(db_index=True, default=django.utils.timezone.now)),
+                ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('is_deleted', models.BooleanField(default=False)),
                 ('likes_count', models.PositiveIntegerField(default=0)),
                 ('is_anonymous', models.BooleanField(default=False)),
@@ -60,7 +60,7 @@ class Migration(migrations.Migration):
             name='ForumCommentLike',
             fields=[
                 ('id', models.BigAutoField(primary_key=True, serialize=False)),
-                ('created_at', models.DateTimeField(db_index=True, default=django.utils.timezone.now)),
+                ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='forum_comment_likes', to=settings.AUTH_USER_MODEL)),
                 ('comment', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='likes', to='forum.forumpostcomment')),
             ],
@@ -75,7 +75,7 @@ class Migration(migrations.Migration):
             name='ForumPostLike',
             fields=[
                 ('id', models.BigAutoField(primary_key=True, serialize=False)),
-                ('created_at', models.DateTimeField(db_index=True, default=django.utils.timezone.now)),
+                ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('post', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='likes', to='forum.forumpost')),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='forum_post_likes', to=settings.AUTH_USER_MODEL)),
             ],
@@ -96,6 +96,10 @@ class Migration(migrations.Migration):
             index=GinIndex(fields=['content'], name='forumpost_content_trgm_idx', opclasses=['gin_trgm_ops']),
         ),
         migrations.AddIndex(
+            model_name='forumpost',
+            index=models.Index(fields=['created_at'], name='forumpost_created_idx'),
+        ),
+        migrations.AddIndex(
             model_name='forumpostcomment',
             index=GinIndex(fields=['content'], name='forumcomment_content_trgm_idx', opclasses=['gin_trgm_ops']),
         ),
@@ -111,5 +115,17 @@ class Migration(migrations.Migration):
                 condition=Q(is_deleted=False) | Q(content=''),
                 name='forumcomment_deleted_content_empty',
             ),
+        ),
+        migrations.AddIndex(
+            model_name='forumpostcomment',
+            index=models.Index(fields=['created_at'], name='forumcmt_created_idx'),
+        ),
+        migrations.AddIndex(
+            model_name='forumpostlike',
+            index=models.Index(fields=['created_at'], name='forumpostlike_created_idx'),
+        ),
+        migrations.AddIndex(
+            model_name='forumcommentlike',
+            index=models.Index(fields=['created_at'], name='forumcmtlike_created_idx'),
         ),
     ]
