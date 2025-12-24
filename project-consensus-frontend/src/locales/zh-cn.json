@@ -753,6 +753,12 @@
       "unknownType": "未知通知类型 ({{type}}) 来自 {{actor}}"
     }
   },
+  "resources": {
+    "copyLink": "复制链接",
+    "open": "前往",
+    "officialTitle": "理大官方网站",
+    "officialDesc": "由香港理工大学（PolyU）运营的官方在线资源"
+  },
   "welcome": {
     "title": "欢迎来到 PolyU.life！",
     "subtitle": "通过以下选项开始探索",
