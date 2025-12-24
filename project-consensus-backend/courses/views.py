@@ -74,7 +74,7 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
     # Use course_id as the resource identifier (e.g., /api/courses/{uuid}/)
     lookup_field = "course_id"
     # UUID pattern (8-4-4-4-12 hex), be lenient to lowercase/uppercase
-    lookup_value_regex = "[0-9a-fA-F\-]{32,36}"
+    lookup_value_regex = r"(?:[0-9a-fA-F]{32}|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"
 
     # Basic filtering/searching/ordering for list endpoint
     filter_backends = [SearchFilter, OrderingFilter]
