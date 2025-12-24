@@ -295,7 +295,12 @@ if sys.platform == 'linux':
             socket.TCP_KEEPCNT: 3,
         }
     except AttributeError:
-        pass
+        warnings.warn(
+            "TCP keepalive options could not be set because required "
+            "socket constants are unavailable on this system; "
+            "continuing without TCP keepalive tuning.",
+            RuntimeWarning,
+        )
 
 CELERY_BROKER_TRANSPORT_OPTIONS = _broker_transport_options
 
