@@ -81,7 +81,7 @@ docker compose ps   # 确认 db/redis healthy
 
 ## 5. 配置环境变量（后端 .env）
 
-创建 `project/project-consensus/project-consensus-backend/.env`。环境变量配置内容请参考 `project/project-consensus/project-consensus-backend/.env.example`。Beta版本的网址是 `https://beta-app.polyu.life`，因此 `ALLOWED_HOSTS`、`CORS_ALLOWED_ORIGINS`、`CSRF_TRUSTED_ORIGINS` 需要配置为以下值：
+创建 `project/project-consensus/project-consensus-backend/.env`。环境变量配置内容请参考 `project/project-consensus/project-consensus-backend/env.example`。Beta版本的网址是 `https://beta-app.polyu.life`，因此 `ALLOWED_HOSTS`、`CORS_ALLOWED_ORIGINS`、`CSRF_TRUSTED_ORIGINS` 需要配置为以下值：
 
 - `ALLOWED_HOSTS=beta-api.polyu.life,127.0.0.1,localhost`
 - `CORS_ALLOWED_ORIGINS=https://beta-app.polyu.life`

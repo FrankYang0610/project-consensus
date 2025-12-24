@@ -16,7 +16,7 @@ cd "$SCRIPT_DIR"
 
 # Check if .env file exists
 if [ ! -f ".env" ]; then
-    echo "⚠️  Warning: .env file not found, using .env.example as template"
+    echo "⚠️  Warning: .env file not found, use env.example as a template"
     echo "Please create .env file with your configuration"
     echo ""
 fi
