@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os  # Used to build the .env file path
 import sys  # For platform detection
+import socket
 import warnings  # For security warnings
 import environ  # django-environ: typed environment variable parser
 
@@ -287,11 +288,14 @@ _broker_transport_options = {
 # Add socket keepalive only on Linux (not macOS/Windows)
 if sys.platform == 'linux':
     _broker_transport_options['socket_keepalive'] = True
-    _broker_transport_options['socket_keepalive_options'] = {
-        1: 60,   # TCP_KEEPIDLE: start keepalive after 60s idle
-        2: 10,   # TCP_KEEPINTVL: probe interval
-        3: 3,    # TCP_KEEPCNT: max failed probes before disconnect
-    }
+    try:
+        _broker_transport_options['socket_keepalive_options'] = {
+            socket.TCP_KEEPIDLE: 60,
+            socket.TCP_KEEPINTVL: 10,
+            socket.TCP_KEEPCNT: 3,
+        }
+    except AttributeError:
+        pass
 
 CELERY_BROKER_TRANSPORT_OPTIONS = _broker_transport_options
 
