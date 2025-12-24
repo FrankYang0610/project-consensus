@@ -11,7 +11,6 @@ from django.conf import settings
 from django.db import migrations
 from django.utils import timezone
 import random
-import os
 
 DEMO_TAG = "__demo_seed__"
 
@@ -22,7 +21,7 @@ def _seed_demo_enabled() -> bool:
 
     Production safety: do NOT create demo users/content unless explicitly enabled.
     """
-    return os.environ.get("SEED_DEMO_DATA", "").strip().lower() in {"1", "true", "yes", "on"}
+    return bool(getattr(settings, "SEED_DEMO_DATA", False))
 
 
 def seed_forum_data(apps, schema_editor):

@@ -6,7 +6,6 @@ Creates sample wiki categories and pages for demonstration purposes.
 
 from django.db import migrations
 from django.conf import settings
-import os
 
 
 SEED_CATEGORY_SLUGS = ["getting-started", "features", "faq"]
@@ -26,7 +25,7 @@ def _seed_demo_enabled() -> bool:
 
     Production safety: do NOT create demo content unless explicitly enabled.
     """
-    return os.environ.get("SEED_DEMO_DATA", "").strip().lower() in {"1", "true", "yes", "on"}
+    return bool(getattr(settings, "SEED_DEMO_DATA", False))
 
 
 def create_sample_wiki_data(apps, schema_editor):

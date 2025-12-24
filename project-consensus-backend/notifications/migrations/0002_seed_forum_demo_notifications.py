@@ -17,7 +17,7 @@ notifications app enabled, while still providing rich demo data when it is.
 """
 
 from django.db import migrations
-import os
+from django.conf import settings
 
 
 TITLE_MARKER = "Rossini's The Barber of Seville - What are your thoughts?"
@@ -28,7 +28,7 @@ def _seed_demo_enabled() -> bool:
 
     Production safety: do NOT create demo notifications unless explicitly enabled.
     """
-    return os.environ.get("SEED_DEMO_DATA", "").strip().lower() in {"1", "true", "yes", "on"}
+    return bool(getattr(settings, "SEED_DEMO_DATA", False))
 
 
 def seed_forward(apps, schema_editor):

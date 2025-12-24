@@ -9,7 +9,6 @@ Account:
 
 from django.conf import settings
 from django.db import migrations
-import os
 
 
 DEMO_EMAIL = "demo@connect.polyu.hk"
@@ -22,7 +21,7 @@ def _seed_demo_enabled() -> bool:
 
     Production safety: do NOT create a known-password demo account unless explicitly enabled.
     """
-    return os.environ.get("SEED_DEMO_DATA", "").strip().lower() in {"1", "true", "yes", "on"}
+    return bool(getattr(settings, "SEED_DEMO_DATA", False))
 
 
 def create_demo_user(apps, schema_editor):
