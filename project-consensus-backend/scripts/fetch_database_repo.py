@@ -9,12 +9,9 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-
-def _require_env(name: str) -> str:
-    value = os.getenv(name)
-    if value:
-        return value
-    raise RuntimeError(f"Missing required env var: {name}")
+_MAX_MEMBER_BYTES = int(os.getenv("DATABASE_TARBALL_MAX_MEMBER_BYTES", str(500 * 1024 * 1024)))
+_MAX_TOTAL_BYTES = int(os.getenv("DATABASE_TARBALL_MAX_TOTAL_BYTES", str(1024 * 1024 * 1024)))
+_MAX_FILES = int(os.getenv("DATABASE_TARBALL_MAX_FILES", "20000"))
 
 
 def _download(url: str, *, headers: dict[str, str], out_path: Path) -> None:
@@ -39,8 +36,19 @@ def _safe_write_path(base_dir: Path, rel_path: Path) -> Path:
     raise RuntimeError(f"Unsafe path in archive: {rel_path}")
 
 
+def _assert_safe_dest_dir(*, backend_root: Path, dest_dir: Path) -> None:
+    backend_root_resolved = backend_root.resolve()
+    dest_dir_resolved = dest_dir.resolve()
+    if dest_dir_resolved.name != "database":
+        raise RuntimeError(f"Refusing to delete unexpected directory: {dest_dir_resolved}")
+    if dest_dir_resolved.parent != backend_root_resolved:
+        raise RuntimeError(f"Refusing to delete directory outside backend root: {dest_dir_resolved}")
+
+
 def _extract_tar_gz_strip_first_component(tar_path: Path, *, dest_dir: Path) -> None:
     with tarfile.open(tar_path, mode="r:gz") as tf:
+        total_bytes = 0
+        files_count = 0
         for member in tf.getmembers():
             if not member.name or member.name.startswith("/"):
                 continue
@@ -49,7 +57,7 @@ def _extract_tar_gz_strip_first_component(tar_path: Path, *, dest_dir: Path) -> 
                 continue
 
             rel = Path(*parts[1:])
-            if rel.parts and rel.parts[0] == "..":
+            if ".." in rel.parts:
                 continue
 
             out_path = _safe_write_path(dest_dir, rel)
@@ -60,6 +68,20 @@ def _extract_tar_gz_strip_first_component(tar_path: Path, *, dest_dir: Path) -> 
 
             if member.issym() or member.islnk():
                 continue
+
+            if not member.isreg():
+                continue
+
+            if member.size < 0 or member.size > _MAX_MEMBER_BYTES:
+                raise RuntimeError(f"Archive member too large: {member.name} ({member.size} bytes)")
+
+            files_count += 1
+            if files_count > _MAX_FILES:
+                raise RuntimeError(f"Archive contains too many files (> {_MAX_FILES})")
+
+            total_bytes += member.size
+            if total_bytes > _MAX_TOTAL_BYTES:
+                raise RuntimeError(f"Archive expands beyond size limit (> {_MAX_TOTAL_BYTES} bytes)")
 
             out_path.parent.mkdir(parents=True, exist_ok=True)
             extracted = tf.extractfile(member)
@@ -85,6 +107,7 @@ def main() -> int:
 
     backend_root = Path(__file__).resolve().parents[1]
     dest_dir = backend_root / "database"
+    _assert_safe_dest_dir(backend_root=backend_root, dest_dir=dest_dir)
 
     headers = {
         "Accept": "application/vnd.github+json",
