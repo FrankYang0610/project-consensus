@@ -235,6 +235,16 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                 </NavigationMenuLink>
               </NavigationMenuItem>
 
+              {/* Latest course reviews - direct navigation item */}
+              <NavigationMenuItem>
+                <NavigationMenuLink
+                  href="/courses/latest-reviews"
+                  className={customNavigationMenuTriggerStyle()}
+                >
+                  {t('courses.latestReviews.title')}
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+
               {/* Courses/Teachers navigation item - dropdown with browse options */}
               <NavigationMenuItem>
                 <NavigationMenuTrigger className="h-12 px-6 text-base font-medium">
@@ -259,12 +269,6 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                       href="/courses/advanced-search"
                     >
                       {t('navigation.advancedSearchDesc')}
-                    </ListItem>
-                    <ListItem
-                      title={t('courses.latestReviews.title')}
-                      href="/courses/latest-reviews"
-                    >
-                      {t('courses.latestReviews.subtitle')}
                     </ListItem>
                   </ul>
                 </NavigationMenuContent>
@@ -406,6 +410,15 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
               {t('navigation.forum')}
             </Link>
 
+            {/* Latest course reviews - mobile simple link */}
+            <Link
+              href="/courses/latest-reviews"
+              className="block py-3 px-2 text-sm font-medium hover:bg-accent rounded-md transition-colors"
+              onClick={() => setIsMobileMenuOpen(false)} // Close menu after click
+            >
+              {t('courses.latestReviews.title')}
+            </Link>
+
               {/* Courses/Teachers collapsible section */}
             <div>
               {/* Courses/Teachers collapse button */}
@@ -454,16 +467,6 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                     <div className="font-medium">{t('navigation.advancedSearch')}</div>
                     <div className="text-xs text-muted-foreground mt-1">
                       {t('navigation.advancedSearchDesc')}
-                    </div>
-                  </Link>
-                  <Link
-                    href="/courses/latest-reviews"
-                    className="block py-2 px-3 text-sm hover:bg-accent rounded-md transition-colors"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <div className="font-medium">{t('courses.latestReviews.title')}</div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {t('courses.latestReviews.subtitle')}
                     </div>
                   </Link>
                 </div>

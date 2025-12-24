@@ -166,14 +166,6 @@ function HomePageContent() {
                 <h2 className="text-base font-semibold">
                   {t("courses.latestReviews.title")}
                 </h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="hidden sm:inline-flex"
-                  onClick={goToLatestReviewsPage}
-                >
-                  {t("courses.latestReviews.loadMore")}
-                </Button>
               </div>
               <div className="grid grid-flow-col auto-cols-[minmax(320px,380px)] sm:auto-cols-[minmax(360px,420px)] lg:auto-cols-[minmax(380px,460px)] gap-4 overflow-x-auto pb-2 pl-2 sm:pl-3">
                 {latestReviewsLoading && latestReviews.length === 0 ? (
