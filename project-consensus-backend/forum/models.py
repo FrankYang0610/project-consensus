@@ -250,7 +250,6 @@ class ForumPostLike(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
-        unique_together = ("post", "user")
         indexes = [
             models.Index(
                 fields=["post", "user"],
@@ -259,6 +258,12 @@ class ForumPostLike(models.Model):
             models.Index(
                 fields=["created_at"],
                 name="forumpostlike_created_idx",
+            ),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["post", "user"],
+                name="forumpostlike_post_user_unique",
             ),
         ]
         verbose_name = "ForumPostLike"
@@ -281,7 +286,6 @@ class ForumCommentLike(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
-        unique_together = ("comment", "user")
         indexes = [
             models.Index(
                 fields=["comment", "user"],
@@ -290,6 +294,12 @@ class ForumCommentLike(models.Model):
             models.Index(
                 fields=["created_at"],
                 name="forumcmtlike_created_idx",
+            ),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["comment", "user"],
+                name="forumcommentlike_comment_user_unique",
             ),
         ]
         verbose_name = "ForumCommentLike"

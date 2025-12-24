@@ -32,8 +32,8 @@ Global configuration of interest lives in `config/settings.py`:
 
 - Fields: `id`, `name`, `slug`, `description`, `order`, `language`, `translation_group (UUID)`, `created_at`
 - Constraints/indices:
-  - `unique_together = [['slug', 'language']]` — slug uniqueness within a language
-  - Unique per translation group and language (`wiki_cat_trans_lang_unique`)
+  - `UniqueConstraint(fields=['slug', 'language'], name='wikicat_slug_lang_unique')` — slug uniqueness within a language
+  - Unique per translation group and language (`wikicat_trans_lang_unique`)
   - Indices on `(language, order)` and `translation_group`
 - Behavior:
   - `save()` autogenerates `slug` from `name`, unique within the same `language`
@@ -42,7 +42,7 @@ Global configuration of interest lives in `config/settings.py`:
 
 - Fields: `id`, `title`, `slug`, `content (Markdown)`, `summary`, `category (FK)`, `tags (comma‑separated)`, `status in {'draft','published'}`, `author (FK)`, `created_at`, `updated_at`, `view_count`, `order`, `language`, `translation_group (UUID)`
 - Constraints/indices:
-  - `unique_together = [['slug', 'language']]`
+  - `UniqueConstraint(fields=['slug', 'language'], name='wikipage_slug_lang_unique')`
   - Indices on `(slug, language)`, `(status, -updated_at)`, `(category, order)`, `(language, -updated_at)`, and `translation_group`
 - Helper methods:
   - `get_tags_list()` — splits `tags` into a list

@@ -68,7 +68,6 @@ class Migration(migrations.Migration):
                 'verbose_name': 'ForumCommentLike',
                 'verbose_name_plural': 'ForumCommentLikes',
                 'indexes': [models.Index(fields=['comment', 'user'], name='forumcmtlike_comment_user_idx')],
-                'unique_together': {('comment', 'user')},
             },
         ),
         migrations.CreateModel(
@@ -83,7 +82,6 @@ class Migration(migrations.Migration):
                 'verbose_name': 'ForumPostLike',
                 'verbose_name_plural': 'ForumPostLikes',
                 'indexes': [models.Index(fields=['post', 'user'], name='forumpostlike_post_user_idx')],
-                'unique_together': {('post', 'user')},
             },
         ),
         
@@ -126,10 +124,24 @@ class Migration(migrations.Migration):
             model_name='forumpostlike',
             index=models.Index(fields=['created_at'], name='forumpostlike_created_idx'),
         ),
+        migrations.AddConstraint(
+            model_name='forumpostlike',
+            constraint=models.UniqueConstraint(
+                fields=('post', 'user'),
+                name='forumpostlike_post_user_unique',
+            ),
+        ),
 
 
         migrations.AddIndex(
             model_name='forumcommentlike',
             index=models.Index(fields=['created_at'], name='forumcmtlike_created_idx'),
+        ),
+        migrations.AddConstraint(
+            model_name='forumcommentlike',
+            constraint=models.UniqueConstraint(
+                fields=('comment', 'user'),
+                name='forumcommentlike_comment_user_unique',
+            ),
         ),
     ]

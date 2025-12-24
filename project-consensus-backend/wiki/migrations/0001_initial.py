@@ -31,7 +31,6 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Wiki Category',
                 'verbose_name_plural': 'Wiki Categories',
                 'ordering': ['order', 'name'],
-                'unique_together': {('slug', 'language')},
                 'indexes': [
                     models.Index(fields=['language', 'order'], name='wikicat_lang_order_idx'),
                     models.Index(fields=['translation_group'], name='wikicat_transgrp_idx'),
@@ -61,7 +60,6 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Wiki Page',
                 'verbose_name_plural': 'Wiki Pages',
                 'ordering': ['-updated_at'],
-                'unique_together': {('slug', 'language')},
             },
         ),
         migrations.AddIndex(
@@ -103,14 +101,30 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name='wikipage',
             constraint=models.UniqueConstraint(
-                fields=['translation_group', 'language'], name='wikipage_trans_lang_unique'
+                fields=['translation_group', 'language'],
+                name='wikipage_trans_lang_unique',
+            ),
+        ),
+        migrations.AddConstraint(
+            model_name='wikipage',
+            constraint=models.UniqueConstraint(
+                fields=['slug', 'language'],
+                name='wikipage_slug_lang_unique',
             ),
         ),
 
         migrations.AddConstraint(
             model_name='wikicategory',
             constraint=models.UniqueConstraint(
-                fields=['translation_group', 'language'], name='wikicat_trans_lang_unique'
+                fields=['translation_group', 'language'],
+                name='wikicat_trans_lang_unique',
+            ),
+        ),
+        migrations.AddConstraint(
+            model_name='wikicategory',
+            constraint=models.UniqueConstraint(
+                fields=['slug', 'language'],
+                name='wikicat_slug_lang_unique',
             ),
         ),
     ]

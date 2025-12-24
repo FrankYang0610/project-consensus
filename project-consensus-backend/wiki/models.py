@@ -78,13 +78,19 @@ class WikiCategory(models.Model):
         verbose_name = "Wiki Category"
         verbose_name_plural = "Wiki Categories"
         ordering = ['order', 'name']
-        unique_together = [['slug', 'language']]  # slug unique per language
         indexes = [
             models.Index(fields=['language', 'order'], name='wikicat_lang_order_idx'),
             models.Index(fields=['translation_group'], name='wikicat_transgrp_idx'),
         ]
         constraints = [
-            models.UniqueConstraint(fields=['translation_group', 'language'], name='wikicat_trans_lang_unique')
+            models.UniqueConstraint(
+                fields=['translation_group', 'language'],
+                name='wikicat_trans_lang_unique',
+            ),
+            models.UniqueConstraint(
+                fields=['slug', 'language'],
+                name='wikicat_slug_lang_unique',
+            ),
         ]
     
     def __str__(self):
@@ -215,7 +221,6 @@ class WikiPage(models.Model):
         verbose_name = "Wiki Page"
         verbose_name_plural = "Wiki Pages"
         ordering = ['-updated_at']
-        unique_together = [['slug', 'language']]  # slug unique per language
         indexes = [
             models.Index(fields=['slug', 'language'], name='wikipage_slug_lang_idx'),
             models.Index(fields=['status', '-updated_at'], name='wikipage_status_updated_idx'),
@@ -228,7 +233,14 @@ class WikiPage(models.Model):
             GinIndex(fields=['tags'], name='wikipage_tags_trgm_idx', opclasses=['gin_trgm_ops']),
         ]
         constraints = [
-            models.UniqueConstraint(fields=['translation_group', 'language'], name='wikipage_trans_lang_unique')
+            models.UniqueConstraint(
+                fields=['translation_group', 'language'],
+                name='wikipage_trans_lang_unique',
+            ),
+            models.UniqueConstraint(
+                fields=['slug', 'language'],
+                name='wikipage_slug_lang_unique',
+            ),
         ]
     
     def __str__(self):
