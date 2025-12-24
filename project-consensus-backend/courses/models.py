@@ -264,12 +264,11 @@ class CourseReview(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["author", "course"], name="unique_course_review_per_user"),
             models.CheckConstraint(
-                condition=Q(only_text=False) | Q(overall_rating=0),
-                name="coursereview_only_text_zero_rating",
-            ),
-            models.CheckConstraint(
-                condition=Q(only_text=True) | (Q(overall_rating__gte=1) & Q(overall_rating__lte=10)),
-                name="coursereview_rated_rating_range_1_10",
+                condition=(
+                    (Q(only_text=True) & Q(overall_rating=0))
+                    | (Q(only_text=False) & Q(overall_rating__gte=1) & Q(overall_rating__lte=10))
+                ),
+                name="coursereview_rating_rules",
             ),
         ]
         indexes = [
