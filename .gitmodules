@@ -1,3 +1,3 @@
 [submodule "project-consensus-backend/database"]
 	path = project-consensus-backend/database
-	url = https://github.com/FrankYang0610/project-consensus-database
+	url = https://github.com/FivespeedDoc/project-consensus-database
