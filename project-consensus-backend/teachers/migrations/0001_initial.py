@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
             name='Teacher',
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('name', models.CharField(db_index=True, max_length=100)),
+                ('name', models.CharField(max_length=100)),
                 ('title', models.CharField(blank=True, max_length=300)),
                 ('department', models.CharField(blank=True, max_length=200)),
                 ('avatar_url', models.URLField(blank=True)),
@@ -53,10 +53,21 @@ class Migration(migrations.Migration):
             options={
                 'verbose_name': 'Teacher',
                 'verbose_name_plural': 'Teachers',
-                'indexes': [models.Index(fields=['name'], name='teachers_te_name_c63a4b_idx'), models.Index(fields=['department'], name='teachers_te_departm_3b845d_idx')],
             },
         ),
-        # Add trigram indexes for better search performance
+
+        migrations.AddIndex(
+            model_name='teacher',
+            index=models.Index(fields=['-updated_at'], name='teacher_updated_at_idx'),
+        ),
+        migrations.AddIndex(
+            model_name='teacher',
+            index=models.Index(fields=['name'], name='teacher_name_idx'),
+        ),
+        migrations.AddIndex(
+            model_name='teacher',
+            index=models.Index(fields=['department'], name='teacher_dept_idx'),
+        ),
         migrations.AddIndex(
             model_name='teacher',
             index=GinIndex(fields=['name'], name='teacher_name_trgm_idx', opclasses=['gin_trgm_ops']),
@@ -64,9 +75,5 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name='teacher',
             index=GinIndex(fields=['department'], name='teacher_department_trgm_idx', opclasses=['gin_trgm_ops']),
-        ),
-        migrations.AddIndex(
-            model_name='teacher',
-            index=models.Index(fields=['-updated_at'], name='teacher_updated_at_idx'),
         ),
     ]

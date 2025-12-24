@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import uuid
 from django.conf import settings
+from django.contrib.postgres.indexes import GinIndex
 from django.db import models
-from django.db.models import Avg, Count, Case, When, Value, IntegerField, F
+from django.db.models import Avg, Count, Case, When, Value, IntegerField, F, Q
 from django.utils import timezone
 
 
@@ -103,7 +104,25 @@ class Course(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=["course_id"]),
+            models.Index(
+                fields=["-last_updated"],
+                name="course_last_updated_idx",
+            ),
+            GinIndex(
+                fields=["subject_code"],
+                name="courses_subject_code_trgm_idx",
+                opclasses=["gin_trgm_ops"],
+            ),
+            GinIndex(
+                fields=["title"],
+                name="courses_title_trgm_idx",
+                opclasses=["gin_trgm_ops"],
+            ),
+            GinIndex(
+                fields=["department"],
+                name="courses_department_trgm_idx",
+                opclasses=["gin_trgm_ops"],
+            ),
         ]
         verbose_name = "Course"
         verbose_name_plural = "Courses"
@@ -236,7 +255,7 @@ class CourseReview(models.Model):
     only_text = models.BooleanField(default=False, help_text="If true, only text reviews (no rating and attributes)")
     likes_count = models.PositiveIntegerField(default=0)
     is_edited = models.BooleanField(default=False)
-    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+    created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
     term_year = models.PositiveIntegerField(null=True, blank=True)
@@ -246,8 +265,29 @@ class CourseReview(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(
+                fields=["created_at"],
+                name="coursereview_created_idx",
+            ),
+            GinIndex(
+                fields=["content"],
+                name="coursereview_content_trgm_idx",
+                opclasses=["gin_trgm_ops"],
+            ),
+        ]
         constraints = [
             models.UniqueConstraint(fields=["author", "course"], name="unique_course_review_per_user"),
+            models.CheckConstraint(
+                # Text-only reviews must have rating = 0
+                condition=Q(only_text=False) | Q(overall_rating=0),
+                name="coursereview_only_text_zero_rating",
+            ),
+            models.CheckConstraint(
+                # Rated reviews (only_text=false) must have rating in [1, 10]
+                condition=Q(only_text=True) | (Q(overall_rating__gte=1) & Q(overall_rating__lte=10)),
+                name="coursereview_rated_rating_range_1_10",
+            ),
         ]
         verbose_name = "Course review"
         verbose_name_plural = "Course reviews"
@@ -278,13 +318,29 @@ class CourseReviewReply(models.Model):
     review = models.ForeignKey(CourseReview, on_delete=models.CASCADE, related_name="replies")
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     content = models.TextField()
-    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+    created_at = models.DateTimeField(default=timezone.now)
     likes_count = models.PositiveIntegerField(default=0)
     reply_to_user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="course_review_reply_targets")
     is_deleted = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(is_deleted=False) | Q(content=""),
+                name="coursereviewreply_deleted_content_empty",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["is_deleted", "created_at"],
+                name="crreply_del_created_idx",
+            ),
+            models.Index(
+                fields=["created_at"],
+                name="crreply_created_idx",
+            ),
+        ]
         verbose_name = "Course review reply"
         verbose_name_plural = "Course review replies"
 
@@ -308,14 +364,21 @@ class CourseReviewLike(models.Model):
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     review = models.ForeignKey(CourseReview, on_delete=models.CASCADE, related_name="likes")
-    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+    created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=["user", "review"], name="unique_review_like"),
         ]
         indexes = [
-            models.Index(fields=["review", "user"]),
+            models.Index(
+                fields=["review", "user"],
+                name="crlike_review_user_idx",
+            ),
+            models.Index(
+                fields=["created_at"],
+                name="crlike_created_idx",
+            ),
         ]
         verbose_name = "Course review like"
         verbose_name_plural = "Course review likes"
@@ -326,14 +389,21 @@ class CourseReviewReplyLike(models.Model):
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     reply = models.ForeignKey(CourseReviewReply, on_delete=models.CASCADE, related_name="likes")
-    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+    created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=["user", "reply"], name="unique_reply_like"),
         ]
         indexes = [
-            models.Index(fields=["reply", "user"]),
+            models.Index(
+                fields=["reply", "user"],
+                name="crrplike_reply_user_idx",
+            ),
+            models.Index(
+                fields=["created_at"],
+                name="crrplike_created_idx",
+            ),
         ]
         verbose_name = "Course review reply like"
         verbose_name_plural = "Course review reply likes"
@@ -352,14 +422,21 @@ class CourseVote(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="votes")
     value = models.CharField(max_length=20, choices=Value.choices)
-    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+    created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=["user", "course"], name="unique_course_vote"),
         ]
         indexes = [
-            models.Index(fields=["course", "user"]),
+            models.Index(
+                fields=["course", "user"],
+                name="coursevote_course_user_idx",
+            ),
+            models.Index(
+                fields=["created_at"],
+                name="coursevote_created_idx",
+            ),
         ]
         verbose_name = "Course vote"
         verbose_name_plural = "Course votes"

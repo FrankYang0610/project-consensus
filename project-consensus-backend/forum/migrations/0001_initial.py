@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('title', models.CharField(max_length=200)),
                 ('content', models.TextField()),
-                ('created_at', models.DateTimeField(db_index=True, default=django.utils.timezone.now)),
+                ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('tags', models.JSONField(blank=True, default=list)),
                 ('likes_count', models.PositiveIntegerField(default=0)),
                 ('is_anonymous', models.BooleanField(default=False)),
@@ -42,7 +42,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('content', models.TextField()),
-                ('created_at', models.DateTimeField(db_index=True, default=django.utils.timezone.now)),
+                ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('is_deleted', models.BooleanField(default=False)),
                 ('likes_count', models.PositiveIntegerField(default=0)),
                 ('is_anonymous', models.BooleanField(default=False)),
@@ -60,31 +60,34 @@ class Migration(migrations.Migration):
             name='ForumCommentLike',
             fields=[
                 ('id', models.BigAutoField(primary_key=True, serialize=False)),
-                ('created_at', models.DateTimeField(db_index=True, default=django.utils.timezone.now)),
+                ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='forum_comment_likes', to=settings.AUTH_USER_MODEL)),
                 ('comment', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='likes', to='forum.forumpostcomment')),
             ],
             options={
                 'verbose_name': 'ForumCommentLike',
                 'verbose_name_plural': 'ForumCommentLikes',
-                'indexes': [models.Index(fields=['comment', 'user'], name='forum_forum_comment_a11cb8_idx')],
-                'unique_together': {('comment', 'user')},
+                'indexes': [models.Index(fields=['comment', 'user'], name='forumcmtlike_comment_user_idx')],
             },
         ),
         migrations.CreateModel(
             name='ForumPostLike',
             fields=[
                 ('id', models.BigAutoField(primary_key=True, serialize=False)),
-                ('created_at', models.DateTimeField(db_index=True, default=django.utils.timezone.now)),
+                ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('post', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='likes', to='forum.forumpost')),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='forum_post_likes', to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'verbose_name': 'ForumPostLike',
                 'verbose_name_plural': 'ForumPostLikes',
-                'indexes': [models.Index(fields=['post', 'user'], name='forum_forum_post_id_611220_idx')],
-                'unique_together': {('post', 'user')},
+                'indexes': [models.Index(fields=['post', 'user'], name='forumpostlike_post_user_idx')],
             },
+        ),
+        
+        migrations.AddIndex(
+            model_name='forumpost',
+            index=models.Index(fields=['created_at'], name='forumpost_created_idx'),
         ),
         # Add trigram indexes for better search performance
         migrations.AddIndex(
@@ -95,26 +98,50 @@ class Migration(migrations.Migration):
             model_name='forumpost',
             index=GinIndex(fields=['content'], name='forumpost_content_trgm_idx', opclasses=['gin_trgm_ops']),
         ),
-        # Optimize feed queries: order by newest
+
         migrations.AddIndex(
-            model_name='forumpost',
-            index=models.Index(name='forumpost_created_idx', fields=['created_at']),
+            model_name='forumpostcomment',
+            index=models.Index(fields=['is_deleted', 'created_at'], name='forumcmt_del_created_idx'),
+        ),
+        migrations.AddIndex(
+            model_name='forumpostcomment',
+            index=models.Index(fields=['created_at'], name='forumcmt_created_idx'),
         ),
         migrations.AddIndex(
             model_name='forumpostcomment',
             index=GinIndex(fields=['content'], name='forumcomment_content_trgm_idx', opclasses=['gin_trgm_ops']),
         ),
-        # Add composite index for filtering deleted comments
-        migrations.AddIndex(
-            model_name='forumpostcomment',
-            index=models.Index(name='forumcomment_deleted_created_idx', fields=['is_deleted', 'created_at']),
-        ),
-        # Enforce soft-delete contract: deleted comments must have empty content
         migrations.AddConstraint(
             model_name='forumpostcomment',
             constraint=models.CheckConstraint(
-                check=Q(is_deleted=False) | Q(content=''),
+                condition=Q(is_deleted=False) | Q(content=''),
                 name='forumcomment_deleted_content_empty',
+            ),
+        ),
+
+
+        migrations.AddIndex(
+            model_name='forumpostlike',
+            index=models.Index(fields=['created_at'], name='forumpostlike_created_idx'),
+        ),
+        migrations.AddConstraint(
+            model_name='forumpostlike',
+            constraint=models.UniqueConstraint(
+                fields=('post', 'user'),
+                name='forumpostlike_post_user_unique',
+            ),
+        ),
+
+
+        migrations.AddIndex(
+            model_name='forumcommentlike',
+            index=models.Index(fields=['created_at'], name='forumcmtlike_created_idx'),
+        ),
+        migrations.AddConstraint(
+            model_name='forumcommentlike',
+            constraint=models.UniqueConstraint(
+                fields=('comment', 'user'),
+                name='forumcommentlike_comment_user_unique',
             ),
         ),
     ]

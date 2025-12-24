@@ -31,10 +31,9 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Wiki Category',
                 'verbose_name_plural': 'Wiki Categories',
                 'ordering': ['order', 'name'],
-                'unique_together': {('slug', 'language')},
                 'indexes': [
-                    models.Index(fields=['language', 'order'], name='wiki_cat_lang_order_idx'),
-                    models.Index(fields=['translation_group'], name='wiki_cat_trans_grp_idx'),
+                    models.Index(fields=['language', 'order'], name='wikicat_lang_order_idx'),
+                    models.Index(fields=['translation_group'], name='wikicat_transgrp_idx'),
                 ],
             },
         ),
@@ -61,42 +60,28 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Wiki Page',
                 'verbose_name_plural': 'Wiki Pages',
                 'ordering': ['-updated_at'],
-                'unique_together': {('slug', 'language')},
             },
         ),
         migrations.AddIndex(
             model_name='wikipage',
-            index=models.Index(fields=['slug', 'language'], name='wiki_page_slug_lang_idx'),
+            index=models.Index(fields=['slug', 'language'], name='wikipage_slug_lang_idx'),
         ),
         migrations.AddIndex(
             model_name='wikipage',
-            index=models.Index(fields=['status', '-updated_at'], name='wiki_page_status_updated_idx'),
+            index=models.Index(fields=['status', '-updated_at'], name='wikipage_status_updated_idx'),
         ),
         migrations.AddIndex(
             model_name='wikipage',
-            index=models.Index(fields=['category', 'order'], name='wiki_page_cat_order_idx'),
+            index=models.Index(fields=['category', 'order'], name='wikipage_cat_order_idx'),
         ),
         migrations.AddIndex(
             model_name='wikipage',
-            index=models.Index(fields=['language', '-updated_at'], name='wiki_page_lang_updated_idx'),
+            index=models.Index(fields=['language', '-updated_at'], name='wikipage_lang_updated_idx'),
         ),
         migrations.AddIndex(
             model_name='wikipage',
-            index=models.Index(fields=['translation_group'], name='wiki_page_trans_grp_idx'),
+            index=models.Index(fields=['translation_group'], name='wikipage_transgrp_idx'),
         ),
-        migrations.AddConstraint(
-            model_name='wikicategory',
-            constraint=models.UniqueConstraint(
-                fields=['translation_group', 'language'], name='wiki_cat_trans_lang_unique'
-            ),
-        ),
-        migrations.AddConstraint(
-            model_name='wikipage',
-            constraint=models.UniqueConstraint(
-                fields=['translation_group', 'language'], name='wiki_page_trans_lang_unique'
-            ),
-        ),
-        # Add trigram indexes for better search performance
         migrations.AddIndex(
             model_name='wikipage',
             index=GinIndex(fields=['title'], name='wikipage_title_trgm_idx', opclasses=['gin_trgm_ops']),
@@ -112,5 +97,34 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name='wikipage',
             index=GinIndex(fields=['tags'], name='wikipage_tags_trgm_idx', opclasses=['gin_trgm_ops']),
+        ),
+        migrations.AddConstraint(
+            model_name='wikipage',
+            constraint=models.UniqueConstraint(
+                fields=['translation_group', 'language'],
+                name='wikipage_trans_lang_unique',
+            ),
+        ),
+        migrations.AddConstraint(
+            model_name='wikipage',
+            constraint=models.UniqueConstraint(
+                fields=['slug', 'language'],
+                name='wikipage_slug_lang_unique',
+            ),
+        ),
+
+        migrations.AddConstraint(
+            model_name='wikicategory',
+            constraint=models.UniqueConstraint(
+                fields=['translation_group', 'language'],
+                name='wikicat_trans_lang_unique',
+            ),
+        ),
+        migrations.AddConstraint(
+            model_name='wikicategory',
+            constraint=models.UniqueConstraint(
+                fields=['slug', 'language'],
+                name='wikicat_slug_lang_unique',
+            ),
         ),
     ]

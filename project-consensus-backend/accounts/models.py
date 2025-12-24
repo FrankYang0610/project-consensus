@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.postgres.indexes import GinIndex
 from django.db import models
 from django.utils import timezone
 
@@ -31,6 +32,14 @@ class Profile(models.Model):
     class Meta:
         verbose_name = "Profile"
         verbose_name_plural = "Profiles"
+        indexes = [
+            # Trigram GIN index to speed up search on nickname
+            GinIndex(
+                fields=["nickname"],
+                name="profile_nickname_trgm_idx",
+                opclasses=["gin_trgm_ops"],
+            ),
+        ]
 
     def __str__(self) -> str:  # pragma: no cover - simple text representation
         return self.nickname or self.user.get_username()
