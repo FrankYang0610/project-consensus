@@ -43,6 +43,12 @@ DEBUG = env("DEBUG")
 # Used by a few data migrations that create a demo user and sample content.
 SEED_DEMO_DATA = env.bool("SEED_DEMO_DATA", default=False)
 
+ADMIN_URL = env("DJANGO_ADMIN_URL", default="admin/")
+ADMIN_URL = (ADMIN_URL or "admin/").strip().strip('"').strip("'")
+ADMIN_URL = ADMIN_URL.lstrip("/")
+if not ADMIN_URL.endswith("/"):
+    ADMIN_URL += "/"
+
 # Comma-separated hostnames/IPs that this Django instance will serve.
 # Example: "127.0.0.1,localhost,api.example.com"
 ALLOWED_HOSTS = [h.strip() for h in env("ALLOWED_HOSTS", default="").split(",") if h.strip()]
