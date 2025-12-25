@@ -15,6 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 
@@ -22,7 +23,7 @@ from core.views import health, search
 from core.views_upload import ImageUploadView
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    path(settings.ADMIN_URL, admin.site.urls),
     path("api/health/", health),
     path("api/search/", search),
     path("api/upload/image/", ImageUploadView.as_view(), name="upload_image"),
