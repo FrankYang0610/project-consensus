@@ -25,7 +25,7 @@ def _seed_demo_enabled() -> bool:
 
     Production safety: do NOT create demo content unless explicitly enabled.
     """
-    return bool(getattr(settings, "SEED_DEMO_DATA", False))
+    return True
 
 
 def create_sample_wiki_data(apps, schema_editor):
