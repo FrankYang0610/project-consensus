@@ -112,23 +112,42 @@ export function sanitizeHtml(html: string): string {
       }
     }
 
-    // Validate <img src> to https and allowed hosts only
+    // Validate <img src> to allowed image hosts only
     if (node.nodeName === 'IMG' && data.attrName === 'src') {
-      const raw = (data.attrValue || '').trim();
+      let value = (data.attrValue || '').trim();
       try {
         // Base URL is only used for resolving relative paths in both browser and SSR. 
         // Absolute http/https URLs will ignore Base URL.
         const baseUrl = typeof window !== 'undefined' 
           ? window.location.origin 
           : (process.env.NEXT_PUBLIC_SITE_URL || 'https://polyu.life');
-        const url = new URL(raw, baseUrl);
+
+        // If user typed a bare domain like "image.polyu.life/xxx.png",
+        // normalize it to an absolute https URL so host detection works.
+        const hasScheme = /^[a-zA-Z][a-zA-Z\d+\-]*:/.test(value);
+        const startsWithSpecial = value.startsWith('/') || value.startsWith('#') || value.startsWith('?') || value.startsWith('.');
+        const looksLikeDomain = /^[^/\s]+\.[^/\s]+(\/[^\s]*)?$/.test(value);
+        if (value && !hasScheme && !startsWithSpecial && looksLikeDomain) {
+          value = `https://${value}`;
+          data.attrValue = value;
+        }
+
+        const url = new URL(value, baseUrl);
         const allowedHosts = (process.env.NEXT_PUBLIC_ALLOWED_IMAGE_HOSTS || 'image.polyu.life')
           .split(',')
           .map(h => h.trim().toLowerCase())
           .filter(Boolean);
-        const host = url.host.toLowerCase();
-        // Only https and within allowlist
-        if (url.protocol !== 'https:' || !allowedHosts.includes(host)) {
+
+        // Use hostname so "image.polyu.life:9000" still matches "image.polyu.life"
+        const hostname = url.hostname.toLowerCase();
+        const isAllowedHost = allowedHosts.includes(hostname);
+
+        const isHttp = url.protocol === 'http:';
+        const isHttps = url.protocol === 'https:';
+
+        // For our own image hosts, allow both http and https (any port).
+        // Everything else is stripped.
+        if (!(isAllowedHost && (isHttp || isHttps))) {
           data.keepAttr = false;
         }
       } catch {
