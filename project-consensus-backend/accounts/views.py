@@ -16,7 +16,6 @@ from rest_framework.throttling import AnonRateThrottle
 
 from accounts import error_codes
 from accounts.models import Profile
-from .selectors import get_user_with_stats
 from .serializers import (
     LoginSerializer,
     PasswordChangeSerializer,
@@ -198,14 +197,9 @@ def login_view(request):
             "account_disabled": True
         }, status=status.HTTP_403_FORBIDDEN)
 
-    # Fetch user with optimized stats to avoid N+1 queries
-    user_with_stats = get_user_with_stats(user.pk)
-    if not user_with_stats:
-        return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-
     # Success; establish session and return profile payload.
     django_login(request, user)
-    return Response({"success": True, "user": UserDetailSerializer(user_with_stats).data})
+    return Response({"success": True, "user": UserDetailSerializer(user).data})
 
 
 @api_view(["POST"])
@@ -219,11 +213,7 @@ def me(request):
     if not request.user.is_authenticated:
         return Response({"message": "Not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
     
-    # Fetch user with optimized stats to avoid N+1 queries
-    user_with_stats = get_user_with_stats(request.user.pk)
-    if not user_with_stats:
-        return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-    return Response(UserDetailSerializer(user_with_stats).data)
+    return Response(UserDetailSerializer(request.user).data)
 
 
 @api_view(["PATCH"])
@@ -257,12 +247,11 @@ def update_profile(request):
 def public_user(request, user_id):
     """Get public profile information for a specific user."""
     try:
-        # Fetch user with optimized stats
-        user_with_stats = get_user_with_stats(user_id)
-        if not user_with_stats:
+        user = User.objects.select_related("profile").filter(pk=user_id).first()
+        if not user:
             return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        return Response(PublicUserSerializer(user_with_stats).data)
+        return Response(PublicUserSerializer(user).data)
     except Exception as e:
         logger.error(f"Error fetching public user {user_id}: {e}")
         return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)

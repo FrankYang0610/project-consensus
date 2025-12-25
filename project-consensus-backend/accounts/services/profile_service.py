@@ -8,7 +8,6 @@ from django.db import transaction
 from django.utils import timezone
 
 from accounts.models import Profile
-from accounts.selectors import get_user_with_stats
 from accounts.serializers import ProfileSerializer
 from core.utils import delete_storage_object_by_url
 
@@ -91,5 +90,4 @@ class ProfileService:
                 exc_info=True,
             )
 
-        # Return user with optimized stats for serializers
-        return get_user_with_stats(user.pk)
+        return User.objects.select_related("profile").get(pk=user.pk)

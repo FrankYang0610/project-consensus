@@ -25,7 +25,11 @@ export function TeacherPreviewCard({ teacher }: TeacherPreviewCardProps) {
   }, [teacher.avatarUrl, teacher.name, isUrl]);
 
   return (
-    <Link href={`/teachers/${teacher.id}`}>
+    <Link
+      href={`/teachers/${teacher.id}`}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
       <Card className="h-full transition-all hover:shadow-md hover:border-primary/50 cursor-pointer">
         <CardContent className="p-4 sm:p-5">
           <div className="flex items-start gap-4">

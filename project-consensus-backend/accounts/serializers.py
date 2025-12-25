@@ -444,47 +444,25 @@ class UserDetailSerializer(serializers.ModelSerializer):
         if not profile:
             return None
 
-        # Prefer a domain method on Profile when available (keeps rule in the model)
-        if hasattr(profile, "days_until_nickname_update_allowed"):
-            return profile.days_until_nickname_update_allowed()
-
-        last_updated = profile.last_nickname_updated_at
-        if not last_updated:
-            return None
-
-        days_since_update = (timezone.now() - last_updated).days
-        if days_since_update >= 14:
-            return None
-        return 14 - days_since_update
-
+        return profile.days_until_nickname_update_allowed()
+    
     def get_stats(self, obj: User) -> dict:
         """
-        Aggregate per-user activity stats.
-        Uses annotated counts when available to avoid N+1 queries.
+        Return per-user activity stats from the profile.
         """
-        if hasattr(obj, "posts_count"):
-            posts_count = obj.posts_count
-        else:
-            posts_count = obj.forum_posts.count()
-
-        if hasattr(obj, "comments_count"):
-            comments_count = obj.comments_count
-        else:
-            comments_count = obj.forum_comments.count()
-
-        if hasattr(obj, "reviews_count"):
-            reviews_count = obj.reviews_count
-        else:
-            reviews_count = obj.course_reviews.count()
+        profile = self._get_profile(obj)
+        forum_posts_count = profile.forum_posts_count if profile else 0
+        forum_post_comments_count = profile.forum_post_comments_count if profile else 0
+        course_reviews_count = profile.course_reviews_count if profile else 0
 
         joined_days = 0
         if obj.date_joined:
             joined_days = (timezone.now() - obj.date_joined).days
 
         return {
-            "posts": posts_count,
-            "comments": comments_count,
-            "reviews": reviews_count,
+            "forumPostsCount": forum_posts_count,
+            "forumPostCommentsCount": forum_post_comments_count,
+            "courseReviewsCount": course_reviews_count,
             "joinedDays": joined_days,
         }
 

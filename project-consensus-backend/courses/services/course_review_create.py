@@ -4,6 +4,8 @@ import logging
 from django.db import transaction, IntegrityError
 from django.contrib.auth import get_user_model
 
+from accounts.services import increment_course_reviews_count
+
 from ..models import CourseReview, Course
 from ..security.html import sanitize_course_review_html
 from .course_exceptions import AlreadyReviewedError
@@ -45,6 +47,7 @@ def create_course_review(user: User, course: Course, payload: dict) -> CourseRev
                 course=course,
                 **payload
             )
+            transaction.on_commit(lambda: increment_course_reviews_count(user_id=user.pk))
             recompute_course_aggregates_after_review_change(course=course)
             # Prepare for serialization (add presentation fields)
             return prepare_course_review_for_serialization(instance, user)

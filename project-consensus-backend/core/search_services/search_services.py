@@ -389,12 +389,9 @@ def search_users(query: str, similarity_threshold: float, is_short_query: bool) 
     else:
         profiles_qs = profiles_qs.filter(similarity__gte=similarity_threshold)
 
-    # Calculate user activity and final score
+    # Calculate user activity and final score using stored counters on Profile
     profiles = profiles_qs.select_related('user').annotate(
-        posts_count=Count('user__forum_posts', distinct=True),
-        reviews_count=Count('user__course_reviews', distinct=True)
-    ).annotate(
-        activity_score=F('posts_count') + F('reviews_count'),
+        activity_score=F('forum_posts_count') + F('course_reviews_count'),
         popularity_norm=Least(F('activity_score') / Value(100.0), Value(1.0)),
         final_score=create_final_score_expr()
     ).order_by('-final_score')[:MAX_RESULTS_PER_TYPE]
@@ -416,8 +413,8 @@ def search_users(query: str, similarity_threshold: float, is_short_query: bool) 
                 {
                     'nickname': profile.nickname,
                     'avatar_url': profile.avatar_url,
-                    'posts_count': profile.posts_count,
-                    'reviews_count': profile.reviews_count,
+                    'forum_posts_count': profile.forum_posts_count,
+                    'course_reviews_count': profile.course_reviews_count,
                     'pronouns': profile.pronouns if profile.pronouns != 'not_specified' else None
                 }
             ),

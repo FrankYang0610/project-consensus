@@ -46,10 +46,10 @@ export default function PublicUserPage() {
   const formattedPronouns = shouldDisplayPronouns(user?.pronouns) ? formatPronounsForProfilePageDisplay(user?.pronouns) : "";
 
   const userStats = user?.stats || {
-    posts: 0,
-    comments: 0,
-    reviews: 0,
-    joinedDays: 0
+    forumPostsCount: 0,
+    forumPostCommentsCount: 0,
+    courseReviewsCount: 0,
+    joinedDays: 0,
   };
 
   // Fetch user information
@@ -212,15 +212,15 @@ export default function PublicUserPage() {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{userStats.posts}</div>
+                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{userStats.forumPostsCount}</div>
                       <div className="text-sm text-gray-600 dark:text-gray-300">{t('profile.stats.posts')}</div>
                     </div>
                     <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600 dark:text-green-400">{userStats.comments}</div>
+                      <div className="text-2xl font-bold text-green-600 dark:text-green-400">{userStats.forumPostCommentsCount}</div>
                       <div className="text-sm text-gray-600 dark:text-gray-300">{t('profile.stats.comments')}</div>
                     </div>
                     <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                      <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{userStats.reviews}</div>
+                      <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{userStats.courseReviewsCount}</div>
                       <div className="text-sm text-gray-600 dark:text-gray-300">{t('profile.stats.reviews')}</div>
                     </div>
                     <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">

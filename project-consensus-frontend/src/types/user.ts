@@ -6,10 +6,10 @@
  * 用户统计信息接口 / User statistics interface
  */
 export interface UserStats {
-  posts: number; // 发帖数量 / Number of posts
-  comments: number; // 评论数量 / Number of comments
-  reviews: number; // 评价数量 / Number of reviews
-  joinedDays: number; // 加入天数 / Days since joining
+  forumPostsCount: number; // Number of forum posts
+  forumPostCommentsCount: number; // Number of forum post comments
+  courseReviewsCount: number; // Number of course reviews
+  joinedDays: number; // Days since joining
 }
 
 /**

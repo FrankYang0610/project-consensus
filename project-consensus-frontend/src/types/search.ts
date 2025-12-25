@@ -33,7 +33,8 @@ export interface SearchResultMetadata {
   // User metadata
   nickname?: string;
   avatar_url?: string;
-  posts_count?: number;
+  forum_posts_count?: number;
+  course_reviews_count?: number;
 
   // Common
   created_at?: string;

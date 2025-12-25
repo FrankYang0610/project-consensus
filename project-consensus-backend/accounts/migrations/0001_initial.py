@@ -27,6 +27,9 @@ class Migration(migrations.Migration):
                 ("show_course_reviews_publicly", models.BooleanField(default=True, help_text="Show my course reviews publicly")),
                 ("last_nickname_updated_at", models.DateTimeField(blank=True, help_text="Last nickname change time", null=True)),
                 ("is_account_active", models.BooleanField(default=True, help_text="Account is active (can log in)")),
+                ("forum_posts_count", models.PositiveIntegerField(default=0, help_text="Total forum posts created by the user")),
+                ("forum_post_comments_count", models.PositiveIntegerField(default=0, help_text="Total forum comments created by the user")),
+                ("course_reviews_count", models.PositiveIntegerField(default=0, help_text="Total course reviews created by the user")),
                 ("user", models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name="profile", to=settings.AUTH_USER_MODEL)),
             ],
             options={

@@ -5,7 +5,6 @@ import logging
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import override
@@ -17,6 +16,7 @@ from accounts.services.privacy_service import (
 from core.permissions import IsAuthorOrReadOnly
 from core.views import BaseUserContentListView
 from .models import ForumPost, ForumPostComment
+from .pagination import DefaultPageNumberPagination
 from .serializers import ForumPostCommentSerializer, ForumPostSerializer
 from .services.forum_like import (
     toggle_forum_post_like,
@@ -33,12 +33,6 @@ from .services.forum_post_comment_position import (
 from .services import get_forum_post_stats
 
 logger = logging.getLogger(__name__)
-
-
-class DefaultPageNumberPagination(PageNumberPagination):
-    page_size = 12
-    page_size_query_param = "page_size"
-    max_page_size = 100
 
 
 class ForumPostViewSet(viewsets.ModelViewSet):
