@@ -4,24 +4,17 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter, OrderingFilter
-from rest_framework.pagination import PageNumberPagination
 
 from courses.models import Course
 
 from django.db.models import Q
 
 from .models import Teacher
+from .pagination import TeacherPagination
 from .serializers import TeacherSerializer, TeacherCourseRefSerializer
 from .services.teachers_splink_search import search_teachers_with_splink
 from .services.teachers_build_search_response import build_teachers_splink_response
 from .services import get_teacher_stats
-
-
-class TeacherPagination(PageNumberPagination):
-    """Custom pagination for teachers list."""
-    page_size = 20
-    page_size_query_param = 'page_size'
-    max_page_size = 100
 
 
 class TeacherViewSet(viewsets.ReadOnlyModelViewSet):
