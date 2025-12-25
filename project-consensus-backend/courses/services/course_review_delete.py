@@ -41,7 +41,7 @@ def delete_course_review(user: User, review: CourseReview) -> None:
             return
 
         if author_id:
-            decrement_course_reviews_count(user_id=author_id, delta=1)
+            transaction.on_commit(lambda: decrement_course_reviews_count(user_id=author_id, delta=1))
 
         course.increment_deleted_reviews_count()
         recompute_course_aggregates_after_review_change(course=course)

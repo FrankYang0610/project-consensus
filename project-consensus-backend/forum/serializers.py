@@ -80,8 +80,9 @@ class ForumPostSerializer(serializers.ModelSerializer):
         if not user or not user.is_authenticated:
             raise serializers.ValidationError({"detail": "Authentication required"})
 
-        post = ForumPost.objects.create(author=user, **validated_data)
-        increment_forum_posts_count(user_id=user.pk)
+        with transaction.atomic():
+            post = ForumPost.objects.create(author=user, **validated_data)
+            transaction.on_commit(lambda: increment_forum_posts_count(user_id=user.pk))
         return post
 
     def get_author(self, obj: ForumPost) -> dict:
@@ -256,8 +257,9 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
         if not user or not user.is_authenticated:
             raise serializers.ValidationError({"detail": "Authentication required"})
 
-        comment = ForumPostComment.objects.create(author=user, **validated_data)
-        increment_forum_post_comments_count(user_id=user.pk)
+        with transaction.atomic():
+            comment = ForumPostComment.objects.create(author=user, **validated_data)
+            transaction.on_commit(lambda: increment_forum_post_comments_count(user_id=user.pk))
 
         # Best-effort notification; errors should not block comment creation
         try:

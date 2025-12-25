@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.db import transaction
 from django.db.models import F, Case, When, Value, IntegerField
 
 from accounts.models import Profile
@@ -13,25 +14,27 @@ def _ensure_profile(user_id: int) -> None:
 def _increment_field(user_id: int, field_name: str, delta: int) -> None:
     if delta <= 0:
         return
-    _ensure_profile(user_id)
-    Profile.objects.filter(user_id=user_id).update(
-        **{field_name: F(field_name) + delta}
-    )
+    with transaction.atomic():
+        _ensure_profile(user_id)
+        Profile.objects.filter(user_id=user_id).update(
+            **{field_name: F(field_name) + delta}
+        )
 
 
 def _decrement_field(user_id: int, field_name: str, delta: int) -> None:
     if delta <= 0:
         return
-    _ensure_profile(user_id)
-    Profile.objects.filter(user_id=user_id).update(
-        **{
-            field_name: Case(
-                When(**{f"{field_name}__gte": delta}, then=F(field_name) - delta),
-                default=Value(0),
-                output_field=IntegerField(),
-            )
-        }
-    )
+    with transaction.atomic():
+        _ensure_profile(user_id)
+        Profile.objects.filter(user_id=user_id).update(
+            **{
+                field_name: Case(
+                    When(**{f"{field_name}__gte": delta}, then=F(field_name) - delta),
+                    default=Value(0),
+                    output_field=IntegerField(),
+                )
+            }
+        )
 
 
 def increment_forum_posts_count(*, user_id: int, delta: int = 1) -> None:

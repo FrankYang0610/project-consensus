@@ -93,6 +93,10 @@ def seed_forum_data(apps, schema_editor):
         likes_count=0,
     )
 
+    demo_profile = Profile.objects.get(user=demo)
+    demo_profile.forum_posts_count += 1
+    demo_profile.save(update_fields=["forum_posts_count"])
+
     # Create ~20 topical posts across CS, Economics, Math, Literature, Classical Musicology
     # Don't create comments and notifications, only create example posts for homepage and filtering
     topics = [
@@ -192,6 +196,9 @@ def seed_forum_data(apps, schema_editor):
             likes_count=random.randint(0, 24),
             has_content_warning=random.random() < 0.2,  # Randomly mark some demo posts with a content warning
         )
+        author_profile = Profile.objects.get(user=author)
+        author_profile.forum_posts_count += 1
+        author_profile.save(update_fields=["forum_posts_count"])
 
     # Create discussion with nested replies
     comments_data = [
@@ -359,6 +366,9 @@ def seed_forum_data(apps, schema_editor):
             created_at=comment_data["created_at"],
             is_anonymous=comment_data.get("is_anonymous", False),
         )
+        author_profile = Profile.objects.get(user=author)
+        author_profile.forum_post_comments_count += 1
+        author_profile.save(update_fields=["forum_post_comments_count"])
         main_comments.append(comment)
 
     # Create replies to main comments
@@ -572,6 +582,9 @@ def seed_forum_data(apps, schema_editor):
             created_at=reply_data["created_at"],
             is_anonymous=reply_data.get("is_anonymous", False),
         )
+        author_profile = Profile.objects.get(user=author)
+        author_profile.forum_post_comments_count += 1
+        author_profile.save(update_fields=["forum_post_comments_count"])
         created_replies.append(c)
 
     # Soft-delete two replies to demonstrate placeholders
@@ -579,9 +592,18 @@ def seed_forum_data(apps, schema_editor):
         # Mark first reply soft-deleted with cleared content
         first = created_replies[0]
         ForumPostComment.objects.filter(pk=first.pk).update(is_deleted=True, content="")
+        first_author_profile = Profile.objects.filter(user_id=first.author_id).first()
+        if first_author_profile and first_author_profile.forum_post_comments_count > 0:
+            first_author_profile.forum_post_comments_count -= 1
+            first_author_profile.save(update_fields=["forum_post_comments_count"])
+
     if len(created_replies) > 5:
         another = created_replies[5]
         ForumPostComment.objects.filter(pk=another.pk).update(is_deleted=True, content="")
+        another_author_profile = Profile.objects.filter(user_id=another.author_id).first()
+        if another_author_profile and another_author_profile.forum_post_comments_count > 0:
+            another_author_profile.forum_post_comments_count -= 1
+            another_author_profile.save(update_fields=["forum_post_comments_count"])
 
     # Create some nested replies (replies to replies)
     nested_replies_data = [
@@ -660,11 +682,19 @@ def seed_forum_data(apps, schema_editor):
             created_at=nested_data["created_at"],
             is_anonymous=nested_data.get("is_anonymous", False),
         )
+        author_profile = Profile.objects.get(user=author)
+        author_profile.forum_post_comments_count += 1
+        author_profile.save(update_fields=["forum_post_comments_count"])
         created_nested_replies.append(c)
 
     # Soft-delete one nested reply as well
     if created_nested_replies:
-        ForumPostComment.objects.filter(pk=created_nested_replies[-1].pk).update(is_deleted=True, content="")
+        nested = created_nested_replies[-1]
+        ForumPostComment.objects.filter(pk=nested.pk).update(is_deleted=True, content="")
+        nested_author_profile = Profile.objects.filter(user_id=nested.author_id).first()
+        if nested_author_profile and nested_author_profile.forum_post_comments_count > 0:
+            nested_author_profile.forum_post_comments_count -= 1
+            nested_author_profile.save(update_fields=["forum_post_comments_count"])
 
 
 def unseed_forum_data(apps, schema_editor):

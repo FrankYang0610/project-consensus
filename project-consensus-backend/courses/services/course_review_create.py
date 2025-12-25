@@ -47,7 +47,7 @@ def create_course_review(user: User, course: Course, payload: dict) -> CourseRev
                 course=course,
                 **payload
             )
-            increment_course_reviews_count(user_id=user.pk)
+            transaction.on_commit(lambda: increment_course_reviews_count(user_id=user.pk))
             recompute_course_aggregates_after_review_change(course=course)
             # Prepare for serialization (add presentation fields)
             return prepare_course_review_for_serialization(instance, user)
