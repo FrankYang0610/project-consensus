@@ -124,7 +124,7 @@ export function sanitizeHtml(html: string): string {
 
         // If user typed a bare domain like "image.polyu.life/xxx.png",
         // normalize it to an absolute https URL so host detection works.
-        const hasScheme = /^[a-zA-Z][a-zA-Z\d+\-]*:/.test(value);
+        const hasScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(value);
         const startsWithSpecial = value.startsWith('/') || value.startsWith('#') || value.startsWith('?') || value.startsWith('.');
         const looksLikeDomain = /^[^/\s]+\.[^/\s]+(\/[^\s]*)?$/.test(value);
         if (value && !hasScheme && !startsWithSpecial && looksLikeDomain) {
