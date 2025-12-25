@@ -160,11 +160,11 @@ export function SearchResultCard({ result, className, highlight }: SearchResultC
             {result.metadata.department}
           </span>
         )}
-        {result.metadata.posts_count !== undefined && result.metadata.reviews_count !== undefined && (
+        {result.metadata.forum_posts_count !== undefined && result.metadata.course_reviews_count !== undefined && (
           <span>
             {t('search.resultTitle.userStats', {
-              posts: result.metadata.posts_count,
-              reviews: result.metadata.reviews_count
+              posts: result.metadata.forum_posts_count,
+              reviews: result.metadata.course_reviews_count
             })}
           </span>
         )}

@@ -6,6 +6,11 @@ from django.db import transaction
 from rest_framework import serializers
 from typing import override
 
+from accounts.services import (
+    increment_forum_posts_count,
+    increment_forum_post_comments_count,
+)
+
 from .models import ForumPost, ForumPostComment
 from .utils import generate_anonymous_id
 from forum.security.html import sanitize_forum_html
@@ -75,7 +80,9 @@ class ForumPostSerializer(serializers.ModelSerializer):
         if not user or not user.is_authenticated:
             raise serializers.ValidationError({"detail": "Authentication required"})
 
-        return ForumPost.objects.create(author=user, **validated_data)
+        post = ForumPost.objects.create(author=user, **validated_data)
+        increment_forum_posts_count(user_id=user.pk)
+        return post
 
     def get_author(self, obj: ForumPost) -> dict:
         if obj.is_anonymous:
@@ -250,6 +257,7 @@ class ForumPostCommentSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"detail": "Authentication required"})
 
         comment = ForumPostComment.objects.create(author=user, **validated_data)
+        increment_forum_post_comments_count(user_id=user.pk)
 
         # Best-effort notification; errors should not block comment creation
         try:

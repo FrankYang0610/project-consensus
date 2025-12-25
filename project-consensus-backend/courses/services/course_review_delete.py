@@ -3,6 +3,8 @@ from __future__ import annotations
 from django.contrib.auth import get_user_model
 from django.db import transaction
 
+from accounts.services import decrement_course_reviews_count
+
 from ..models import CourseReview
 from .course_aggregates import recompute_course_aggregates_after_review_change
 from .course_image_cleanup import delete_review_images
@@ -25,6 +27,7 @@ def delete_course_review(user: User, review: CourseReview) -> None:
         raise PermissionError("You can only delete your own reviews")
 
     course = review.course
+    author_id = review.author_id
     delete_review_images(review=review)
 
     with transaction.atomic():
@@ -36,6 +39,9 @@ def delete_course_review(user: User, review: CourseReview) -> None:
             # Already deleted or does not exist – no-op: do not increment
             # counters or recompute aggregates.
             return
+
+        if author_id:
+            decrement_course_reviews_count(user_id=author_id, delta=1)
 
         course.increment_deleted_reviews_count()
         recompute_course_aggregates_after_review_change(course=course)

@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import logging
 from django.db import transaction
+from django.db.models import Count
 
+from accounts.services import (
+    decrement_forum_posts_count,
+    decrement_forum_post_comments_count,
+)
 from core.utils import delete_images_in_html, delete_storage_object_by_url, extract_image_srcs_from_html
 
 from ..models import ForumPost, ForumPostComment
@@ -12,6 +17,8 @@ logger = logging.getLogger(__name__)
 
 def delete_post_and_cleanup_images(*, post: ForumPost) -> None:
     """Hard delete a forum post and cleanup related images."""
+    author_id = post.author_id
+
     try:
         delete_images_in_html(post.content or "", owner_user_id=post.author_id)
     except Exception as e:
@@ -28,15 +35,37 @@ def delete_post_and_cleanup_images(*, post: ForumPost) -> None:
                 try:
                     delete_images_in_html(content, owner_user_id=author_id)
                 except Exception:
-                    # Best-effort per comment; continue on failure
-                    pass
+                    pass  # Best-effort per comment; continue on failure
     except Exception as e:
         logger.warning(
             f"Failed to cleanup images in comments for forum post {post.pk}: {e}",
             exc_info=True,
         )
+
+    # Compute how many comments each author has under this post so that user stats can be updated after deletion.
+    try:
+        comment_counts = list(
+            ForumPostComment.objects.filter(post_id=post.pk)
+            .values("author_id")
+            .annotate(count=Count("id"))
+        )
+    except Exception as e:  # pragma: no cover - defensive logging
+        logger.warning("Failed to compute comment counts for forum post %s before delete: %s", post.pk, e, exc_info=True)
+        comment_counts = []
+
     with transaction.atomic():
-        post.delete()
+        deleted_count, _ = post.delete()
+        if deleted_count == 0:
+            return
+
+        if author_id:
+            decrement_forum_posts_count(user_id=author_id, delta=1)
+
+        for row in comment_counts:
+            user_id = row.get("author_id")
+            count = row.get("count") or 0
+            if user_id and count > 0:
+                decrement_forum_post_comments_count(user_id=user_id, delta=count)
 
 
 def cleanup_removed_images_for_post(*, before_html: str, post_after_update: ForumPost) -> None:

@@ -28,6 +28,9 @@ class Profile(models.Model):
     show_course_reviews_publicly = models.BooleanField(default=True, help_text="Show my course reviews publicly")
     last_nickname_updated_at = models.DateTimeField(null=True, blank=True, help_text="Last nickname change time")
     is_account_active = models.BooleanField(default=True, help_text="Account is active (can log in)")
+    forum_posts_count = models.PositiveIntegerField(default=0, help_text="Total forum posts created by the user")
+    forum_post_comments_count = models.PositiveIntegerField(default=0, help_text="Total forum comments created by the user")
+    course_reviews_count = models.PositiveIntegerField(default=0, help_text="Total course reviews created by the user")
 
     class Meta:
         verbose_name = "Profile"
