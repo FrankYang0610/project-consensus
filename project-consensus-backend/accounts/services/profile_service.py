@@ -22,7 +22,7 @@ class NicknameRateLimitError(Exception):
     def __init__(self, days_remaining: int) -> None:
         self.days_remaining = days_remaining
         super().__init__(
-            "Nickname can only be updated once every 14 days. "
+            "Nickname can only be updated once every 3 days. "
             f"Please wait {days_remaining} more day(s)."
         )
 
@@ -31,7 +31,7 @@ class ProfileService:
     """Encapsulate profile update business logic.
 
     Responsibilities:
-    - Enforce nickname 14-day cooldown rule
+    - Enforce nickname cooldown rule
     - Validate and persist profile fields via serializer
     - Clean up old avatar object in storage when avatar_url changes
     - Return a fresh user instance annotated with stats for response payloads

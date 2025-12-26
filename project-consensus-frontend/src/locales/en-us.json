@@ -553,7 +553,7 @@
       "preview": "Preview",
       "saved": "Profile updated.",
       "saveFailed": "Failed to save profile.",
-      "updateRestriction": "Nickname can only be updated once every 14 days.",
+      "updateRestriction": "Nickname can only be updated once every 3 days.",
       "lastUpdated": "Nickname last updated",
       "canUpdateIn": "Nickname can be updated in {{days}} day(s)",
       "canUpdateNow": "You can update your nickname now",

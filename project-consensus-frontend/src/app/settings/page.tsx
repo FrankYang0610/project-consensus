@@ -176,7 +176,7 @@ export default function SettingsPage() {
         }
         // Check if this is a rate limit error
         // 检查是否为频率限制错误
-        else if (errorMessage.includes('display name') && (errorMessage.includes('14 days') || errorMessage.includes('wait'))) {
+        else if (errorMessage.includes('display name') && (errorMessage.includes('3 days') || errorMessage.includes('wait'))) {
           // Extract days from error message if possible
           // 尝试从错误消息中提取天数
           const match = errorMessage.match(/(\d+)\s*(?:more\s+)?day/i);

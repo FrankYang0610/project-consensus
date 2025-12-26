@@ -551,7 +551,7 @@
       "preview": "預覽",
       "saved": "個人資料已更新。",
       "saveFailed": "儲存個人資料失敗。",
-      "updateRestriction": "暱稱每14天只能修改一次。",
+      "updateRestriction": "暱稱每3天只能修改一次。",
       "lastUpdated": "暱稱最後更新",
       "canUpdateIn": "暱稱還需 {{days}} 天後才能再次更新",
       "canUpdateNow": "現在可以更新暱稱",
