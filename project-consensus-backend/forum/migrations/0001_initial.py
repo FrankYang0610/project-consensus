@@ -98,7 +98,7 @@ class Migration(migrations.Migration):
                 'db_table': 'forum_comment_content_backup',
             },
         ),
-        
+
         migrations.AddIndex(
             model_name='forumpost',
             index=models.Index(fields=['created_at'], name='forumpost_created_idx'),
@@ -157,5 +157,10 @@ class Migration(migrations.Migration):
                 fields=('comment', 'user'),
                 name='forumcommentlike_comment_user_unique',
             ),
+        ),
+
+        migrations.AddIndex(
+            model_name='forumcommentcontentbackup',
+            index=models.Index(fields=['deleted_at'], name='forumcmtbackup_deleted_at_idx'),
         ),
     ]

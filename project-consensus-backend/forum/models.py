@@ -323,6 +323,9 @@ class ForumCommentContentBackup(models.Model):
         db_table = "forum_comment_content_backup"
         verbose_name = "Comment Content Backup"
         verbose_name_plural = "Comment Content Backups"
+        indexes = [
+            models.Index(fields=["deleted_at"], name="forumcmtbackup_deleted_at_idx"),
+        ]
 
     def __str__(self) -> str:  # pragma: no cover
         return f"Backup for comment {self.comment_id}"

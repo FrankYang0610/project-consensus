@@ -153,7 +153,7 @@ class ForumPostCommentAdmin(admin.ModelAdmin):
         "created_at",
     )
     search_fields = ("post__title", "author__username", "content")
-    readonly_fields = ("id", "created_at", "likes_count")
+    readonly_fields = ("id", "created_at", "likes_count", "is_deleted")
     date_hierarchy = "created_at"
     list_select_related = ["author", "post", "reply_to"]
 
