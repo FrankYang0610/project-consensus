@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from django.db import connections
 from django.http import StreamingHttpResponse, HttpRequest, HttpResponse
 from django.conf import settings
@@ -11,6 +13,9 @@ from rest_framework.response import Response
 # Reuse Notification model from accounts to avoid DB migrations during decoupling
 from .models import Notification
 from .runtime import subscribe, publish
+
+
+logger = logging.getLogger(__name__)
 
 
 class DefaultNotificationPageNumberPagination(PageNumberPagination):
@@ -171,10 +176,9 @@ def notifications_stream(request: HttpRequest):
 
     cnt = Notification.objects.filter(recipient=user, is_read=False, is_deleted=False).count()
     try:
-        for conn in connections.all():
-            conn.close()
+        connections.close_all()
     except Exception:
-        pass
+        logger.exception("Failed to close database connections before starting notifications SSE stream")
 
     def _gen():
         # initial event
