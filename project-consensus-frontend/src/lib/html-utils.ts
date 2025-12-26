@@ -38,11 +38,13 @@ function normalizeAllowedHttpsOrigin(value: string): string | null {
 }
 
 let allowedImageOriginsCache: string[] | null = null;
+let allowedImageOriginsCacheKey: string | null = null;
 
 function getAllowedImageOrigins(): string[] {
-  if (allowedImageOriginsCache) return allowedImageOriginsCache;
+  const raw = process.env.NEXT_PUBLIC_ALLOWED_IMAGE_HOSTS || 'https://image.polyu.life';
+  if (allowedImageOriginsCache && allowedImageOriginsCacheKey === raw) return allowedImageOriginsCache;
 
-  const origins = (process.env.NEXT_PUBLIC_ALLOWED_IMAGE_HOSTS || 'https://image.polyu.life')
+  const origins = raw
     .split(',')
     .map((h) => normalizeAllowedHttpsOrigin(h))
     .filter((h): h is string => Boolean(h));
@@ -52,6 +54,7 @@ function getAllowedImageOrigins(): string[] {
   }
 
   allowedImageOriginsCache = origins;
+  allowedImageOriginsCacheKey = raw;
   return origins;
 }
 
