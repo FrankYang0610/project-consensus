@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import time
 import warnings
 from typing import AsyncIterator, Optional
@@ -9,6 +10,8 @@ from typing import AsyncIterator, Optional
 import redis
 import redis.asyncio as redis_async
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 
 # ==================== Redis-backed Pub/Sub for Notifications ====================
@@ -144,6 +147,7 @@ class _AsyncRedisSubscriber:
                 except Exception:
                     continue
         except Exception:
+            logger.warning("Replay failed for user %s", self.user_id, exc_info=True)
             return
 
     async def listen(self, keepalive_seconds: int = 25) -> AsyncIterator[str]:
