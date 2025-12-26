@@ -2,7 +2,7 @@
 Forum application Django admin configuration.
 
 Provides admin interfaces for ForumPost, ForumPostComment, ForumPostLike,
-and ForumCommentLike models.
+and ForumPostCommentLike models.
 """
 
 from django.contrib import admin
@@ -13,13 +13,13 @@ from .models import (
     ForumPost,
     ForumPostComment,
     ForumPostLike,
-    ForumCommentLike,
-    ForumCommentContentBackup,
+    ForumPostCommentLike,
+    ForumPostCommentContentBackup,
 )
 
 
-@admin.register(ForumCommentContentBackup)
-class ForumCommentContentBackupAdmin(admin.ModelAdmin):
+@admin.register(ForumPostCommentContentBackup)
+class ForumPostCommentContentBackupAdmin(admin.ModelAdmin):
     """Admin interface for viewing comment backups (read-only)."""
     list_display = ("comment_id", "content_preview", "deleted_by", "deleted_at")
     readonly_fields = ("comment_id", "content", "deleted_at", "deleted_by")
@@ -209,7 +209,7 @@ class ForumPostCommentAdmin(admin.ModelAdmin):
         # Backup content before deletion
         backups = []
         for comment in to_delete:
-            backups.append(ForumCommentContentBackup(
+            backups.append(ForumPostCommentContentBackup(
                 comment_id=comment.id,
                 content=comment.content,
                 deleted_by=request.user.username,
@@ -217,7 +217,7 @@ class ForumPostCommentAdmin(admin.ModelAdmin):
 
         # Bulk create backups (update if already exists)
         if backups:
-            ForumCommentContentBackup.objects.bulk_create(
+            ForumPostCommentContentBackup.objects.bulk_create(
                 backups,
                 update_conflicts=True,
                 unique_fields=["comment_id"],
@@ -251,13 +251,13 @@ class ForumPostCommentAdmin(admin.ModelAdmin):
 
         for comment in to_restore:
             try:
-                backup = ForumCommentContentBackup.objects.get(comment_id=comment.id)
+                backup = ForumPostCommentContentBackup.objects.get(comment_id=comment.id)
                 comment.content = backup.content
                 comment.is_deleted = False
                 comment.save(update_fields=["content", "is_deleted"])
                 backup.delete()  # Remove backup after successful restore
                 restored_count += 1
-            except ForumCommentContentBackup.DoesNotExist:
+            except ForumPostCommentContentBackup.DoesNotExist:
                 no_backup_count += 1
 
         not_deleted = queryset.filter(is_deleted=False).count()
@@ -299,8 +299,8 @@ class ForumPostLikeAdmin(admin.ModelAdmin):
         return obj.post.title[:40] + "..." if len(obj.post.title) > 40 else obj.post.title
 
 
-@admin.register(ForumCommentLike)
-class ForumCommentLikeAdmin(admin.ModelAdmin):
+@admin.register(ForumPostCommentLike)
+class ForumPostCommentLikeAdmin(admin.ModelAdmin):
     """
     Forum Comment Like Admin Interface
 

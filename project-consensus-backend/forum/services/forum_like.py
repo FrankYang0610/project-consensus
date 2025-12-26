@@ -4,7 +4,7 @@ from django.db import transaction
 
 from .forum_notification import emit_notification_for_post_like, emit_notification_for_comment_like
 
-from ..models import ForumCommentLike, ForumPost, ForumPostComment, ForumPostLike
+from ..models import ForumPostCommentLike, ForumPost, ForumPostComment, ForumPostLike
 
 
 def toggle_forum_post_like(*, user, post: ForumPost) -> bool:
@@ -30,7 +30,7 @@ def toggle_forum_comment_like(*, user, comment: ForumPostComment) -> bool:
     Returns True if now liked, False if unliked.
     """
     with transaction.atomic():
-        like, created = ForumCommentLike.objects.get_or_create(comment=comment, user=user)
+        like, created = ForumPostCommentLike.objects.get_or_create(comment=comment, user=user)
         if created:
             comment.increment_like()
             emit_notification_for_comment_like(comment=comment, user=user)
