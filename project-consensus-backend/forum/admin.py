@@ -6,6 +6,7 @@ and ForumCommentLike models.
 """
 
 from django.contrib import admin
+from django.db.models import Case, Count, Value, When
 from django.utils.html import strip_tags
 
 from .models import ForumPost, ForumPostComment, ForumPostLike, ForumCommentLike
@@ -73,31 +74,35 @@ class ForumPostAdmin(admin.ModelAdmin):
         return "-"
     tags_display.short_description = "Tags"
 
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        queryset = queryset.annotate(_comments_count=Count("comments"))
+        return queryset
+
     def comments_count(self, obj):
-        return obj.comments.count()
+        return obj._comments_count
     comments_count.short_description = "Comments"
+    comments_count.admin_order_field = "_comments_count"
 
     actions = ["toggle_content_warning", "clear_content_warning"]
 
     @admin.action(description="Toggle content warning on selected posts")
     def toggle_content_warning(self, request, queryset):
         """Toggle content warning for selected posts"""
-        for post in queryset:
-            post.has_content_warning = not post.has_content_warning
-            post.save(update_fields=["has_content_warning"])
-        self.message_user(
-            request,
-            f"Content warning toggled for {queryset.count()} posts."
+        count = queryset.count()
+        queryset.update(
+            has_content_warning=Case(
+                When(has_content_warning=True, then=Value(False)),
+                default=Value(True),
+            )
         )
+        self.message_user(request, f"Content warning toggled for {count} posts.")
 
     @admin.action(description="Clear content warning on selected posts")
     def clear_content_warning(self, request, queryset):
         """Clear content warning for selected posts"""
         updated = queryset.update(has_content_warning=False)
-        self.message_user(
-            request,
-            f"Content warning cleared for {updated} posts."
-        )
+        self.message_user(request, f"Content warning cleared for {updated} posts.")
 
 
 @admin.register(ForumPostComment)
@@ -159,7 +164,7 @@ class ForumPostCommentAdmin(admin.ModelAdmin):
     author_name.admin_order_field = "author__username"
 
     def reply_to_name(self, obj):
-        if obj.reply_to:
+        if obj.reply_to and obj.reply_to.author:
             return obj.reply_to.author.username
         return "-"
     reply_to_name.short_description = "Reply To"
