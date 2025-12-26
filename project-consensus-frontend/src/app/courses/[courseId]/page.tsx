@@ -22,6 +22,8 @@ import { useI18n } from "@/hooks/use-i18n";
 import { fetchCourseById } from "@/lib/api/course";
 import type { Course, TeacherInfo, CourseReview, FetchCourseReviewsParams, CourseReviewReply } from "@/types";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { isContentEmpty } from "@/lib/utils";
 import { useApp } from "@/contexts/AppContext";
 import { deleteCourseReview } from "@/lib/api/course";
@@ -140,6 +142,8 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
   const [replyComposerOpen, setReplyComposerOpen] = React.useState<Set<string>>(new Set());
   // Track reply target user per review when replying to a reply
   const [replyToUserByReview, setReplyToUserByReview] = React.useState<Record<string, { id: string; name: string } | null>>({});
+  // Track anonymous mode per review when composing a reply
+  const [anonymousByReview, setAnonymousByReview] = React.useState<Record<string, boolean>>({});
 
   // Parse URL hash on mount and when URL changes to support notification anchors
   const [targetReviewId, setTargetReviewId] = React.useState<string | undefined>(undefined);
@@ -386,6 +390,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
     });
     setNewReplyContentByReview(prev => ({ ...prev, [reviewId]: prev[reviewId] ?? "" }));
     setReplyToUserByReview(prev => ({ ...prev, [reviewId]: null }));
+    setAnonymousByReview(prev => ({ ...prev, [reviewId]: prev[reviewId] ?? false }));
   }, [isLoggedIn, openLoginModal]);
 
   // Open composer targeting a specific reply's author (reply to reply)
@@ -399,6 +404,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
     });
     setReplyToUserByReview(prev => ({ ...prev, [reviewId]: { id: target.author.id, name: target.author.name } }));
     setNewReplyContentByReview(prev => ({ ...prev, [reviewId]: prev[reviewId] ?? "" }));
+    setAnonymousByReview(prev => ({ ...prev, [reviewId]: prev[reviewId] ?? false }));
   }, [isLoggedIn, openLoginModal]);
 
   const handleSubmitReply = React.useCallback(async (reviewId: string) => {
@@ -409,6 +415,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
       const payload: Parameters<typeof createReviewReply>[1] = {
         content: html,
         ...(replyToUserByReview[reviewId]?.id ? { replyToUserId: replyToUserByReview[reviewId]?.id } : {}),
+        ...(anonymousByReview[reviewId] ? { isAnonymous: true } : {}),
       };
       const reply = await createReviewReply(reviewId, payload);
       setRepliesByReview(prev => ({ ...prev, [reviewId]: [ ...(prev[reviewId] || []), reply ] }));
@@ -419,6 +426,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
         return next;
       });
       setReplyToUserByReview(prev => ({ ...prev, [reviewId]: null }));
+      setAnonymousByReview(prev => ({ ...prev, [reviewId]: false }));
       // bump repliesCount on review
       setReviews(prev => prev.map(r => r.id === reviewId ? { ...r, repliesCount: (r.repliesCount || 0) + 1 } : r));
       
@@ -427,7 +435,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
     } catch (e) {
       console.error('Failed to create reply', e);
     }
-  }, [newReplyContentByReview, replyToUserByReview, isLoggedIn, openLoginModal]);
+  }, [newReplyContentByReview, replyToUserByReview, anonymousByReview, isLoggedIn, openLoginModal]);
 
   const handleDeleteReply = React.useCallback(async (reviewId: string, replyId: string) => {
     if (!isLoggedIn) { openLoginModal(); return; }
@@ -591,7 +599,18 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
                                   disableImages={true}
                                   imagesDisabledMessage={t('editor.imagesNotAllowed')}
                                 />
-                                <div className="flex gap-2 justify-end mt-2">
+                                <div className="flex items-center justify-between mt-2">
+                                  <div className="flex items-center gap-2">
+                                    <Checkbox
+                                      id={`anonymous-${review.id}`}
+                                      checked={anonymousByReview[review.id] ?? false}
+                                      onCheckedChange={(checked) => setAnonymousByReview(prev => ({ ...prev, [review.id]: !!checked }))}
+                                    />
+                                    <Label htmlFor={`anonymous-${review.id}`} className="text-xs text-muted-foreground cursor-pointer">
+                                      {t('comment.anonymous')}
+                                    </Label>
+                                  </div>
+                                <div className="flex gap-2">
                                   <Button
                                     size="sm"
                                     onClick={() => handleSubmitReply(review.id)}
@@ -610,10 +629,12 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
                                         return next;
                                       });
                                       setReplyToUserByReview(prev => ({ ...prev, [review.id]: null }));
+                                      setAnonymousByReview(prev => ({ ...prev, [review.id]: false }));
                                     }}
                                   >
                                     {t('post.cancel')}
                                   </Button>
+                                </div>
                                 </div>
                               </div>
                             )}

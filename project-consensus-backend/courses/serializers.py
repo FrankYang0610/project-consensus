@@ -8,7 +8,7 @@ from rest_framework.exceptions import PermissionDenied
 from accounts.models import Profile
 
 from .models import Course, CourseReview, CourseReviewReply, CourseReviewLike, CourseReviewReplyLike, CourseVote
-from .presentation.author import get_course_review_author_display
+from .presentation.author import get_course_review_author_display, get_course_review_reply_author_display
 from .services import create_course_review, create_course_review_reply, update_course_review
 from .services.course_exceptions import AlreadyReviewedError, ServiceError, NotFoundError
 from .services.course_get_teachers import sort_teachers_by_surname
@@ -336,7 +336,7 @@ class CourseReviewReplySerializer(serializers.ModelSerializer):
         - replyToUserByReplyId: dict[UUID, dict] - Precomputed reply-to-user display data by reply ID
     """
 
-    # reviewId/content/replyToUserId are writable for creating replies; everything else is read-only metadata.
+    # reviewId/content/replyToUserId/isAnonymous are writable for creating replies; everything else is read-only metadata.
     id = serializers.UUIDField(read_only=True)
     reviewId = serializers.PrimaryKeyRelatedField(
         queryset=CourseReview.objects.all(),
@@ -354,44 +354,38 @@ class CourseReviewReplySerializer(serializers.ModelSerializer):
     likes = serializers.IntegerField(source="likes_count", read_only=True)
     isLiked = serializers.SerializerMethodField()
     isDeleted = serializers.BooleanField(source="is_deleted", read_only=True)
+    isAnonymous = serializers.BooleanField(source="is_anonymous", required=False, default=False)
 
     class Meta:
         model = CourseReviewReply
         fields = [
             "id", "reviewId", "author", "content", "createdAt",
             "likes", "isLiked", "replyToUser", "isDeleted",
-            "replyToUserId",
+            "replyToUserId", "isAnonymous",
         ]
     
     def get_author(self, obj: CourseReviewReply) -> dict:
-        # Priority 1: Check annotated data (most efficient)
+        """
+        Resolve the author payload for a course review reply.
+
+        Uses the shared presentation-layer helper `get_course_review_reply_author_display`
+        so that anonymous reply rules are applied consistently across all endpoints.
+        """
+        # Priority 1: Check annotated/precomputed data (most efficient, optional)
         annotated = getattr(obj, "_author_display", None)
         if annotated is not None:
             return annotated
         
-        # Priority 2: Check context mapping (batch precomputed)
+        # Priority 2: Check context mapping (batch precomputed, optional)
         author_map = self.context.get("authorByReplyId") or {}
         mapped = author_map.get(obj.id)
         if mapped is not None:
             return mapped
         
-        # Priority 3: Direct object access (fallback, may cause N+1)
-        user = obj.author
-        if user is None:
-            return {"id": "", "name": "", "avatarUrl": None}
-        
-        try:
-            profile = user.profile
-            display_name = profile.nickname or user.get_username()
-            avatar_url = profile.avatar_url or None
-        except Profile.DoesNotExist:
-            display_name = user.get_username()
-            avatar_url = None
-        return {
-            "id": str(user.pk),
-            "name": display_name,
-            "avatarUrl": avatar_url,
-        }
+        # Priority 3: Compute based on current request user and reply flags
+        request = self.context.get("request")
+        request_user = request.user if request is not None else None
+        return get_course_review_reply_author_display(obj, request_user)
 
     def get_replyToUser(self, obj: CourseReviewReply):
         # Get the user being replied to, if this is a reply to another user.

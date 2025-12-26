@@ -159,4 +159,7 @@ export interface CourseReviewReply {
   isLiked?: boolean;      // Whether current user liked this reply
   replyToUser?: { id: string; name: string };   // Optional: reply to which user (if any)
   isDeleted?: boolean;    // Whether the reply is deleted
+  isAnonymous?: boolean;  // Whether this reply is anonymous.
+                          // If true and current viewer is not the author, backend will redact author.id to "".
+                          // Frontend should display localized anonymous label accordingly.
 }

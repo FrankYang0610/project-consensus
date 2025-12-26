@@ -9,6 +9,7 @@ from ..security.html import sanitize_course_text_html
 from .course_notification import emit_notifications_for_new_reply
 from .course_exceptions import ReplyNotFoundError
 from .course_aggregates import recompute_review_replies_count
+from .course_review_reply_read import prepare_course_review_reply_for_serialization
 
 User = get_user_model()
 
@@ -67,4 +68,4 @@ def create_course_review_reply(user: User, review: CourseReview, payload: dict, 
         recompute_review_replies_count(review=review)
     
     emit_notifications_for_new_reply(reply=instance, actor=user)
-    return instance
+    return prepare_course_review_reply_for_serialization(instance, user)

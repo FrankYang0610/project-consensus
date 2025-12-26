@@ -326,6 +326,7 @@ class CourseReviewReply(models.Model):
     likes_count = models.PositiveIntegerField(default=0)
     reply_to_user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="course_review_reply_targets")
     is_deleted = models.BooleanField(default=False)
+    is_anonymous = models.BooleanField(default=False)  # Whether the reply should display the author as Anonymous on the client
 
     class Meta:
         ordering = ["created_at"]
