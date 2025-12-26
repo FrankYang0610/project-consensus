@@ -8,18 +8,54 @@ import { decode } from "he";
  * @returns Normalized URL with https:// prefix, or original value if not a bare domain
  */
 function normalizeBareDomainUrl(value: string): string {
-  const hasScheme = /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(value);
-  const startsWithSpecial = /^[\/#?.]/.test(value);
+  const v = String(value ?? "").trim();
+  if (!v) return v;
+  const startsWithSpecial = v.startsWith('/') || v.startsWith('#') || v.startsWith('?') || v.startsWith('.');
+  const hasScheme = /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(v);
 
-  if (value && !hasScheme && !startsWithSpecial) {
+  if (!hasScheme && !startsWithSpecial) {
     try {
-      new URL(`https://${value}`); // Validate before applying
-      return `https://${value}`;
+      new URL(`https://${v}`); // Validate before applying
+      return `https://${v}`;
     } catch {
       // Not a valid URL even with https://, return original
     }
   }
-  return value;
+  return v;
+}
+
+function normalizeAllowedHttpsOrigin(value: string): string | null {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  const normalized = normalizeBareDomainUrl(raw);
+  try {
+    const u = new URL(normalized);
+    if (u.protocol !== 'https:') return null;
+    return u.origin;
+  } catch {
+    return null;
+  }
+}
+
+let allowedImageOriginsCache: string[] | null = null;
+let allowedImageOriginsCacheKey: string | null = null;
+
+function getAllowedImageOrigins(): string[] {
+  const raw = process.env.NEXT_PUBLIC_ALLOWED_IMAGE_HOSTS || 'https://image.polyu.life';
+  if (allowedImageOriginsCache && allowedImageOriginsCacheKey === raw) return allowedImageOriginsCache;
+
+  const origins = raw
+    .split(',')
+    .map((h) => normalizeAllowedHttpsOrigin(h))
+    .filter((h): h is string => Boolean(h));
+
+  if (origins.length === 0) {
+    origins.push('https://image.polyu.life');
+  }
+
+  allowedImageOriginsCache = origins;
+  allowedImageOriginsCacheKey = raw;
+  return origins;
 }
 
 /**
@@ -55,6 +91,8 @@ export function sanitizeHtml(html: string): string {
     SAFE_FOR_TEMPLATES: true,
     ALLOW_UNKNOWN_PROTOCOLS: false,
   };
+
+  const allowedImageOrigins = getAllowedImageOrigins();
 
   // Hook function for tag-specific attribute validation
   const attributeHook = (node: Element, data: { attrName: string; attrValue: string; keepAttr?: boolean }) => {
@@ -134,21 +172,8 @@ export function sanitizeHtml(html: string): string {
           : (process.env.NEXT_PUBLIC_SITE_URL || 'https://polyu.life');
 
         const url = new URL(value, baseUrl);
-        const allowedHosts = (process.env.NEXT_PUBLIC_ALLOWED_IMAGE_HOSTS || 'image.polyu.life')
-          .split(',')
-          .map(h => h.trim().toLowerCase())
-          .filter(Boolean);
-
-        // Use hostname so "image.polyu.life:9000" still matches "image.polyu.life"
-        const hostname = url.hostname.toLowerCase();
-        const isAllowedHost = allowedHosts.includes(hostname);
-
-        const isHttp = url.protocol === 'http:';
-        const isHttps = url.protocol === 'https:';
-
-        // For our own image hosts, allow both http and https (any port).
-        // Everything else is stripped.
-        if (!(isAllowedHost && (isHttp || isHttps))) {
+        const isAllowedOrigin = url.protocol === 'https:' && allowedImageOrigins.includes(url.origin);
+        if (!isAllowedOrigin) {
           data.keepAttr = false;
         }
       } catch {
