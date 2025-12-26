@@ -151,7 +151,7 @@ export default function RichTextEditor({ value, onChange, placeholder, className
   }, [imageError]);
 
   // Default error message
-  const defaultImageErrorMessage = 'Images are not allowed in comments and replies';
+  const defaultImageErrorMessage = 'Images are not allowed in course review replies';
   const errorMessage = imagesDisabledMessage || defaultImageErrorMessage;
 
   // Handle editor ready - add clipboard listeners to block images

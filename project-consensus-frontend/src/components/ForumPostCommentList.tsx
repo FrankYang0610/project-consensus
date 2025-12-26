@@ -366,7 +366,6 @@ export function ForumPostCommentList({
           closeAriaLabel={t('common.close') || 'Close'}
           anonymousLabel={t('comment.anonymous') || 'Comment anonymously'}
           postLabel={t('comment.post') || 'Post'}
-          imagesDisabledMessage={t('editor.imagesNotAllowed')}
         />
       )}
 
@@ -412,7 +411,6 @@ export function ForumPostCommentList({
                     closeAriaLabel={t('common.close') || 'Close'}
                     anonymousLabel={t('comment.anonymous') || 'Comment anonymously'}
                     postLabel={t('comment.post') || 'Post'}
-                    imagesDisabledMessage={t('editor.imagesNotAllowed')}
                   />
                 )}
               </React.Fragment>
