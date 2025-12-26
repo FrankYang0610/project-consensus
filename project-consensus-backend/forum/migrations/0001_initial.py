@@ -24,6 +24,7 @@ class Migration(migrations.Migration):
                 ('title', models.CharField(max_length=200)),
                 ('content', models.TextField()),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
+                ('updated_at', models.DateTimeField(auto_now=True)),
                 ('tags', models.JSONField(blank=True, default=list)),
                 ('likes_count', models.PositiveIntegerField(default=0)),
                 ('is_anonymous', models.BooleanField(default=False)),
@@ -102,6 +103,10 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name='forumpost',
             index=models.Index(fields=['created_at'], name='forumpost_created_idx'),
+        ),
+        migrations.AddIndex(
+            model_name='forumpost',
+            index=models.Index(fields=['updated_at'], name='forumpost_updated_idx'),
         ),
         # Add trigram indexes for better search performance
         migrations.AddIndex(

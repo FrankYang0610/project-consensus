@@ -150,6 +150,8 @@
     "removeTag": "移除標籤",
     "maxTagsReached": "最多只能添加 {{max}} 個標籤",
     "edited": "已編輯",
+    "createdAt": "發佈於 {{date}}",
+    "updatedAt": "編輯於 {{date}}",
     "validation": {
       "titleRequired": "標題不能為空",
       "titleTooShort": "標題至少需要5個字符",
@@ -158,6 +160,15 @@
       "contentTooShort": "內容至少需要10個字符",
       "tagsRequired": "至少需要一個標籤",
       "tooManyTags": "最多只能添加10個標籤"
+    }
+  },
+  "forum": {
+    "sortBy": {
+      "default": "預設（最新發佈）",
+      "newest": "最新發佈",
+      "updated": "最近更新",
+      "likes": "最多讚好",
+      "comments": "最多評論"
     }
   },
   "time": {
@@ -358,8 +369,10 @@
           "label": "排序",
           "options": {
             "mostLiked": "點贊最多",
-            "newest": "最新點評",
-            "oldest": "最舊點評",
+            "newestCreated": "創建時間最新",
+            "oldestCreated": "創建時間最舊",
+            "newestUpdated": "更新時間最新",
+            "oldestUpdated": "更新時間最舊",
             "ratingHighToLow": "評分高-低",
             "ratingLowToHigh": "評分低-高"
           }
@@ -384,7 +397,9 @@
     },
     "review": {
       "overallRating": "綜合評分",
-      "edited": "編輯於 {{date}}",
+      "createdAt": "發佈於 {{date}}",
+      "updatedAt": "編輯於 {{date}}",
+      "edited": "已編輯",
       "edit": "編輯",
       "delete": "刪除",
       "deleteConfirm": "確認要刪除這條點評嗎？",

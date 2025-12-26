@@ -99,6 +99,8 @@ function HomePageContent() {
     switch (ordering) {
       case "-created_at":
         return "newest";
+      case "-updated_at":
+        return "updated";
       case "-likes_count":
         return "likes";
       case "-comments_count":
@@ -120,7 +122,7 @@ function HomePageContent() {
         const res = await fetchCourseReviews({
           page: 1,
           pageSize: 10,
-          ordering: "-created_at",
+          ordering: "-updated_at",
         });
         if (!cancelled) { setLatestReviews(res.results ?? []); }
       } catch (err) {

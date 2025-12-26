@@ -635,8 +635,10 @@ export function CourseDetailCard({
           <DropdownMenuRadioGroup value={value} onValueChange={onValueChange}>
             {[
               "mostLiked",
-              "newest",
-              "oldest",
+              "newestCreated",
+              "oldestCreated",
+              "newestUpdated",
+              "oldestUpdated",
               "ratingHighToLow",
               "ratingLowToHigh",
             ].map((key) => (

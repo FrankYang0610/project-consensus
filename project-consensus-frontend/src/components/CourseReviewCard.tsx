@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   Star,
   ThumbsUp,
-  Clock,
   MessageSquare,
   Edit3,
   Calendar,
@@ -178,21 +177,6 @@ export function CourseReviewCard({
     [review.updatedAt, language]
   );
 
-  // Check if review was edited with validation
-  const isEdited = React.useMemo(() => {
-    if (!review.updatedAt) return false;
-    const created = new Date(review.createdAt);
-    const updated = new Date(review.updatedAt);
-
-    // Validate dates
-    if (isNaN(created.getTime()) || isNaN(updated.getTime())) {
-      console.warn('Invalid dates in review:', { createdAt: review.createdAt, updatedAt: review.updatedAt });
-      return false;
-    }
-
-    return updated.getTime() - created.getTime() > 60000; // More than 1 minute difference
-  }, [review.createdAt, review.updatedAt]);
-
   // Memoize term formatting to avoid inline hook call
   const termElement = React.useMemo(() =>
     review.term ? (
@@ -259,13 +243,6 @@ export function CourseReviewCard({
               </div>
             </div>
           </div>
-          {/* Edit indicator */}
-          {isEdited && updatedAtFormatted && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Edit3 className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{t("courses.review.edited", { date: updatedAtFormatted })}</span>
-            </div>
-          )}
         </div>
 
         {/* Rating and Attributes in same row - only show when not onlyText */}
@@ -380,10 +357,15 @@ export function CourseReviewCard({
             )}
           </div>
 
-          {/* Time info */}
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock className="w-3.5 h-3.5" />
-            <span>{createdAtFormatted}</span>
+          {/* Time info: show both created and updated if edited */}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+            <span>{t("courses.review.createdAt", { date: createdAtFormatted })}</span>
+            {review.isEdited && updatedAtFormatted && (
+              <>
+                <span>•</span>
+                <span>{t("courses.review.updatedAt", { date: updatedAtFormatted })}</span>
+              </>
+            )}
           </div>
         </div>
 

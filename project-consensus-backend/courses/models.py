@@ -264,11 +264,15 @@ class CourseReview(models.Model):
     replies_count = models.PositiveIntegerField(default=0)
 
     class Meta:
-        ordering = ["-created_at"]
+        ordering = ["-updated_at"]
         indexes = [
             models.Index(
                 fields=["created_at"],
                 name="coursereview_created_idx",
+            ),
+            models.Index(
+                fields=["updated_at"],
+                name="coursereview_updated_idx",
             ),
             GinIndex(
                 fields=["content"],

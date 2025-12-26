@@ -26,12 +26,7 @@ interface ForumFilterBarProps {
 // Sorting choices follow common industry defaults for forums/feeds.
 // "default" relies on server's default ordering (newest first with engagement tiebreakers)
 // without sending an explicit ordering param.
-const sortOptions = [
-  { value: "default", label: "Default" },
-  { value: "newest", label: "Newest" },
-  { value: "likes", label: "Most liked" },
-  { value: "comments", label: "Most commented" },
-];
+const sortOptionKeys = ["default", "newest", "updated", "likes", "comments"] as const;
 
 export function ForumFilterBar({ className, initialSort, initialSearch, initialTags }: ForumFilterBarProps) {
   const { t } = useI18n();
@@ -64,6 +59,8 @@ export function ForumFilterBar({ className, initialSort, initialSearch, initialT
     switch (s) {
       case "newest":
         return "-created_at";
+      case "updated":
+        return "-updated_at";
       case "likes":
         return "-likes_count";
       case "comments":
@@ -74,8 +71,9 @@ export function ForumFilterBar({ className, initialSort, initialSearch, initialT
     }
   };
 
-  const handleApply = React.useCallback(() => {
-    const ordering = mapSortToOrdering(sort);
+  // Helper to build URL with given sort value (used for immediate apply on sort change)
+  const applyWithSort = React.useCallback((newSort: string) => {
+    const ordering = mapSortToOrdering(newSort);
     const params = new URLSearchParams();
     if (ordering) params.set("ordering", ordering);
     const s = search.trim();
@@ -83,7 +81,17 @@ export function ForumFilterBar({ className, initialSort, initialSearch, initialT
     if (tags.length > 0) tags.forEach((t) => params.append("tags", t));
     const qs = params.toString();
     router.push(qs ? `${pathname}?${qs}` : pathname);
-  }, [pathname, router, search, sort, tags]);
+  }, [pathname, router, search, tags]);
+
+  // Handle sort change: update state and immediately apply
+  const handleSortChange = React.useCallback((newSort: string) => {
+    setSort(newSort);
+    applyWithSort(newSort);
+  }, [applyWithSort]);
+
+  const handleApply = React.useCallback(() => {
+    applyWithSort(sort);
+  }, [applyWithSort, sort]);
 
   return (
     <div
@@ -100,16 +108,16 @@ export function ForumFilterBar({ className, initialSort, initialSearch, initialT
           <Button variant="outline" size="sm" className="h-8 text-xs">
             <span>{t("courses.topbar.sortBy")}:</span>
             <span className="ml-1">
-              {sortOptions.find(o => o.value === sort)?.label ?? t("common.default", { defaultValue: "Default" })}
+              {t(`forum.sortBy.${sort}`)}
             </span>
             <ChevronDown className="ml-2 size-4 opacity-60" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-48">
-          <DropdownMenuRadioGroup value={sort} onValueChange={setSort}>
-            {sortOptions.map(opt => (
-              <DropdownMenuRadioItem key={opt.value} value={opt.value} className="text-xs">
-                {opt.label}
+          <DropdownMenuRadioGroup value={sort} onValueChange={handleSortChange}>
+            {sortOptionKeys.map(key => (
+              <DropdownMenuRadioItem key={key} value={key} className="text-xs">
+                {t(`forum.sortBy.${key}`)}
               </DropdownMenuRadioItem>
             ))}
           </DropdownMenuRadioGroup>

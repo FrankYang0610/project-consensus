@@ -32,7 +32,7 @@ export default function LatestReviewsPage() {
     loadMore,
   } = useInfiniteList<CourseReview, FetchCourseReviewsParams>({
     pageFetcher: fetchCourseReviews,
-    initialParams: { page: 1, pageSize: 20, ordering: '-created_at' },
+    initialParams: { page: 1, pageSize: 20, ordering: '-updated_at' },
     pageSize: 20,
     dedupeKey: (r) => r.id,
     autoLoad: true, // Auto-load first page, consistent with advanced-search

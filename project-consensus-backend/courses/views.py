@@ -421,7 +421,7 @@ class UserReviewsListView(BaseUserContentListView):
             .select_related("course", "author")
             .prefetch_related("author__profile", "likes")
             .filter(author=target_user)
-            .order_by("-created_at")
+            .order_by("-updated_at")
         )
 
         # Annotate per-user isLiked to avoid N+1 exists() calls in serializers

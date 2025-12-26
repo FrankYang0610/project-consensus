@@ -5,7 +5,6 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import {
-  Calendar,
   Heart,
   MoreHorizontal,
   Languages,
@@ -46,9 +45,7 @@ import { useApp } from "@/contexts/AppContext";
 import { updateForumPost } from "@/lib/api/forum-post";
 import { isContentEmpty } from "@/lib/utils";
 import { TagManager } from "@/components/TagManager";
-import { Badge } from "@/components/ui/badge";
-
-import ClientOnlyTime from "./ClientOnlyTime";
+import { formatRelativeTime } from "@/lib/time-utils";
 
 /**
  * 论坛帖子详情卡片组件属性 / Forum post detail card component props
@@ -257,7 +254,15 @@ export function ForumPostDetailCard({
                   )}
                 </Link>
               )}
-              <ClientOnlyTime dateString={post.createdAt} />
+              <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                <span>{t("post.createdAt", { date: formatRelativeTime(post.createdAt, t, language) })}</span>
+                {post.isEdited && post.updatedAt && (
+                  <>
+                    <span>•</span>
+                    <span>{t("post.updatedAt", { date: formatRelativeTime(post.updatedAt, t, language) })}</span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -269,9 +274,6 @@ export function ForumPostDetailCard({
             <h1 className="text-xl font-bold line-clamp-2 flex-1">
               {isTranslated ? t('post.translateUnavailable') : post.title}
             </h1>
-            {post.isEdited && (
-              <Badge variant="secondary" className="ml-3 whitespace-nowrap">{t('post.edited')}</Badge>
-            )}
           </div>
         ) : (
           <div className="mb-4 space-y-3">

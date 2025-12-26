@@ -150,6 +150,8 @@
     "removeTag": "移除标签",
     "maxTagsReached": "最多只能添加 {{max}} 个标签",
     "edited": "已编辑",
+    "createdAt": "发布于 {{date}}",
+    "updatedAt": "编辑于 {{date}}",
     "validation": {
       "titleRequired": "标题不能为空",
       "titleTooShort": "标题至少需要5个字符",
@@ -158,6 +160,15 @@
       "contentTooShort": "内容至少需要10个字符",
       "tagsRequired": "至少需要一个标签",
       "tooManyTags": "最多只能添加10个标签"
+    }
+  },
+  "forum": {
+    "sortBy": {
+      "default": "默认（最新发布）",
+      "newest": "最新发布",
+      "updated": "最近更新",
+      "likes": "最多点赞",
+      "comments": "最多评论"
     }
   },
   "time": {
@@ -358,8 +369,10 @@
           "label": "排序",
           "options": {
             "mostLiked": "点赞最多",
-            "newest": "最新点评",
-            "oldest": "最旧点评",
+            "newestCreated": "创建时间最新",
+            "oldestCreated": "创建时间最旧",
+            "newestUpdated": "更新时间最新",
+            "oldestUpdated": "更新时间最旧",
             "ratingHighToLow": "评分高-低",
             "ratingLowToHigh": "评分低-高"
           }
@@ -384,7 +397,9 @@
     },
     "review": {
       "overallRating": "综合评分",
-      "edited": "编辑于 {{date}}",
+      "createdAt": "发布于 {{date}}",
+      "updatedAt": "编辑于 {{date}}",
+      "edited": "已编辑",
       "edit": "编辑",
       "delete": "删除",
       "deleteConfirm": "确认要删除这条点评吗？",

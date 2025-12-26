@@ -79,6 +79,7 @@ class ForumPost(models.Model):
     content = models.TextField()
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="forum_posts")
     created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
     tags = models.JSONField(default=list, blank=True)
     likes_count = models.PositiveIntegerField(default=0)
     is_anonymous = models.BooleanField(default=False) # Whether the post should display the author as Anonymous on the client
@@ -92,7 +93,14 @@ class ForumPost(models.Model):
         verbose_name = "ForumPost"
         verbose_name_plural = "ForumPosts"
         indexes = [
-            # Trigram GIN indexes for full-text-like search on title/content
+            models.Index(
+                fields=["created_at"],
+                name="forumpost_created_idx",
+            ),
+            models.Index(
+                fields=["updated_at"],
+                name="forumpost_updated_idx",
+            ),
             GinIndex(
                 fields=["title"],
                 name="forumpost_title_trgm_idx",
@@ -102,10 +110,6 @@ class ForumPost(models.Model):
                 fields=["content"],
                 name="forumpost_content_trgm_idx",
                 opclasses=["gin_trgm_ops"],
-            ),
-            models.Index(
-                fields=["created_at"],
-                name="forumpost_created_idx",
             ),
         ]
 

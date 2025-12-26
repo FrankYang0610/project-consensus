@@ -88,6 +88,7 @@ export interface CourseReview {
   createdAt: string;            // Creation time
   updatedAt?: string;           // Last updated time
   isLiked?: boolean;            // Whether current user liked
+  isEdited?: boolean;           // Whether review has been edited
   term?: {                      // Course term
     year: number;
     semester: SemesterKey;
