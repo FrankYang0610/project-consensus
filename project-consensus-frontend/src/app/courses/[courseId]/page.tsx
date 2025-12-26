@@ -588,6 +588,8 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
                                   onChange={(v: string) => setNewReplyContentByReview(prev => ({ ...prev, [review.id]: v }))}
                                   placeholder={t('comment.writePlaceholder') || 'Write a comment…'}
                                   className="w-full"
+                                  disableImages={true}
+                                  imagesDisabledMessage={t('editor.imagesNotAllowed')}
                                 />
                                 <div className="flex gap-2 justify-end mt-2">
                                   <Button

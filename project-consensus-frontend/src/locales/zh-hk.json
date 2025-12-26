@@ -221,7 +221,8 @@
     "me": "我",
     "anonymous": "匿名",
     "anonymousWithId": "匿名（{{name}}）",
-    "noMore": "已顯示全部"
+    "noMore": "已顯示全部",
+    "imagePlaceholder": "【圖片】"
   },
   "courses": {
     "topbar": {
@@ -408,8 +409,7 @@
       "cancel": "取消",
       "reply": "回覆",
       "replies": "{{count}} 條回覆",
-      "repliesSection": "回覆將顯示在此處",
-      "imagePlaceholder": "【圖片】"
+      "repliesSection": "回覆將顯示在此處"
     },
     "reviewForm": {
       "title": "撰寫課程點評",
@@ -773,6 +773,9 @@
     "open": "前往",
     "officialTitle": "理大官方網站",
     "officialDesc": "由香港理工大學（PolyU）營運的官方網上資源"
+  },
+  "editor": {
+    "imagesNotAllowed": "課程評價回覆中不允許插入圖片"
   },
   "welcome": {
     "title": "歡迎來到 PolyU.life！",

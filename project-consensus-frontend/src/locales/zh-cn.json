@@ -221,7 +221,8 @@
     "me": "我",
     "anonymous": "匿名",
     "anonymousWithId": "匿名（{{name}}）",
-    "noMore": "没有更多了"
+    "noMore": "没有更多了",
+    "imagePlaceholder": "【图片】"
   },
   "courses": {
     "topbar": {
@@ -408,8 +409,7 @@
       "cancel": "取消",
       "reply": "回复",
       "replies": "{{count}} 条回复",
-      "repliesSection": "回复将显示在此处",
-      "imagePlaceholder": "【图片】"
+      "repliesSection": "回复将显示在此处"
     },
     "reviewForm": {
       "title": "撰写课程点评",
@@ -773,6 +773,9 @@
     "open": "前往",
     "officialTitle": "理大官方网站",
     "officialDesc": "由香港理工大学（PolyU）运营的官方在线资源"
+  },
+  "editor": {
+    "imagesNotAllowed": "课程评价回复中不允许插入图片"
   },
   "welcome": {
     "title": "欢迎来到 PolyU.life！",

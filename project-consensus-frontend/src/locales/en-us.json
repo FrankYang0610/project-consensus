@@ -223,7 +223,8 @@
     "me": "Me",
     "anonymous": "Anonymous",
     "anonymousWithId": "Anonymous ({{name}})",
-    "noMore": "No more"
+    "noMore": "No more",
+    "imagePlaceholder": "[Image]"
   },
   "courses": {
     "topbar": {
@@ -410,8 +411,7 @@
       "cancel": "Cancel",
       "reply": "Reply",
       "replies": "{{count}} replies",
-      "repliesSection": "Replies will appear here",
-      "imagePlaceholder": "[Image]"
+      "repliesSection": "Replies will appear here"
     },
     "reviewForm": {
       "title": "Write Course Review",
@@ -775,6 +775,9 @@
     "open": "Open",
     "officialTitle": "PolyU official websites",
     "officialDesc": "Official university-operated resources from The Hong Kong Polytechnic University"
+  },
+  "editor": {
+    "imagesNotAllowed": "Images are not allowed in course review replies"
   },
   "welcome": {
     "title": "Welcome to PolyU.life!",

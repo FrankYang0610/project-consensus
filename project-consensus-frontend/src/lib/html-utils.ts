@@ -213,24 +213,32 @@ export function sanitizeHtml(html: string): string {
 /**
  * Strips HTML tags and decodes HTML entities to get plain text
  * @param html - The HTML string to convert to plain text
+ * @param imagePlaceholder - Optional placeholder text for images (default: none, images are stripped)
  * @returns Plain text string with HTML tags removed and entities decoded
  */
-export function stripHtmlTags(html: string): string {
+export function stripHtmlTags(html: string, imagePlaceholder?: string): string {
   // First, decode all HTML entities using the 'he' library
   const decoded = decode(html);
 
+  // If a placeholder is provided, replace <img> tags with the placeholder
+  let processed = decoded;
+  if (imagePlaceholder) {
+    processed = decoded.replace(/<img\b[^>]*>/gi, imagePlaceholder);
+  }
+
   // Remove HTML tags
-  return decoded.replace(/<[^>]*>/g, '').trim();
+  return processed.replace(/<[^>]*>/g, '').trim();
 }
 
 /**
  * Truncates HTML content to a specified length after converting to plain text
  * @param html - The HTML string to truncate
  * @param maxLength - Maximum length of the resulting text (default: 150)
+ * @param imagePlaceholder - Optional placeholder text for images (pass localized string for i18n support)
  * @returns Truncated plain text string
  */
-export function truncateHtmlContent(html: string, maxLength: number = 150): string {
-  const plainText = stripHtmlTags(html);
+export function truncateHtmlContent(html: string, maxLength: number = 150, imagePlaceholder?: string): string {
+  const plainText = stripHtmlTags(html, imagePlaceholder);
   if (plainText.length <= maxLength) return plainText;
   return plainText.slice(0, maxLength) + "...";
 }

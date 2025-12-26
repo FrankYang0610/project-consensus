@@ -204,7 +204,7 @@ export function ForumPostPreviewCard({
             </h3>
           </div>
           <p className="text-muted-foreground text-sm leading-relaxed mb-1 break-words overflow-wrap-anywhere line-clamp-2 min-h-[3.25em]">
-            {isTranslated ? t('post.translateUnavailable') : truncateHtmlContent(post.content)}
+            {isTranslated ? t('post.translateUnavailable') : truncateHtmlContent(post.content, 150, t('common.imagePlaceholder'))}
           </p>
         </CardContent>
       </Link>
