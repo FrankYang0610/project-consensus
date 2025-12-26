@@ -1,8 +1,7 @@
 """
 Forum application Django admin configuration.
 
-Provides admin interfaces for ForumPost, ForumPostComment, ForumPostLike,
-and ForumPostCommentLike models.
+Provides admin interfaces for ForumPost, ForumPostComment, ForumPostLike, ForumPostCommentLike, and ForumPostCommentContentBackup models.
 """
 
 from django.contrib import admin
