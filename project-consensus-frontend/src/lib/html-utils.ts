@@ -37,6 +37,24 @@ function normalizeAllowedHttpsOrigin(value: string): string | null {
   }
 }
 
+let allowedImageOriginsCache: string[] | null = null;
+
+function getAllowedImageOrigins(): string[] {
+  if (allowedImageOriginsCache) return allowedImageOriginsCache;
+
+  const origins = (process.env.NEXT_PUBLIC_ALLOWED_IMAGE_HOSTS || 'https://image.polyu.life')
+    .split(',')
+    .map((h) => normalizeAllowedHttpsOrigin(h))
+    .filter((h): h is string => Boolean(h));
+
+  if (origins.length === 0) {
+    origins.push('https://image.polyu.life');
+  }
+
+  allowedImageOriginsCache = origins;
+  return origins;
+}
+
 /**
  * Sanitizes HTML content using DOMPurify with a restrictive configuration
  * @param html - The HTML string to sanitize
@@ -71,14 +89,7 @@ export function sanitizeHtml(html: string): string {
     ALLOW_UNKNOWN_PROTOCOLS: false,
   };
 
-  const allowedImageOrigins = (process.env.NEXT_PUBLIC_ALLOWED_IMAGE_HOSTS || 'https://image.polyu.life')
-    .split(',')
-    .map((h) => normalizeAllowedHttpsOrigin(h))
-    .filter((h): h is string => Boolean(h));
-
-  if (allowedImageOrigins.length === 0) {
-    allowedImageOrigins.push('https://image.polyu.life');
-  }
+  const allowedImageOrigins = getAllowedImageOrigins();
 
   // Hook function for tag-specific attribute validation
   const attributeHook = (node: Element, data: { attrName: string; attrValue: string; keepAttr?: boolean }) => {
