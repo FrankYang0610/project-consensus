@@ -10,3 +10,9 @@ class AccountsConfig(AppConfig):
 
     default_auto_field = "django.db.models.BigAutoField"
     name = "accounts"
+
+    def ready(self):
+        """Register models for audit logging."""
+        from auditlog.registry import auditlog
+        from .models import Profile
+        auditlog.register(Profile)

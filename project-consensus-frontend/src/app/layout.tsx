@@ -22,8 +22,54 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "polyu.life",
-  description: "polyu.life main page",
+  title: {
+    default: "PolyU Life - 香港理工大學學生論壇與課程評價社區 | PolyU Student Forum & Course Review Community",
+    template: "%s | PolyU Life",
+  },
+  description:
+    "PolyU Life 是香港理工大學學生的綜合社區平台，提供課程評價、教師評分、校園論壇等功能。PolyU Life is a student community platform for The Hong Kong Polytechnic University, offering course reviews, teacher ratings, and campus forums.",
+  keywords: [
+    "PolyU",
+    "香港理工大學",
+    "理大",
+    "課程評價",
+    "教師評分",
+    "學生論壇",
+    "Hong Kong Polytechnic University",
+    "course review",
+    "teacher rating",
+    "student forum",
+    "campus life",
+    "PolyU courses",
+    "PolyU teachers",
+  ],
+  authors: [{ name: "PolyU Life Team" }],
+  openGraph: {
+    type: "website",
+    locale: "zh_HK",
+    alternateLocale: ["en_US"],
+    url: "https://www.polyu.life",
+    siteName: "PolyU Life",
+    title: "PolyU Life - 香港理工大學學生論壇與課程評價社區 | PolyU Student Forum & Course Review Community",
+    description:
+      "香港理工大學學生論壇與課程評價社區 - 課程評價、教師評分、校園論壇 | PolyU student forum & course review community - course reviews, teacher ratings, campus forums.",
+    images: [
+      {
+        url: "/project-consensus-icon.svg",
+        alt: "PolyU Life Logo",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary",
+    title: "PolyU Life - 香港理工大學學生論壇與課程評價社區 | PolyU Student Forum & Course Review Community",
+    description:
+      "香港理工大學學生論壇與課程評價社區 - 課程評價、教師評分、校園論壇 | PolyU student forum & course review community - course reviews, teacher ratings, campus forums.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

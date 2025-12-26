@@ -438,7 +438,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
     def get_daysUntilNextUpdate(self, obj: User) -> int | None:
         """
         Return remaining days before nickname can be updated again.
-        Mirrors the 14‑day rule previously implemented in the view.
+        Mirrors the cooldown rule previously implemented in the view.
         """
         profile = self._get_profile(obj)
         if not profile:

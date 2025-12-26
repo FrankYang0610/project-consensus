@@ -551,7 +551,7 @@
       "preview": "预览",
       "saved": "个人资料已更新。",
       "saveFailed": "保存个人资料失败。",
-      "updateRestriction": "昵称每14天只能修改一次。",
+      "updateRestriction": "昵称每3天只能修改一次。",
       "lastUpdated": "昵称最后更新",
       "canUpdateIn": "昵称还需 {{days}} 天后才能再次更新",
       "canUpdateNow": "现在可以更新昵称",

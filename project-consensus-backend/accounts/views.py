@@ -230,7 +230,7 @@ def update_profile(request):
         return Response(
             {
                 "message": (
-                    "Nickname can only be updated once every 14 days. "
+                    f"Nickname can only be updated once every {Profile.NICKNAME_COOLDOWN_DAYS} days. "
                     f"Please wait {e.days_remaining} more day(s)."
                 ),
                 "days_remaining": e.days_remaining,

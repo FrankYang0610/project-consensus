@@ -2,6 +2,27 @@ import DOMPurify from "isomorphic-dompurify";
 import { decode } from "he";
 
 /**
+ * Normalizes a bare domain URL (e.g., "apple.com" or "www.apple.com") by prepending https://
+ * Returns the normalized URL if valid, otherwise returns the original value.
+ * @param value - The URL string to normalize
+ * @returns Normalized URL with https:// prefix, or original value if not a bare domain
+ */
+function normalizeBareDomainUrl(value: string): string {
+  const hasScheme = /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(value);
+  const startsWithSpecial = /^[\/#?.]/.test(value);
+
+  if (value && !hasScheme && !startsWithSpecial) {
+    try {
+      new URL(`https://${value}`); // Validate before applying
+      return `https://${value}`;
+    } catch {
+      // Not a valid URL even with https://, return original
+    }
+  }
+  return value;
+}
+
+/**
  * Sanitizes HTML content using DOMPurify with a restrictive configuration
  * @param html - The HTML string to sanitize
  * @returns Sanitized HTML string
@@ -17,7 +38,7 @@ export function sanitizeHtml(html: string): string {
   const config = {
     ALLOWED_TAGS: [
       'p', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'br',
-      'strong', 'em', 'code', 'pre', 'blockquote',
+      'strong', 'b', 'em', 'i', 'u', 's', 'code', 'pre', 'blockquote',
       'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th',
       // Links and images
       'a', 'img'
@@ -82,22 +103,9 @@ export function sanitizeHtml(html: string): string {
 
     // Normalize and validate <a href> to http/https only
     if (node.nodeName === 'A' && data.attrName === 'href') {
-      let value = (data.attrValue || '').trim();
-
-      // If user typed a bare domain like "apple.com" or "www.apple.com",
-      // treat it as an https URL instead of a relative path.
-      // Conditions:
-      // - no explicit scheme (no leading "<scheme>:" such as "http:", "https:", "file:")
-      // - does not start with "/", "#", "?", or "."
-      // - looks like "domain.tld" optionally with a path suffix
-      const hasScheme = /^[a-zA-Z][a-zA-Z\d+\-]*:/.test(value);
-      const startsWithSpecial = value.startsWith('/') || value.startsWith('#') || value.startsWith('?') || value.startsWith('.');
-      const looksLikeDomain = /^[^/\s]+\.[^/\s]+(\/[^\s]*)?$/.test(value);
-
-      if (value && !hasScheme && !startsWithSpecial && looksLikeDomain) {
-        value = `https://${value}`;
-        data.attrValue = value;
-      }
+      // If user typed a bare domain like "apple.com", normalize to https://
+      let value = normalizeBareDomainUrl((data.attrValue || '').trim());
+      data.attrValue = value;
 
       try {
         const baseUrl = typeof window !== 'undefined' 
@@ -112,23 +120,35 @@ export function sanitizeHtml(html: string): string {
       }
     }
 
-    // Validate <img src> to https and allowed hosts only
+    // Validate <img src> to allowed image hosts only
     if (node.nodeName === 'IMG' && data.attrName === 'src') {
-      const raw = (data.attrValue || '').trim();
+      // If user typed a bare domain like "image.polyu.life/xxx.png", normalize to https://
+      let value = normalizeBareDomainUrl((data.attrValue || '').trim());
+      data.attrValue = value;
+
       try {
         // Base URL is only used for resolving relative paths in both browser and SSR. 
         // Absolute http/https URLs will ignore Base URL.
         const baseUrl = typeof window !== 'undefined' 
           ? window.location.origin 
           : (process.env.NEXT_PUBLIC_SITE_URL || 'https://polyu.life');
-        const url = new URL(raw, baseUrl);
+
+        const url = new URL(value, baseUrl);
         const allowedHosts = (process.env.NEXT_PUBLIC_ALLOWED_IMAGE_HOSTS || 'image.polyu.life')
           .split(',')
           .map(h => h.trim().toLowerCase())
           .filter(Boolean);
-        const host = url.host.toLowerCase();
-        // Only https and within allowlist
-        if (url.protocol !== 'https:' || !allowedHosts.includes(host)) {
+
+        // Use hostname so "image.polyu.life:9000" still matches "image.polyu.life"
+        const hostname = url.hostname.toLowerCase();
+        const isAllowedHost = allowedHosts.includes(hostname);
+
+        const isHttp = url.protocol === 'http:';
+        const isHttps = url.protocol === 'https:';
+
+        // For our own image hosts, allow both http and https (any port).
+        // Everything else is stripped.
+        if (!(isAllowedHost && (isHttp || isHttps))) {
           data.keepAttr = false;
         }
       } catch {

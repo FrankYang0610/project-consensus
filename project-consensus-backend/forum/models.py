@@ -153,13 +153,13 @@ class ForumPostCommentQuerySet(models.QuerySet):
         """
         Annotate is_liked for a given user.
 
-        - For authenticated users: exists subquery on ForumCommentLike
+        - For authenticated users: exists subquery on ForumPostCommentLike
         - For anonymous users: constant False (BooleanField)
         """
         if user is not None and user.is_authenticated:
             return self.annotate(
                 is_liked=Exists(
-                    ForumCommentLike.objects.filter(
+                    ForumPostCommentLike.objects.filter(
                         comment_id=OuterRef("id"),
                         user=user,
                     )
@@ -198,22 +198,22 @@ class ForumPostComment(models.Model):
         indexes = [
             models.Index(
                 fields=["is_deleted", "created_at"],
-                name="forumcmt_del_created_idx",
+                name="fpcmt_del_created_idx",
             ),
             models.Index(
                 fields=["created_at"],
-                name="forumcmt_created_idx",
+                name="fpcmt_created_idx",
             ),
             GinIndex(
                 fields=["content"],
-                name="forumcomment_content_trgm_idx",
+                name="fpcmt_content_trgm_idx",
                 opclasses=["gin_trgm_ops"],
             ),
         ]
         constraints = [
             models.CheckConstraint(  # - Deleted comments must have empty content
                 condition=Q(is_deleted=False) | Q(content=""),
-                name="forumcomment_deleted_content_empty",
+                name="fpcmt_deleted_content_empty",
             ),
         ]
 
@@ -273,7 +273,7 @@ class ForumPostLike(models.Model):
         return f"{self.user_id} liked {self.post_id}"
 
 
-class ForumCommentLike(models.Model):
+class ForumPostCommentLike(models.Model):
     """Forum comment like relation
 
     - Internal relation table; its primary key is not exposed to the frontend.
@@ -289,21 +289,43 @@ class ForumCommentLike(models.Model):
         indexes = [
             models.Index(
                 fields=["comment", "user"],
-                name="forumcmtlike_comment_user_idx",
+                name="fpcmtlike_comment_user_idx",
             ),
             models.Index(
                 fields=["created_at"],
-                name="forumcmtlike_created_idx",
+                name="fpcmtlike_created_idx",
             ),
         ]
         constraints = [
             models.UniqueConstraint(
                 fields=["comment", "user"],
-                name="forumcommentlike_comment_user_unique",
+                name="fpcmt_like_user_uniq",
             ),
         ]
-        verbose_name = "ForumCommentLike"
-        verbose_name_plural = "ForumCommentLikes"
+        verbose_name = "ForumPostCommentLike"
+        verbose_name_plural = "ForumPostCommentLikes"
 
     def __str__(self) -> str:  # pragma: no cover
         return f"{self.user_id} liked {self.comment_id}"
+
+
+class ForumPostCommentContentBackup(models.Model):
+    """
+    Admin-only model for backing up comment content before soft deletion.
+    This enables restore functionality in the admin interface.
+    """
+    comment_id = models.UUIDField(primary_key=True)
+    content = models.TextField()
+    deleted_at = models.DateTimeField(default=timezone.now)
+    deleted_by = models.CharField(max_length=150, blank=True)  # Admin username
+
+    class Meta:
+        db_table = "forum_comment_content_backup"
+        verbose_name = "Comment Content Backup"
+        verbose_name_plural = "Comment Content Backups"
+        indexes = [
+            models.Index(fields=["deleted_at"], name="fpcmtbackup_deleted_at_idx"),
+        ]
+
+    def __str__(self) -> str:  # pragma: no cover
+        return f"Backup for comment {self.comment_id}"

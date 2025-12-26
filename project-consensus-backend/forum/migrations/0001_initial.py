@@ -57,7 +57,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='ForumCommentLike',
+            name='ForumPostCommentLike',
             fields=[
                 ('id', models.BigAutoField(primary_key=True, serialize=False)),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
@@ -65,9 +65,9 @@ class Migration(migrations.Migration):
                 ('comment', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='likes', to='forum.forumpostcomment')),
             ],
             options={
-                'verbose_name': 'ForumCommentLike',
-                'verbose_name_plural': 'ForumCommentLikes',
-                'indexes': [models.Index(fields=['comment', 'user'], name='forumcmtlike_comment_user_idx')],
+                'verbose_name': 'ForumPostCommentLike',
+                'verbose_name_plural': 'ForumPostCommentLikes',
+                'indexes': [models.Index(fields=['comment', 'user'], name='fpcmtlike_comment_user_idx')],
             },
         ),
         migrations.CreateModel(
@@ -84,7 +84,21 @@ class Migration(migrations.Migration):
                 'indexes': [models.Index(fields=['post', 'user'], name='forumpostlike_post_user_idx')],
             },
         ),
-        
+        migrations.CreateModel(
+            name='ForumPostCommentContentBackup',
+            fields=[
+                ('comment_id', models.UUIDField(primary_key=True, serialize=False)),
+                ('content', models.TextField()),
+                ('deleted_at', models.DateTimeField(default=django.utils.timezone.now)),
+                ('deleted_by', models.CharField(blank=True, max_length=150)),
+            ],
+            options={
+                'verbose_name': 'Comment Content Backup',
+                'verbose_name_plural': 'Comment Content Backups',
+                'db_table': 'forum_comment_content_backup',
+            },
+        ),
+
         migrations.AddIndex(
             model_name='forumpost',
             index=models.Index(fields=['created_at'], name='forumpost_created_idx'),
@@ -101,21 +115,21 @@ class Migration(migrations.Migration):
 
         migrations.AddIndex(
             model_name='forumpostcomment',
-            index=models.Index(fields=['is_deleted', 'created_at'], name='forumcmt_del_created_idx'),
+            index=models.Index(fields=['is_deleted', 'created_at'], name='fpcmt_del_created_idx'),
         ),
         migrations.AddIndex(
             model_name='forumpostcomment',
-            index=models.Index(fields=['created_at'], name='forumcmt_created_idx'),
+            index=models.Index(fields=['created_at'], name='fpcmt_created_idx'),
         ),
         migrations.AddIndex(
             model_name='forumpostcomment',
-            index=GinIndex(fields=['content'], name='forumcomment_content_trgm_idx', opclasses=['gin_trgm_ops']),
+            index=GinIndex(fields=['content'], name='fpcmt_content_trgm_idx', opclasses=['gin_trgm_ops']),
         ),
         migrations.AddConstraint(
             model_name='forumpostcomment',
             constraint=models.CheckConstraint(
                 condition=Q(is_deleted=False) | Q(content=''),
-                name='forumcomment_deleted_content_empty',
+                name='fpcmt_deleted_content_empty',
             ),
         ),
 
@@ -134,14 +148,19 @@ class Migration(migrations.Migration):
 
 
         migrations.AddIndex(
-            model_name='forumcommentlike',
-            index=models.Index(fields=['created_at'], name='forumcmtlike_created_idx'),
+            model_name='forumpostcommentlike',
+            index=models.Index(fields=['created_at'], name='fpcmtlike_created_idx'),
         ),
         migrations.AddConstraint(
-            model_name='forumcommentlike',
+            model_name='forumpostcommentlike',
             constraint=models.UniqueConstraint(
                 fields=('comment', 'user'),
-                name='forumcommentlike_comment_user_unique',
+                name='fpcmt_like_user_uniq',
             ),
+        ),
+
+        migrations.AddIndex(
+            model_name='forumpostcommentcontentbackup',
+            index=models.Index(fields=['deleted_at'], name='fpcmtbackup_deleted_at_idx'),
         ),
     ]

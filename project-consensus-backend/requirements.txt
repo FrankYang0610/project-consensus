@@ -52,9 +52,12 @@ click-repl==0.3.0
 django==5.2.6
     # via
     #   -r requirements.in
+    #   django-auditlog
     #   django-cors-headers
     #   django-storages
     #   djangorestframework
+django-auditlog==3.0.0
+    # via -r requirements.in
 django-cors-headers==4.9.0
     # via -r requirements.in
 django-environ==0.12.0
@@ -125,6 +128,7 @@ python-dateutil==2.9.0.post0
     # via
     #   botocore
     #   celery
+    #   django-auditlog
     #   pandas
 python-dotenv==1.1.1
     # via uvicorn

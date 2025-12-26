@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'rest_framework',           # Django REST Framework for building APIs
     'corsheaders',              # CORS handling for browser cross-origin requests
     'storages',                 # Django-storages for S3-compatible storage (R2)
+    'auditlog',                 # django-auditlog for model change audit logging
 
     # Local apps
     'core',
@@ -96,6 +97,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'auditlog.middleware.AuditlogMiddleware',  # Captures current user for audit logging
 ]
 
 ROOT_URLCONF = 'config.urls'
