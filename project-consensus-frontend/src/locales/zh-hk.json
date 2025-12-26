@@ -164,7 +164,7 @@
   },
   "forum": {
     "sortBy": {
-      "default": "預設",
+      "default": "預設（最新發佈）",
       "newest": "最新發佈",
       "updated": "最近更新",
       "likes": "最多讚好",

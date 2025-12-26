@@ -164,7 +164,7 @@
   },
   "forum": {
     "sortBy": {
-      "default": "默认",
+      "default": "默认（最新发布）",
       "newest": "最新发布",
       "updated": "最近更新",
       "likes": "最多点赞",

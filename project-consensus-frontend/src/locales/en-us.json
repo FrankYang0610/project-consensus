@@ -166,8 +166,8 @@
   },
   "forum": {
     "sortBy": {
-      "default": "Default",
-      "newest": "Newest",
+      "default": "Default (Newest Created)",
+      "newest": "Newest Created",
       "updated": "Recently Updated",
       "likes": "Most Liked",
       "comments": "Most Commented"

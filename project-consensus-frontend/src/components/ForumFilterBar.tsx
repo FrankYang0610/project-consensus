@@ -71,8 +71,9 @@ export function ForumFilterBar({ className, initialSort, initialSearch, initialT
     }
   };
 
-  const handleApply = React.useCallback(() => {
-    const ordering = mapSortToOrdering(sort);
+  // Helper to build URL with given sort value (used for immediate apply on sort change)
+  const applyWithSort = React.useCallback((newSort: string) => {
+    const ordering = mapSortToOrdering(newSort);
     const params = new URLSearchParams();
     if (ordering) params.set("ordering", ordering);
     const s = search.trim();
@@ -80,7 +81,17 @@ export function ForumFilterBar({ className, initialSort, initialSearch, initialT
     if (tags.length > 0) tags.forEach((t) => params.append("tags", t));
     const qs = params.toString();
     router.push(qs ? `${pathname}?${qs}` : pathname);
-  }, [pathname, router, search, sort, tags]);
+  }, [pathname, router, search, tags]);
+
+  // Handle sort change: update state and immediately apply
+  const handleSortChange = React.useCallback((newSort: string) => {
+    setSort(newSort);
+    applyWithSort(newSort);
+  }, [applyWithSort]);
+
+  const handleApply = React.useCallback(() => {
+    applyWithSort(sort);
+  }, [applyWithSort, sort]);
 
   return (
     <div
@@ -103,7 +114,7 @@ export function ForumFilterBar({ className, initialSort, initialSearch, initialT
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-48">
-          <DropdownMenuRadioGroup value={sort} onValueChange={setSort}>
+          <DropdownMenuRadioGroup value={sort} onValueChange={handleSortChange}>
             {sortOptionKeys.map(key => (
               <DropdownMenuRadioItem key={key} value={key} className="text-xs">
                 {t(`forum.sortBy.${key}`)}
