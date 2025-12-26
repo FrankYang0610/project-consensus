@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import asyncio
 import json
-import os
 import time
 import warnings
-from typing import Iterator, Optional
+from typing import AsyncIterator, Optional
 
 import redis
+import redis.asyncio as redis_async
 from django.conf import settings
 
 
@@ -16,14 +17,13 @@ from django.conf import settings
 # - Monotonic event IDs per user (Redis INCR)
 # - Short backlog in Redis Sorted Set (ZSET) to support efficient Last-Event-ID replay on reconnect
 # - SSE-formatted output with id: and data: lines
+# - Async subscriber for ASGI/Uvicorn, sync publisher for Celery tasks
 
 _REDIS_CLIENT: Optional[redis.Redis] = None
 
 
-def _get_redis() -> redis.Redis:
-    global _REDIS_CLIENT
-    if _REDIS_CLIENT is not None:
-        return _REDIS_CLIENT
+def _get_redis_url() -> str:
+    """Get Redis URL from settings with fallback."""
     url = getattr(settings, "NOTIFICATIONS_REDIS_URL", None)
     if url is None:
         url = "redis://localhost:6379/1"
@@ -32,6 +32,15 @@ def _get_redis() -> redis.Redis:
             "This is insecure for production; configure NOTIFICATIONS_REDIS_URL.",
             RuntimeWarning,
         )
+    return url
+
+
+def _get_redis() -> redis.Redis:
+    """Get sync Redis client for publish operations (used by Celery tasks)."""
+    global _REDIS_CLIENT
+    if _REDIS_CLIENT is not None:
+        return _REDIS_CLIENT
+    url = _get_redis_url()
     # decode_responses=True returns str instead of bytes
     _REDIS_CLIENT = redis.Redis.from_url(
         url,
@@ -73,29 +82,55 @@ def _sse_format(event_id: int, payload: dict) -> str:
     return f"id: {event_id}\ndata: {data}\n\n"
 
 
-class _RedisSubscriber:
+class _AsyncRedisSubscriber:
+    """Async Redis subscriber for use with ASGI servers (Uvicorn).
+    
+    This implementation is non-blocking and allows a single Uvicorn worker
+    to handle thousands of concurrent SSE connections without exhausting
+    thread pools or database connections.
+    """
+    
     def __init__(self, user_id: str, last_event_id: Optional[int] = None):
         self.user_id = user_id
         self.last_event_id = last_event_id
-        self._r = _get_redis()
-        self._pubsub = self._r.pubsub(ignore_subscribe_messages=True)
-        self._pubsub.subscribe(_chan(user_id))
         self._closed = False
+        self._r: Optional[redis_async.Redis] = None
+        self._pubsub: Optional[redis_async.client.PubSub] = None
 
-    def close(self) -> None:
+    async def _get_async_redis(self) -> redis_async.Redis:
+        """Get or create async Redis connection."""
+        if self._r is None:
+            url = _get_redis_url()
+            self._r = redis_async.from_url(
+                url,
+                decode_responses=True,
+                socket_timeout=float(getattr(settings, "NOTIFICATIONS_REDIS_SOCKET_TIMEOUT", 5.0)),
+                socket_connect_timeout=float(getattr(settings, "NOTIFICATIONS_REDIS_SOCKET_CONNECT_TIMEOUT", 5.0)),
+            )
+        return self._r
+
+    async def close(self) -> None:
+        """Close all connections."""
         self._closed = True
         try:
-            self._pubsub.close()
+            if self._pubsub is not None:
+                await self._pubsub.close()
+        except Exception:
+            pass
+        try:
+            if self._r is not None:
+                await self._r.close()
         except Exception:
             pass
 
-    def _replay(self) -> Iterator[str]:
+    async def _replay(self) -> AsyncIterator[str]:
+        """Replay missed events from backlog."""
         if self.last_event_id is None:
             return
         try:
+            r = await self._get_async_redis()
             # Use ZSET ZRANGEBYSCORE to efficiently fetch only events > last_event_id
-            # Score is event_id, fetch in ascending order (oldest first)
-            raw_items = self._r.zrangebyscore(
+            raw_items = await r.zrangebyscore(
                 _backlog_key(self.user_id),
                 min=f"({self.last_event_id}",  # exclusive lower bound
                 max="+inf"
@@ -107,43 +142,69 @@ class _RedisSubscriber:
                     payload = _extract_payload(item)
                     yield _sse_format(event_id, payload)
                 except Exception:
-                    # ignore malformed entries
                     continue
         except Exception:
-            # best-effort replay; ignore errors
             return
 
-    def listen(self, keepalive_seconds: int = 25) -> Iterator[str]:
+    async def listen(self, keepalive_seconds: int = 25) -> AsyncIterator[str]:
+        """Async generator that yields SSE-formatted events.
+        
+        This method:
+        - First replays any missed events from backlog
+        - Then subscribes to Redis pub/sub for live events
+        - Sends keepalive comments to prevent connection timeouts
+        - Properly cleans up on disconnect
+        """
         # First deliver replay if any
-        yield from self._replay()
-        last = time.time()
+        async for chunk in self._replay():
+            yield chunk
+
+        r = await self._get_async_redis()
+        self._pubsub = r.pubsub(ignore_subscribe_messages=True)
+        await self._pubsub.subscribe(_chan(self.user_id))
+
+        last_activity = time.time()
         try:
             while not self._closed:
-                # Use non-blocking polling to allow keepalives
-                msg = self._pubsub.get_message(timeout=1.0)
+                try:
+                    # Non-blocking get with timeout - releases event loop while waiting
+                    msg = await asyncio.wait_for(
+                        self._pubsub.get_message(ignore_subscribe_messages=True),
+                        timeout=1.0
+                    )
+                except asyncio.TimeoutError:
+                    msg = None
+
                 if msg and msg.get("type") == "message":
                     try:
                         data = json.loads(msg.get("data") or "{}")
                         event_id = int(data.get("id", 0))
                         payload = _extract_payload(data)
                         yield _sse_format(event_id, payload)
-                        last = time.time()
+                        last_activity = time.time()
                     except Exception:
-                        # ignore malformed messages
                         pass
                     continue
 
-                # keepalive if idle
+                # Send keepalive if idle
                 now = time.time()
-                if now - last >= keepalive_seconds:
+                if now - last_activity >= keepalive_seconds:
                     yield ": keep-alive\n\n"
-                    last = now
+                    last_activity = now
+
+        except asyncio.CancelledError:
+            raise  # Client disconnected - this is expected for sometime.
         finally:
-            self.close()
+            await self.close()
 
 
-def subscribe(user_id: str, last_event_id: Optional[int] = None) -> _RedisSubscriber:
-    return _RedisSubscriber(user_id=user_id, last_event_id=last_event_id)
+def subscribe_async(user_id: str, last_event_id: Optional[int] = None) -> _AsyncRedisSubscriber:
+    """Create an async Redis subscriber for SSE endpoints.
+    
+    Use this with async def views under Uvicorn for efficient handling
+    of many concurrent long-lived connections.
+    """
+    return _AsyncRedisSubscriber(user_id=user_id, last_event_id=last_event_id)
 
 
 def publish(user_id: str, msg: dict) -> None:
