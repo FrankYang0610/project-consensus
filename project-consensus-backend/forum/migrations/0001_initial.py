@@ -84,6 +84,20 @@ class Migration(migrations.Migration):
                 'indexes': [models.Index(fields=['post', 'user'], name='forumpostlike_post_user_idx')],
             },
         ),
+        migrations.CreateModel(
+            name='ForumCommentContentBackup',
+            fields=[
+                ('comment_id', models.UUIDField(primary_key=True, serialize=False)),
+                ('content', models.TextField()),
+                ('deleted_at', models.DateTimeField(default=django.utils.timezone.now)),
+                ('deleted_by', models.CharField(blank=True, max_length=150)),
+            ],
+            options={
+                'verbose_name': 'Comment Content Backup',
+                'verbose_name_plural': 'Comment Content Backups',
+                'db_table': 'forum_comment_content_backup',
+            },
+        ),
         
         migrations.AddIndex(
             model_name='forumpost',

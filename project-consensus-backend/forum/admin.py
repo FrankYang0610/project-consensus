@@ -9,7 +9,33 @@ from django.contrib import admin
 from django.db.models import Case, Count, Value, When
 from django.utils.html import strip_tags
 
-from .models import ForumPost, ForumPostComment, ForumPostLike, ForumCommentLike
+from .models import (
+    ForumPost,
+    ForumPostComment,
+    ForumPostLike,
+    ForumCommentLike,
+    ForumCommentContentBackup,
+)
+
+
+@admin.register(ForumCommentContentBackup)
+class ForumCommentContentBackupAdmin(admin.ModelAdmin):
+    """Admin interface for viewing comment backups (read-only)."""
+    list_display = ("comment_id", "content_preview", "deleted_by", "deleted_at")
+    readonly_fields = ("comment_id", "content", "deleted_at", "deleted_by")
+    search_fields = ("comment_id", "content")
+    date_hierarchy = "deleted_at"
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    @admin.display(description="Content Preview")
+    def content_preview(self, obj):
+        text = strip_tags(obj.content)
+        return text[:80] + "..." if len(text) > 80 else text
 
 
 @admin.register(ForumPost)
@@ -174,23 +200,80 @@ class ForumPostCommentAdmin(admin.ModelAdmin):
 
     actions = ["soft_delete_comments", "restore_comments"]
 
-    @admin.action(description="Soft delete selected comments")
+    @admin.action(description="Soft delete selected comments (with backup)")
     def soft_delete_comments(self, request, queryset):
-        """Soft delete comments (mark as deleted and clear content)"""
-        updated = queryset.update(is_deleted=True, content="")
-        self.message_user(
-            request,
-            f"{updated} comments were soft deleted."
-        )
+        """Soft delete comments: backup content, then mark as deleted and clear content."""
+        # Only process comments that are not already deleted
+        to_delete = queryset.filter(is_deleted=False).exclude(content="")
 
-    @admin.action(description="Restore selected comments (mark as not deleted)")
+        # Backup content before deletion
+        backups = []
+        for comment in to_delete:
+            backups.append(ForumCommentContentBackup(
+                comment_id=comment.id,
+                content=comment.content,
+                deleted_by=request.user.username,
+            ))
+
+        # Bulk create backups (update if already exists)
+        if backups:
+            ForumCommentContentBackup.objects.bulk_create(
+                backups,
+                update_conflicts=True,
+                unique_fields=["comment_id"],
+                update_fields=["content", "deleted_at", "deleted_by"],
+            )
+
+        # Perform soft delete
+        updated = to_delete.update(is_deleted=True, content="")
+        already_deleted = queryset.filter(is_deleted=True).count()
+
+        if already_deleted:
+            self.message_user(
+                request,
+                f"{updated} comments soft deleted (content backed up). "
+                f"{already_deleted} were already deleted."
+            )
+        else:
+            self.message_user(
+                request,
+                f"{updated} comments soft deleted (content backed up)."
+            )
+
+    @admin.action(description="Restore selected comments (from backup)")
     def restore_comments(self, request, queryset):
-        """Restore deleted comments (note: content cannot be recovered)"""
-        updated = queryset.update(is_deleted=False)
-        self.message_user(
-            request,
-            f"{updated} comments were restored (content was not recovered)."
-        )
+        """Restore deleted comments from backup."""
+        # Only process deleted comments
+        to_restore = queryset.filter(is_deleted=True)
+
+        restored_count = 0
+        no_backup_count = 0
+
+        for comment in to_restore:
+            try:
+                backup = ForumCommentContentBackup.objects.get(comment_id=comment.id)
+                comment.content = backup.content
+                comment.is_deleted = False
+                comment.save(update_fields=["content", "is_deleted"])
+                backup.delete()  # Remove backup after successful restore
+                restored_count += 1
+            except ForumCommentContentBackup.DoesNotExist:
+                no_backup_count += 1
+
+        not_deleted = queryset.filter(is_deleted=False).count()
+
+        messages = []
+        if restored_count:
+            messages.append(f"{restored_count} comments restored")
+        if no_backup_count:
+            messages.append(f"{no_backup_count} had no backup")
+        if not_deleted:
+            messages.append(f"{not_deleted} were not deleted")
+
+        if messages:
+            self.message_user(request, ". ".join(messages) + ".")
+        else:
+            self.message_user(request, "No comments to restore.", level="warning")
 
 
 @admin.register(ForumPostLike)

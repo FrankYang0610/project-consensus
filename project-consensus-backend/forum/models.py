@@ -307,3 +307,22 @@ class ForumCommentLike(models.Model):
 
     def __str__(self) -> str:  # pragma: no cover
         return f"{self.user_id} liked {self.comment_id}"
+
+
+class ForumCommentContentBackup(models.Model):
+    """
+    Admin-only model for backing up comment content before soft deletion.
+    This enables restore functionality in the admin interface.
+    """
+    comment_id = models.UUIDField(primary_key=True)
+    content = models.TextField()
+    deleted_at = models.DateTimeField(default=timezone.now)
+    deleted_by = models.CharField(max_length=150, blank=True)  # Admin username
+
+    class Meta:
+        db_table = "forum_comment_content_backup"
+        verbose_name = "Comment Content Backup"
+        verbose_name_plural = "Comment Content Backups"
+
+    def __str__(self) -> str:  # pragma: no cover
+        return f"Backup for comment {self.comment_id}"
