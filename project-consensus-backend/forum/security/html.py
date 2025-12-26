@@ -33,7 +33,7 @@ _COURSE_TEXT_ATTRS: dict[str, list[str]] = {
 
 _FORUM_TAGS = [
     'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'br',
-    'strong', 'em', 'code', 'pre', 'blockquote',
+    'strong', 'b', 'em', 'i', 'code', 'pre', 'blockquote',
     'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th',
     'div', 'span', 'hr', 'del', 'ins', 'u', 's', 'sub', 'sup',
     'a', 'img',

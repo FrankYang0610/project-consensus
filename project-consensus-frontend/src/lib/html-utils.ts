@@ -17,7 +17,7 @@ export function sanitizeHtml(html: string): string {
   const config = {
     ALLOWED_TAGS: [
       'p', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'br',
-      'strong', 'em', 'code', 'pre', 'blockquote',
+      'strong', 'b', 'em', 'i', 'u', 's', 'code', 'pre', 'blockquote',
       'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th',
       // Links and images
       'a', 'img'
