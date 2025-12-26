@@ -115,16 +115,9 @@ project-consensus-backend/
 │   ├── admin.py                               # Django admin configuration
 │   ├── tests.py                               # Core app tests
 │   ├── presentation/                          # Presentation layer utilities
-│   ├── search_services/                       # Global Search Services
-│   │   ├── __init__.py
-│   │   ├── search_services.py                 # Main search service implementation
-│   │   ├── search_algorithms.py               # Search algorithm implementations
-│   │   ├── search_utils.py                    # Search utility functions
-│   │   ├── search_exceptions.py               # Search-specific exceptions
-│   │   └── README.md                          # Search service documentation
 │   ├── security/                              # Security utilities
 │   ├── migrations/                            # Database migrations
-│   │   └── 0001_initial.py                    # Initial schema
+│   │   └── 0001_initial.py                    # Enable pg_trgm extension
 │   └── README.md                              # Core app documentation
 │
 ├── courses/                                   # Course Management & Review System
@@ -239,6 +232,15 @@ project-consensus-backend/
 │   └── migrations/                            # Database migrations
 │       ├── 0001_initial.py                    # Initial schema
 │       └── 0002_seed_notifications.py         # Notification seed data
+│
+├── search/                                    # Global Search App
+│   ├── __init__.py
+│   ├── apps.py                                # Django app configuration
+│   ├── services.py                            # Main search service implementation
+│   ├── algorithms.py                          # Search scoring and similarity algorithms
+│   ├── utils.py                               # Search utility functions and validation
+│   ├── exceptions.py                          # Search-specific exceptions
+│   └── README.md                              # Search app documentation
 │
 ├── database/                                  # Database Seed Data
 │   ├── courses/                               # Course seed data
@@ -524,7 +526,7 @@ For detailed architecture documentation, see `README.celery-and-ops.md`.
 - **Forum App**: See `forum/README.md` for forum posts and comments
 - **Teachers App**: See `teachers/README.md` for teacher information management
 - **Wiki App**: See `wiki/README.md` for wiki knowledge base
-- **Core App**: See `core/README.md` for global search and image upload
-- **Search Services**: See `core/search_services/README.md` for search implementation
+- **Core App**: See `core/README.md` for health check and image upload
+- **Search App**: See `search/README.md` for global search implementation
 - **Celery & Operations**: See `README.celery-and-ops.md` for async tasks and infrastructure
 

@@ -1,5 +1,5 @@
 """
-Search-related exceptions for the core app service layer.
+Search-related exceptions.
 """
 
 
@@ -26,3 +26,4 @@ class SearchQueryTooLongError(SearchValidationError):
 class SearchQueryMaliciousError(SearchValidationError):
     """Raised when search query contains potentially malicious content."""
     pass
+

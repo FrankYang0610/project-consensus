@@ -1,5 +1,5 @@
 """
-Search algorithms and scoring functions for the core app service layer.
+Search algorithms and scoring functions.
 """
 
 from django.db.models import Q, F, Value, FloatField, Case, When
@@ -140,3 +140,4 @@ def apply_short_query_filters(queryset, query: str, similarity_threshold: float,
     return queryset.filter(
         Q(similarity__gte=similarity_threshold) | prefix_q | text_q
     )
+
