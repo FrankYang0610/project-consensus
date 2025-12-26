@@ -111,7 +111,7 @@ class WikiCategoryViewSet(viewsets.ModelViewSet):
 
         # Fallback: if requested slug exists but default language version is missing,
         # return any available language without ordering overhead.
-        obj = queryset.filter(slug=slug).order_by().first()
+        obj = queryset.filter(slug=slug).order_by('id').first()
         if obj is not None:
             return obj
         raise Http404
@@ -230,7 +230,7 @@ class WikiPageViewSet(viewsets.ModelViewSet):
 
         # Fallback: if requested slug exists but default language version is missing,
         # return any available language without ordering overhead.
-        obj = queryset.filter(slug=slug).order_by().first()
+        obj = queryset.filter(slug=slug).order_by('id').first()
         if obj is not None:
             return obj
         raise Http404
