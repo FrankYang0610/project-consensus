@@ -22,7 +22,7 @@ class NicknameRateLimitError(Exception):
     def __init__(self, days_remaining: int) -> None:
         self.days_remaining = days_remaining
         super().__init__(
-            "Nickname can only be updated once every 3 days. "
+            f"Nickname can only be updated once every {Profile.NICKNAME_COOLDOWN_DAYS} days. "
             f"Please wait {days_remaining} more day(s)."
         )
 
