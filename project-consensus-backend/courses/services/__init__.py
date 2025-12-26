@@ -9,6 +9,7 @@ from .course_aggregates import (
     recompute_course_aggregates_after_review_change,
     recompute_review_replies_count,
     recompute_teachers_aggregates,
+    recompute_teacher_aggregates,
 )
 from .course_image_cleanup import (
     cleanup_removed_images_for_review,
@@ -68,6 +69,7 @@ __all__ = [
     "emit_notifications_for_new_reply",
     
     # Aggregates & Cleanup
+    "recompute_teacher_aggregates",
     "recompute_teachers_aggregates",
     "recompute_course_aggregates_after_review_change",
     "recompute_review_replies_count",
