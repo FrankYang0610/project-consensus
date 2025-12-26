@@ -409,8 +409,7 @@
       "cancel": "取消",
       "reply": "回覆",
       "replies": "{{count}} 條回覆",
-      "repliesSection": "回覆將顯示在此處",
-      "imagePlaceholder": "【圖片】"
+      "repliesSection": "回覆將顯示在此處"
     },
     "reviewForm": {
       "title": "撰寫課程點評",
