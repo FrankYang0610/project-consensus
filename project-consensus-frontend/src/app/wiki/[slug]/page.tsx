@@ -9,9 +9,11 @@ import WikiToc from '@/components/wiki/WikiToc';
 
 export const revalidate = 0;
 
-export default async function WikiDetailPage({ params, searchParams }: { params: { slug: string }, searchParams?: Record<string, string | string[] | undefined> }) {
-  const slug = params.slug;
-  const language = (searchParams?.language as LanguageCode | undefined) ?? undefined;
+export default async function WikiDetailPage({ params, searchParams }: { params: { slug: string } | Promise<{ slug: string }>, searchParams?: Record<string, string | string[] | undefined> | Promise<Record<string, string | string[] | undefined>> }) {
+  const { slug } = await params;
+  if (!slug) return notFound();
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const language = (resolvedSearchParams?.language as LanguageCode | undefined) ?? undefined;
   const page = await fetchWikiPageDetail(slug, language);
   if (!page) return notFound();
 
