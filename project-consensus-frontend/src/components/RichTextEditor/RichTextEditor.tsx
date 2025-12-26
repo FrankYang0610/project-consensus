@@ -174,7 +174,7 @@ export default function RichTextEditor({ value, onChange, placeholder, className
       
       // Check if clipboard contains image data in HTML
       const htmlData = dataTransfer.getData('text/html') || '';
-      const hasImageInHtml = /<img\s/i.test(htmlData);
+      const hasImageInHtml = /<img\b[^>]*>/i.test(htmlData);
 
       if (hasImageFile || hasImageInHtml) {
         evt.stop();
