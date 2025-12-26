@@ -10,6 +10,7 @@ import {
   FileText,
   Check,
   MessageSquare,
+  Calendar,
 } from "lucide-react";
 
 import {
@@ -39,8 +40,7 @@ import { ForumPost } from "@/types";
 import { useI18n } from "@/hooks/use-i18n";
 import { useApp } from "@/contexts/AppContext";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-
-import ClientOnlyTime from "./ClientOnlyTime";
+import { formatRelativeTime } from "@/lib/time-utils";
 
 /**
  * 论坛帖子预览卡片组件属性 / Forum post preview card component props
@@ -61,7 +61,7 @@ export function ForumPostPreviewCard({
   currentUserId,
 }: ForumPostPreviewCardProps) {
   // i18n translation
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const { isLoggedIn, openLoginModal } = useApp();
   const router = useRouter();
   const pathname = usePathname();
@@ -176,7 +176,16 @@ export function ForumPostPreviewCard({
                   )}
                 </Link>
               )}
-              <ClientOnlyTime dateString={post.createdAt} className="text-xs text-muted-foreground" />
+              <div className="flex items-center gap-1 text-xs text-muted-foreground flex-wrap">
+                <Calendar className="w-3 h-3" />
+                <span>{t("post.createdAt", { date: formatRelativeTime(post.createdAt, t, language) })}</span>
+                {post.isEdited && post.updatedAt && (
+                  <>
+                    <span>•</span>
+                    <span>{t("post.updatedAt", { date: formatRelativeTime(post.updatedAt, t, language) })}</span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>

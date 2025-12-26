@@ -80,7 +80,7 @@ class Migration(migrations.Migration):
             options={
                 'verbose_name': 'Course review',
                 'verbose_name_plural': 'Course reviews',
-                'ordering': ['-created_at'],
+                'ordering': ['-updated_at'],
             },
         ),
         migrations.CreateModel(
@@ -162,6 +162,10 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name='coursereview',
             index=models.Index(fields=['created_at'], name='coursereview_created_idx'),
+        ),
+        migrations.AddIndex(
+            model_name='coursereview',
+            index=models.Index(fields=['updated_at'], name='coursereview_updated_idx'),
         ),
         migrations.AddIndex(
             model_name='coursereview',

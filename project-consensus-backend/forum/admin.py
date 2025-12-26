@@ -110,6 +110,12 @@ class ForumPostAdmin(admin.ModelAdmin):
 
     actions = ["toggle_content_warning", "clear_content_warning"]
 
+    def save_model(self, request, obj, form, change):
+        """Automatically mark post as edited when admin updates it."""
+        if change:  # Only on update, not on creation
+            obj.is_edited = True
+        super().save_model(request, obj, form, change)
+
     @admin.action(description="Toggle content warning on selected posts")
     def toggle_content_warning(self, request, queryset):
         """Toggle content warning for selected posts"""

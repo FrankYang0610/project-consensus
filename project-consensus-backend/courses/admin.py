@@ -99,7 +99,7 @@ class CourseReviewAdmin(admin.ModelAdmin):
             ),
         }),
         ("Options", {
-            "fields": ("is_anonymous", "only_text"),
+            "fields": ("is_anonymous", "only_text", "is_edited"),
         }),
         ("Term", {
             "fields": ("term_year", "term_semester"),
@@ -112,6 +112,12 @@ class CourseReviewAdmin(admin.ModelAdmin):
         }),
     )
     
+    def save_model(self, request, obj, form, change):
+        """Automatically mark review as edited when admin updates it."""
+        if change:  # Only on update, not on creation
+            obj.is_edited = True
+        super().save_model(request, obj, form, change)
+
     def course_code_title(self, obj):
         return f"{obj.course.subject_code} - {obj.course.title}"
     course_code_title.short_description = "Course"

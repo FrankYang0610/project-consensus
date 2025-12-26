@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import {
   Star,
   ThumbsUp,
-  Calendar,
   BookOpen,
 } from "lucide-react";
 
@@ -159,6 +158,11 @@ export function CourseReviewPreviewCard({
     [review.createdAt, language]
   );
 
+  const updatedAtFormatted = React.useMemo(() =>
+    review.updatedAt ? formatDateDisplay(review.updatedAt, language) : null,
+    [review.updatedAt, language]
+  );
+
   // Memoize term formatting
   const termElement = React.useMemo(() =>
     review.term ? (
@@ -276,8 +280,12 @@ export function CourseReviewPreviewCard({
                     </Link>
                   )}
                   <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-                    <Calendar className="w-3 h-3 shrink-0" />
-                    <span className="shrink-0">{createdAtFormatted}</span>
+                    <span className="shrink-0">
+                      {review.isEdited && updatedAtFormatted
+                        ? t("courses.review.updatedAt", { date: updatedAtFormatted })
+                        : t("courses.review.createdAt", { date: createdAtFormatted })
+                      }
+                    </span>
                     {termElement && (
                       <>
                         <span>•</span>

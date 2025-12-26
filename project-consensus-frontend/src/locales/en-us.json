@@ -152,6 +152,8 @@
     "removeTag": "Remove tag",
     "maxTagsReached": "Maximum {{max}} tags allowed",
     "edited": "Edited",
+    "createdAt": "Created at: {{date}}",
+    "updatedAt": "Updated at: {{date}}",
     "validation": {
       "titleRequired": "Title is required",
       "titleTooShort": "Title must be at least 5 characters",
@@ -160,6 +162,15 @@
       "contentTooShort": "Content must be at least 10 characters",
       "tagsRequired": "At least one tag is required",
       "tooManyTags": "Maximum 10 tags allowed"
+    }
+  },
+  "forum": {
+    "sortBy": {
+      "default": "Default",
+      "newest": "Newest",
+      "updated": "Recently Updated",
+      "likes": "Most Liked",
+      "comments": "Most Commented"
     }
   },
   "time": {
@@ -360,8 +371,10 @@
           "label": "Sort",
           "options": {
             "mostLiked": "Most liked",
-            "newest": "Newest",
-            "oldest": "Oldest",
+            "newestCreated": "Newest created",
+            "oldestCreated": "Oldest created",
+            "newestUpdated": "Recently updated",
+            "oldestUpdated": "Oldest updated",
             "ratingHighToLow": "Rating: high → low",
             "ratingLowToHigh": "Rating: low → high"
           }
@@ -386,7 +399,9 @@
     },
     "review": {
       "overallRating": "Overall Rating",
-      "edited": "edited {{date}}",
+      "createdAt": "Created at: {{date}}",
+      "updatedAt": "Updated at: {{date}}",
+      "edited": "Edited",
       "edit": "Edit",
       "delete": "Delete",
       "deleteConfirm": "Are you sure you want to delete this review?",

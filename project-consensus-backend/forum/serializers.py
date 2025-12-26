@@ -46,13 +46,14 @@ class ForumPostSerializer(serializers.ModelSerializer):
     commentsCount = serializers.SerializerMethodField()
     isLiked = serializers.SerializerMethodField()
     createdAt = serializers.DateTimeField(source="created_at", read_only=True)
+    updatedAt = serializers.DateTimeField(source="updated_at", read_only=True)
     isAnonymous = serializers.BooleanField(source="is_anonymous", required=False)
     isEdited = serializers.BooleanField(source="is_edited", read_only=True)
 
     class Meta:
         model = ForumPost
         fields = [
-            "id", "title", "content", "author", "createdAt",
+            "id", "title", "content", "author", "createdAt", "updatedAt",
             "tags", "likesCount", "commentsCount", "isLiked",
             "isAnonymous", "isEdited",
         ]

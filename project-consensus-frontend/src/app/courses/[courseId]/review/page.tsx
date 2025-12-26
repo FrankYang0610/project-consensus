@@ -91,7 +91,7 @@ export default function CourseReviewCreatePage({ params }: { params: Promise<{ c
     (async () => {
       if (!isEditMode) return;
       try {
-        const page = await fetchCourseReviews({ courseId, page: 1, pageSize: 1, mine: true, ordering: '-created_at' });
+        const page = await fetchCourseReviews({ courseId, page: 1, pageSize: 1, mine: true, ordering: '-updated_at' });
         const my = page.results?.[0];
         if (my && !cancelled) {
           setEditingReviewId(my.id);

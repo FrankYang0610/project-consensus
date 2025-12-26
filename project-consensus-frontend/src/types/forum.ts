@@ -13,6 +13,7 @@ export interface ForumPost {
   content: string; // 帖子内容 / Post content
   author: Author; // 帖子作者 / Post author
   createdAt: string; // 创建时间 / Creation time
+  updatedAt?: string; // 更新时间 / Last updated time
   tags: string[]; // 标签列表 / Tags list
   likesCount: number; // 点赞数量 / Number of likes
   commentsCount: number; // 评论数量 / Number of comments

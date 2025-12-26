@@ -55,7 +55,7 @@ class ForumPostViewSet(viewsets.ModelViewSet):
     # - Ordering: by created_at (time), likes_count (likes), comments_count (computed)
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["title", "content", "tags"]
-    ordering_fields = ["created_at", "likes_count", "comments_count", "id"]
+    ordering_fields = ["created_at", "updated_at", "likes_count", "comments_count", "id"]
     # Sensible default ordering for feeds without ML: newest first, break ties by engagement
     ordering = ["-created_at", "-likes_count", "-id"]
     pagination_class = DefaultPageNumberPagination

@@ -74,7 +74,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
     reset: resetReviews,
   } = useInfiniteList<CourseReview, FetchCourseReviewsParams>({
     pageFetcher: fetchCourseReviews,
-    initialParams: { courseId, page: 1, pageSize: 10, ordering: '-created_at' },
+    initialParams: { courseId, page: 1, pageSize: 10, ordering: '-updated_at' },
     pageSize: 10,
     dedupeKey: (r) => r.id,
   });
@@ -85,11 +85,13 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
   const mapSortToOrdering = React.useCallback((key: string): string => {
     switch (key) {
       case 'mostLiked': return '-likes_count';
-      case 'newest': return '-created_at';
-      case 'oldest': return 'created_at';
+      case 'newestCreated': return '-created_at';
+      case 'oldestCreated': return 'created_at';
+      case 'newestUpdated': return '-updated_at';
+      case 'oldestUpdated': return 'updated_at';
       case 'ratingHighToLow': return '-overall_rating';
       case 'ratingLowToHigh': return 'overall_rating';
-      default: return '-created_at';
+      default: return '-updated_at';
     }
   }, []);
 
