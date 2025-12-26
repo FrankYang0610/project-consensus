@@ -9,9 +9,9 @@ import { decode } from "he";
  */
 function normalizeBareDomainUrl(value: string): string {
   const v = String(value ?? "").trim();
-  if (!v) return value;
+  if (!v) return v;
   const startsWithSpecial = v.startsWith('/') || v.startsWith('#') || v.startsWith('?') || v.startsWith('.');
-  const hasScheme = v.includes('://');
+  const hasScheme = /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(v);
 
   if (!hasScheme && !startsWithSpecial) {
     try {
