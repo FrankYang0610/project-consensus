@@ -5,6 +5,7 @@ Provides admin interfaces for ForumPost, ForumPostComment, ForumPostLike, ForumP
 """
 
 from django.contrib import admin
+from django.db import transaction
 from django.db.models import Case, Count, Value, When
 from django.utils.html import strip_tags
 
@@ -214,19 +215,18 @@ class ForumPostCommentAdmin(admin.ModelAdmin):
                 deleted_by=request.user.username,
             ))
 
-        # Bulk create backups (update if already exists)
-        if backups:
-            ForumPostCommentContentBackup.objects.bulk_create(
-                backups,
-                update_conflicts=True,
-                unique_fields=["comment_id"],
-                update_fields=["content", "deleted_at", "deleted_by"],
-            )
-
-        # Perform soft delete
-        updated = to_delete.update(is_deleted=True, content="")
+        # Bulk create backups and perform soft delete atomically
+        with transaction.atomic():
+            if backups:
+                ForumPostCommentContentBackup.objects.bulk_create(
+                    backups,
+                    update_conflicts=True,
+                    unique_fields=["comment_id"],
+                    update_fields=["content", "deleted_at", "deleted_by"],
+                )
+            updated = to_delete.update(is_deleted=True, content="")  # Perform soft delete
+        
         already_deleted = queryset.filter(is_deleted=True).count()
-
         if already_deleted:
             self.message_user(
                 request,
@@ -251,10 +251,11 @@ class ForumPostCommentAdmin(admin.ModelAdmin):
         for comment in to_restore:
             try:
                 backup = ForumPostCommentContentBackup.objects.get(comment_id=comment.id)
-                comment.content = backup.content
-                comment.is_deleted = False
-                comment.save(update_fields=["content", "is_deleted"])
-                backup.delete()  # Remove backup after successful restore
+                with transaction.atomic():
+                    comment.content = backup.content
+                    comment.is_deleted = False
+                    comment.save(update_fields=["content", "is_deleted"])
+                    backup.delete()  # Remove backup after successful restore
                 restored_count += 1
             except ForumPostCommentContentBackup.DoesNotExist:
                 no_backup_count += 1
