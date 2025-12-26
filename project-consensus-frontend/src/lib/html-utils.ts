@@ -2,6 +2,27 @@ import DOMPurify from "isomorphic-dompurify";
 import { decode } from "he";
 
 /**
+ * Normalizes a bare domain URL (e.g., "apple.com" or "www.apple.com") by prepending https://
+ * Returns the normalized URL if valid, otherwise returns the original value.
+ * @param value - The URL string to normalize
+ * @returns Normalized URL with https:// prefix, or original value if not a bare domain
+ */
+function normalizeBareDomainUrl(value: string): string {
+  const hasScheme = /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(value);
+  const startsWithSpecial = /^[\/#?.]/.test(value);
+
+  if (value && !hasScheme && !startsWithSpecial) {
+    try {
+      new URL(`https://${value}`); // Validate before applying
+      return `https://${value}`;
+    } catch {
+      // Not a valid URL even with https://, return original
+    }
+  }
+  return value;
+}
+
+/**
  * Sanitizes HTML content using DOMPurify with a restrictive configuration
  * @param html - The HTML string to sanitize
  * @returns Sanitized HTML string
@@ -82,23 +103,9 @@ export function sanitizeHtml(html: string): string {
 
     // Normalize and validate <a href> to http/https only
     if (node.nodeName === 'A' && data.attrName === 'href') {
-      let value = (data.attrValue || '').trim();
-
-      // If user typed a bare domain like "apple.com" or "www.apple.com",
-      // treat it as an https URL instead of a relative path.
-      // We try prepending https:// and let the URL constructor validate it.
-      const hasScheme = /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(value);
-      const startsWithSpecial = /^[\/#?.]/.test(value);
-
-      if (value && !hasScheme && !startsWithSpecial) {
-        try {
-          new URL(`https://${value}`); // Validate before applying
-          value = `https://${value}`;
-          data.attrValue = value;
-        } catch {
-          // Not a valid URL even with https://, leave as-is for final validation
-        }
-      }
+      // If user typed a bare domain like "apple.com", normalize to https://
+      let value = normalizeBareDomainUrl((data.attrValue || '').trim());
+      data.attrValue = value;
 
       try {
         const baseUrl = typeof window !== 'undefined' 
@@ -115,29 +122,16 @@ export function sanitizeHtml(html: string): string {
 
     // Validate <img src> to allowed image hosts only
     if (node.nodeName === 'IMG' && data.attrName === 'src') {
-      let value = (data.attrValue || '').trim();
+      // If user typed a bare domain like "image.polyu.life/xxx.png", normalize to https://
+      let value = normalizeBareDomainUrl((data.attrValue || '').trim());
+      data.attrValue = value;
+
       try {
         // Base URL is only used for resolving relative paths in both browser and SSR. 
         // Absolute http/https URLs will ignore Base URL.
         const baseUrl = typeof window !== 'undefined' 
           ? window.location.origin 
           : (process.env.NEXT_PUBLIC_SITE_URL || 'https://polyu.life');
-
-        // If user typed a bare domain like "image.polyu.life/xxx.png",
-        // normalize it to an absolute https URL so host detection works.
-        // We try prepending https:// and let the URL constructor validate it.
-        const hasScheme = /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(value);
-        const startsWithSpecial = /^[\/#?.]/.test(value);
-
-        if (value && !hasScheme && !startsWithSpecial) {
-          try {
-            new URL(`https://${value}`); // Validate before applying
-            value = `https://${value}`;
-            data.attrValue = value;
-          } catch {
-            // Not a valid URL even with https://, will be caught by outer try-catch
-          }
-        }
 
         const url = new URL(value, baseUrl);
         const allowedHosts = (process.env.NEXT_PUBLIC_ALLOWED_IMAGE_HOSTS || 'image.polyu.life')
