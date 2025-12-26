@@ -61,28 +61,26 @@ class ForumPostAdmin(admin.ModelAdmin):
         }),
     )
 
+    @admin.display(description="Author", ordering="author__username")
     def author_name(self, obj):
         if obj.is_anonymous:
             return f"{obj.author.username} (Anonymous)"
         return obj.author.username
-    author_name.short_description = "Author"
-    author_name.admin_order_field = "author__username"
 
+    @admin.display(description="Tags")
     def tags_display(self, obj):
         if obj.tags:
             return ", ".join(obj.tags[:3]) + ("..." if len(obj.tags) > 3 else "")
         return "-"
-    tags_display.short_description = "Tags"
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
         queryset = queryset.annotate(_comments_count=Count("comments"))
         return queryset
 
+    @admin.display(description="Comments", ordering="_comments_count")
     def comments_count(self, obj):
         return obj._comments_count
-    comments_count.short_description = "Comments"
-    comments_count.admin_order_field = "_comments_count"
 
     actions = ["toggle_content_warning", "clear_content_warning"]
 
@@ -151,30 +149,28 @@ class ForumPostCommentAdmin(admin.ModelAdmin):
         }),
     )
 
+    @admin.display(description="Post", ordering="post__title")
     def post_title(self, obj):
         return obj.post.title[:40] + "..." if len(obj.post.title) > 40 else obj.post.title
-    post_title.short_description = "Post"
-    post_title.admin_order_field = "post__title"
 
+    @admin.display(description="Author", ordering="author__username")
     def author_name(self, obj):
         if obj.is_anonymous:
             return f"{obj.author.username} (Anonymous)"
         return obj.author.username
-    author_name.short_description = "Author"
-    author_name.admin_order_field = "author__username"
 
+    @admin.display(description="Reply To")
     def reply_to_name(self, obj):
         if obj.reply_to and obj.reply_to.author:
             return obj.reply_to.author.username
         return "-"
-    reply_to_name.short_description = "Reply To"
 
+    @admin.display(description="Content Preview")
     def content_preview(self, obj):
         if obj.is_deleted:
             return "[DELETED]"
         text = strip_tags(obj.content)
         return text[:50] + "..." if len(text) > 50 else text
-    content_preview.short_description = "Content Preview"
 
     actions = ["soft_delete_comments", "restore_comments"]
 
@@ -211,15 +207,13 @@ class ForumPostLikeAdmin(admin.ModelAdmin):
     date_hierarchy = "created_at"
     list_select_related = ["user", "post"]
 
+    @admin.display(description="User", ordering="user__username")
     def user_name(self, obj):
         return obj.user.username
-    user_name.short_description = "User"
-    user_name.admin_order_field = "user__username"
 
+    @admin.display(description="Post", ordering="post__title")
     def post_title(self, obj):
         return obj.post.title[:40] + "..." if len(obj.post.title) > 40 else obj.post.title
-    post_title.short_description = "Post"
-    post_title.admin_order_field = "post__title"
 
 
 @admin.register(ForumCommentLike)
@@ -236,20 +230,18 @@ class ForumCommentLikeAdmin(admin.ModelAdmin):
     date_hierarchy = "created_at"
     list_select_related = ["user", "comment", "comment__author"]
 
+    @admin.display(description="User", ordering="user__username")
     def user_name(self, obj):
         return obj.user.username
-    user_name.short_description = "User"
-    user_name.admin_order_field = "user__username"
 
+    @admin.display(description="Comment Author", ordering="comment__author__username")
     def comment_author(self, obj):
         return obj.comment.author.username
-    comment_author.short_description = "Comment Author"
-    comment_author.admin_order_field = "comment__author__username"
 
+    @admin.display(description="Comment Preview")
     def comment_preview(self, obj):
         if obj.comment.is_deleted:
             return "[DELETED]"
         text = strip_tags(obj.comment.content)
         return text[:30] + "..." if len(text) > 30 else text
-    comment_preview.short_description = "Comment Preview"
 
