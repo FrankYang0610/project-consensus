@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from django.db.models import Q, Count
 from django.shortcuts import get_object_or_404
 from django.conf import settings
+from django.http import Http404
 import logging
 from .models import WikiPage, WikiCategory
 from .serializers import (
@@ -97,9 +98,23 @@ class WikiCategoryViewSet(viewsets.ModelViewSet):
         根据 slug 和 language 获取分类对象；若未提供 language，则默认 zh-CN
         """
         slug = self.kwargs.get(self.lookup_field)
-        language = self.request.query_params.get('language') or settings.DEFAULT_CONTENT_LANGUAGE
+        language = self.request.query_params.get('language')
         queryset = self.filter_queryset(self.get_queryset())
-        return get_object_or_404(queryset, slug=slug, language=language)
+
+        if language:
+            return get_object_or_404(queryset, slug=slug, language=language)
+
+        default_language = settings.DEFAULT_CONTENT_LANGUAGE
+        obj = queryset.filter(slug=slug, language=default_language).first()
+        if obj is not None:
+            return obj
+
+        # Fallback: if requested slug exists but default language version is missing,
+        # return any available language without ordering overhead.
+        obj = queryset.filter(slug=slug).order_by('id').first()
+        if obj is not None:
+            return obj
+        raise Http404
     
 
 class WikiPageViewSet(viewsets.ModelViewSet):
@@ -202,9 +217,23 @@ class WikiPageViewSet(viewsets.ModelViewSet):
         根据 slug 和 language 精确获取页面；默认 language=zh-CN
         """
         slug = self.kwargs.get(self.lookup_field)
-        language = self.request.query_params.get('language') or settings.DEFAULT_CONTENT_LANGUAGE
+        language = self.request.query_params.get('language')
         queryset = self.filter_queryset(self.get_queryset())
-        return get_object_or_404(queryset, slug=slug, language=language)
+
+        if language:
+            return get_object_or_404(queryset, slug=slug, language=language)
+
+        default_language = settings.DEFAULT_CONTENT_LANGUAGE
+        obj = queryset.filter(slug=slug, language=default_language).first()
+        if obj is not None:
+            return obj
+
+        # Fallback: if requested slug exists but default language version is missing,
+        # return any available language without ordering overhead.
+        obj = queryset.filter(slug=slug).order_by('id').first()
+        if obj is not None:
+            return obj
+        raise Http404
     
     def retrieve(self, request, *args, **kwargs):
         """
