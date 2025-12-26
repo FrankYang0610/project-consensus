@@ -2,6 +2,7 @@ Django==5.2.6
 djangorestframework==3.16.1
 django-cors-headers==4.9.0
 django-environ==0.12.0
+django-auditlog==3.0.0
 psycopg[binary]==3.2.10
 bleach==6.1.0
 boto3
