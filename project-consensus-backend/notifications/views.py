@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 
-from django.db import connections
 from django.http import StreamingHttpResponse, HttpRequest, HttpResponse
 from django.conf import settings
+from asgiref.sync import sync_to_async
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework import status, permissions
 from rest_framework.pagination import PageNumberPagination
@@ -12,7 +13,7 @@ from rest_framework.response import Response
 
 # Reuse Notification model from accounts to avoid DB migrations during decoupling
 from .models import Notification
-from .runtime import subscribe, publish
+from .runtime import publish, subscribe_async
 
 
 logger = logging.getLogger(__name__)
@@ -151,16 +152,29 @@ def notifications_delete_read(request):
     return Response({"success": True})
 
 
-def notifications_stream(request: HttpRequest):
+async def notifications_stream(request: HttpRequest):
     """
-    SSE endpoint for real-time notifications.
-    Uses plain Django view (not DRF) to avoid content negotiation issues with text/event-stream.
+    Async SSE endpoint for real-time notifications.
+    
+    This view is designed to run under Uvicorn (ASGI) and uses:
+    - Async Redis pub/sub (redis.asyncio) for non-blocking event streaming
+    - Django's async ORM (.acount()) for database queries
+    
+    ARCHITECTURE NOTES:
+    - This view runs directly on Uvicorn's event loop
+    - No thread pool workers are consumed during the long-lived connection
+    - A single Uvicorn worker can handle thousands of concurrent SSE connections
+    - Database connections are only used briefly during initial query, then released
+    - The streaming loop uses only Redis, which is also non-blocking
     """
-    if not request.user.is_authenticated:
+    # 1. Authentication check (must use sync_to_async for lazy user access)
+    user = await sync_to_async(lambda: request.user)()
+    if not user.is_authenticated:
         return HttpResponse("Unauthorized", status=401)
-    user = request.user
+    
+    user_pk = str(user.pk)
 
-    # Parse Last-Event-ID from header or query
+    # 2. Parse Last-Event-ID from header or query
     last_event_id = None
     hdr_last_id = request.headers.get("Last-Event-ID")
     q_last_id = request.GET.get("lastEventId")
@@ -171,21 +185,33 @@ def notifications_stream(request: HttpRequest):
         except Exception:
             last_event_id = None
 
-    # Streaming response for SSE (with optional replay)
-    sub = subscribe(str(user.pk), last_event_id=last_event_id)
+    # 3. Query unread count using async ORM (Django 4.1+). This briefly acquires a DB connection, queries, then releases it immediately
+    cnt = await Notification.objects.filter(recipient=user, is_read=False, is_deleted=False).acount()
 
-    cnt = Notification.objects.filter(recipient=user, is_read=False, is_deleted=False).count()
-    try:
-        connections.close_all()
-    except Exception:
-        logger.exception("Failed to close database connections before starting notifications SSE stream")
+    # 4. Create async Redis subscriber
+    sub = subscribe_async(user_pk, last_event_id=last_event_id)
 
-    def _gen():
-        # initial event
+    async def _gen():
+        """
+        Async generator that yields SSE events.
+        - All middleware has finished
+        - No database connections are held
+        - We're purely streaming from Redis (non-blocking)
+        """
+        # Initial event with unread count
         yield f"data: {{\"type\": \"notification\", \"unreadCount\": {int(cnt)} }}\n\n"
-        # subsequent events
-        for chunk in sub.listen(keepalive_seconds=int(getattr(settings, "NOTIFICATIONS_SSE_KEEPALIVE_SECONDS", 15))):
-            yield chunk
+        
+        # Stream events from Redis (async, non-blocking)
+        try:
+            async for chunk in sub.listen(keepalive_seconds=int(getattr(settings, "NOTIFICATIONS_SSE_KEEPALIVE_SECONDS", 15))):
+                yield chunk
+        except asyncio.CancelledError:
+            # Client disconnected - this is expected for sometime.
+            logger.debug("SSE client disconnected: user_pk=%s", user_pk)  # use `logger.debug` to avoid too much logging
+            pass
+        finally:
+            # Ensure Redis resources are cleaned up
+            await sub.close()
 
     resp = StreamingHttpResponse(_gen(), content_type='text/event-stream')
     # discourage buffering/caching
