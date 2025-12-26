@@ -29,7 +29,7 @@ import {
   PictureEditing,
   SimpleUploadAdapter,
 } from 'ckeditor5';
-import type { EditorConfig } from 'ckeditor5';
+import type { ClipboardEventData, EditorConfig } from 'ckeditor5';
 import { cn } from '@/lib/utils';
 import { getAPIBaseUrl, getCookie, ensureCSRFCookie } from '@/lib/api/api-utils';
 
@@ -163,8 +163,9 @@ export default function RichTextEditor({ value, onChange, placeholder, className
     const viewDocument = view.document;
 
     // Listen for clipboardInput events to block image paste/drop
-    viewDocument.on('clipboardInput', (evt, data) => {
-      const dataTransfer = data.dataTransfer;
+    editor.listenTo(viewDocument, 'clipboardInput', (evt, data) => {
+      const clipboardData = data as ClipboardEventData;
+      const dataTransfer = clipboardData.dataTransfer;
       if (!dataTransfer) return;
 
       // Check if clipboard contains image files
