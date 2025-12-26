@@ -221,7 +221,8 @@
     "me": "我",
     "anonymous": "匿名",
     "anonymousWithId": "匿名（{{name}}）",
-    "noMore": "没有更多了"
+    "noMore": "没有更多了",
+    "imagePlaceholder": "【图片】"
   },
   "courses": {
     "topbar": {

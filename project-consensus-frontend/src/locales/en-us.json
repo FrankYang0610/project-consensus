@@ -223,7 +223,8 @@
     "me": "Me",
     "anonymous": "Anonymous",
     "anonymousWithId": "Anonymous ({{name}})",
-    "noMore": "No more"
+    "noMore": "No more",
+    "imagePlaceholder": "[Image]"
   },
   "courses": {
     "topbar": {

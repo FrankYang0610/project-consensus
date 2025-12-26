@@ -137,7 +137,7 @@ export function CourseReviewPreviewCard({
   const { t, language } = useI18n();
   const router = useRouter();
   const { user, isLoggedIn, openLoginModal } = useApp();
-  const imagePlaceholder = t("courses.review.imagePlaceholder");
+  const imagePlaceholder = t("common.imagePlaceholder");
 
   // Handle like action (prevent event bubbling)
   const handleLike = React.useCallback((e: React.MouseEvent) => {
