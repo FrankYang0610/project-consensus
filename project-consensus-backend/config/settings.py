@@ -81,6 +81,7 @@ INSTALLED_APPS = [
     'teachers',
     'wiki',
     'notifications',
+    'search',
 ]
 
 MIDDLEWARE = [

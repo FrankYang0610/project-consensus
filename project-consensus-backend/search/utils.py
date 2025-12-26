@@ -1,10 +1,10 @@
 """
-Search utility functions for the core app service layer.
+Search utility functions.
 """
 
 import bleach
 import re
-from .search_exceptions import (
+from .exceptions import (
     SearchQueryEmptyError,
     SearchQueryTooLongError,
     SearchQueryMaliciousError,
@@ -110,3 +110,4 @@ def validate_and_sanitize_search_query(query: str) -> str:
         raise SearchQueryEmptyError("Search query invalid after security processing")
     
     return sanitized
+

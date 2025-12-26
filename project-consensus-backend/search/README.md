@@ -1,32 +1,35 @@
-# Global Search Services
+# Search App
 
-This directory contains **global search service layer** functions for core-related business logic. These services encapsulate complex search operations, data transformations, and cross-cutting concerns while keeping views thin and focused on HTTP handling.
+Global search functionality for the Project Consensus backend.
 
 ## Architecture
 
-The service layer follows the same pattern as `courses` and `forum` apps:
+The search app follows the service layer pattern:
 
 ```
-HTTP Request → View → Service → Model
-     ↑                           ↓
+HTTP Request → View (core/views.py) → Service → Model
+     ↑                                           ↓
 HTTP Response ← Serializer ← Service ← Model
 ```
 
 ## File Structure
 
 ```
-search_services/
-├── __init__.py                    # Public API exports
-├── search_exceptions.py           # Search-related exception definitions
-├── search_algorithms.py           # Search scoring and similarity algorithms
-├── search_utils.py                # Search utility functions and validation
-├── search_services.py             # Main search business logic
-└── README.md                      # This document
+search/
+├── __init__.py           # App initialization
+├── apps.py               # Django app configuration
+├── exceptions.py         # Search-related exception definitions
+├── algorithms.py         # Search scoring and similarity algorithms
+├── utils.py              # Search utility functions and validation
+├── services.py           # Main search business logic
+└── README.md             # This document
 ```
 
-## Global Search Services
+Note: The `pg_trgm` PostgreSQL extension is enabled via `core/migrations/0001_initial.py`.
 
-### `search_services.py`
+## Modules
+
+### `services.py`
 **Purpose**: Main search business logic and orchestration.
 
 **Key Functions**:
@@ -39,7 +42,7 @@ search_services/
 - `search_teachers()` - Search in Teacher model
 - `search_users()` - Search in User/Profile model
 
-### `search_algorithms.py`
+### `algorithms.py`
 **Purpose**: Search scoring algorithms and similarity calculations.
 
 **Key Functions**:
@@ -49,7 +52,7 @@ search_services/
 - `create_snippet_expr()` - Create snippet extraction expressions
 - `apply_short_query_filters()` - Apply filters for short queries
 
-### `search_utils.py`
+### `utils.py`
 **Purpose**: Search utility functions and input validation.
 
 **Key Functions**:
@@ -58,7 +61,7 @@ search_services/
 - `truncate_content()` - Truncate content with ellipsis
 - `validate_and_sanitize_search_query()` - Validate and sanitize search queries
 
-### `search_exceptions.py`
+### `exceptions.py`
 **Purpose**: Search-related exception definitions.
 
 **Exception Classes**:
@@ -71,7 +74,8 @@ search_services/
 ## Usage Example
 
 ```python
-from core.search_services import perform_global_search, SearchQueryEmptyError
+from search.services import perform_global_search
+from search.exceptions import SearchQueryEmptyError
 
 try:
     result = perform_global_search(
@@ -85,14 +89,6 @@ except SearchQueryEmptyError as e:
     return Response({"error": str(e)}, status=400)
 ```
 
-## Benefits of Service Layer
-
-1. **Separation of Concerns**: Views handle HTTP, services handle business logic
-2. **Testability**: Business logic can be unit tested independently
-3. **Reusability**: Services can be used by multiple views or other services
-4. **Maintainability**: Complex logic is organized and easier to modify
-5. **Consistency**: Follows the same pattern as other apps in the project
-
 ## Search Algorithm
 
 The search uses PostgreSQL trigram similarity with weighted scoring:
@@ -103,3 +99,4 @@ The search uses PostgreSQL trigram similarity with weighted scoring:
 - **Fallback Filters**: Short queries also use prefix and text contains matching
 
 This approach prioritizes relevance while giving a slight boost to popular content.
+

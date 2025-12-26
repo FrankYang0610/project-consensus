@@ -1,5 +1,5 @@
 """
-Search services for the core app service layer.
+Search services for global search functionality.
 """
 
 from django.db.models import Q, F, Value, FloatField, Case, When, Count
@@ -12,14 +12,14 @@ from wiki.models import WikiPage
 from teachers.models import Teacher
 from accounts.models import Profile
 
-from .search_algorithms import (
+from .algorithms import (
     get_similarity_threshold,
     create_popularity_norm,
     create_final_score_expr,
     create_snippet_expr,
     apply_short_query_filters,
 )
-from .search_utils import (
+from .utils import (
     get_author_name,
     build_search_result,
     validate_and_sanitize_search_query,
@@ -93,7 +93,7 @@ def search_forum_posts(query: str, similarity_threshold: float, is_short_query: 
     Snippet: post content
     Popularity: based on likes count
     """
-    from .search_algorithms import FORUM_POST_WEIGHTS
+    from .algorithms import FORUM_POST_WEIGHTS
     
     posts_qs = ForumPost.objects.annotate(
         title_sim=Coalesce(TrigramSimilarity('title', query), Value(0.0)),
@@ -486,3 +486,4 @@ def perform_global_search(query: str, filter_types: set, page: int = 1, page_siz
         "page": page,
         "page_size": page_size
     }
+
