@@ -1,14 +1,44 @@
 from __future__ import annotations
 
 import logging
+
 from django.db import transaction
+from django.db.models import Avg, Count
 
 from ..models import CourseReview, CourseReviewReply, Course
-from teachers.services import recompute_teacher_aggregates
+from teachers.models import Teacher
 
 from .course_image_cleanup import delete_review_images
 
 logger = logging.getLogger(__name__)
+
+
+def recompute_teacher_aggregates(teacher: Teacher) -> None:
+    """Recompute and update teacher's rating metrics from all course reviews.
+    """
+    # Find all courses taught by this teacher, then get all reviews for those courses
+    # Only count reviews with ratings (only_text=False)
+    qs = CourseReview.objects.filter(
+        course__teachers=teacher,
+        only_text=False
+    )
+    
+    agg = qs.aggregate(
+        avg=Avg("overall_rating"),
+        cnt=Count("id")
+    )
+    
+    count = int(agg.get("cnt") or 0)
+    avg = float(agg.get("avg") or 0.0)
+    
+    # Keep one decimal place as agreed (consistent with course rating)
+    score = round(avg, 1) if count > 0 else None
+    
+    # Update teacher record atomically
+    Teacher.objects.filter(pk=teacher.pk).update(
+        rating_overall=score,
+        rating_reviews_count=count,
+    )
 
 
 def recompute_course_aggregates_after_review_change(*, course: Course) -> None:
