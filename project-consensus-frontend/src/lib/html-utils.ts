@@ -86,17 +86,18 @@ export function sanitizeHtml(html: string): string {
 
       // If user typed a bare domain like "apple.com" or "www.apple.com",
       // treat it as an https URL instead of a relative path.
-      // Conditions:
-      // - no explicit scheme (no leading "<scheme>:" such as "http:", "https:", "file:")
-      // - does not start with "/", "#", "?", or "."
-      // - looks like "domain.tld" optionally with a path suffix
-      const hasScheme = /^[a-zA-Z][a-zA-Z\d+\-]*:/.test(value);
-      const startsWithSpecial = value.startsWith('/') || value.startsWith('#') || value.startsWith('?') || value.startsWith('.');
-      const looksLikeDomain = /^[^/\s]+\.[^/\s]+(\/[^\s]*)?$/.test(value);
+      // We try prepending https:// and let the URL constructor validate it.
+      const hasScheme = /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(value);
+      const startsWithSpecial = /^[\/#?.]/.test(value);
 
-      if (value && !hasScheme && !startsWithSpecial && looksLikeDomain) {
-        value = `https://${value}`;
-        data.attrValue = value;
+      if (value && !hasScheme && !startsWithSpecial) {
+        try {
+          new URL(`https://${value}`); // Validate before applying
+          value = `https://${value}`;
+          data.attrValue = value;
+        } catch {
+          // Not a valid URL even with https://, leave as-is for final validation
+        }
       }
 
       try {
@@ -124,12 +125,18 @@ export function sanitizeHtml(html: string): string {
 
         // If user typed a bare domain like "image.polyu.life/xxx.png",
         // normalize it to an absolute https URL so host detection works.
-        const hasScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(value);
-        const startsWithSpecial = value.startsWith('/') || value.startsWith('#') || value.startsWith('?') || value.startsWith('.');
-        const looksLikeDomain = /^[^/\s]+\.[^/\s]+(\/[^\s]*)?$/.test(value);
-        if (value && !hasScheme && !startsWithSpecial && looksLikeDomain) {
-          value = `https://${value}`;
-          data.attrValue = value;
+        // We try prepending https:// and let the URL constructor validate it.
+        const hasScheme = /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(value);
+        const startsWithSpecial = /^[\/#?.]/.test(value);
+
+        if (value && !hasScheme && !startsWithSpecial) {
+          try {
+            new URL(`https://${value}`); // Validate before applying
+            value = `https://${value}`;
+            data.attrValue = value;
+          } catch {
+            // Not a valid URL even with https://, will be caught by outer try-catch
+          }
         }
 
         const url = new URL(value, baseUrl);

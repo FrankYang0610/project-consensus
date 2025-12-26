@@ -47,7 +47,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "zh_HK",
-    alternateLocale: "en_US",
+    alternateLocale: ["en_US"],
     url: "https://www.polyu.life",
     siteName: "PolyU Life",
     title: "PolyU Life - 香港理工大學學生論壇與課程評價社區 | PolyU Student Forum & Course Review Community",
@@ -56,8 +56,6 @@ export const metadata: Metadata = {
     images: [
       {
         url: "/project-consensus-icon.svg",
-        width: 512,
-        height: 512,
         alt: "PolyU Life Logo",
       },
     ],
