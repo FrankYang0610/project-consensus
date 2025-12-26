@@ -25,6 +25,7 @@ export interface ForumPostCommentComposerProps {
   closeAriaLabel: string;
   anonymousLabel: string;
   postLabel: string;
+  imagesDisabledMessage?: string;  /** Error message to show when image insertion is blocked */
 }
 
 export function ForumPostCommentComposer({
@@ -41,6 +42,7 @@ export function ForumPostCommentComposer({
   closeAriaLabel,
   anonymousLabel,
   postLabel,
+  imagesDisabledMessage,
 }: ForumPostCommentComposerProps) {
   return (
     <div id={anchorId} className={cn('mt-3 border rounded-md p-3 relative', isReply && 'ml-11')}>
@@ -60,6 +62,8 @@ export function ForumPostCommentComposer({
         onChange={(v: string) => onChange?.(v)}
         placeholder={placeholder}
         className="w-full min-h-[80px]"
+        disableImages={true}
+        imagesDisabledMessage={imagesDisabledMessage}
       />
       <div className="mt-2 flex items-center justify-between">
         <div className="flex items-center gap-2">

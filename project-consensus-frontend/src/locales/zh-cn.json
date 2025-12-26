@@ -775,6 +775,9 @@
     "officialTitle": "理大官方网站",
     "officialDesc": "由香港理工大学（PolyU）运营的官方在线资源"
   },
+  "editor": {
+    "imagesNotAllowed": "评论和回复中不允许插入图片"
+  },
   "welcome": {
     "title": "欢迎来到 PolyU.life！",
     "subtitle": "通过以下选项开始探索",
