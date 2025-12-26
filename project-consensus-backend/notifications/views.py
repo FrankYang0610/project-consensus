@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import logging
+
+from django.db import connections
 from django.http import StreamingHttpResponse, HttpRequest, HttpResponse
 from django.conf import settings
 from rest_framework.decorators import api_view, permission_classes
@@ -10,6 +13,9 @@ from rest_framework.response import Response
 # Reuse Notification model from accounts to avoid DB migrations during decoupling
 from .models import Notification
 from .runtime import subscribe, publish
+
+
+logger = logging.getLogger(__name__)
 
 
 class DefaultNotificationPageNumberPagination(PageNumberPagination):
@@ -168,9 +174,14 @@ def notifications_stream(request: HttpRequest):
     # Streaming response for SSE (with optional replay)
     sub = subscribe(str(user.pk), last_event_id=last_event_id)
 
+    cnt = Notification.objects.filter(recipient=user, is_read=False, is_deleted=False).count()
+    try:
+        connections.close_all()
+    except Exception:
+        logger.exception("Failed to close database connections before starting notifications SSE stream")
+
     def _gen():
         # initial event
-        cnt = Notification.objects.filter(recipient=user, is_read=False, is_deleted=False).count()
         yield f"data: {{\"type\": \"notification\", \"unreadCount\": {int(cnt)} }}\n\n"
         # subsequent events
         for chunk in sub.listen(keepalive_seconds=int(getattr(settings, "NOTIFICATIONS_SSE_KEEPALIVE_SECONDS", 15))):
