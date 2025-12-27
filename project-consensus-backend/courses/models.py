@@ -4,7 +4,7 @@ import uuid
 from django.conf import settings
 from django.contrib.postgres.indexes import GinIndex
 from django.db import models
-from django.db.models import Avg, Count, Case, When, Value, IntegerField, F, Q
+from django.db.models import Avg, BooleanField, Count, Case, Exists, When, Value, IntegerField, F, OuterRef, Q
 from django.utils import timezone
 
 
@@ -237,6 +237,45 @@ class Course(models.Model):
 
 
 
+class CourseReviewQuerySet(models.QuerySet):
+    """
+    Custom queryset for CourseReview to encapsulate common select/annotate patterns.
+
+    This keeps list/detail/user-activity views DRY and ensures that any future
+    changes to the eager-loading strategy only need to be updated in one place.
+    """
+
+    def with_details(self) -> "CourseReviewQuerySet":
+        """
+        Attach common related objects used by serializers and views:
+        - course
+        - author and author.profile
+        - likes relation
+        """
+        return (
+            self.select_related("course", "author", "author__profile")
+            .prefetch_related("likes")
+        )
+
+    def with_user_interaction(self, user) -> "CourseReviewQuerySet":
+        """
+        Annotate is_liked for a given user.
+
+        - For authenticated users: exists subquery on CourseReviewLike
+        - For anonymous users: constant False (BooleanField)
+        """
+        if user is not None and user.is_authenticated:
+            return self.annotate(
+                is_liked=Exists(
+                    CourseReviewLike.objects.filter(
+                        review_id=OuterRef("id"),
+                        user=user,
+                    )
+                )
+            )
+        return self.annotate(is_liked=Value(False, output_field=BooleanField()))
+
+
 class CourseReview(models.Model):
     """Course review model."""
 
@@ -262,6 +301,8 @@ class CourseReview(models.Model):
     term_semester = models.CharField(max_length=10, choices=Course.Semester.choices, blank=True)
 
     replies_count = models.PositiveIntegerField(default=0)
+
+    objects: CourseReviewQuerySet = CourseReviewQuerySet.as_manager()
 
     class Meta:
         ordering = ["-updated_at"]
@@ -315,6 +356,44 @@ class CourseReview(models.Model):
         )
 
 
+class CourseReviewReplyQuerySet(models.QuerySet):
+    """
+    Custom queryset for CourseReviewReply to share common eager-loading
+    and per-user interaction annotations.
+    """
+
+    def with_details(self) -> "CourseReviewReplyQuerySet":
+        """
+        Attach common related objects used by serializers:
+        - review
+        - author, author.profile
+        - reply_to, reply_to.author, reply_to.author.profile
+        - likes
+        """
+        return (
+            self.select_related("review", "author", "author__profile", "reply_to", "reply_to__author", "reply_to__author__profile")
+            .prefetch_related("likes")
+        )
+
+    def with_user_interaction(self, user) -> "CourseReviewReplyQuerySet":
+        """
+        Annotate is_liked for a given user.
+
+        - For authenticated users: exists subquery on CourseReviewReplyLike
+        - For anonymous users: constant False (BooleanField)
+        """
+        if user is not None and user.is_authenticated:
+            return self.annotate(
+                is_liked=Exists(
+                    CourseReviewReplyLike.objects.filter(
+                        reply_id=OuterRef("id"),
+                        user=user,
+                    )
+                )
+            )
+        return self.annotate(is_liked=Value(False, output_field=BooleanField()))
+
+
 class CourseReviewReply(models.Model):
     """Single-level course review reply model."""
 
@@ -327,6 +406,8 @@ class CourseReviewReply(models.Model):
     reply_to = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL, related_name="replies_to_this")
     is_deleted = models.BooleanField(default=False)
     is_anonymous = models.BooleanField(default=False)  # Whether the reply should display the author as Anonymous on the client
+
+    objects: CourseReviewReplyQuerySet = CourseReviewReplyQuerySet.as_manager()
 
     class Meta:
         ordering = ["created_at"]
