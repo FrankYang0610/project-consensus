@@ -14,17 +14,18 @@ logger = logging.getLogger(__name__)
 def emit_notifications_for_new_reply(*, reply: CourseReviewReply, actor) -> None:
     """Emit notifications for a new course review reply (best-effort).
 
-    - If replying to a specific user, notify that user; otherwise notify the review author.
+    - If replying to a specific reply, notify that reply's author; otherwise notify the review author.
     - Skips when actor == recipient.
     """
     try:
         review = reply.review
-        target = reply.reply_to_user or review.author
+        # Get the author of the reply being replied to, or the review author
+        target = reply.reply_to.author if reply.reply_to else review.author
         if target.pk == actor.pk:
             return
         notification_type = (
             NotificationType.COURSE_REVIEW_REPLY_REPLIED
-            if reply.reply_to_user
+            if reply.reply_to
             else NotificationType.COURSE_REVIEW_REPLIED
         )
         emit(

@@ -333,10 +333,9 @@ class CourseReviewReplySerializer(serializers.ModelSerializer):
     
     Context keys expected:
         - authorByReplyId: dict[UUID, dict] - Precomputed author display data by reply ID
-        - replyToUserByReplyId: dict[UUID, dict] - Precomputed reply-to-user display data by reply ID
     """
 
-    # reviewId/content/replyToUserId/isAnonymous are writable for creating replies; everything else is read-only metadata.
+    # reviewId/content/replyTo/isAnonymous are writable for creating replies; everything else is read-only metadata.
     id = serializers.UUIDField(read_only=True)
     reviewId = serializers.PrimaryKeyRelatedField(
         queryset=CourseReview.objects.all(),
@@ -348,8 +347,7 @@ class CourseReviewReplySerializer(serializers.ModelSerializer):
         },
     )
     author = serializers.SerializerMethodField()
-    replyToUser = serializers.SerializerMethodField()
-    replyToUserId = serializers.CharField(write_only=True, required=False, allow_blank=False)  # Write-only field for specifying the user being replied to.
+    replyTo = serializers.UUIDField(source="reply_to_id", allow_null=True, required=False)
     createdAt = serializers.DateTimeField(source="created_at", read_only=True)
     likes = serializers.IntegerField(source="likes_count", read_only=True)
     isLiked = serializers.SerializerMethodField()
@@ -360,8 +358,8 @@ class CourseReviewReplySerializer(serializers.ModelSerializer):
         model = CourseReviewReply
         fields = [
             "id", "reviewId", "author", "content", "createdAt",
-            "likes", "isLiked", "replyToUser", "isDeleted",
-            "replyToUserId", "isAnonymous",
+            "likes", "isLiked", "replyTo", "isDeleted",
+            "isAnonymous",
         ]
     
     def get_author(self, obj: CourseReviewReply) -> dict:
@@ -386,41 +384,6 @@ class CourseReviewReplySerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         request_user = request.user if request is not None else None
         return get_course_review_reply_author_display(obj, request_user)
-
-    def get_replyToUser(self, obj: CourseReviewReply):
-        # Get the user being replied to, if this is a reply to another user.
-        if not obj.reply_to_user_id:
-            return None
-        
-        # Priority 1: Check annotated data (most efficient)
-        annotated = getattr(obj, "_reply_to_user_display", None)
-        if annotated is not None:
-            return annotated
-        
-        # Priority 2: Check context mapping (batch precomputed)
-        reply_map = self.context.get("replyToUserByReplyId") or {}
-        mapped = reply_map.get(obj.id)
-        if mapped is not None:
-            return mapped
-        
-        # Priority 3: Direct object access (fallback, may cause N+1)
-        user = obj.reply_to_user
-        if user is None:
-            return {"id": "", "name": "", "avatarUrl": None}
-        
-        # Use Profile nickname
-        try:
-            profile = user.profile
-            display_name = profile.nickname or user.get_username()
-            avatar_url = profile.avatar_url or None
-        except Profile.DoesNotExist:
-            display_name = user.get_username()
-            avatar_url = None
-        return {
-            "id": str(user.pk),
-            "name": display_name,
-            "avatarUrl": avatar_url,
-        }
 
     def get_isLiked(self, obj: CourseReviewReply) -> bool:
         request = self.context.get("request")
@@ -467,6 +430,19 @@ class CourseReviewReplySerializer(serializers.ModelSerializer):
         if review is None:
             raise serializers.ValidationError({"reviewId": "required"})
 
+        # Validate reply_to target if provided
+        reply_to_id = attrs.get("reply_to_id")
+        if reply_to_id is not None:
+            try:
+                reply_to_obj = CourseReviewReply.objects.get(pk=reply_to_id)
+            except CourseReviewReply.DoesNotExist:
+                raise serializers.ValidationError({"replyTo": "invalid reply target id"})
+            if reply_to_obj.is_deleted:
+                raise serializers.ValidationError({"replyTo": "reply target has been deleted"})
+            # Ensure reply target belongs to the same review
+            if str(reply_to_obj.review_id) != str(review.pk):
+                raise serializers.ValidationError({"replyTo": "reply target does not belong to the given reviewId"})
+
         # Validate reply creation
         return validate_course_review_reply_creation(attrs, initial_data)
     
@@ -479,7 +455,6 @@ class CourseReviewReplySerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         user = request.user if request is not None else None
         review = validated_data.pop("review", None)
-        reply_to_user_id = validated_data.pop("replyToUserId", None)
 
         if not user or not user.is_authenticated:
             raise serializers.ValidationError({"detail": "Authentication required"})
@@ -491,12 +466,8 @@ class CourseReviewReplySerializer(serializers.ModelSerializer):
                 user=user,
                 review=review,
                 payload=validated_data,
-                reply_to_user_id=reply_to_user_id,
             )
         except ServiceError as e:
-            if isinstance(e, NotFoundError):
-                # Currently used for reply_to_user resolution
-                raise serializers.ValidationError({"replyToUserId": str(e)})
             raise serializers.ValidationError({"detail": str(e)})
     
     @override

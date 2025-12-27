@@ -324,7 +324,7 @@ class CourseReviewReply(models.Model):
     content = models.TextField()
     created_at = models.DateTimeField(default=timezone.now)
     likes_count = models.PositiveIntegerField(default=0)
-    reply_to_user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="course_review_reply_targets")
+    reply_to = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL, related_name="replies_to_this")
     is_deleted = models.BooleanField(default=False)
     is_anonymous = models.BooleanField(default=False)  # Whether the reply should display the author as Anonymous on the client
 

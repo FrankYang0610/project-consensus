@@ -140,8 +140,8 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
   const [newReplyContentByReview, setNewReplyContentByReview] = React.useState<Record<string, string>>({});
   // Track which reviews have the inline reply composer open
   const [replyComposerOpen, setReplyComposerOpen] = React.useState<Set<string>>(new Set());
-  // Track reply target user per review when replying to a reply
-  const [replyToUserByReview, setReplyToUserByReview] = React.useState<Record<string, { id: string; name: string } | null>>({});
+  // Track reply target (the reply being replied to) per review when replying to a reply
+  const [replyToByReview, setReplyToByReview] = React.useState<Record<string, CourseReviewReply | null>>({});
   // Track anonymous mode per review when composing a reply
   const [anonymousByReview, setAnonymousByReview] = React.useState<Record<string, boolean>>({});
 
@@ -389,11 +389,11 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
       return next;
     });
     setNewReplyContentByReview(prev => ({ ...prev, [reviewId]: prev[reviewId] ?? "" }));
-    setReplyToUserByReview(prev => ({ ...prev, [reviewId]: null }));
+    setReplyToByReview(prev => ({ ...prev, [reviewId]: null }));
     setAnonymousByReview(prev => ({ ...prev, [reviewId]: prev[reviewId] ?? false }));
   }, [isLoggedIn, openLoginModal]);
 
-  // Open composer targeting a specific reply's author (reply to reply)
+  // Open composer targeting a specific reply (reply to reply)
   const handleReplyToReply = React.useCallback((reviewId: string, target: CourseReviewReply) => {
     if (!isLoggedIn) { openLoginModal(); return; }
     setExpandedReviews(prev => new Set(prev).add(reviewId));
@@ -402,7 +402,8 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
       next.add(reviewId);
       return next;
     });
-    setReplyToUserByReview(prev => ({ ...prev, [reviewId]: { id: target.author.id, name: target.author.name } }));
+    // Store the target reply so we can show who we're replying to and send replyTo ID
+    setReplyToByReview(prev => ({ ...prev, [reviewId]: target }));
     setNewReplyContentByReview(prev => ({ ...prev, [reviewId]: prev[reviewId] ?? "" }));
     setAnonymousByReview(prev => ({ ...prev, [reviewId]: prev[reviewId] ?? false }));
   }, [isLoggedIn, openLoginModal]);
@@ -412,9 +413,10 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
     const html = (newReplyContentByReview[reviewId] || "").trim();
     if (isContentEmpty(html)) return;
     try {
+      const targetReply = replyToByReview[reviewId];
       const payload: Parameters<typeof createReviewReply>[1] = {
         content: html,
-        ...(replyToUserByReview[reviewId]?.id ? { replyToUserId: replyToUserByReview[reviewId]?.id } : {}),
+        ...(targetReply?.id ? { replyTo: targetReply.id } : {}),
         ...(anonymousByReview[reviewId] ? { isAnonymous: true } : {}),
       };
       const reply = await createReviewReply(reviewId, payload);
@@ -425,7 +427,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
         next.delete(reviewId);
         return next;
       });
-      setReplyToUserByReview(prev => ({ ...prev, [reviewId]: null }));
+      setReplyToByReview(prev => ({ ...prev, [reviewId]: null }));
       setAnonymousByReview(prev => ({ ...prev, [reviewId]: false }));
       // bump repliesCount on review
       setReviews(prev => prev.map(r => r.id === reviewId ? { ...r, repliesCount: (r.repliesCount || 0) + 1 } : r));
@@ -435,7 +437,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
     } catch (e) {
       console.error('Failed to create reply', e);
     }
-  }, [newReplyContentByReview, replyToUserByReview, anonymousByReview, isLoggedIn, openLoginModal]);
+  }, [newReplyContentByReview, replyToByReview, anonymousByReview, isLoggedIn, openLoginModal]);
 
   const handleDeleteReply = React.useCallback(async (reviewId: string, replyId: string) => {
     if (!isLoggedIn) { openLoginModal(); return; }
@@ -586,9 +588,11 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
                             {/* Inline reply composer: shown only when opened via "Add Comment" */}
                             {replyComposerOpen.has(review.id) && (
                               <div className="p-2 border rounded">
-                                {replyToUserByReview[review.id] && (
+                                {replyToByReview[review.id] && (
                                   <div className="text-xs text-muted-foreground mb-1">
-                                    {t('comment.reply')} @{replyToUserByReview[review.id]?.name}
+                                    {t('comment.reply')} @{replyToByReview[review.id]?.isAnonymous
+                                      ? t('common.anonymous') 
+                                      : replyToByReview[review.id]?.author.name}
                                   </div>
                                 )}
                                 <RichTextEditor
@@ -628,7 +632,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
                                         next.delete(review.id);
                                         return next;
                                       });
-                                      setReplyToUserByReview(prev => ({ ...prev, [review.id]: null }));
+                                      setReplyToByReview(prev => ({ ...prev, [review.id]: null }));
                                       setAnonymousByReview(prev => ({ ...prev, [review.id]: false }));
                                     }}
                                   >
@@ -638,10 +642,14 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
                                 </div>
                               </div>
                             )}
-                            {replies.map((r) => (
+                            {replies.map((r) => {
+                              // Find the reply being replied to (if any) for display
+                              const replyToReply = r.replyTo ? replies.find(rr => rr.id === r.replyTo) : undefined;
+                              return (
                               <div key={r.id} id={`reply-${r.id}`}>
                                 <CourseReviewReplyCard
                                   reply={r}
+                                  replyToReply={replyToReply}
                                   onLike={async (id) => {
                                   if (!isLoggedIn) { openLoginModal(); return; }
                                   try {
@@ -658,7 +666,8 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
                                 onDelete={(id) => handleDeleteReply(review.id, id)}
                               />
                               </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
                       </div>

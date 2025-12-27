@@ -153,10 +153,10 @@ class CourseReviewReplyAdmin(admin.ModelAdmin):
             "fields": ("id", "review", "author", "content"),
         }),
         ("Reply Target", {
-            "fields": ("reply_to_user",),
+            "fields": ("reply_to",),
         }),
         ("Stats & Status", {
-            "fields": ("likes_count", "is_deleted"),
+            "fields": ("likes_count", "is_anonymous", "is_deleted"),
         }),
         ("Timestamps", {
             "fields": ("created_at",),
@@ -173,7 +173,9 @@ class CourseReviewReplyAdmin(admin.ModelAdmin):
     author_name.admin_order_field = "author__username"
     
     def reply_to_name(self, obj):
-        return obj.reply_to_user.username if obj.reply_to_user else "-"
+        if obj.reply_to:
+            return f"{obj.reply_to.id} ({obj.reply_to.author.username})"
+        return "-"
     reply_to_name.short_description = "Reply To"
     
     def content_preview(self, obj):

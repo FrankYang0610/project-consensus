@@ -22,6 +22,7 @@ export interface CourseReviewReplyCardProps {
   onReply?: (replyId: string) => void;
   onDelete?: (replyId: string) => void;
   className?: string;
+  replyToReply?: CourseReviewReply;  // The reply being replied to (if this is a nested reply)
 }
 
 /**
@@ -33,6 +34,7 @@ export function CourseReviewReplyCard({
   onReply,
   onDelete,
   className,
+  replyToReply,
 }: CourseReviewReplyCardProps) {
   const { t } = useI18n();
   const { user } = useApp();
@@ -129,9 +131,9 @@ export function CourseReviewReplyCard({
                   {displayName}
                 </Link>
               )}
-              {reply.replyToUser && (
+              {replyToReply && (
                 <span className="text-xs text-muted-foreground">
-                  {t("comment.replyTo") + " @" + reply.replyToUser.name}
+                  {t("comment.replyTo") + " @" + (replyToReply.isAnonymous ? t("common.anonymous") : replyToReply.author.name)}
                 </span>
               )}
               <ClientOnlyTime dateString={reply.createdAt} className="text-xs text-muted-foreground" />

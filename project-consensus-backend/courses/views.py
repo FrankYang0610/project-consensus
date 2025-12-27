@@ -302,8 +302,8 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
 
     queryset = (
         CourseReviewReply.objects
-        .select_related("review", "author", "reply_to_user")
-        .prefetch_related("author__profile", "reply_to_user__profile")
+        .select_related("review", "author", "reply_to", "reply_to__author")
+        .prefetch_related("author__profile", "reply_to__author__profile")
     )
     serializer_class = CourseReviewReplySerializer
     permission_classes = [IsAuthorOrReadOnly]

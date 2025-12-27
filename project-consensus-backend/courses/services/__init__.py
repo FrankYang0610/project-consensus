@@ -28,7 +28,6 @@ from .course_review_delete import (
     delete_course_review,
 )
 from .course_review_reply_create import (
-    find_reply_to_user,
     create_course_review_reply,
 )
 from .course_review_reply_read import (
@@ -64,7 +63,6 @@ __all__ = [
     
     # Course Review/Reply Utils
     "mark_review_edited_if_fields_changed",
-    "find_reply_to_user",
     "toggle_course_review_like",
     "toggle_course_review_reply_like",
     "toggle_course_vote",
