@@ -408,11 +408,11 @@ class UserDetailSerializer(serializers.ModelSerializer):
             return None
         return profile.avatar_url or None
 
-    def get_pronouns(self, obj: User) -> str:
-        """Return pronouns, defaulting to 'prefer_not_to_say' when empty."""
+    def get_pronouns(self, obj: User) -> str | None:
+        """Return pronouns, or None if empty/not set."""
         profile = self._get_profile(obj)
-        pronouns = profile.pronouns if profile else None
-        return pronouns or "prefer_not_to_say"
+        pronouns = profile.pronouns.strip() if profile and profile.pronouns else None
+        return pronouns or None
 
     def get_showForumPostsPublicly(self, obj: User) -> bool:
         profile = self._get_profile(obj)

@@ -402,8 +402,9 @@ def search_users(query: str, similarity_threshold: float, is_short_query: bool) 
         
         # Build snippet with pronouns if available
         snippet_parts = []
-        if profile.pronouns and profile.pronouns != 'not_specified':
-            snippet_parts.append(profile.pronouns)
+        pronouns = profile.pronouns.strip() if profile.pronouns else None
+        if pronouns:
+            snippet_parts.append(pronouns)
         
         results.append({
             **build_search_result(
@@ -415,7 +416,7 @@ def search_users(query: str, similarity_threshold: float, is_short_query: bool) 
                     'avatar_url': profile.avatar_url,
                     'forum_posts_count': profile.forum_posts_count,
                     'course_reviews_count': profile.course_reviews_count,
-                    'pronouns': profile.pronouns if profile.pronouns != 'not_specified' else None
+                    'pronouns': pronouns
                 }
             ),
             'score': float(profile.final_score)

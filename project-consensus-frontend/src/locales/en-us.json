@@ -617,8 +617,7 @@
     }
   },
   "pronouns": {
-    "info": "polyu.life values diversity and inclusion. We support you in expressing your identity authentically. If you don't find suitable pronouns in the preset list, you can choose \\\"custom\\\" and set your own pronouns.",
-    "share": "Share pronouns on profile"
+    "info": "polyu.life values diversity and inclusion. We support you in expressing your identity authentically. Feel free to enter your pronouns in any format you prefer."
   },
   "validation": {
     "nickname": {

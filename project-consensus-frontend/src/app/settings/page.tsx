@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Info } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
@@ -27,7 +27,6 @@ import {
 import { ChevronDown } from 'lucide-react';
 import { Language, User } from '@/types';
 import { updateProfile, updatePrivacySettings, changePassword } from '@/lib/api/user-profile';
-import { PronounsSelector } from '@/components/PronounsSelector';
 import { validateNickname } from '@/lib/utils';
 import { AvatarUpload } from '@/components/AvatarUpload';
 
@@ -347,12 +346,35 @@ export default function SettingsPage() {
             />
           </div>
 
-          <PronounsSelector
-            value={pronouns}
-            onChange={setPronouns}
-            label={t('settings.profile.pronouns')}
-            id="pronouns-selector"
-          />
+          <div className="grid gap-2">
+            <div className="inline-flex items-center gap-2">
+              <Label htmlFor="pronouns">{t('settings.profile.pronouns')}</Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Pronouns info"
+                    className="h-6 w-6 p-0 text-muted-foreground"
+                  >
+                    <Info className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="right" align="start" sideOffset={4} className="w-64">
+                  <div className="p-2 text-xs text-muted-foreground">
+                    {t('pronouns.info')}
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            <Input
+              id="pronouns"
+              placeholder="e.g., she/her, he/him, they/them"
+              value={pronouns}
+              onChange={(e) => setPronouns(e.target.value)}
+            />
+          </div>
 
           <div className="pt-2">
             <Button 
