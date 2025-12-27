@@ -6,8 +6,9 @@ Provides admin interfaces for WikiCategory and WikiPage models.
 
 from django.contrib import admin
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Q, Count
-from .models import WikiPage, WikiCategory
+from .models import WikiPage, WikiCategory, LanguageChoices
 
 
 @admin.register(WikiCategory)
@@ -50,6 +51,16 @@ class WikiCategoryAdmin(admin.ModelAdmin):
     actions = ['create_zh_cn_translation', 'create_zh_hk_translation', 'create_en_translation']
 
     def _create_translation(self, request, queryset, target_language):
+        # Validate target_language
+        valid_languages = {choice[0] for choice in LanguageChoices.choices}
+        if target_language not in valid_languages:
+            self.message_user(
+                request,
+                f"Invalid target language: {target_language}. No translations were created.",
+                level=messages.ERROR,
+            )
+            return
+
         created = 0
         skipped = 0
         conflicts = 0
@@ -72,33 +83,37 @@ class WikiCategoryAdmin(admin.ModelAdmin):
             ).values('slug', 'translation_group')
         }
 
-        for category in categories:
-            if category.language == target_language:
-                skipped += 1
-                continue
+        with transaction.atomic():
+            for category in categories:
+                if category.language == target_language:
+                    skipped += 1
+                    continue
 
-            if category.translation_group in existing_groups:
-                skipped += 1
-                continue
+                if category.translation_group in existing_groups:
+                    skipped += 1
+                    continue
 
-            existing_group_for_slug = existing_by_slug.get(category.slug)
-            if existing_group_for_slug and existing_group_for_slug != category.translation_group:
-                conflicts += 1
-                continue
+                existing_group_for_slug = existing_by_slug.get(category.slug)
+                if existing_group_for_slug and existing_group_for_slug != category.translation_group:
+                    conflicts += 1
+                    continue
 
-            WikiCategory.objects.create(
-                name=category.name,
-                slug=category.slug,
-                description=category.description,
-                order=category.order,
-                language=target_language,
-                translation_group=category.translation_group,
-            )
-            created += 1
+                WikiCategory.objects.create(
+                    name=category.name,
+                    slug=category.slug,
+                    description=category.description,
+                    order=category.order,
+                    language=target_language,
+                    translation_group=category.translation_group,
+                )
+                created += 1
 
         base_message = f"Created {created} translation(s), skipped {skipped}."
         if conflicts:
-            base_message += f" {conflicts} slug conflict(s)."
+            base_message += (
+                f" {conflicts} slug conflict(s): categories with the same slug already "
+                f"exist in '{target_language}' under different translation groups."
+            )
         level = messages.WARNING if conflicts else messages.INFO
         self.message_user(request, base_message, level=level)
 
@@ -202,12 +217,22 @@ class WikiPageAdmin(admin.ModelAdmin):
     ]
 
     def _create_translation(self, request, queryset, target_language):
+        # Validate target_language
+        valid_languages = {choice[0] for choice in LanguageChoices.choices}
+        if target_language not in valid_languages:
+            self.message_user(
+                request,
+                f"Invalid target language: {target_language}. No translations were created.",
+                level=messages.ERROR,
+            )
+            return
+
         created = 0
         skipped = 0
         conflicts = 0
         category_fallbacks = 0
 
-        pages = list(queryset.select_related('category'))
+        pages = list(queryset.select_related('category', 'author'))
         groups = {p.translation_group for p in pages}
         slugs = {p.slug for p in pages}
         category_groups = {p.category.translation_group for p in pages if p.category is not None}
@@ -233,50 +258,55 @@ class WikiPageAdmin(admin.ModelAdmin):
             )
         }
 
-        for page in pages:
-            if page.language == target_language:
-                skipped += 1
-                continue
+        with transaction.atomic():
+            for page in pages:
+                if page.language == target_language:
+                    skipped += 1
+                    continue
 
-            if page.translation_group in existing_groups:
-                skipped += 1
-                continue
+                if page.translation_group in existing_groups:
+                    skipped += 1
+                    continue
 
-            existing_group_for_slug = existing_by_slug.get(page.slug)
-            if existing_group_for_slug and existing_group_for_slug != page.translation_group:
-                conflicts += 1
-                continue
+                existing_group_for_slug = existing_by_slug.get(page.slug)
+                if existing_group_for_slug and existing_group_for_slug != page.translation_group:
+                    conflicts += 1
+                    continue
 
-            target_category = page.category
-            if page.category is not None:
-                translated_category = translated_categories_by_group.get(page.category.translation_group)
-                if translated_category is not None:
-                    target_category = translated_category
-                else:
-                    category_fallbacks += 1
+                target_category = page.category
+                if page.category is not None:
+                    translated_category = translated_categories_by_group.get(page.category.translation_group)
+                    if translated_category is not None:
+                        target_category = translated_category
+                    else:
+                        category_fallbacks += 1
 
-            WikiPage.objects.create(
-                title=page.title,
-                slug=page.slug,
-                content=page.content,
-                summary=page.summary,
-                category=target_category,
-                tags=page.tags,
-                status='draft',
-                order=page.order,
-                language=target_language,
-                translation_group=page.translation_group,
-                author=page.author,
-            )
-            created += 1
+                WikiPage.objects.create(
+                    title=page.title,
+                    slug=page.slug,
+                    content=page.content,
+                    summary=page.summary,
+                    category=target_category,
+                    tags=page.tags,
+                    status='draft',
+                    order=page.order,
+                    language=target_language,
+                    translation_group=page.translation_group,
+                    author=page.author,
+                )
+                created += 1
 
         base_message = f"Created {created} translation(s), skipped {skipped}."
         if conflicts:
-            base_message += f" {conflicts} slug conflict(s)."
+            base_message += (
+                f" {conflicts} slug conflict(s): pages with the same slug already "
+                f"exist in '{target_language}' under different translation groups."
+            )
         if category_fallbacks:
             base_message += (
-                f" {category_fallbacks} page(s) kept the original category because no "
-                f"translated category exists for '{target_language}'."
+                f" {category_fallbacks} page(s) kept their original category because no "
+                f"category translated into '{target_language}' was found; consider creating "
+                f"translated categories first if needed."
             )
         level = messages.WARNING if (conflicts or category_fallbacks) else messages.INFO
         self.message_user(request, base_message, level=level)
