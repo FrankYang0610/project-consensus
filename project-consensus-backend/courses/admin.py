@@ -1,7 +1,10 @@
 from django.contrib import admin
 from django.utils.html import strip_tags
 
+from teachers.models import Teacher
+
 from .models import Course, CourseReview, CourseReviewReply, CourseReviewLike, CourseReviewReplyLike, CourseVote
+from .services import recompute_teacher_aggregates
 
 
 @admin.register(Course)
@@ -56,6 +59,27 @@ class CourseAdmin(admin.ModelAdmin):
             "fields": ("teachers",),
         }),
     )
+
+    def save_related(self, request, form, formsets, change):
+        """Recompute teacher aggregates when teachers M2M relation changes."""
+        # Get old teachers before saving (only for existing courses)
+        old_teacher_pks = set()
+        if change and form.instance.pk:
+            old_teacher_pks = set(form.instance.teachers.values_list("pk", flat=True))
+
+        # Save M2M relations
+        super().save_related(request, form, formsets, change)
+
+        # Get new teachers after saving
+        new_teacher_pks = set(form.instance.teachers.values_list("pk", flat=True))
+
+        # Find all affected teachers (old + new)
+        affected_teacher_pks = old_teacher_pks | new_teacher_pks
+
+        # Recompute aggregates for all affected teachers
+        if affected_teacher_pks:
+            for teacher in Teacher.objects.filter(pk__in=affected_teacher_pks):
+                recompute_teacher_aggregates(teacher)
 
 
 @admin.register(CourseReview)
