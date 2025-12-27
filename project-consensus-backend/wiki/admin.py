@@ -5,6 +5,7 @@ Provides admin interfaces for WikiCategory and WikiPage models.
 """
 
 from django.contrib import admin
+from django.contrib import messages
 from django.db.models import Q, Count
 from .models import WikiPage, WikiCategory
 
@@ -45,6 +46,65 @@ class WikiCategoryAdmin(admin.ModelAdmin):
     )
     
     readonly_fields = ['translation_group']
+
+    actions = ['create_zh_cn_translation', 'create_zh_hk_translation', 'create_en_translation']
+
+    def _create_translation(self, request, queryset, target_language):
+        created = 0
+        skipped = 0
+        conflicts = 0
+
+        for category in queryset:
+            if category.language == target_language:
+                skipped += 1
+                continue
+
+            if WikiCategory.objects.filter(
+                translation_group=category.translation_group,
+                language=target_language,
+            ).exists():
+                skipped += 1
+                continue
+
+            existing_slug = WikiCategory.objects.filter(slug=category.slug, language=target_language).first()
+            if existing_slug and existing_slug.translation_group != category.translation_group:
+                conflicts += 1
+                continue
+
+            WikiCategory.objects.create(
+                name=category.name,
+                slug=category.slug,
+                description=category.description,
+                order=category.order,
+                language=target_language,
+                translation_group=category.translation_group,
+            )
+            created += 1
+
+        if conflicts:
+            self.message_user(
+                request,
+                f"Created {created} translation(s), skipped {skipped}, {conflicts} slug conflict(s).",
+                level=messages.WARNING,
+            )
+        else:
+            self.message_user(
+                request,
+                f"Created {created} translation(s), skipped {skipped}.",
+                level=messages.INFO,
+            )
+
+    @admin.action(description='创建简体中文翻译 / Create zh-CN translation')
+    def create_zh_cn_translation(self, request, queryset):
+        self._create_translation(request, queryset, 'zh-CN')
+
+    @admin.action(description='创建繁體中文（香港）翻译 / Create zh-HK translation')
+    def create_zh_hk_translation(self, request, queryset):
+        self._create_translation(request, queryset, 'zh-HK')
+
+    @admin.action(description='创建英文翻译 / Create English translation')
+    def create_en_translation(self, request, queryset):
+        self._create_translation(request, queryset, 'en')
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -125,8 +185,64 @@ class WikiPageAdmin(admin.ModelAdmin):
             obj.author = request.user
         super().save_model(request, obj, form, change)
     
-    actions = ['publish_pages', 'unpublish_pages']
-    
+    actions = [
+        'publish_pages',
+        'unpublish_pages',
+        'create_zh_cn_translation',
+        'create_zh_hk_translation',
+        'create_en_translation',
+    ]
+
+    def _create_translation(self, request, queryset, target_language):
+        created = 0
+        skipped = 0
+        conflicts = 0
+
+        for page in queryset:
+            if page.language == target_language:
+                skipped += 1
+                continue
+
+            if WikiPage.objects.filter(
+                translation_group=page.translation_group,
+                language=target_language,
+            ).exists():
+                skipped += 1
+                continue
+
+            existing_slug = WikiPage.objects.filter(slug=page.slug, language=target_language).first()
+            if existing_slug and existing_slug.translation_group != page.translation_group:
+                conflicts += 1
+                continue
+
+            WikiPage.objects.create(
+                title=page.title,
+                slug=page.slug,
+                content=page.content,
+                summary=page.summary,
+                category=page.category,
+                tags=page.tags,
+                status='draft',
+                order=page.order,
+                language=target_language,
+                translation_group=page.translation_group,
+                author=page.author,
+            )
+            created += 1
+
+        if conflicts:
+            self.message_user(
+                request,
+                f"Created {created} translation(s), skipped {skipped}, {conflicts} slug conflict(s).",
+                level=messages.WARNING,
+            )
+        else:
+            self.message_user(
+                request,
+                f"Created {created} translation(s), skipped {skipped}.",
+                level=messages.INFO,
+            )
+
     @admin.action(description='发布选中的页面 / Publish selected pages')
     def publish_pages(self, request, queryset):
         """批量发布页面 / Bulk publish pages"""
@@ -135,6 +251,18 @@ class WikiPageAdmin(admin.ModelAdmin):
             request,
             f'{updated} pages were successfully published.'
         )
+
+    @admin.action(description='创建简体中文翻译 / Create zh-CN translation')
+    def create_zh_cn_translation(self, request, queryset):
+        self._create_translation(request, queryset, 'zh-CN')
+
+    @admin.action(description='创建繁體中文（香港）翻译 / Create zh-HK translation')
+    def create_zh_hk_translation(self, request, queryset):
+        self._create_translation(request, queryset, 'zh-HK')
+
+    @admin.action(description='创建英文翻译 / Create English translation')
+    def create_en_translation(self, request, queryset):
+        self._create_translation(request, queryset, 'en')
     
     @admin.action(description='取消发布选中的页面 / Unpublish selected pages')
     def unpublish_pages(self, request, queryset):
