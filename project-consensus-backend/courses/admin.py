@@ -66,12 +66,13 @@ class CourseAdmin(admin.ModelAdmin):
         old_teacher_pks = set()
         if change and form.instance.pk:
             old_teacher_pks = set(form.instance.teachers.values_list("pk", flat=True))
+        
+        # Get new teachers from cleaned form data
+        new_teachers = form.cleaned_data.get('teachers', [])
+        new_teacher_pks = set(t.pk for t in new_teachers)
 
         # Save M2M relations
         super().save_related(request, form, formsets, change)
-
-        # Get new teachers after saving
-        new_teacher_pks = set(form.instance.teachers.values_list("pk", flat=True))
 
         # Find all affected teachers (old + new)
         affected_teacher_pks = old_teacher_pks | new_teacher_pks
