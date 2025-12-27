@@ -197,6 +197,7 @@ class WikiPageAdmin(admin.ModelAdmin):
         created = 0
         skipped = 0
         conflicts = 0
+        category_fallbacks = 0
 
         for page in queryset:
             if page.language == target_language:
