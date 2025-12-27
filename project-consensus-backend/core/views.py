@@ -46,20 +46,20 @@ class BaseUserContentListView(ListAPIView):
         Return (target_user, is_public_mode).
 
         is_public_mode:
-        - False when viewing own content (including via /users/<self_id>/...)
-        - True when viewing someone else's content via /users/<user_id>/...
+        - False when viewing own content via /my-*/ (private view, includes anonymous content)
+        - True when viewing via /users/<user_id>/* (public view, hides anonymous content for everyone)
         """
         user_id = self.kwargs.get("user_id")
         request_user = self.request.user
 
-        # Mode 1: /my-*/ – must be authenticated
+        # Mode 1: /my-*/ – must be authenticated, shows all content including anonymous
         if user_id is None:
             if not request_user.is_authenticated:
                 # Keep using our i18n error code for consistency with other auth endpoints.
                 raise NotAuthenticated(detail=accounts_error_codes.AUTHENTICATION_REQUIRED)
             return request_user, False
 
-        # Mode 2: /users/<user_id>/* – public profile content
+        # Mode 2: /users/<user_id>/* – public profile content (always public view)
         try:
             target_user = User.objects.get(pk=user_id)
         except User.DoesNotExist:
@@ -76,10 +76,11 @@ class BaseUserContentListView(ListAPIView):
             if not checker(viewer=request_user, owner=target_user):
                 # Normalize the privacy error message; specific wording is not important to the frontend.
                 raise PermissionDenied(detail="Content is private")
-            return target_user, True
 
-        # Owner always sees full content (including anonymous) regardless of URL pattern.
-        return target_user, False
+        # Public profile URL always shows public view (hides anonymous content)
+        # even for the owner - this lets users preview what others see.
+        # Use /my-*/ endpoints for full content including anonymous posts.
+        return target_user, True
 
     def get_content_queryset(self, target_user):
         """
@@ -94,5 +95,4 @@ class BaseUserContentListView(ListAPIView):
         # In public mode, hide anonymous content consistently across all user-activity endpoints.
         if is_public:
             qs = qs.filter(is_anonymous=False)
-
         return qs
