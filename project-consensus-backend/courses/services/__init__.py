@@ -28,11 +28,11 @@ from .course_review_delete import (
     delete_course_review,
 )
 from .course_review_reply_create import (
-    find_reply_to_user,
     create_course_review_reply,
 )
 from .course_review_reply_read import (
     find_review_for_reply_id,
+    prepare_course_review_reply_for_serialization,
 )
 from .course_review_reply_delete import (
     delete_course_review_reply,
@@ -57,12 +57,12 @@ __all__ = [
     
     # Course Review Reply CRUD
     "create_course_review_reply",
+    "prepare_course_review_reply_for_serialization",
     "find_review_for_reply_id",
     "delete_course_review_reply",
     
     # Course Review/Reply Utils
     "mark_review_edited_if_fields_changed",
-    "find_reply_to_user",
     "toggle_course_review_like",
     "toggle_course_review_reply_like",
     "toggle_course_vote",

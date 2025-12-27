@@ -57,7 +57,8 @@ export interface FetchReviewRepliesParams {
 // POST /api/replies/ payload
 export interface CreateReplyPayload {
   content: string;
-  replyToUserId?: string;
+  replyTo?: string;  // ID of the reply being replied to (if any)
+  isAnonymous?: boolean;
 }
 
 // Course vote types

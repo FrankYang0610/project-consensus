@@ -104,8 +104,9 @@ class Migration(migrations.Migration):
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
                 ('likes_count', models.PositiveIntegerField(default=0)),
                 ('is_deleted', models.BooleanField(default=False)),
+                ('is_anonymous', models.BooleanField(default=False)),
                 ('author', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
-                ('reply_to_user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='course_review_reply_targets', to=settings.AUTH_USER_MODEL)),
+                ('reply_to', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='replies_to_this', to='courses.coursereviewreply')),
                 ('review', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='replies', to='courses.coursereview')),
             ],
             options={

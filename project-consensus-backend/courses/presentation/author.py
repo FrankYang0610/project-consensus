@@ -64,15 +64,19 @@ def get_course_review_author_display(review: Any, request_user: Optional[Any] = 
 def get_course_review_reply_author_display(reply: Any, request_user: Optional[Any] = None) -> dict:
     """Get the appropriate author display for a course review reply.
     
-    Replies are never anonymous, so always show the real author.
+    Handles anonymous reply logic:
+    - If reply is anonymous and current user is not the author, show anonymous
+    - Otherwise show the real author
     
     Args:
         reply: CourseReviewReply instance
-        request_user: Current request user (optional, unused for replies)
+        request_user: Current request user (optional)
         
     Returns:
         Author payload dict
     """
+    if reply.is_anonymous and (not request_user or request_user != reply.author):
+        return get_anonymous_author_payload()
     return build_course_author_payload(reply.author)
 
 
