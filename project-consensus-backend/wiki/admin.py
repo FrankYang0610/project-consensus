@@ -215,12 +215,23 @@ class WikiPageAdmin(admin.ModelAdmin):
                 conflicts += 1
                 continue
 
+            target_category = page.category
+            if page.category is not None:
+                translated_category = WikiCategory.objects.filter(
+                    translation_group=page.category.translation_group,
+                    language=target_language,
+                ).first()
+                if translated_category is not None:
+                    target_category = translated_category
+                else:
+                    category_fallbacks += 1
+
             WikiPage.objects.create(
                 title=page.title,
                 slug=page.slug,
                 content=page.content,
                 summary=page.summary,
-                category=page.category,
+                category=target_category,
                 tags=page.tags,
                 status='draft',
                 order=page.order,
@@ -241,6 +252,13 @@ class WikiPageAdmin(admin.ModelAdmin):
                 request,
                 f"Created {created} translation(s), skipped {skipped}.",
                 level=messages.INFO,
+            )
+
+        if category_fallbacks:
+            self.message_user(
+                request,
+                f"{category_fallbacks} page(s) kept the original category because no translated category exists for '{target_language}'.",
+                level=messages.WARNING,
             )
 
     @admin.action(description='发布选中的页面 / Publish selected pages')
