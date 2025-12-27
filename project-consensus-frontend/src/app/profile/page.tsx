@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { formatPronounsForProfilePageDisplay, shouldDisplayPronouns } from '@/lib/pronouns-utils';
 import { getMyPosts, getMyComments, getMyReviews } from '@/lib/api/user-activity';
 import { stripHtmlTags } from '@/lib/html-utils';
 import ClientOnlyTime from '@/components/ClientOnlyTime';
@@ -39,7 +38,7 @@ export default function ProfilePage() {
     ? user.name.charAt(0).toUpperCase()
     : (user?.email ? user.email.charAt(0).toUpperCase() : '');
 
-  const formattedPronouns = shouldDisplayPronouns(user?.pronouns) ? formatPronounsForProfilePageDisplay(user?.pronouns) : "";
+  const formattedPronouns = user?.pronouns || "";
 
   // Get user statistics from API
   const userStats = user?.stats || {

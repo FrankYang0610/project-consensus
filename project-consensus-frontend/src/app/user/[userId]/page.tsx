@@ -12,7 +12,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { formatPronounsForProfilePageDisplay, shouldDisplayPronouns } from '@/lib/pronouns-utils';
 import { getPublicUser, getPublicUserPosts, getPublicUserComments, getPublicUserReviews } from '@/lib/api/public-user';
 import { stripHtmlTags } from '@/lib/html-utils';
 import ClientOnlyTime from '@/components/ClientOnlyTime';
@@ -43,7 +42,7 @@ export default function PublicUserPage() {
 
   const displayName = user?.name || '';
   const avatarText = user?.name ? user.name.charAt(0).toUpperCase() : '';
-  const formattedPronouns = shouldDisplayPronouns(user?.pronouns) ? formatPronounsForProfilePageDisplay(user?.pronouns) : "";
+  const formattedPronouns = user?.pronouns || "";
 
   const userStats = user?.stats || {
     forumPostsCount: 0,

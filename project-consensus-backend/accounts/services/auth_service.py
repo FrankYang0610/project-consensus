@@ -216,11 +216,10 @@ class AuthService:
             raise RegistrationError("email_already_registered")
 
         user = User.objects.create_user(username=email, email=email, password=password)
-        # Default pronouns to 'not_specified' for new users to distinguish from empty string.
         Profile.objects.create(
             user=user,
             nickname=nickname,
-            pronouns="not_specified",
+            pronouns="",
         )
 
         # Invalidate code and attempt counter to prevent reuse

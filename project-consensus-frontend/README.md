@@ -109,7 +109,6 @@ project-consensus-frontend/
 │   │   ├── ThemeToggle.tsx                   # Theme switcher button
 │   │   ├── Watermark.tsx                     # Watermark overlay component
 │   │   ├── ClientOnlyTime.tsx                # Client-side time display
-│   │   ├── PronounsSelector.tsx              # Pronouns selection component
 │   │   ├── TagManager.tsx                    # Tag management component
 │   │   ├── InlineTagManager.tsx              # Inline tag management component
 │   │   ├── AvatarUpload.tsx                  # Avatar upload component
@@ -198,8 +197,7 @@ project-consensus-frontend/
 │   │   ├── markdown.ts                       # Markdown processing utilities
 │   │   ├── search-utils.ts                   # Search utility functions
 │   │   ├── i18n.ts                           # Internationalization configuration
-│   │   ├── locale.ts                         # Locale management utilities
-│   │   └── pronouns-utils.ts                 # Pronouns utilities and helpers
+│   │   └── locale.ts                         # Locale management utilities
 │   │
 │   ├── types/                                # TypeScript Type Definitions
 │   │   ├── index.ts                          # Main type exports
