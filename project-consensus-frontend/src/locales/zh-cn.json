@@ -78,7 +78,7 @@
     "resendCode": "重新发送",
     "confirmPassword": "确认密码",
     "alreadyHaveAccount": "已经有账号？",
-    "emailVerificationHint": "建议使用个人邮箱注册；如使用学校邮箱，可能会出现收不到验证码的情况。",
+    "emailVerificationHint": "我们建议使用个人邮箱注册；如使用学校邮箱，可能会出现收不到验证码的情况。",
     "codeInputDisabledHint": "请先点击发送验证码以启用",
     "errorPasswordMismatch": "两次输入的密码不一致",
     "emailPrivacyNotice": "您的电子邮件仅用于创建和保护您的 polyu.life 账户。您的个人隐私信息不会被分享。",
