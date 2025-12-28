@@ -5,8 +5,6 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter, OrderingFilter
 
-from courses.models import Course
-
 from django.db.models import Q
 
 from .models import Teacher
@@ -92,14 +90,15 @@ class TeacherViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=["get"], url_path="courses")
     def courses(self, request, pk=None):
         """
-        Return lightweight course refs taught by the teacher via M2M relation.
+        Return lightweight course refs taught by the teacher via reverse relation.
+        Uses the `teacher.courses` to fetch all courses associated with this teacher.
 
-        Uses the Course.teachers M2M field to fetch all courses associated with this teacher.
-        Includes current term (term_year/term_semester) and historical terms list to align
-        with the frontend Course/TeacherCourseRef types.
+        Returns the current term (term_year/term_semester), historical terms list, 
+        and co-teachers (other teachers of the same course).
         """
         teacher = self.get_object()  # automatically handle pk lookup and 404
-        qs = Course.objects.filter(teachers=teacher).only(
+        # Use reverse relation to avoid importing Course model
+        qs = teacher.courses.prefetch_related("teachers").only(
             "course_id",
             "subject_code",
             "title",
@@ -107,7 +106,7 @@ class TeacherViewSet(viewsets.ReadOnlyModelViewSet):
             "term_semester",
             "terms",
         )
-        serializer = TeacherCourseRefSerializer(qs, many=True)
+        serializer = TeacherCourseRefSerializer(qs, many=True, context={"current_teacher_id": teacher.id})
         return Response(serializer.data)
 
     @action(detail=False, methods=["GET"], url_path="stats")

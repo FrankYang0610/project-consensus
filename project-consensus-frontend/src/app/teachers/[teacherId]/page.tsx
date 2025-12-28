@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { SiteNavigation } from "@/components/SiteNavigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useI18n } from "@/hooks/use-i18n";
@@ -53,7 +53,6 @@ function TeacherAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string }
 export default function TeacherDetailPage() {
   const { t, language } = useI18n();
   const params = useParams();
-  const router = useRouter();
   const teacherId = params.teacherId as string;
 
   const [teacher, setTeacher] = React.useState<Teacher | null>(null);
@@ -96,13 +95,11 @@ export default function TeacherDetailPage() {
     window.scrollTo(0, 0);
   }, [teacherId]);
 
-  const handleBackClick = () => router.back();
-
   // Loading state
   if (isLoading) {
     return (
       <>
-        <SiteNavigation showBackButton={true} onBackClick={handleBackClick} />
+        <SiteNavigation />
         <div className="min-h-screen bg-background">
           <main className="w-full py-8">
             <div className="container mx-auto px-4 max-w-3xl">
@@ -122,7 +119,7 @@ export default function TeacherDetailPage() {
   if (!teacher) {
     return (
       <>
-        <SiteNavigation showBackButton={true} onBackClick={handleBackClick} />
+        <SiteNavigation />
         <div className="min-h-screen bg-background">
           <main className="w-full py-8">
             <div className="container mx-auto px-4 max-w-3xl">
@@ -140,7 +137,7 @@ export default function TeacherDetailPage() {
 
   return (
     <>
-      <SiteNavigation showBackButton={true} onBackClick={handleBackClick} />
+      <SiteNavigation />
       <div className="min-h-screen bg-background">
         <main className="w-full py-6 sm:py-8">
           <div className="container mx-auto px-4 max-w-5xl grid gap-6">
@@ -335,8 +332,8 @@ export default function TeacherDetailPage() {
                       const orderedTerms = sourceTerms.length > 0 ? sortTerms(sourceTerms) : [];
 
                       return (
-                        <Link key={course.courseId} href={`/courses/${course.courseId}`}>
-                          <div className="border rounded p-3 hover:border-primary transition-colors">
+                        <Link key={course.courseId} href={`/courses/${course.courseId}`} className="block h-full">
+                          <div className="border rounded p-3 hover:border-primary transition-colors h-full flex flex-col">
                             <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
                               <span className="text-sm">
                                 {course.subjectCode}
@@ -351,6 +348,14 @@ export default function TeacherDetailPage() {
                               ))}
                             </div>
                             <div className="font-medium truncate mt-1">{course.title}</div>
+                            {course.coTeachers && course.coTeachers.length > 0 && (
+                              <div className="mt-2">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted text-muted-foreground text-xs">
+                                  {t('teacher.coTaughtWith', { names: course.coTeachers.map(ct => ct.name).join(', ') })}
+                                </span>
+                              </div>
+                            )}
+                            <div className="flex-1" />
                           </div>
                         </Link>
                       );

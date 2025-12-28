@@ -100,6 +100,7 @@ class TeacherCourseRefSerializer(serializers.Serializer):
     title = serializers.CharField()
     term = serializers.SerializerMethodField()
     terms = serializers.SerializerMethodField()
+    coTeachers = serializers.SerializerMethodField()
 
     def get_term(self, obj):
         """
@@ -116,3 +117,17 @@ class TeacherCourseRefSerializer(serializers.Serializer):
         if obj.terms:
             return obj.terms
         return [{"year": obj.term_year, "semester": obj.term_semester}]
+
+    def get_coTeachers(self, obj):
+        """
+        Return co-teachers (other teachers of this course), excluding the current teacher.
+        Returns a list of {id, name} objects.
+        """
+        current_teacher_id = self.context.get("current_teacher_id")
+        if not current_teacher_id:
+            return []
+        # Use already-fetched teachers (via prefetch_related) and filter in Python
+        # to avoid N+1 queries - exclude() would bypass prefetched data
+        teachers = obj.teachers.all()
+        co_teachers = [t for t in teachers if str(t.id) != str(current_teacher_id)]
+        return [{"id": str(t.id), "name": t.name} for t in co_teachers]

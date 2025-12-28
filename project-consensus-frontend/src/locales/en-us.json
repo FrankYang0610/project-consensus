@@ -747,6 +747,7 @@
     "languages": "Languages",
     "coursesTaught": "Courses Taught",
     "noCourses": "No courses are currently listed",
+    "coTaughtWith": "Co-taught with {{names}}",
     "stats": {
       "overall": "Overall",
       "difficulty": "Difficulty",
