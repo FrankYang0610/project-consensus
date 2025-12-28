@@ -78,7 +78,7 @@
     "resendCode": "重新發送",
     "confirmPassword": "確認密碼",
     "alreadyHaveAccount": "已經有帳戶？",
-    "emailVerificationHint": "我哋建議你使用理大電郵註冊，不過你當然亦可以使用其他電郵註冊。",
+    "emailVerificationHint": "我哋建議用個人電郵註冊；如果用學校電郵，有時可能會收唔到驗證碼。",
     "codeInputDisabledHint": "請先點擊發送驗證碼以啟用",
     "errorPasswordMismatch": "兩次輸入的密碼不一致",
     "emailPrivacyNotice": "您的電郵僅用於建立和保護您的 polyu.life 帳戶。您的個人私隱資訊不會被分享。",

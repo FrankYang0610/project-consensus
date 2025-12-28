@@ -80,7 +80,7 @@
     "resendCode": "Resend Code",
     "confirmPassword": "Confirm Password",
     "alreadyHaveAccount": "Already have an account?",
-    "emailVerificationHint": "We recommend using your PolyU email to register, but you can also use any other email address.",
+    "emailVerificationHint": "We recommend registering with a personal email. If you use a school email, you may occasionally have trouble receiving verification codes.",
     "codeInputDisabledHint": "Click Send Code first to enable",
     "errorPasswordMismatch": "Passwords do not match",
     "emailPrivacyNotice": "Your email is only used to create and secure your polyu.life account. Your personal information will not be shared.",
