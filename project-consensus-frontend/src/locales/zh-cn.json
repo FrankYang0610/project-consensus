@@ -745,6 +745,7 @@
     "languages": "授课语言",
     "coursesTaught": "授课课程",
     "noCourses": "暂无课程记录",
+    "coTaughtWith": "与 {{names}} 共同授课",
     "stats": {
       "overall": "总体",
       "difficulty": "难度",

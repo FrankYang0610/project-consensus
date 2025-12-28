@@ -37,6 +37,13 @@ export interface TeacherCourseRef {
     year: number;
     semester: SemesterKey;
   }>;
+  /**
+   * Co-teachers (other teachers of this course)
+   */
+  coTeachers?: Array<{
+    id: string;
+    name: string;
+  }>;
 }
 
 /**

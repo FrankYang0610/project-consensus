@@ -47,6 +47,13 @@ export interface OtherTeacherCourse {
   courseId: string;
   teacherName: string;
   teacherAvatarUrl?: string;
+  /**
+   * Co-teachers (other teachers of this course, excluding the primary teacher)
+   */
+  coTeachers?: Array<{
+    id: string;
+    name: string;
+  }>;
   rating: {
     score: number;
     reviewsCount: number;

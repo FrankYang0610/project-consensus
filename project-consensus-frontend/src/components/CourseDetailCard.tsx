@@ -1093,6 +1093,13 @@ export function CourseDetailCard({
                             <span>•</span>
                             <span>{t("courses.card.rating.reviews", { count: course.rating.reviewsCount })}</span>
                           </div>
+                          {course.coTeachers && course.coTeachers.length > 0 && (
+                            <div className="mt-1">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted text-muted-foreground text-xs">
+                                {t('teacher.coTaughtWith', { names: course.coTeachers.map(ct => ct.name).join(', ') })}
+                              </span>
+                            </div>
+                          )}
                         </div>
                         <div className="flex flex-col items-end gap-1 text-xs text-muted-foreground">
                           <div className="flex items-center gap-1.5">
