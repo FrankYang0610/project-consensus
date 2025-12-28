@@ -163,6 +163,7 @@
     }
   },
   "forum": {
+    "searchPlaceholder": "Search posts, comments...",
     "sortBy": {
       "default": "Default (Newest Created)",
       "newest": "Newest Created",

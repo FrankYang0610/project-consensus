@@ -161,6 +161,7 @@
     }
   },
   "forum": {
+    "searchPlaceholder": "搜尋帖子、評論...",
     "sortBy": {
       "default": "預設（最新發佈）",
       "newest": "最新發佈",
