@@ -161,6 +161,7 @@
     }
   },
   "forum": {
+    "searchPlaceholder": "搜索帖子、评论...",
     "sortBy": {
       "default": "默认（最新发布）",
       "newest": "最新发布",

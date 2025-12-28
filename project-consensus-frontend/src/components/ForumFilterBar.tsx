@@ -128,7 +128,7 @@ export function ForumFilterBar({ className, initialSort, initialSearch, initialT
       <Input
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        placeholder={t("search.placeholder")}
+        placeholder={t("forum.searchPlaceholder")}
         className="h-8 text-xs flex-1 min-w-[140px] sm:max-w-[320px]"
       />
 
