@@ -122,14 +122,14 @@ export function CoursePreviewCard({
   const TitleBlock = (
     <CardHeader className="pb-0">
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+        <div className="min-w-0 w-full">
           <CardTitle className="text-base">
-            <span className="inline-flex items-center gap-2">
-              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-secondary text-secondary-foreground text-xs font-medium">
+            <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-secondary text-secondary-foreground text-xs font-medium shrink-0">
                 {subjectCode}
               </span>
-              <span className="line-clamp-1">{title}</span>
-              <span className="text-muted-foreground text-sm ml-1">({termText})</span>
+              <span className="break-words">{title}</span>
+              <span className="text-muted-foreground text-sm shrink-0">({termText})</span>
             </span>
           </CardTitle>
         </div>
