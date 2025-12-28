@@ -39,7 +39,6 @@ export function LoginModal({ className, onLoginSuccess }: LoginModalProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState('');
 
   // Reset Form
@@ -96,12 +95,6 @@ export function LoginModal({ className, onLoginSuccess }: LoginModalProps) {
       const msg = err instanceof Error ? err.message : t('auth.errorNetwork');
       return { success: false, message: msg } as LoginResponse;
     }
-  };
-
-  // Google Auth
-  const handleGoogleAuth = async (): Promise<void> => {
-    // Redirect to Oauth google auth endpoint
-    window.location.href = '/api/auth/google';
   };
 
   // Form submit handle
@@ -161,20 +154,6 @@ export function LoginModal({ className, onLoginSuccess }: LoginModalProps) {
       }
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  // Google login handling
-  const handleGoogleLogin = async () => {
-    setIsGoogleLoading(true);
-    setError('');
-
-    try {
-      await handleGoogleAuth();
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : t('auth.errorGoogleFailed');
-      setError(errorMessage);
-      setIsGoogleLoading(false);
     }
   };
 
@@ -260,18 +239,6 @@ export function LoginModal({ className, onLoginSuccess }: LoginModalProps) {
           </CardContent>
 
           <CardFooter className="flex-col gap-3">
-            {/* Google Login button */}
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={handleGoogleLogin}
-              disabled={isGoogleLoading || isLoading}
-            >
-              {isGoogleLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t('auth.loginWithGoogle')}
-            </Button>
-
             {/* Register Link */}
             <div className="text-center text-sm text-muted-foreground">
               {t('auth.dontHaveAccount')}{' '}
