@@ -511,10 +511,10 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
   return (
     <div className="min-h-screen bg-background">
       <SiteNavigation showBackButton onBackClick={() => router.back()} />
-      <main className="w-full py-8">
-        <div className="w-full p-6">
-          <div className="max-w-6xl mx-auto grid grid-cols-1 gap-6 pt-2">
-            <div className="px-4">
+      <main className="w-full py-4 sm:py-8">
+        <div className="w-full p-2 sm:p-6">
+          <div className="max-w-6xl mx-auto grid grid-cols-1 gap-4 sm:gap-6 pt-2">
+            <div className="px-1 sm:px-4">
               <CourseDetailCard
                 courseId={course.courseId}
                 subjectCode={course.subjectCode}
@@ -545,7 +545,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
 
             {/* Course Reviews Section */}
             {reviews.length > 0 && (
-              <div className="px-4">
+              <div className="px-1 sm:px-4">
                 <div className="flex flex-col gap-1">
                   {reviews.map((review) => {
                     const isExpanded = expandedReviews.has(review.id);
