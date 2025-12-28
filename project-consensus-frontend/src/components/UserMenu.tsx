@@ -44,13 +44,8 @@ export function UserMenu({ className }: UserMenuProps) {
     setIsOpen(false);
   };
 
-  // Get user display name
-  const displayName = user.name || user.email.split('@')[0];
-
   // Get avatar - if no avatar, display first letter
-  const avatarText = user.name
-    ? user.name.charAt(0).toUpperCase()
-    : user.email.charAt(0).toUpperCase();
+  const avatarText = user?.nickname?.charAt(0).toUpperCase() || '?';
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -61,10 +56,10 @@ export function UserMenu({ className }: UserMenuProps) {
           className={cn("items-center gap-2", className)}
         >
           {/* User avatar */}
-          {user.avatar ? (
+          {user?.avatar ? (
             <Image
               src={user.avatar}
-              alt={displayName}
+              alt={user.nickname}
               width={16}
               height={16}
               className="w-4 h-4 rounded-full"
@@ -77,7 +72,7 @@ export function UserMenu({ className }: UserMenuProps) {
 
           {/* User name - on larger screens */}
           <span className="hidden sm:inline text-sm">
-            {displayName}
+            {user.nickname}
           </span>
 
           {/* Dropdown arrow */}
@@ -90,10 +85,10 @@ export function UserMenu({ className }: UserMenuProps) {
         <div className="p-4">
           {/* User information header */}
           <div className="flex items-center gap-3 pb-4 border-b">
-            {user.avatar ? (
+            {user?.avatar ? (
               <Image
                 src={user.avatar}
-                alt={displayName}
+                alt={user.nickname}
                 width={40}
                 height={40}
                 className="w-10 h-10 rounded-full"
@@ -104,8 +99,8 @@ export function UserMenu({ className }: UserMenuProps) {
               </div>
             )}
             <div>
-              <div className="font-medium">{displayName}</div>
-              <div className="text-sm text-muted-foreground">{user.email}</div>
+              <div className="font-medium">{user.nickname}</div>
+              <div className="text-sm text-muted-foreground">{user.username}</div>
             </div>
           </div>
 

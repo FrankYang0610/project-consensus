@@ -121,3 +121,92 @@ export function validateNickname(value: string): ValidationResult {
     sanitizedValue: sanitized,
   };
 }
+
+/**
+ * Validate and sanitize username
+ * 
+ * Rules:
+ * - Strip leading/trailing whitespace
+ * - Min length: 5 characters
+ * - Max length: 30 characters
+ * - No whitespace allowed
+ * - Only ASCII letters, digits, underscore (_), and period (.)
+ * - Periods cannot appear at start or end (prevents confusion like ".username" or "username.")
+ * - No consecutive periods (prevents confusion like "user..name")
+ * 
+ * @param value - The username to validate
+ * @returns ValidationResult with sanitized value or error message
+ */
+export function validateUsername(value: string): ValidationResult {
+  // Check if empty
+  if (!value) {
+    return {
+      isValid: false,
+      error: 'validation.username.required',
+    };
+  }
+
+  // Trim whitespace
+  const sanitized = validator.trim(value);
+
+  // Check if empty after trim
+  if (!sanitized) {
+    return {
+      isValid: false,
+      error: 'validation.username.required',
+    };
+  }
+
+  // Check minimum length
+  if (sanitized.length < 5) {
+    return {
+      isValid: false,
+      error: 'validation.username.tooShort',
+    };
+  }
+
+  // Check maximum length
+  if (sanitized.length > 30) {
+    return {
+      isValid: false,
+      error: 'validation.username.tooLong',
+    };
+  }
+
+  // Check for whitespace
+  if (/\s/.test(sanitized)) {
+    return {
+      isValid: false,
+      error: 'validation.username.invalid',
+    };
+  }
+
+  // Check for valid username format (ASCII letters, digits, underscore, period only)
+  if (!/^[A-Za-z0-9_.]+$/.test(sanitized)) {
+    return {
+      isValid: false,
+      error: 'validation.username.invalid',
+    };
+  }
+
+  // Check for period at start or end
+  if (sanitized.startsWith('.') || sanitized.endsWith('.')) {
+    return {
+      isValid: false,
+      error: 'validation.username.invalidPeriodFormat',
+    };
+  }
+
+  // Check for consecutive periods (prevents confusable usernames)
+  if (sanitized.includes('..')) {
+    return {
+      isValid: false,
+      error: 'validation.username.invalidPeriodFormat',
+    };
+  }
+
+  return {
+    isValid: true,
+    sanitizedValue: sanitized,
+  };
+}

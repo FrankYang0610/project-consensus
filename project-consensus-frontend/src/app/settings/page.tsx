@@ -41,7 +41,7 @@ export default function SettingsPage() {
   const { user, isLoggedIn, updateUser } = useApp();
 
   // Profile form
-  const [nickname, setNickname] = useState(user?.name || '');
+  const [nickname, setNickname] = useState(user?.nickname || '');
   const [avatarUrl, setAvatarUrl] = useState(user?.avatar || '');
   const [pronouns, setPronouns] = useState<string>(user?.pronouns || '');
   const [profileSaving, setProfileSaving] = useState(false);
@@ -75,7 +75,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     // Initialize profile fields from user
-    setNickname(user?.name || '');
+    setNickname(user?.nickname || '');
     setAvatarUrl(user?.avatar || '');
     setPronouns(user?.pronouns || '');
     
@@ -130,7 +130,7 @@ export default function SettingsPage() {
     
     // Validate nickname if it's being updated
     // 如果要更新昵称，先进行验证
-    if (nickname !== user?.name) {
+    if (nickname !== user?.nickname) {
       const validation = validateNickname(nickname);
       if (!validation.isValid) {
         setProfileErr(t(validation.error || 'settings.profile.saveFailed'));
@@ -153,7 +153,7 @@ export default function SettingsPage() {
 
       // Update local user from backend response
       updateUser?.({ 
-        name: resp.user.name, 
+        nickname: resp.user.nickname, 
         avatar: resp.user.avatar, 
         pronouns: resp.user.pronouns,
         lastProfileUpdatedAt: resp.user.lastProfileUpdatedAt,

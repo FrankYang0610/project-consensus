@@ -20,7 +20,7 @@ export interface UserStats {
  */
 export interface PublicUser {
   id: string; // 用户唯一标识符 / User unique identifier
-  name?: string; // 用户名称（可选） / User name (optional)
+  nickname: string; // 用户昵称（必填，注册时必须提供） / User nickname (required, must be provided at registration)
   avatar?: string; // 用户头像URL（可选） / User avatar URL (optional)
   pronouns?: string; // 用户代词（可选） / User pronouns (optional)
   showForumPostsPublicly?: boolean; // 是否公开展示自己发的forum posts（可选） / Whether forum posts are shown publicly (optional)
@@ -41,7 +41,7 @@ export interface PublicUser {
  * Used for the current logged-in user's profile
  */
 export interface User extends PublicUser {
-  email: string; // 用户邮箱 / User email
+  username: string; // Username (unique identifier for login)
 }
 
 /**

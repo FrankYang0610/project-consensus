@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import bleach
+import re
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password as dj_validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -105,7 +106,6 @@ class ProfileSerializer(serializers.ModelSerializer):
         sanitized_value = validate_and_sanitize_nickname(value)
 
         # Check uniqueness (exclude current user's profile)
-        # 检查唯一性（排除当前用户的资料）
         request = self.context.get('request')
         if not request:
             raise serializers.ValidationError(error_codes.AUTHENTICATION_REQUIRED)
@@ -132,27 +132,89 @@ class SendCodeSerializer(serializers.Serializer):
     )
 
 
+def validate_username(value: str) -> str:
+    """
+    Validate username for registration/login.
+    
+    Rules:
+    - Required (non-empty)
+    - Min length: 5 characters
+    - Max length: 30 characters
+    - No whitespace allowed
+    - Only ASCII letters, digits, underscore (_), and period (.)
+    - Periods cannot appear at start or end (prevents confusion like ".username" or "username.")
+    - No consecutive periods (prevents confusion like "user..name")
+    """
+
+    value = value.strip()
+
+    if not value:
+        raise serializers.ValidationError(error_codes.USERNAME_REQUIRED)
+    
+    if len(value) < 5:
+        raise serializers.ValidationError(error_codes.USERNAME_TOO_SHORT)
+    
+    if len(value) > 30:
+        raise serializers.ValidationError(error_codes.USERNAME_TOO_LONG)
+    
+    # Check for whitespace
+    if re.search(r'\s', value):
+        raise serializers.ValidationError(error_codes.USERNAME_INVALID)
+    
+    # Validate username format (ASCII letters, digits, underscore, period only)
+    if not re.match(r'^[A-Za-z0-9_.]+$', value):
+        raise serializers.ValidationError(error_codes.USERNAME_INVALID)
+    
+    # Check for period at start or end
+    if value.startswith('.') or value.endswith('.'):
+        raise serializers.ValidationError(error_codes.USERNAME_INVALID_PERIOD_FORMAT)
+    
+    # Check for consecutive periods
+    if '..' in value:
+        raise serializers.ValidationError(error_codes.USERNAME_INVALID_PERIOD_FORMAT)
+    
+    return value
+
+
 class RegisterSerializer(serializers.Serializer):
     """Request body for the register endpoint.
 
     Fields:
+    - username: unique username (no spaces, max 30 chars)
     - nickname: nickname (max 15 characters after sanitization)
-    - email: email address
-    - verification_code: email verification code
+    - email: email address (optional, but requires verification_code if provided)
+    - verification_code: required if email is provided
     - password: password
     """
 
+    username = serializers.CharField(max_length=30, required=True)
     nickname = serializers.CharField(max_length=100, required=True)
     email = serializers.EmailField(
-        required=True,
+        required=False,
+        allow_blank=True,
         error_messages={
             "invalid": error_codes.EMAIL_INVALID,
-            "required": error_codes.EMAIL_REQUIRED,
         },
     )
-    verification_code = serializers.RegexField(regex=r'^\d{6}$', max_length=6, min_length=6, required=True)
+    verification_code = serializers.RegexField(
+        regex=r'^\d{6}$',
+        max_length=6,
+        min_length=6,
+        required=False,
+        allow_blank=True,
+    )
     password = serializers.CharField(write_only=True, required=True)
     password_confirm = serializers.CharField(write_only=True, required=True)
+    
+    def validate_username(self, value):
+        """Validate username format and check uniqueness."""
+        validated_value = validate_username(value)
+        
+        # Check uniqueness for registration
+        if User.objects.filter(username=validated_value).exists():
+            raise serializers.ValidationError(error_codes.USERNAME_ALREADY_TAKEN)
+        
+        return validated_value
     
     def validate_nickname(self, value):
         """Validate and sanitize nickname, check uniqueness."""
@@ -174,6 +236,17 @@ class RegisterSerializer(serializers.Serializer):
         password_confirm = attrs.get('password_confirm')
         if password_confirm != password:
             raise serializers.ValidationError({"password_confirm": error_codes.PASSWORD_MISMATCH})
+        
+        # If email is provided, verification_code is required
+        # Note: Email format validation happens at field level (EmailField),
+        # so only valid emails (or empty strings) reach this point
+        email = attrs.get('email', '').strip()
+        verification_code = attrs.get('verification_code', '').strip()
+        if email and not verification_code:
+            raise serializers.ValidationError({
+                "verification_code": error_codes.VERIFICATION_CODE_REQUIRED
+            })
+        
         return attrs
 
 
@@ -181,15 +254,16 @@ class LoginSerializer(serializers.Serializer):
     """Request body for login endpoint.
 
     Fields:
-    - email: user email
+    - username_or_email: user username or email
     - password: user password
     """
 
-    email = serializers.EmailField(
+    username_or_email = serializers.CharField(
+        max_length=150,
         error_messages={
-            "invalid": error_codes.EMAIL_INVALID,
-            "required": error_codes.EMAIL_REQUIRED,
-        }
+            "required": error_codes.USERNAME_REQUIRED,
+        },
+        trim_whitespace=True
     )
     password = serializers.CharField(write_only=True)
 
@@ -368,7 +442,9 @@ class UserDetailSerializer(serializers.ModelSerializer):
     """
 
     id = serializers.CharField(source="pk", read_only=True)
-    name = serializers.SerializerMethodField()
+    username = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
+    nickname = serializers.SerializerMethodField()
     avatar = serializers.SerializerMethodField()
     pronouns = serializers.SerializerMethodField()
     showForumPostsPublicly = serializers.SerializerMethodField()
@@ -382,7 +458,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            "id", "email", "name", "avatar", "pronouns",
+            "id", "username", "email", "nickname", "avatar", "pronouns",
             "showForumPostsPublicly", "showForumPostCommentsPublicly",
             "showCourseReviewsPublicly", "isAccountActive",
             "lastProfileUpdatedAt", "daysUntilNextUpdate", "stats",
@@ -396,11 +472,18 @@ class UserDetailSerializer(serializers.ModelSerializer):
         except Profile.DoesNotExist:
             return None
 
-    def get_name(self, obj: User) -> str:
-        profile = self._get_profile(obj)
-        if profile and profile.nickname:
-            return profile.nickname
+    def get_username(self, obj: User) -> str:
+        """Return the user's username. Required field set at registration."""
         return obj.get_username()
+
+    def get_email(self, obj: User) -> str | None:
+        """Return email if set, otherwise None."""
+        return obj.email or None
+
+    def get_nickname(self, obj: User) -> str:
+        """Return the user's nickname. Required field set at registration."""
+        profile = self._get_profile(obj)
+        return profile.nickname if profile else "?"
 
     def get_avatar(self, obj: User) -> str | None:
         profile = self._get_profile(obj)
@@ -476,7 +559,7 @@ class PublicUserSerializer(UserDetailSerializer):
     class Meta(UserDetailSerializer.Meta):
         model = User
         fields = [
-            "id", "name", "avatar", "pronouns",
+            "id", "nickname", "avatar", "pronouns",
             "showForumPostsPublicly", "showForumPostCommentsPublicly",
             "showCourseReviewsPublicly", "isAccountActive",
             "lastProfileUpdatedAt", "daysUntilNextUpdate", "stats",

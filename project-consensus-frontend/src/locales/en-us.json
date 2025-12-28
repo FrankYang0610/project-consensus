@@ -61,8 +61,15 @@
     "profile": "Profile",
     "settings": "Settings",
     "welcomeBack": "Welcome Back",
-    "loginDescription": "Enter your email below to login to your account",
+    "loginDescription": "Enter your username or email to login to your account",
+    "usernameOrEmail": "Email or Username",
+    "usernameOrEmailPlaceholder": "Username or email",
     "email": "Email",
+    "username": "Username (required)",
+    "usernamePlaceholder": "Enter username",
+    "usernameHint": "Username is used for login. Must be 5-30 characters, containing only letters, digits, underscore (_), and period (.), no spaces allowed",
+    "emailOptional": "Email (optional)",
+    "emailOptionalHint": "Email is optional, can be used for password recovery",
     "password": "Password",
     "forgotPassword": "Forgot password?",
     "dontHaveAccount": "Don't have an account?",
@@ -72,7 +79,7 @@
     "errorNetwork": "Network error. Please try again.",
     "errorAccountDisabled": "This account has been disabled. Please contact support for assistance.",
     "errorAuthRequired": "Authentication is required for this action. Please log in.",
-    "invalidCredentials": "Invalid email or password",
+    "invalidCredentials": "Invalid username/email or password",
     "register": "Register",
     "nickname": "Nickname",
     "verificationCode": "Verification Code",
@@ -81,7 +88,7 @@
     "confirmPassword": "Confirm Password",
     "alreadyHaveAccount": "Already have an account?",
     "emailVerificationHint": "We recommend registering with a personal email. If you use a school email, you may occasionally have trouble receiving verification codes.",
-    "codeInputDisabledHint": "Click Send Code first to enable",
+    "verificationCodeInputDisabledHint": "Click Send Code first to enable",
     "errorPasswordMismatch": "Passwords do not match",
     "emailPrivacyNotice": "Your email is only used to create and secure your polyu.life account. Your personal information will not be shared.",
     "registerConsent": "By clicking Register you agree to our",
@@ -632,6 +639,14 @@
       "characters": "characters",
       "alreadyTaken": "This nickname is already taken. Please choose another one."
     },
+    "username": {
+      "required": "Username is required",
+      "tooShort": "Username must be at least 5 characters",
+      "tooLong": "Username must be 30 characters or less",
+      "invalid": "Username can only contain letters, digits, underscore (_), and period (.), no spaces allowed",
+      "invalidPeriodFormat": "Periods cannot appear at the beginning or end, and consecutive periods are not allowed",
+      "alreadyTaken": "This username is already taken. Please choose another one."
+    },
     "email": {
       "required": "Email is required",
       "invalid": "Please enter a valid email address",
@@ -659,6 +674,7 @@
   "profile": {
     "title": "Profile",
     "subtitle": "Profile overview and recent activity",
+    "notLoggedIn": "Not Logged In",
     "actions": {
       "edit": "Edit Profile",
       "viewPublic": "View Public Profile",

@@ -33,10 +33,7 @@ export default function ProfilePage() {
   const [loadingComments, setLoadingComments] = useState(true);
   const [loadingReviews, setLoadingReviews] = useState(true);
 
-  const displayName = user?.name || (user?.email ? user.email.split('@')[0] : '');
-  const avatarText = user?.name
-    ? user.name.charAt(0).toUpperCase()
-    : (user?.email ? user.email.charAt(0).toUpperCase() : '');
+  const avatarText = user?.nickname?.charAt(0).toUpperCase() || '?';
 
   const formattedPronouns = user?.pronouns || "";
 
@@ -122,7 +119,7 @@ export default function ProfilePage() {
                     {user?.avatar ? (
                       <Image
                         src={user.avatar}
-                        alt={displayName}
+                        alt={user.nickname}
                         width={80}
                         height={80}
                         className="w-20 h-20 rounded-full object-cover"
@@ -134,12 +131,12 @@ export default function ProfilePage() {
                     )}
 
                     <div className="w-full">
-                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{displayName}</h2>
+                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{user?.nickname || t('profile.notLoggedIn')}</h2>
                       {formattedPronouns && (
                         <p className="text-gray-600 dark:text-gray-300 mt-1">{formattedPronouns}</p>
                       )}
-                      {user?.email && (
-                        <p className="text-sm text-muted-foreground mt-2 break-all">{user.email}</p>
+                      {user?.username && (
+                        <p className="text-sm text-muted-foreground mt-2 break-all">{user.username}</p>
                       )}
                       <Badge variant="secondary" className="mt-2">
                         {t('profile.memberFor', { days: userStats.joinedDays })}
