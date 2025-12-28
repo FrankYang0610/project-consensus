@@ -450,7 +450,11 @@
       "selectLevelFirst": "請選擇等級以查看課程",
       "courses": "課程列表",
       "advancedSearch": "進階搜索",
-      "search": "搜索"
+      "search": "搜索",
+      "back": "返回",
+      "step1": "第一步：選擇部門",
+      "step2": "第二步：選擇等級",
+      "step3": "第三步：瀏覽課程"
     },
     "latestReviews": {
       "title": "最新點評",

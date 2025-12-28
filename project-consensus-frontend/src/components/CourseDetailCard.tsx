@@ -990,7 +990,7 @@ export function CourseDetailCard({
                 onClick={() => handleVote('recommend')}
               >
                 <ThumbsUp className="w-4 h-4" />
-                <span>{t("courses.detail.recommend")}</span>
+                <span className="hidden sm:inline">{t("courses.detail.recommend")}</span>
                 <span className={cn(
                   "px-1.5 py-0.5 rounded text-xs font-medium",
                   votingState.userVote === 'recommend' ? "bg-white/20" : "bg-muted"
@@ -1005,7 +1005,7 @@ export function CourseDetailCard({
                 onClick={() => handleVote('notRecommend')}
               >
                 <ThumbsDown className="w-4 h-4" />
-                <span>{t("courses.detail.notRecommend")}</span>
+                <span className="hidden sm:inline">{t("courses.detail.notRecommend")}</span>
                 <span className={cn(
                   "px-1.5 py-0.5 rounded text-xs font-medium",
                   votingState.userVote === 'notRecommend' ? "bg-white/20" : "bg-muted"
@@ -1207,25 +1207,29 @@ export function CourseDetailCard({
                 </div>
               </div>
               {/* Right cluster: Rating + Total + Apply */}
-              <div className="flex items-center gap-3 flex-1 md:justify-end">
-                <Label className="text-xs w-12 shrink-0 text-muted-foreground">{t("courses.detail.reviews.rating.label")}</Label>
-                <div className="flex-1 min-w-[240px] max-w-[360px]">
-                  <RatingSlider
-                    minVal={currentFilterState.ratingMin}
-                    maxVal={currentFilterState.ratingMax}
-                    onRangeChange={currentCallbacks.onRatingChange}
-                  />
+              <div className="flex items-center gap-2 sm:gap-3 flex-1 md:justify-end flex-wrap">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <Label className="text-xs w-10 sm:w-12 shrink-0 text-muted-foreground">{t("courses.detail.reviews.rating.label")}</Label>
+                  <div className="flex-1 min-w-[140px] sm:min-w-[240px] max-w-[360px]">
+                    <RatingSlider
+                      minVal={currentFilterState.ratingMin}
+                      maxVal={currentFilterState.ratingMax}
+                      onRangeChange={currentCallbacks.onRatingChange}
+                    />
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground whitespace-nowrap">
-                  {t("courses.detail.reviews.totalReviews", { count: filteredReviewsCount })}
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="text-xs text-muted-foreground whitespace-nowrap">
+                    {t("courses.detail.reviews.totalReviews", { count: filteredReviewsCount })}
+                  </div>
+                  <Button
+                    size="sm"
+                    className="h-8 px-3 text-xs sm:h-9 sm:px-4 sm:text-sm"
+                    onClick={currentCallbacks.onApplyFilters}
+                  >
+                    {t("courses.detail.reviews.apply")}
+                  </Button>
                 </div>
-                <Button
-                  size="default"
-                  className="h-9 px-4 text-sm"
-                  onClick={currentCallbacks.onApplyFilters}
-                >
-                  {t("courses.detail.reviews.apply")}
-                </Button>
               </div>
             </div>
           </div>

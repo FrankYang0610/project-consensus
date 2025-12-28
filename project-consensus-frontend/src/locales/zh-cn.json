@@ -450,7 +450,11 @@
       "selectLevelFirst": "请选择等级以查看课程",
       "courses": "课程列表",
       "advancedSearch": "高级搜索",
-      "search": "搜索"
+      "search": "搜索",
+      "back": "返回",
+      "step1": "第一步：选择部门",
+      "step2": "第二步：选择等级",
+      "step3": "第三步：浏览课程"
     },
     "latestReviews": {
       "title": "最新点评",

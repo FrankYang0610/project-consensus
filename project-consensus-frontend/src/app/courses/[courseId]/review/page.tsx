@@ -308,8 +308,8 @@ export default function CourseReviewCreatePage({ params }: { params: Promise<{ c
     <>
       <SiteNavigation />
       <div className="min-h-screen bg-background">
-        <main className="w-full py-8">
-          <div className="w-full p-6">
+        <main className="w-full py-4 sm:py-8">
+          <div className="w-full p-2 sm:p-6">
             <div className="max-w-3xl mx-auto">
                   <h1 className="text-2xl font-semibold mb-4">{isEditMode ? t('courses.reviewForm.editTitle') : t('courses.reviewForm.title')}</h1>
               <Card>

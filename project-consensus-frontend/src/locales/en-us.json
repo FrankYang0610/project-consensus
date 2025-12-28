@@ -452,7 +452,11 @@
       "selectLevelFirst": "Select a level to view courses",
       "courses": "Courses",
       "advancedSearch": "Advanced Search",
-      "search": "Search"
+      "search": "Search",
+      "back": "Back",
+      "step1": "Step 1: Select Department",
+      "step2": "Step 2: Select Level",
+      "step3": "Step 3: View Courses"
     },
     "latestReviews": {
       "title": "Latest Reviews",

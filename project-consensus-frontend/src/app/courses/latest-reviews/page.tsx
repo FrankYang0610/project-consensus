@@ -59,8 +59,8 @@ export default function LatestReviewsPage() {
     <>
       <SiteNavigation />
       <div className="min-h-screen bg-background">
-        <main className="w-full py-6 sm:py-8">
-          <div className="w-full px-4 sm:px-6 lg:px-8">
+        <main className="w-full py-4 sm:py-8">
+          <div className="w-full px-2 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto">
               <CourseBackgroundCard>
                 {/* Page title */}

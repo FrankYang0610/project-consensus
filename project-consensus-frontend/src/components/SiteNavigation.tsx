@@ -126,13 +126,14 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
   const [mobileDropdowns, setMobileDropdowns] = useState({
     courses: false,
     more: false,
+    language: false,
   });
 
   /**
    * Toggle specific mobile dropdown open/close state
-   * @param {'courses' | 'more'} key - Dropdown identifier ('courses', 'more')
+   * @param {'courses' | 'more' | 'language'} key - Dropdown identifier ('courses', 'more', 'language')
    */
-  const toggleMobileDropdown = (key: 'courses' | 'more') => {
+  const toggleMobileDropdown = (key: 'courses' | 'more' | 'language') => {
     setMobileDropdowns(prev => ({
       ...prev,
       [key]: !prev[key],
@@ -179,9 +180,9 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
    */
   const handleLanguageChange = (newLanguage: Language) => {
     changeLanguage(newLanguage);
-    // Close mobile menu if open
-    if (isMobileMenuOpen) {
-      setIsMobileMenuOpen(false);
+    // Close mobile language dropdown if open
+    if (mobileDropdowns.language) {
+      setMobileDropdowns(prev => ({ ...prev, language: false }));
     }
   };
 
@@ -198,7 +199,7 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
       "supports-[backdrop-filter]:bg-background/60"
     )}>
       {/* Main navigation container - max width constraint and centered */}
-      <div className="grid grid-cols-[auto_1fr_auto] h-20 items-center px-6 lg:px-8 xl:px-12 2xl:px-16">
+      <div className="grid grid-cols-[auto_1fr_auto] h-14 md:h-20 items-center px-6 lg:px-8 xl:px-12 2xl:px-16">
 
         {/* Logo area - click to return home */}
         <div className="flex items-center">
@@ -213,7 +214,7 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
           )}
           <Link href="/" className="flex items-center space-x-2">
             <Image
-              className="dark:invert"
+              className="dark:invert w-[150px] h-[40px] md:w-[225px] md:h-[60px]"
               src="/project-consensus-icon.svg"
               alt="polyu.life-icon"
               width={225}
@@ -327,7 +328,9 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
 
           {/* Notifications + Theme toggle */}
           <NotificationBell />
-          <ThemeToggle />
+          <div className="hidden md:block">
+            <ThemeToggle />
+          </div>
 
           {/* Language Switcher - visible on larger screens (hidden after login) */}
           {!isLoggedIn && (
@@ -391,7 +394,7 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
             {/* Mobile: Search + Login inline */}
             <div className="py-2 flex items-center gap-2">
               <SearchBar className="flex-1" showMobileVersion={true} placeholder={t('search.placeholder')} />
-              <NotificationBell />
+              <ThemeToggle />
               {!isLoading && (
                 isLoggedIn ? (
                   <UserMenu />
@@ -535,19 +538,32 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
             </div>
 
 
-            {/* Language Switcher - mobile */}
+            {/* Language Switcher - mobile collapsible */}
             <div className="border-t pt-2 mt-2">
-              <div className="px-2 pb-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                  <span>{t('navigation.language')}</span>
-                </div>
-                <div className="grid grid-cols-1 gap-1">
+              {/* Language collapse button */}
+              <button
+                className="flex items-center justify-between w-full py-3 px-2 text-sm font-medium hover:bg-accent rounded-md transition-colors"
+                onClick={() => toggleMobileDropdown('language')}
+              >
+                <span>{t('navigation.language')}</span>
+                {/* Arrow icon - rotates 180 degrees when expanded */}
+                <ChevronDown
+                  size={16}
+                  className={cn(
+                    "transition-transform duration-200",
+                    mobileDropdowns.language && "rotate-180"
+                  )}
+                />
+              </button>
+              {/* Language options - only visible when expanded */}
+              {mobileDropdowns.language && (
+                <div className="ml-4 mt-1 space-y-1">
                   {languageOptions.map((langOption) => (
                     <button
                       key={langOption.code}
                       onClick={() => handleLanguageChange(langOption.code)}
                       className={cn(
-                        "flex items-center gap-3 px-3 py-2 text-sm rounded-md transition-colors text-left",
+                        "flex items-center gap-3 w-full px-3 py-2 text-sm rounded-md transition-colors text-left",
                         "hover:bg-accent hover:text-accent-foreground",
                         language === langOption.code
                           ? "bg-accent text-accent-foreground font-medium"
@@ -561,7 +577,7 @@ export function SiteNavigation({ showBackButton = false, onBackClick }: SiteNavi
                     </button>
                   ))}
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
