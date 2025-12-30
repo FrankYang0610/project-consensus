@@ -59,8 +59,15 @@
     "profile": "個人資料",
     "settings": "設定",
     "welcomeBack": "歡迎回來",
-    "loginDescription": "請輸入電郵以登入你的帳戶",
+    "loginDescription": "請輸入用戶名或電郵以登入你的帳戶",
+    "usernameOrEmail": "電郵或用戶名",
+    "usernameOrEmailPlaceholder": "用戶名或電郵",
     "email": "電郵",
+    "username": "用戶名（必填）",
+    "usernamePlaceholder": "請輸入用戶名",
+    "usernameHint": "用戶名用於登入，需要5-30個字符，只能包含字母、數字、底線 (_) 和句號 (.)，不能有空格",
+    "emailOptional": "電郵（可選）",
+    "emailOptionalHint": "電郵是可選的，可用於找回密碼",
     "password": "密碼",
     "forgotPassword": "忘記密碼？",
     "dontHaveAccount": "還沒有帳戶？",
@@ -70,7 +77,7 @@
     "errorNetwork": "網絡錯誤，請重試",
     "errorAccountDisabled": "此帳戶已被停用，請聯絡支援團隊尋求協助。",
     "errorAuthRequired": "此操作需要身份驗證，請登入。",
-    "invalidCredentials": "電郵或密碼錯誤",
+    "invalidCredentials": "用戶名/電郵或密碼錯誤",
     "register": "註冊",
     "nickname": "暱稱",
     "verificationCode": "驗證碼",
@@ -79,7 +86,7 @@
     "confirmPassword": "確認密碼",
     "alreadyHaveAccount": "已經有帳戶？",
     "emailVerificationHint": "我哋建議用個人電郵註冊；如果用學校電郵，有時可能會收唔到驗證碼。",
-    "codeInputDisabledHint": "請先點擊發送驗證碼以啟用",
+    "verificationCodeInputDisabledHint": "請先點擊發送驗證碼以啟用",
     "errorPasswordMismatch": "兩次輸入的密碼不一致",
     "emailPrivacyNotice": "您的電郵僅用於建立和保護您的 polyu.life 帳戶。您的個人私隱資訊不會被分享。",
     "registerConsent": "點擊註冊即代表你同意我們的",
@@ -630,6 +637,14 @@
       "characters": "字符",
       "alreadyTaken": "此暱稱已被使用，請選擇其他名稱。"
     },
+    "username": {
+      "required": "用戶名不能為空",
+      "tooShort": "用戶名至少需要5個字符",
+      "tooLong": "用戶名不能超過30個字符",
+      "invalid": "用戶名只能包含字母、數字、底線 (_) 和句號 (.)，不能有空格",
+      "invalidPeriodFormat": "句號不能出現在開頭或結尾，也不能連續使用",
+      "alreadyTaken": "此用戶名已被佔用，請選擇其他用戶名。"
+    },
     "email": {
       "required": "郵箱不能為空",
       "invalid": "請輸入有效的郵箱地址",
@@ -657,6 +672,7 @@
   "profile": {
     "title": "個人資料",
     "subtitle": "資料總覽與最近活動",
+    "notLoggedIn": "未登入",
     "actions": {
       "edit": "修改個人資料",
       "viewPublic": "查看公開主頁",

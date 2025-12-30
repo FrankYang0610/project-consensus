@@ -114,9 +114,9 @@ def send_verification_code(request):
 @throttle_classes([RegisterRateThrottle])
 def register(request):
     """
-    Validate code and create user + profile.
+    Create user + profile with username-based registration.
 
-    Body: { nickname, email, verification_code, password }
+    Body: { username, nickname, email (optional), verification_code (required if email), password }
     """
     serializer = RegisterSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -124,12 +124,23 @@ def register(request):
     data = serializer.validated_data
     try:
         user = auth_service.register_user(
+            username=data["username"],
             nickname=data["nickname"],
-            email=data["email"],
-            code=data["verification_code"],
+            email=data.get("email", ""),
+            verification_code=data.get("verification_code", ""),
             password=data["password"],
         )
     except RegistrationError as e:
+        if e.reason == "username_already_taken":
+            return Response(
+                {"username": ["validation.username.alreadyTaken"]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if e.reason == "email_already_registered":
+            return Response(
+                {"email": ["validation.email.alreadyRegistered"]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         if e.reason == "too_many_attempts":
             return Response(
                 {"message": "validation.verificationCode.tooManyAttempts"},
@@ -140,9 +151,9 @@ def register(request):
                 {"verification_code": ["validation.verificationCode.invalidOrExpired"]},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if e.reason == "email_already_registered":
+        if e.reason == "verification_code_required":
             return Response(
-                {"email": ["validation.email.alreadyRegistered"]},
+                {"verification_code": ["validation.verificationCode.required"]},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         # Fallback generic error (should not normally happen)
@@ -173,16 +184,36 @@ def csrf(request):
 @throttle_classes([LoginRateThrottle])
 def login_view(request):
     """
-    Simple username/password login.
+    Username/password login supporting both username and email.
 
-    Body: { email, password }
+    Body: { username_or_email, password }
+    
+    The `username_or_email` field accepts either:
+    - A username
+    - An email address (for legacy users and future users whose username == email)
     """
     serializer = LoginSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    email = serializer.validated_data["email"].lower()
+    username_or_email = serializer.validated_data["username_or_email"]
     password = serializer.validated_data["password"]
 
-    user = authenticate(username=email, password=password)
+    # Note:
+    # Current users have username == email
+    # New users will have username != email, and they log in with username [or] email
+    # When our platform is developed, we will require all new users to use email for login
+    # At that time, all new users will have username == email again.
+
+    # Try to authenticate with username first
+    user = authenticate(username=username_or_email, password=password)
+
+    # If username auth failed and input looks like an email, try email lookup
+    if not user and "@" in username_or_email:
+        try:
+            user_by_email = User.objects.get(email=username_or_email.lower())  # see auth_service. all emails in the database are stored in lower cases
+            user = authenticate(username=user_by_email.username, password=password)
+        except User.DoesNotExist:
+            pass
+
     if not user:
         return Response({"message": "auth.invalidCredentials"}, status=status.HTTP_400_BAD_REQUEST)
 

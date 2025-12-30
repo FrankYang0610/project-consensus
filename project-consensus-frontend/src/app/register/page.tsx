@@ -22,13 +22,14 @@ import { ErrorResponse, RegisterSuccessResponse, SendVerificationCodeResponse } 
 import { getCookie, getAPIBaseUrl } from '@/lib/api/api-utils';
 import { extractErrorMessage } from '@/lib/api/error-utils';
 import { useApp } from '@/contexts/AppContext';
-import { validateNickname, validateEmail } from '@/lib/utils';
+import { validateNickname, validateEmail, validateUsername } from '@/lib/utils';
 
 export default function RegisterPage() {
   const { t } = useI18n();
   const router = useRouter();
   const { login, user, isLoading: authLoading, openLoginModal } = useApp();
 
+  const [username, setUsername] = useState('');
   const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
@@ -36,12 +37,15 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const [isSendingCode, setIsSendingCode] = useState(false);
-  const [canInputCode, setCanInputCode] = useState(false);
-  const [sentToEmail, setSentToEmail] = useState(''); 
+  const [canInputVerificationCode, setCanInputVerificationCode] = useState(false);
+  const [sentToEmail, setSentToEmail] = useState('');
   const [resendCountdown, setResendCountdown] = useState(0);
   const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Check if email is provided (trimmed)
+  const hasEmail = email.trim().length > 0;
 
   // Redirect if user is already logged in
   useEffect(() => {
@@ -50,7 +54,7 @@ export default function RegisterPage() {
     }
   }, [authLoading, user, router]);
 
-  // countdown effect
+  // Countdown effect for resend button
   useEffect(() => {
     if (resendCountdown <= 0) return;
     const timer = setInterval(() => {
@@ -59,20 +63,26 @@ export default function RegisterPage() {
     return () => clearInterval(timer);
   }, [resendCountdown]);
 
+  // Reset verification code state when email changes
+  useEffect(() => {
+    setCanInputVerificationCode(false);
+    setSentToEmail('');
+    setVerificationCode('');
+  }, [email]);
+
   const handleSendCode = async () => {
     setError('');
     setSuccess('');
 
     // Validate email
-    // 验证邮箱
     const emailValidation = validateEmail(email);
     if (!emailValidation.isValid) {
       setError(t(emailValidation.error || 'auth.errorInvalidEmail'));
       return;
     }
-    
+
     const sanitizedEmail = emailValidation.sanitizedValue!;
-    
+
     try {
       setIsSendingCode(true);
       await fetch(`${getAPIBaseUrl()}/api/accounts/csrf/`, { method: 'GET', credentials: 'include' });
@@ -96,7 +106,7 @@ export default function RegisterPage() {
         throw new Error(localized);
       }
       const data: SendVerificationCodeResponse = await res.json();
-      setCanInputCode(true);
+      setCanInputVerificationCode(true);
       setSentToEmail(data.email);
       const countdown = typeof data.resend_after_seconds === 'number' && data.resend_after_seconds > 0 ? data.resend_after_seconds : 90;
       setResendCountdown(countdown);
@@ -114,26 +124,42 @@ export default function RegisterPage() {
     setError('');
     setSuccess('');
 
-    if (!nickname || !email || !password || !confirmPassword || !verificationCode) {
+    if (!username || !nickname || !password || !confirmPassword) {
       setError(t('auth.errorRequiredFields'));
       return;
     }
-    
+
+    // Validate username
+    const usernameValidation = validateUsername(username);
+    if (!usernameValidation.isValid) {
+      setError(t(usernameValidation.error || 'validation.username.invalid'));
+      return;
+    }
+
     // Validate nickname
-    // 验证昵称
     const nicknameValidation = validateNickname(nickname);
     if (!nicknameValidation.isValid) {
       setError(t(nicknameValidation.error || 'validation.nickname.invalid'));
       return;
     }
-    
-    // Validate email
-    // 验证邮箱
-    const emailValidation = validateEmail(email);
-    if (!emailValidation.isValid) {
-      setError(t(emailValidation.error || 'auth.errorInvalidEmail'));
-      return;
+
+    // Validate email and verification code (if email provided)
+    let sanitizedEmail = '';
+    if (hasEmail) {
+      const emailValidation = validateEmail(email);
+      if (!emailValidation.isValid) {
+        setError(t(emailValidation.error || 'auth.errorInvalidEmail'));
+        return;
+      }
+      sanitizedEmail = emailValidation.sanitizedValue || '';
+
+      // If email is provided, verification code is required
+      if (!verificationCode || verificationCode.length !== 6) {
+        setError(t('validation.verificationCode.required'));
+        return;
+      }
     }
+
     if (password !== confirmPassword) {
       setError(t('auth.errorPasswordMismatch'));
       return;
@@ -148,23 +174,24 @@ export default function RegisterPage() {
         headers: { 'Content-Type': 'application/json', ...(csrfToken ? { 'X-CSRFToken': csrfToken } : {}) },
         credentials: 'include',
         body: JSON.stringify({
+          username: usernameValidation.sanitizedValue,
           nickname: nicknameValidation.sanitizedValue,
-          email: emailValidation.sanitizedValue,
-          verification_code: verificationCode,
+          email: sanitizedEmail,
+          verification_code: hasEmail ? verificationCode : '',
           password,
           password_confirm: confirmPassword,
         }),
       });
       if (!res.ok) {
         const data: ErrorResponse = await res.json().catch(() => ({ message: 'Register failed' } as ErrorResponse));
-        
+
         // Handle specific error cases
         if (res.status === 429) {
           const msg = (data.message || '').toString();
           const localized429 = msg.startsWith('auth.') || msg.startsWith('validation.') ? t(msg) : t('auth.errorTooManyAttempts');
           throw new Error(localized429);
         }
-        
+
         // Extract error message
         let errorMessage = extractErrorMessage(data, 'Register failed');
 
@@ -180,16 +207,16 @@ export default function RegisterPage() {
             errorMessage = passwordErrors.join(', ');
           }
         }
-        
+
         if (errorMessage.startsWith('validation.') || errorMessage.startsWith('auth.')) {
           errorMessage = t(errorMessage);
         }
 
         throw new Error(errorMessage);
       }
-      
+
       const data: RegisterSuccessResponse = await res.json();
-      
+
       // Verify registration success
       if (!data.success || !data.user) {
         throw new Error('Register failed');
@@ -197,17 +224,16 @@ export default function RegisterPage() {
 
       // Session cookie is set by backend; update UI state
       login(data.user);
-      
+
       // Use window.location for navigation to ensure clean page load
       // This helps prevent any state issues with the router
       window.location.href = '/welcome';
     } catch (e: unknown) {
       // Check if display name is already taken
-      // 检查显示名称是否已被占用
       if (e instanceof Error) {
         const errorMessage = e.message.toLowerCase();
         if (
-          errorMessage.includes('already taken') || 
+          errorMessage.includes('already taken') ||
           errorMessage.includes('已被使用') ||
           errorMessage.includes('display name')
         ) {
@@ -247,6 +273,23 @@ export default function RegisterPage() {
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div className="grid gap-2">
+                <Label htmlFor="username">{t('auth.username')}</Label>
+                <Input
+                  id="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder={t('auth.usernamePlaceholder')}
+                  disabled={isRegistering}
+                  minLength={5}
+                  maxLength={30}
+                  required
+                />
+                <p className="text-sm text-muted-foreground">
+                  {t('auth.usernameHint')}
+                </p>
+              </div>
+
+              <div className="grid gap-2">
                 <Label htmlFor="nickname">{t('auth.nickname')}</Label>
                 <Input
                   id="nickname"
@@ -262,53 +305,54 @@ export default function RegisterPage() {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="email">{t('auth.email')}</Label>
+                <Label htmlFor="email">{t('auth.emailOptional')}</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="name@connect.polyu.hk"
+                  placeholder="name@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isRegistering}
-                  required
                 />
                 <p className="text-sm text-muted-foreground">
-                  {t('auth.emailVerificationHint')}{' '}
-                  {t('auth.emailPrivacyNotice')}
+                  {t('auth.emailOptionalHint')}
                 </p>
               </div>
 
-              <div className="grid gap-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="code">{t('auth.verificationCode')}</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSendCode}
-                    disabled={isSendingCode || isRegistering || resendCountdown > 0}
-                  >
-                    {isSendingCode && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {resendCountdown > 0 ? `${t('auth.resendCode')} (${resendCountdown}s)` : t('auth.sendCode')}
-                  </Button>
+              {/* Verification code section - only shown when email is provided */}
+              {hasEmail && (
+                <div className="grid gap-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="code">{t('auth.verificationCode')}</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSendCode}
+                      disabled={isSendingCode || isRegistering || resendCountdown > 0}
+                    >
+                      {isSendingCode && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {resendCountdown > 0 ? `${t('auth.resendCode')} (${resendCountdown}s)` : t('auth.sendCode')}
+                    </Button>
+                  </div>
+                  <Input
+                    id="code"
+                    placeholder={canInputVerificationCode ? '' : t('auth.verificationCodeInputDisabledHint')}
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value)}
+                    disabled={!canInputVerificationCode || isRegistering}
+                    inputMode="numeric"
+                    pattern="[0-9]{6}"
+                    maxLength={6}
+                    required={hasEmail}
+                  />
+                  {sentToEmail && (
+                    <p className="text-sm text-muted-foreground">
+                      {t('auth.verificationCodeSent', { email: sentToEmail })}
+                    </p>
+                  )}
                 </div>
-                <Input
-                  id="code"
-                  placeholder={t('auth.codeInputDisabledHint')}
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value)}
-                  disabled={!canInputCode || isRegistering}
-                  inputMode="numeric"
-                  pattern="[0-9]{6}"
-                  maxLength={6}
-                  required
-                />
-                {sentToEmail && (
-                  <p className="text-sm text-muted-foreground">
-                    {t('auth.verificationCodeSent', { email: sentToEmail })}
-                  </p>
-                )}
-              </div>
+              )}
 
               <div className="grid gap-2">
                 <Label htmlFor="password">{t('auth.password')}</Label>
@@ -379,5 +423,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-
-

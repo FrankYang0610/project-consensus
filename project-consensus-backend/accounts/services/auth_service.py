@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.core.cache import cache
 from django.utils.translation import get_language_from_request
 
@@ -187,44 +187,70 @@ class AuthService:
             )
 
     @transaction.atomic
-    def register_user(self, *, nickname: str, email: str, code: str, password: str) -> User:
+    def register_user(self, *, username: str, nickname: str, email: str | None, verification_code: str | None, password: str) -> User:
         """
-        Validate verification code and create a new user + profile.
+        Create a new user + profile with username-based registration.
+
+        Args:
+            username: Unique username for login (uniqueness check is done in the serializer)
+            nickname: Display name (uniqueness check is done in the serializer)
+            email: Optional email address (requires code if provided)
+            verification_code: Verification code (required if email is provided)
+            password: User password
 
         Raises:
-            RegistrationError: when verification fails or the email is already used.
+            RegistrationError: when username is already taken or verification fails.
+        
+        Note:
+            Email uniqueness [must] be checked [here] in the service layer after successful
+            verification, and should not be done in the serializer. This ensures the
+            uniqueness check is tied to a verified email, which is important for security.
         """
-        email = email.lower()
 
-        max_attempts = getattr(settings, "AUTH_VERIFICATION_MAX_ATTEMPTS", 5)
-        attempt_key = f"accounts:verify:attempts:{email}"
-        attempts = cache.get(attempt_key, 0)
-        if attempts >= max_attempts:
-            raise RegistrationError("too_many_attempts")
+        # Handle optional email: use None (not empty string) when no email provided
+        email_value: str | None = (email.lower().strip() if email else "") or None
+        
+        # If email is provided, verify the code
+        if email_value:
+            if not verification_code:
+                raise RegistrationError("verification_code_required")
+            
+            # Verify the code
+            max_attempts = getattr(settings, "AUTH_VERIFICATION_MAX_ATTEMPTS", 5)
+            attempt_key = f"accounts:verify:attempts:{email_value}"
+            attempts = cache.get(attempt_key, 0)
+            if attempts >= max_attempts:
+                raise RegistrationError("too_many_attempts")
 
-        code_key = f"accounts:verify:code:{email}"
-        expected_digest = cache.get(code_key)
-        provided_digest = hashlib.sha256(code.encode("utf-8")).hexdigest()
+            code_key = f"accounts:verify:code:{email_value}"
+            expected_digest = cache.get(code_key)
+            provided_digest = hashlib.sha256(verification_code.encode("utf-8")).hexdigest()
 
-        if not expected_digest or not hmac.compare_digest(str(expected_digest), str(provided_digest)):
-            ttl_seconds = getattr(settings, "AUTH_VERIFICATION_CODE_TTL_SECONDS", 60 * 15)
-            cache.set(attempt_key, attempts + 1, timeout=ttl_seconds)
-            raise RegistrationError("invalid_or_expired")
+            if not expected_digest or not hmac.compare_digest(str(expected_digest), str(provided_digest)):
+                ttl_seconds = getattr(settings, "AUTH_VERIFICATION_CODE_TTL_SECONDS", 60 * 15)
+                cache.set(attempt_key, attempts + 1, timeout=ttl_seconds)
+                raise RegistrationError("invalid_or_expired")
+            
+            # Check email is not already registered
+            if User.objects.filter(email=email_value).exists():
+                raise RegistrationError("email_already_registered")
+            
+            # Invalidate code and attempt counter to prevent reuse
+            cache.delete(code_key)
+            cache.delete(attempt_key)
 
-        # Ensure email is not already registered
-        if User.objects.filter(email=email).exists():
-            raise RegistrationError("email_already_registered")
+        try:
+            user = User.objects.create_user(username=username, email=email_value, password=password)
+        except IntegrityError:
+            # IntegrityError is raised when the username is already taken
+            # Because there is a time gap between the uniqueness check in the serializer and the database check
+            raise RegistrationError("username_already_taken")
 
-        user = User.objects.create_user(username=email, email=email, password=password)
         Profile.objects.create(
             user=user,
             nickname=nickname,
             pronouns="",
         )
-
-        # Invalidate code and attempt counter to prevent reuse
-        cache.delete(code_key)
-        cache.delete(attempt_key)
 
         return user
 

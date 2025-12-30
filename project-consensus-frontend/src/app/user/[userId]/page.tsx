@@ -24,12 +24,12 @@ export default function PublicUserPage() {
   const userId = params.userId as string;
   const { user: currentUser } = useApp();
   const { t } = useI18n();
-  
+
   // Scroll to top when page loads
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
-  
+
   const [user, setUser] = useState<PublicUser | null>(null);
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [comments, setComments] = useState<ForumPostComment[]>([]);
@@ -40,8 +40,7 @@ export default function PublicUserPage() {
   const [loadingReviews, setLoadingReviews] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const displayName = user?.name || '';
-  const avatarText = user?.name ? user.name.charAt(0).toUpperCase() : '';
+  const avatarText = user?.nickname ? user.nickname.charAt(0).toUpperCase() : '';
   const formattedPronouns = user?.pronouns || "";
 
   const userStats = user?.stats || {
@@ -158,7 +157,7 @@ export default function PublicUserPage() {
             <div className="flex items-start justify-between mb-6">
               <div>
                 <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-                  {displayName}
+                  {user.nickname}
                 </h1>
               </div>
               {currentUser?.id === userId && (
@@ -176,10 +175,10 @@ export default function PublicUserPage() {
               <Card className="shadow-lg border-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="flex flex-col items-center text-center space-y-4">
-                    {user.avatar ? (
+                    {user?.avatar ? (
                       <Image
                         src={user.avatar}
-                        alt={displayName}
+                        alt={user.nickname}
                         width={80}
                         height={80}
                         className="w-20 h-20 rounded-full object-cover"
@@ -191,7 +190,7 @@ export default function PublicUserPage() {
                     )}
 
                     <div>
-                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{displayName}</h2>
+                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{user.nickname}</h2>
                       {formattedPronouns && (
                         <p className="text-gray-600 dark:text-gray-300 mt-1">{formattedPronouns}</p>
                       )}
@@ -248,8 +247,8 @@ export default function PublicUserPage() {
                     ) : (
                       <div className="space-y-3">
                         {posts.slice(0, 5).map((post) => (
-                          <Link 
-                            key={post.id} 
+                          <Link
+                            key={post.id}
                             href={`/post/${post.id}`}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -302,8 +301,8 @@ export default function PublicUserPage() {
                     ) : (
                       <div className="space-y-3">
                         {comments.slice(0, 5).map((comment) => (
-                          <Link 
-                            key={comment.id} 
+                          <Link
+                            key={comment.id}
                             href={`/post/${comment.postId}#comment-${comment.id}`}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -348,8 +347,8 @@ export default function PublicUserPage() {
                     ) : (
                       <div className="space-y-3">
                         {reviews.slice(0, 5).map((review) => (
-                          <Link 
-                            key={review.id} 
+                          <Link
+                            key={review.id}
                             href={`/courses/${review.courseId}#review-${review.id}`}
                             className="block p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors border border-gray-100 dark:border-slate-700"
                           >

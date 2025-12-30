@@ -20,7 +20,7 @@ import { LoginResponse, LoginApiResponse, ErrorResponse, LoginSuccessResponse } 
 import { getCookie, getAPIBaseUrl } from '@/lib/api/api-utils';
 import { extractErrorMessage } from '@/lib/api/error-utils';
 import { useI18n } from '@/hooks/use-i18n';
-import { cn, validateEmail } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 
 /**
  * 登录模态框属性 / Login modal props
@@ -36,20 +36,20 @@ export function LoginModal({ className, onLoginSuccess }: LoginModalProps) {
   const { login, closeLoginModal, openLoginModal, loginModalOpen } = useApp();
 
   // State management
-  const [email, setEmail] = useState('');
+  const [usernameOrEmail, setUsernameOrEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
   // Reset Form
   const resetForm = () => {
-    setEmail('');
+    setUsernameOrEmail('');
     setPassword('');
     setError('');
   };
 
   // Backend Login API
-  const handleLogin = async (email: string, password: string): Promise<LoginResponse> => {
+  const handleLogin = async (usernameOrEmail: string, password: string): Promise<LoginResponse> => {
     try {
       // Ensure CSRF cookie exists (safe GET)
       await fetch(`${getAPIBaseUrl()}/api/accounts/csrf/`, { method: 'GET', credentials: 'include' });
@@ -62,7 +62,7 @@ export function LoginModal({ className, onLoginSuccess }: LoginModalProps) {
         },
         credentials: 'include',
         body: JSON.stringify({
-          email,
+          username_or_email: usernameOrEmail.trim(),
           password,
         }),
       });
@@ -103,24 +103,15 @@ export function LoginModal({ className, onLoginSuccess }: LoginModalProps) {
     setIsLoading(true);
     setError('');
 
-    // Basic Verification, needs more cases
-    if (!email || !password) {
+    // Basic Verification
+    if (!usernameOrEmail || !password) {
       setError(t('auth.errorRequiredFields'));
       setIsLoading(false);
       return;
     }
 
-    // Validate email
-    // 验证邮箱
-    const emailValidation = validateEmail(email);
-    if (!emailValidation.isValid) {
-      setError(t(emailValidation.error || 'auth.errorInvalidEmail'));
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      const result = await handleLogin(emailValidation.sanitizedValue!, password);
+      const result = await handleLogin(usernameOrEmail, password);
 
       if (result.success && result.user) {
         // Use AuthContext to save user information
@@ -189,15 +180,15 @@ export function LoginModal({ className, onLoginSuccess }: LoginModalProps) {
 
             <form onSubmit={handleSubmit}>
               <div className="flex flex-col gap-4">
-                {/* Email Input */}
+                {/* Username or Email Input */}
                 <div className="grid gap-2">
-                  <Label htmlFor="email">{t('auth.email')}</Label>
+                  <Label htmlFor="usernameOrEmail">{t('auth.usernameOrEmail')}</Label>
                   <Input
-                    id="email"
-                    type="email"
-                    placeholder="name@connect.polyu.hk"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    id="usernameOrEmail"
+                    type="text"
+                    placeholder={t('auth.usernameOrEmailPlaceholder')}
+                    value={usernameOrEmail}
+                    onChange={(e) => setUsernameOrEmail(e.target.value)}
                     disabled={isLoading}
                     required
                   />

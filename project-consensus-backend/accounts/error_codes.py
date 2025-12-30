@@ -11,6 +11,14 @@ NICKNAME_TOO_LONG = "validation.nickname.tooLong"
 NICKNAME_ALREADY_TAKEN = "validation.nickname.alreadyTaken"
 NICKNAME_INVALID = "validation.nickname.invalid"
 
+# Username validation errors
+USERNAME_REQUIRED = "validation.username.required"
+USERNAME_TOO_SHORT = "validation.username.tooShort"  # min 5 characters
+USERNAME_TOO_LONG = "validation.username.tooLong"  # max 30 characters
+USERNAME_INVALID = "validation.username.invalid"
+USERNAME_INVALID_PERIOD_FORMAT = "validation.username.invalidPeriodFormat"  # periods at start/end or consecutive
+USERNAME_ALREADY_TAKEN = "validation.username.alreadyTaken"
+
 # Email validation errors
 EMAIL_REQUIRED = "validation.email.required"
 EMAIL_INVALID = "validation.email.invalid"
