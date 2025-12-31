@@ -512,7 +512,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
     <div className="min-h-screen bg-background">
       <SiteNavigation showBackButton onBackClick={() => router.back()} />
       <main className="w-full py-4 sm:py-8">
-        <div className="w-full p-2 sm:p-6">
+        <div className="w-full px-0 py-2 sm:p-6">
           <div className="max-w-6xl mx-auto grid grid-cols-1 gap-4 sm:gap-6 pt-2">
             <div className="px-1 sm:px-4">
               <CourseDetailCard
@@ -551,7 +551,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
                     const isExpanded = expandedReviews.has(review.id);
                     const replies = isExpanded ? (repliesByReview[review.id] || []) : [];
                     return (
-                      <div key={review.id} id={`review-${review.id}`} className="space-y-0.5">
+                      <div key={review.id} id={`review-${review.id}`} className="space-y-0">
                         {/* Review card */}
                         <CourseReviewCard
                           review={review}
@@ -584,7 +584,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
 
                         {/* Replies area: render only if expanded AND there is something to show */}
                         {(isExpanded && (replyComposerOpen.has(review.id) || replies.length > 0)) && (
-                          <div className="ml-12 space-y-2">
+                          <div className="ml-12 space-y-1">
                             {/* Inline reply composer: shown only when opened via "Add Comment" */}
                             {replyComposerOpen.has(review.id) && (
                               <div className="p-2 border rounded">

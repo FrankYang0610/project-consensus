@@ -9,7 +9,8 @@ import {
   Edit3,
   Calendar,
   Plus,
-  Trash2
+  Trash2,
+  Info
 } from "lucide-react";
 
 import {
@@ -17,6 +18,11 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/use-i18n";
 import { useApp } from "@/contexts/AppContext";
@@ -358,7 +364,28 @@ export function CourseReviewCard({
           </div>
 
           {/* Time info: show both created and updated if edited */}
-          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+          {/* Mobile: Info button */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild className="sm:hidden">
+              <button className="inline-flex items-center justify-center h-7 w-7 rounded-md hover:bg-muted transition-colors text-muted-foreground">
+                <Info className="w-4 h-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="left" align="center" className="p-3 space-y-1.5 min-w-[200px]">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Calendar className="w-3.5 h-3.5 shrink-0" />
+                <span>{t("courses.review.createdAt", { date: createdAtFormatted })}</span>
+              </div>
+              {review.isEdited && updatedAtFormatted && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Edit3 className="w-3.5 h-3.5 shrink-0" />
+                  <span>{t("courses.review.updatedAt", { date: updatedAtFormatted })}</span>
+                </div>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {/* Desktop: Full text */}
+          <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
             <span>{t("courses.review.createdAt", { date: createdAtFormatted })}</span>
             {review.isEdited && updatedAtFormatted && (
               <>

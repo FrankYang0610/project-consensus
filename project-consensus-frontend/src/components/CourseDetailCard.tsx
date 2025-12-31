@@ -1214,21 +1214,23 @@ export function CourseDetailCard({
                 </div>
               </div>
               {/* Right cluster: Rating + Total + Apply */}
-              <div className="flex items-center gap-2 sm:gap-3 flex-1 md:justify-end flex-wrap">
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <Label className="text-xs w-10 sm:w-12 shrink-0 text-muted-foreground">{t("courses.detail.reviews.rating.label")}</Label>
-                  <div className="flex-1 min-w-[140px] sm:min-w-[240px] max-w-[360px]">
-                    <RatingSlider
-                      minVal={currentFilterState.ratingMin}
-                      maxVal={currentFilterState.ratingMax}
-                      onRangeChange={currentCallbacks.onRatingChange}
-                    />
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 flex-1 md:justify-end">
+                <div className="flex items-center gap-2 sm:gap-3 flex-wrap flex-1">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <Label className="text-xs w-10 sm:w-12 shrink-0 text-muted-foreground">{t("courses.detail.reviews.rating.label")}</Label>
+                    <div className="flex-1 min-w-[140px] sm:min-w-[240px] max-w-[360px]">
+                      <RatingSlider
+                        minVal={currentFilterState.ratingMin}
+                        maxVal={currentFilterState.ratingMax}
+                        onRangeChange={currentCallbacks.onRatingChange}
+                      />
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <div className="text-xs text-muted-foreground whitespace-nowrap">
+                  <div className="text-xs text-muted-foreground whitespace-nowrap shrink-0">
                     {t("courses.detail.reviews.totalReviews", { count: filteredReviewsCount })}
                   </div>
+                </div>
+                <div className="flex justify-end sm:justify-start shrink-0">
                   <Button
                     size="sm"
                     className="h-8 px-3 text-xs sm:h-9 sm:px-4 sm:text-sm"
