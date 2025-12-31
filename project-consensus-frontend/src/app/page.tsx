@@ -10,6 +10,8 @@ import CreateForumPostButton from "@/components/CreateForumPostButton";
 import { useApp } from "@/contexts/AppContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Info } from "lucide-react";
 import { toggleLikeForumPost, fetchForumPosts } from "@/lib/api/forum-post";
 import { fetchCourseReviews } from "@/lib/api/course";
 import type { ForumPost, CourseReview, FetchForumPostsParams } from "@/types";
@@ -204,7 +206,13 @@ function HomePageContent() {
             </section>
           )}
 
-          <div className="pt-4 sm:pt-6">
+          <div className="pt-4 sm:pt-6 space-y-3">
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                {t("forum.forumTip")}
+              </AlertDescription>
+            </Alert>
             <ForumFilterBar
               initialSort={initialSort}
               initialSearch={searchQuery ?? ""}
