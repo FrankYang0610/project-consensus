@@ -171,6 +171,7 @@
   },
   "forum": {
     "searchPlaceholder": "Search posts, comments...",
+    "forumTip": "Below is the forum. To review a course, go to \"Courses/Teachers\" → \"Browse Courses\", select a course and submit your review.",
     "sortBy": {
       "default": "Default (Newest Created)",
       "newest": "Newest Created",
