@@ -193,8 +193,6 @@ export function ForumPostPreviewCard({
 
       <Link
         href={`/post/${post.id}`}
-        target="_blank"
-        rel="noopener noreferrer"
         className="block"
       >
         <CardContent className="pt-0 pb-0 px-4 flex flex-col cursor-pointer gap-1">
