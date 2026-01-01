@@ -142,7 +142,7 @@ export function sanitizeHtml(html: string): string {
     // Normalize and validate <a href> to http/https only
     if (node.nodeName === 'A' && data.attrName === 'href') {
       // If user typed a bare domain like "apple.com", normalize to https://
-      let value = normalizeBareDomainUrl((data.attrValue || '').trim());
+      const value = normalizeBareDomainUrl((data.attrValue || '').trim());
       data.attrValue = value;
 
       try {
@@ -161,7 +161,7 @@ export function sanitizeHtml(html: string): string {
     // Validate <img src> to allowed image hosts only
     if (node.nodeName === 'IMG' && data.attrName === 'src') {
       // If user typed a bare domain like "image.polyu.life/xxx.png", normalize to https://
-      let value = normalizeBareDomainUrl((data.attrValue || '').trim());
+      const value = normalizeBareDomainUrl((data.attrValue || '').trim());
       data.attrValue = value;
 
       try {

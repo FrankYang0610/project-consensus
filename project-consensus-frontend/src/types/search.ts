@@ -15,6 +15,7 @@ export interface SearchResultMetadata {
   subject_code?: string;
   department?: string;
   rating?: number;
+  teacher_names?: string;
 
   // Forum/Review metadata
   parent_id?: string;

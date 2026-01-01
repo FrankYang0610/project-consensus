@@ -2,11 +2,12 @@
 Search services for global search functionality.
 """
 
-from django.db.models import Q, F, Value, FloatField, Case, When, Count
+from django.db.models import F, Value, FloatField, Case, When, Prefetch
 from django.contrib.postgres.search import TrigramSimilarity
 from django.db.models.functions import Greatest, Coalesce, Substr, Least, Trim, NullIf
 
 from courses.models import Course, CourseReview
+from courses.services.course_get_teachers import sort_teachers_by_surname
 from forum.models import ForumPost, ForumPostComment
 from wiki.models import WikiPage
 from teachers.models import Teacher
@@ -61,23 +62,36 @@ def search_courses(query: str, similarity_threshold: float, is_short_query: bool
 
     # Optimize field loading and ordering
     courses = courses_qs.only(
-        'course_id', 'subject_code', 'title', 'ai_summary', 'department', 
+        'course_id', 'subject_code', 'title', 'ai_summary', 'department',
         'rating_score', 'last_updated', 'rating_reviews_count'
+    ).prefetch_related(
+        Prefetch('teachers', queryset=Teacher.objects.only('id', 'name'))
     ).order_by('-final_score', '-last_updated')[:MAX_RESULTS_PER_TYPE]
     
     results = []
     for course in courses:
         snippet = course.snippet or ''
+
+        teacher_names = ', '.join(
+            (t.name or '')
+            for t in sort_teachers_by_surname(course.teachers.all())
+            if (t.name or '').strip()
+        ).strip()
+
+        metadata = {
+            'subject_code': course.subject_code,
+            'department': course.department,
+            'rating': course.rating_score,
+            'created_at': course.last_updated.isoformat(),
+        }
+        if teacher_names:
+            metadata['teacher_names'] = teacher_names
+
         results.append({
             **build_search_result(
                 'course', course.course_id, f"{course.subject_code} {course.title}", 
                 snippet, f"/courses/{course.course_id}",
-                {
-                    'subject_code': course.subject_code,
-                    'department': course.department,
-                    'rating': course.rating_score,
-                    'created_at': course.last_updated.isoformat()
-                }
+                metadata
             ),
             'score': float(course.final_score)
         })

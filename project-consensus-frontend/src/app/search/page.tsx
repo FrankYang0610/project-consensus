@@ -6,10 +6,10 @@ import { searchGlobal } from '@/lib/api/search';
 import { SearchResult, SearchResultType, SearchParams } from '@/types/search';
 import { SearchResultCard } from '@/components/SearchResultCard';
 import { useI18n } from '@/hooks/use-i18n';
-import { Search, Loader2, Home } from 'lucide-react';
+import { Search, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
 import { useInfiniteList } from '@/hooks/use-infinite-list';
+import { SiteNavigation } from '@/components/SiteNavigation';
 
 function SearchContent() {
   const { t } = useI18n();
@@ -90,7 +90,7 @@ function SearchContent() {
 
   if (!query.trim()) {
     return (
-      <div className="container mx-auto px-4 py-16">
+      <div className="py-16">
         <div className="max-w-2xl mx-auto text-center">
           <Search className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
           <h1 className="text-2xl font-bold mb-2">
@@ -105,18 +105,7 @@ function SearchContent() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto">
-        {/* Back to Home Button */}
-        <div className="mb-4">
-          <Link href="/">
-            <Button variant="ghost" size="sm">
-              <Home className="w-4 h-4 mr-2" />
-              {t('search.backToHome')}
-            </Button>
-          </Link>
-        </div>
-
+    <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold mb-2">
@@ -212,6 +201,15 @@ function SearchContent() {
             </div>
           </>
         )}
+    </div>
+  );
+}
+
+function SearchPageLoading() {
+  return (
+    <div className="py-16">
+      <div className="max-w-2xl mx-auto text-center">
+        <Loader2 className="w-16 h-16 mx-auto mb-4 animate-spin text-muted-foreground" />
       </div>
     </div>
   );
@@ -219,15 +217,18 @@ function SearchContent() {
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-2xl mx-auto text-center">
-          <Loader2 className="w-16 h-16 mx-auto mb-4 animate-spin text-muted-foreground" />
-        </div>
+    <>
+      <SiteNavigation />
+      <div className="min-h-screen bg-background">
+        <main className="w-full py-6 sm:py-8">
+          <div className="container mx-auto px-4 max-w-7xl">
+            <Suspense fallback={<SearchPageLoading />}>
+              <SearchContent />
+            </Suspense>
+          </div>
+        </main>
       </div>
-    }>
-      <SearchContent />
-    </Suspense>
+    </>
   );
 }
 
