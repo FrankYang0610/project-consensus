@@ -98,11 +98,14 @@ export function SearchResultCard({ result, className, highlight }: SearchResultC
   // Strip HTML and prepare snippet
   const cleanSnippet = stripHtml(result.snippet);
 
+  const courseTeacherNames =
+    result.type === 'course' && typeof result.metadata.teacher_names === 'string'
+      ? result.metadata.teacher_names.trim()
+      : '';
+
   return (
     <Link
       href={result.url}
-      target="_blank"
-      rel="noopener noreferrer"
       className={cn(
         "block p-4 rounded-lg border transition-colors",
         "hover:bg-accent hover:border-accent-foreground/20",
@@ -144,9 +147,15 @@ export function SearchResultCard({ result, className, highlight }: SearchResultC
       </div>
 
       {/* Snippet with highlight */}
-      <p className="text-sm text-muted-foreground line-clamp-2 mb-2 ml-[52px]">
+      <p className="text-sm text-muted-foreground line-clamp-2 mb-1 ml-[52px]">
         {renderHighlightedText(getHighlightParts(cleanSnippet, highlight))}
       </p>
+
+      {courseTeacherNames && (
+        <p className="text-xs text-muted-foreground line-clamp-1 mb-2 ml-[52px]">
+          {t('courses.card.teachers', { names: courseTeacherNames })}
+        </p>
+      )}
 
       {/* Metadata footer */}
       <div className="flex items-center gap-4 text-xs text-muted-foreground ml-[52px]">

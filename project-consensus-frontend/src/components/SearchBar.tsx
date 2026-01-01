@@ -8,6 +8,7 @@ import { SearchResult } from '@/types/search';
 import { stripHtml, getHighlightParts, getSearchTypeLabel, validateSearchQuery, type TextPart } from '@/lib/search-utils';
 import { useI18n } from '@/hooks/use-i18n';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 // Render highlighted text from TextPart array
 function renderHighlightedText(parts: TextPart[]): React.ReactNode {
@@ -42,6 +43,7 @@ export function SearchBar({
   showSuggestions = true,
 }: SearchBarProps) {
   const { t } = useI18n();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -106,8 +108,8 @@ export function SearchBar({
       if (onSubmit) {
         onSubmit(validation.sanitizedValue!);
       } else {
-        // Default behavior - open search page in new tab
-        window.open(`/search?q=${encodeURIComponent(validation.sanitizedValue!)}`, '_blank', 'noopener,noreferrer');
+        // Default behavior - navigate to search page
+        router.push(`/search?q=${encodeURIComponent(validation.sanitizedValue!)}`);
       }
     }
   };
@@ -135,7 +137,7 @@ export function SearchBar({
     } else if (e.key === 'Enter' && selectedIndex >= 0) {
       e.preventDefault();
       const selected = suggestions[selectedIndex];
-      window.open(selected.url, '_blank', 'noopener,noreferrer');
+      router.push(selected.url);
       setShowDropdown(false);
     } else if (e.key === 'Escape') {
       setShowDropdown(false);
@@ -182,8 +184,6 @@ export function SearchBar({
               <Link
                 key={`${suggestion.type}-${suggestion.id}`}
                 href={suggestion.url}
-                target="_blank"
-                rel="noopener noreferrer"
                 onClick={() => setShowDropdown(false)}
                 className={cn(
                   "block px-4 py-3 border-b last:border-b-0 transition-colors",
@@ -209,8 +209,6 @@ export function SearchBar({
           </div>
           <Link
             href={`/search?q=${encodeURIComponent(searchQuery)}`}
-            target="_blank"
-            rel="noopener noreferrer"
             onClick={() => setShowDropdown(false)}
             className="block px-4 py-2 text-sm text-center text-primary hover:bg-accent border-t font-medium"
           >
