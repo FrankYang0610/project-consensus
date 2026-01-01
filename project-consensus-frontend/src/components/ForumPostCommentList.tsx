@@ -325,7 +325,7 @@ export function ForumPostCommentList({
   }, [composerValue]);
 
   return (
-    <div className="mt-6 px-4 sm:px-0">
+    <div className="mt-6 px-1">
       {/* 评论列表头部 / Comment list header */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="flex items-center gap-2 text-lg font-semibold">
