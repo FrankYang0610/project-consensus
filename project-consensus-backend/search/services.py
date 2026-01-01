@@ -2,7 +2,7 @@
 Search services for global search functionality.
 """
 
-from django.db.models import Q, F, Value, FloatField, Case, When, Count, Prefetch
+from django.db.models import F, Value, FloatField, Case, When, Prefetch
 from django.contrib.postgres.search import TrigramSimilarity
 from django.db.models.functions import Greatest, Coalesce, Substr, Least, Trim, NullIf
 
