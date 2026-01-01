@@ -14,59 +14,58 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useI18n } from "@/hooks/use-i18n";
 import { TeacherPreviewCard } from "@/components/TeacherPreviewCard";
-import { fetchTeachers } from "@/lib/api/teacher";
+import { fetchTeachers, fetchTeacherStats } from "@/lib/api/teacher";
 import type { Teacher } from "@/types";
 import { useInfiniteList } from "@/hooks/use-infinite-list";
 import { useRouter, useSearchParams } from "next/navigation";
+
+// Sort orders
+const TEACHER_SORT_ORDERS = {
+  name: { ordering: "name", labelKey: "teachers.sortBy.name" },
+  rating: { ordering: "-rating_overall", labelKey: "teachers.sortBy.rating" },
+  reviews: { ordering: "-rating_reviews_count", labelKey: "teachers.sortBy.reviews" },
+  department: { ordering: "department", labelKey: "teachers.sortBy.department" },
+  updated: { ordering: "-updated_at", labelKey: "teachers.sortBy.updated" },
+} as const;
+
+type SortKey = keyof typeof TEACHER_SORT_ORDERS;
+const DEFAULT_SORT: SortKey = "name";
 
 function TeachersPageContent() {
   const { t } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // State
-  const [searchInput, setSearchInput] = React.useState<string>(
-    () => searchParams.get("q") || ""
-  );
-  const [sortBy, setSortBy] = React.useState<string>("name");
+  // URL is the single source of truth for filters
+  const query = (searchParams.get("q") || "").trim();
+  const sortKey = (searchParams.get("sort") || DEFAULT_SORT) as SortKey;
+  const sortOrder = TEACHER_SORT_ORDERS[sortKey] || TEACHER_SORT_ORDERS[DEFAULT_SORT];
 
-  // Committed query comes from URL (?q=); input is only committed on Enter or clear
-  const committedQuery = React.useMemo(() => (searchParams.get("q") || "").trim(), [searchParams]);
+  // Local state for search input (only committed on Enter)
+  const [searchInput, setSearchInput] = React.useState<string>(query);
 
-  // Keep input in sync when URL ?q changes (e.g., on submit/replace)
+  // Keep input in sync when URL ?q changes
   React.useEffect(() => {
-    const qp = searchParams.get("q") || "";
-    // Only update if different to avoid cursor jumps while typing
-    if (qp !== searchInput) setSearchInput(qp);
+    if (query !== searchInput) setSearchInput(query);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  }, [query]);
 
-  // Map sort options to backend ordering (stable identity)
-  const getSortOrdering = React.useCallback((sort: string): string => {
-    switch (sort) {
-      case "rating":
-        return "-rating_overall";
-      case "reviews":
-        return "-rating_reviews_count";
-      case "department":
-        return "department";
-      case "updated":
-        return "-updated_at";
-      case "name":
-      default:
-        return "name";
-    }
-  }, []);
+  // Build URL and API params from the same source
+  const updateUrl = React.useCallback((params: { q?: string; sort?: SortKey }) => {
+    const qs = new URLSearchParams();
+    if (params.q) qs.set("q", params.q);
+    if (params.sort && params.sort !== DEFAULT_SORT) qs.set("sort", params.sort);
+    router.replace(`/teachers${qs.toString() ? `?${qs.toString()}` : ""}`);
+  }, [router]);
 
-  // Unified infinite list for teachers via fetcher
-  const buildTeachersParams = React.useCallback(() => ({
-    q: committedQuery || undefined,
-    ordering: getSortOrdering(sortBy),
-  }), [committedQuery, sortBy, getSortOrdering]);
+  // API params derived directly from URL state
+  const apiParams = React.useMemo(() => ({
+    q: query || undefined,
+    ordering: sortOrder.ordering,
+  }), [query, sortOrder.ordering]);
 
   const {
     items: teachers,
-    setItems: setTeachers,
     loaderRef: hookLoaderRef,
     hasMore,
     loading,
@@ -77,35 +76,44 @@ function TeachersPageContent() {
     totalCount: teachersTotalCount,
   } = useInfiniteList<Teacher, { q?: string; ordering?: string }>({
     pageFetcher: fetchTeachers,
-    initialParams: buildTeachersParams(),
+    initialParams: apiParams,
     pageSize: 20,
     dedupeKey: (t) => t.id,
+    cacheKey: "teachers-list",
   });
 
-  const countForDisplay = teachersTotalCount ?? teachers.length;
-
-  // Reload when committed query (URL) or sort changes
+  // Fetch total teacher count from stats (only when not searching)
+  const [statsTotal, setStatsTotal] = React.useState<number | null>(null);
   React.useEffect(() => {
-    reset(buildTeachersParams());
-  }, [committedQuery, sortBy, buildTeachersParams, reset]);
+    if (!query) {
+      fetchTeacherStats()
+        .then((stats) => setStatsTotal(stats.teachers))
+        .catch(() => setStatsTotal(null));
+    }
+  }, [query]);
 
-  // Handle search form submit: commit input to URL (?q=) and reload results
+  // Use stats total when not searching, otherwise use search results count
+  const countForDisplay = query
+    ? (teachersTotalCount ?? teachers.length)
+    : (statsTotal ?? teachersTotalCount ?? teachers.length);
+
+  // Reload when URL params change
+  React.useEffect(() => {
+    reset(apiParams);
+  }, [apiParams, reset]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const q = searchInput.trim();
-    // Reflect query in URL
-    const qs = new URLSearchParams();
-    if (q) qs.set("q", q);
-    router.replace(`/teachers${qs.toString() ? `?${qs.toString()}` : ""}`);
-    // Trigger an immediate search using the current input
-    reset({ q: q || undefined, ordering: getSortOrdering(sortBy) });
+    updateUrl({ q: searchInput.trim() || undefined, sort: sortKey });
   };
 
   const handleClearSearch = () => {
     setSearchInput("");
-    // Clear query param from URL
-    router.replace(`/teachers`);
-    reset({ q: undefined, ordering: getSortOrdering(sortBy) });
+    updateUrl({ q: undefined, sort: sortKey });
+  };
+
+  const handleSortChange = (newSort: string) => {
+    updateUrl({ q: query || undefined, sort: newSort as SortKey });
   };
 
   return (
@@ -116,7 +124,7 @@ function TeachersPageContent() {
         <p className="text-muted-foreground">
           {countForDisplay > 0 && t("teachers.total", { count: countForDisplay })}
         </p>
-        {committedQuery && (
+        {query && (
           <p className="text-muted-foreground text-xs mt-1">
             {t("teachers.approximateCountNote")}
           </p>
@@ -154,33 +162,19 @@ function TeachersPageContent() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="w-full sm:w-auto">
-                  {t("teachers.sort")}: {sortBy === "name" && t("teachers.sortBy.name")}
-                  {sortBy === "rating" && t("teachers.sortBy.rating")}
-                  {sortBy === "reviews" && t("teachers.sortBy.reviews")}
-                  {sortBy === "department" && t("teachers.sortBy.department")}
-                  {sortBy === "updated" && t("teachers.sortBy.updated")}
+                  {t("teachers.sort")}: {t(sortOrder.labelKey)}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuRadioGroup
-                  value={sortBy}
-                  onValueChange={setSortBy}
+                  value={sortKey}
+                  onValueChange={handleSortChange}
                 >
-                  <DropdownMenuRadioItem value="name">
-                    {t("teachers.sortBy.name")}
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="rating">
-                    {t("teachers.sortBy.rating")}
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="reviews">
-                    {t("teachers.sortBy.reviews")}
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="department">
-                    {t("teachers.sortBy.department")}
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="updated">
-                    {t("teachers.sortBy.updated")}
-                  </DropdownMenuRadioItem>
+                  {(Object.keys(TEACHER_SORT_ORDERS) as SortKey[]).map((key) => (
+                    <DropdownMenuRadioItem key={key} value={key}>
+                      {t(TEACHER_SORT_ORDERS[key].labelKey)}
+                    </DropdownMenuRadioItem>
+                  ))}
                 </DropdownMenuRadioGroup>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -216,8 +210,8 @@ function TeachersPageContent() {
             <Card>
               <CardContent className="py-12 text-center">
                 <p className="text-muted-foreground">
-                  {committedQuery
-                    ? t("teachers.noResults", { query: committedQuery })
+                  {query
+                    ? t("teachers.noResults", { query })
                     : t("teachers.noTeachers")}
                 </p>
               </CardContent>

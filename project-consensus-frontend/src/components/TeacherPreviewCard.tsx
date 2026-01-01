@@ -27,8 +27,6 @@ export function TeacherPreviewCard({ teacher }: TeacherPreviewCardProps) {
   return (
     <Link
       href={`/teachers/${teacher.id}`}
-      target="_blank"
-      rel="noopener noreferrer"
     >
       <Card className="h-full transition-all hover:shadow-md hover:border-primary/50 cursor-pointer">
         <CardContent className="p-4 sm:p-5">

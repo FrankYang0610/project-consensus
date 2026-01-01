@@ -51,6 +51,7 @@ function HomePageContent() {
     },
     pageSize: 12,
     dedupeKey: (p) => p.id,
+    cacheKey: "home-forum-posts",  // Cache key for sessionStorage
   });
 
   // Light-weight lock to prevent UI and backend state from fighting when "clicking like/unlike" multiple times

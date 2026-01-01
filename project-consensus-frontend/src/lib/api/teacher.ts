@@ -6,6 +6,21 @@ import type {
 } from "@/types";
 import { apiGet, HttpError } from "./api-utils";
 
+export interface TeacherStats {
+  teachers: number;
+}
+
+/**
+ * Fetch teacher stats (total count)
+ * @param init - Optional fetch init options
+ * @returns Teacher stats object
+ */
+export async function fetchTeacherStats(
+  init?: RequestInit
+): Promise<TeacherStats> {
+  return apiGet<TeacherStats>("/api/teachers/stats/", init);
+}
+
 /**
  * Fetch a single teacher by ID
  * @param teacherId - Teacher UUID

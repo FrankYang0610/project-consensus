@@ -18,11 +18,6 @@ export default function NotificationsPage() {
   const { isLoggedIn, openLoginModal } = useApp();
   const [busy, setBusy] = React.useState<boolean>(false);
 
-  const openInNewTab = React.useCallback((url: string) => {
-    const w = window.open(url, "_blank", "noopener,noreferrer");
-    if (w) w.opener = null;
-  }, []);
-
   const {
     items,
     setItems,
@@ -50,15 +45,15 @@ export default function NotificationsPage() {
       } else if (n.courseReviewId) {
         hash = `#review-${n.courseReviewId}`;
       }
-      openInNewTab(`/courses/${n.courseId}${hash}`);
+      router.push(`/courses/${n.courseId}${hash}`);
       return;
     }
     if (n.forumPostId) {
       const hash = n.forumPostCommentId ? `#comment-${n.forumPostCommentId}` : '';
-      openInNewTab(`/post/${n.forumPostId}${hash}`);
+      router.push(`/post/${n.forumPostId}${hash}`);
       return;
     }
-  }, [openInNewTab]);
+  }, [router]);
 
   const displayActor = (n: NotificationItem): string => {
     return n.actor?.name || 'Someone';
@@ -111,7 +106,7 @@ export default function NotificationsPage() {
   };
 
   const handleClickItem = async (n: NotificationItem) => {
-    // Open target immediately (avoid popup blockers due to async work)
+    // Navigate to target immediately
     navigateToTarget(n);
 
     if (!n.isRead) {
