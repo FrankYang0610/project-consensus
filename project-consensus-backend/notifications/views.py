@@ -159,7 +159,7 @@ def notifications_sse_status(request):
     Returns SSE availability status.
     Clients should check this before attempting to open an SSE connection.
     """
-    sse_enabled = getattr(settings, "NOTIFICATIONS_SSE_ENABLED", True)
+    sse_enabled = getattr(settings, "NOTIFICATIONS_SSE_ENABLED", False)
     return Response({"sseEnabled": sse_enabled})
 
 
@@ -179,7 +179,7 @@ async def notifications_stream(request: HttpRequest):
     - The streaming loop uses only Redis, which is also non-blocking
     """
     # 0. Check if SSE is enabled
-    if not getattr(settings, "NOTIFICATIONS_SSE_ENABLED", True):
+    if not getattr(settings, "NOTIFICATIONS_SSE_ENABLED", False):
         return HttpResponse(
             "SSE is disabled on this server",
             status=503,

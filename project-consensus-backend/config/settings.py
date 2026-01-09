@@ -392,7 +392,7 @@ ALLOWED_IMAGE_HOSTS = [
 # Master switch to enable/disable SSE real-time notifications
 # When disabled, the SSE stream endpoint returns 503 and clients fall back to polling on refresh
 # This helps reduce server CPU usage when real-time updates are not needed
-NOTIFICATIONS_SSE_ENABLED = env.bool("NOTIFICATIONS_SSE_ENABLED", default=True)
+NOTIFICATIONS_SSE_ENABLED = env.bool("NOTIFICATIONS_SSE_ENABLED", default=False)
 
 # Redis URL used by notifications runtime (falls back to CELERY_BROKER_URL if unset)
 # Note: Uses database /1 (different from Celery's /0) to separate notification data from task queue data
