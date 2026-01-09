@@ -152,6 +152,17 @@ def notifications_delete_read(request):
     return Response({"success": True})
 
 
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def notifications_sse_status(request):
+    """
+    Returns SSE availability status.
+    Clients should check this before attempting to open an SSE connection.
+    """
+    sse_enabled = getattr(settings, "NOTIFICATIONS_SSE_ENABLED", True)
+    return Response({"sseEnabled": sse_enabled})
+
+
 async def notifications_stream(request: HttpRequest):
     """
     Async SSE endpoint for real-time notifications.
@@ -167,6 +178,14 @@ async def notifications_stream(request: HttpRequest):
     - Database connections are only used briefly during initial query, then released
     - The streaming loop uses only Redis, which is also non-blocking
     """
+    # 0. Check if SSE is enabled
+    if not getattr(settings, "NOTIFICATIONS_SSE_ENABLED", True):
+        return HttpResponse(
+            "SSE is disabled on this server",
+            status=503,
+            content_type="text/plain"
+        )
+
     # 1. Authentication check (must use sync_to_async for lazy user access)
     user = await sync_to_async(lambda: request.user)()
     if not user.is_authenticated:

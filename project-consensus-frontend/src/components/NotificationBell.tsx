@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Bell } from "lucide-react";
 import { useI18n } from "@/hooks/use-i18n";
 import { useApp } from "@/contexts/AppContext";
-import { fetchUnreadCount, openNotificationSSE } from "@/lib/api/notification";
+import { fetchUnreadCount, fetchSSEStatus, openNotificationSSE } from "@/lib/api/notification";
 import { cn } from "@/lib/utils";
 
 export function NotificationBell() {
@@ -18,32 +18,47 @@ export function NotificationBell() {
     let es: EventSource | null = null;
     let cancelled = false;
     (async () => {
+      // Always fetch unread count first (works regardless of SSE status)
       try {
         const n = await fetchUnreadCount();
         if (!cancelled) setUnread(n);
       } catch {
         // ignore
       }
+
+      // Check if SSE is enabled on the server before attempting connection
+      let sseEnabled = false;
       try {
-        // Session cookie-based SSE
-        es = await openNotificationSSE();
-        es.onmessage = (evt) => {
-          try {
-            const data = JSON.parse(evt.data || "{}");
-            if (data && data.type === "notification" && typeof data.unreadCount === "number") {
-              setUnread(data.unreadCount);
-            }
-          } catch {
-            // Ignore JSON parse errors from malformed or irrelevant SSE data.
-            // Only well-formed notification messages are processed; others can be safely ignored.
-          }
-        };
-        es.onerror = () => {
-          // Browser may auto-reconnect. We don't need special handling.
-        };
+        sseEnabled = await fetchSSEStatus();
       } catch {
-        // ignore SSE failure in non-HTTP environments
+        // If status check fails, assume SSE is disabled
+        sseEnabled = false;
       }
+
+      // Only connect to SSE if it's enabled
+      if (sseEnabled) {
+        try {
+          // Session cookie-based SSE
+          es = await openNotificationSSE();
+          es.onmessage = (evt) => {
+            try {
+              const data = JSON.parse(evt.data || "{}");
+              if (data && data.type === "notification" && typeof data.unreadCount === "number") {
+                setUnread(data.unreadCount);
+              }
+            } catch {
+              // Ignore JSON parse errors from malformed or irrelevant SSE data.
+              // Only well-formed notification messages are processed; others can be safely ignored.
+            }
+          };
+          es.onerror = () => {
+            // Browser may auto-reconnect. We don't need special handling.
+          };
+        } catch {
+          // ignore SSE failure in non-HTTP environments
+        }
+      }
+      // When SSE is disabled, unread count will only update on page refresh
     })();
     return () => {
       cancelled = true;

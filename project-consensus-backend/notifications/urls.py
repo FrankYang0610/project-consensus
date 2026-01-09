@@ -8,6 +8,7 @@ urlpatterns = [
     path("mark_read/", views.notifications_mark_read, name="notifications_mark_read"),
     path("mark_all_read/", views.notifications_mark_all_read, name="notifications_mark_all_read"),
     path("delete_read/", views.notifications_delete_read, name="notifications_delete_read"),
+    path("sse_status/", views.notifications_sse_status, name="notifications_sse_status"),
     path("stream/", views.notifications_stream, name="notifications_stream"),
 ]
 
