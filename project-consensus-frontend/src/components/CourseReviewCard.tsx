@@ -26,7 +26,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/use-i18n";
 import { useApp } from "@/contexts/AppContext";
-import { clamp, formatTerm, formatDateDisplay, validateRating } from "@/lib/course-utils";
+import { clamp, formatTerm, formatDateTimeDisplay, validateRating } from "@/lib/course-utils";
 import { sanitizeHtml } from "@/lib/html-utils";
 import type {
   CourseReview,
@@ -174,12 +174,12 @@ export function CourseReviewCard({
 
   // Format dates with memoization for performance
   const createdAtFormatted = React.useMemo(() =>
-    formatDateDisplay(review.createdAt, language),
+    formatDateTimeDisplay(review.createdAt, language),
     [review.createdAt, language]
   );
 
   const updatedAtFormatted = React.useMemo(() =>
-    review.updatedAt ? formatDateDisplay(review.updatedAt, language) : null,
+    review.updatedAt ? formatDateTimeDisplay(review.updatedAt, language) : null,
     [review.updatedAt, language]
   );
 
