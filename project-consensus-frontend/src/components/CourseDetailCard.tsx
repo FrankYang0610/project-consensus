@@ -37,7 +37,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/use-i18n";
 import { useDebounceCallback } from "@/hooks/use-debounce";
-import { clamp, formatDateDisplay, formatTerm, sortTerms, validateRating } from "@/lib/course-utils";
+import { clamp, formatDateTimeDisplay, formatTerm, sortTerms, validateRating } from "@/lib/course-utils";
 import type {
   SemesterKey,
   OtherTeacherCourse,
@@ -1144,7 +1144,7 @@ export function CourseDetailCard({
               {lastUpdated && (
                 <div className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
                   <CalendarDays className="w-3.5 h-3.5" />
-                  {t("courses.card.lastUpdated", { date: formatDateDisplay(lastUpdated, language) })}
+                  {t("courses.card.lastUpdated", { date: formatDateTimeDisplay(lastUpdated, language) })}
                 </div>
               )}
             </div>

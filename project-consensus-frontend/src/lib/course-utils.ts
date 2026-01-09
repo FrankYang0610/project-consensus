@@ -27,13 +27,14 @@ export function formatTerm(
 
 /**
  * Format date for display with language-specific formatting
+ * Includes both date and time (hour:minute)
  */
-export function formatDateDisplay(dateInput: string | Date, language: string): string {
-  const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+export function formatDateTimeDisplay(dateTimeInput: string | Date, language: string): string {
+  const dateTime = typeof dateTimeInput === "string" ? new Date(dateTimeInput) : dateTimeInput;
 
-  // Validate date
-  if (isNaN(date.getTime())) {
-    console.warn('Invalid date provided to formatDateDisplay:', dateInput);
+  // Validate dateTime
+  if (isNaN(dateTime.getTime())) {
+    console.warn('Invalid dateTime provided to formatDateTimeDisplay:', dateTimeInput);
     return 'Invalid Date';
   }
 
@@ -41,10 +42,12 @@ export function formatDateDisplay(dateInput: string | Date, language: string): s
     return new Intl.DateTimeFormat(language, {
       year: "numeric",
       month: "short",
-      day: "numeric"
-    }).format(date);
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    }).format(dateTime);
   } catch {
-    return date.toLocaleDateString();
+    return dateTime.toLocaleString();
   }
 }
 

@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/use-i18n";
-import { clamp, formatDateDisplay, formatTerm, sortTerms, validateRating } from "@/lib/course-utils";
+import { clamp, formatDateTimeDisplay, formatTerm, sortTerms, validateRating } from "@/lib/course-utils";
 import type { SemesterKey, TeacherInfo } from "@/types";
 
 /**
@@ -116,7 +116,7 @@ export function CoursePreviewCard({
 
   const formattedLastUpdated = React.useMemo(() => {
     if (!lastUpdated) return null;
-    return formatDateDisplay(lastUpdated, language);
+    return formatDateTimeDisplay(lastUpdated, language);
   }, [lastUpdated, language]);
 
   const TitleBlock = (
