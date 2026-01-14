@@ -39,7 +39,15 @@ export function NotificationBell() {
       if (sseEnabled) {
         try {
           // Session cookie-based SSE
-          es = await openNotificationSSE();
+          const newEs = await openNotificationSSE();
+
+          // Check if component was unmounted while waiting for SSE connection
+          if (cancelled) {
+            newEs.close();
+            return;
+          }
+
+          es = newEs;
           es.onmessage = (evt) => {
             try {
               const data = JSON.parse(evt.data || "{}");
