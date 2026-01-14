@@ -27,6 +27,21 @@ export async function deleteRead(): Promise<void> {
   await apiPost(`/api/notifications/delete_read/`, {});
 }
 
+/**
+ * Fetches SSE availability status from the server.
+ * Returns true if SSE is enabled, false otherwise.
+ * This allows the client to skip SSE connection attempts when the server has SSE disabled.
+ */
+export async function fetchSSEStatus(): Promise<boolean> {
+  try {
+    const res = await apiGet<{ sseEnabled: boolean }>(`/api/notifications/sse_status/`);
+    return res?.sseEnabled ?? false;
+  } catch {
+    // If status check fails, assume SSE is disabled to be safe
+    return false;
+  }
+}
+
 // Opens a session-authenticated SSE connection via cookies (default method).
 // Note: For cross-subdomain usage or SameSite cookie issues, consider using a short-lived token flow.
 export async function openNotificationSSE(): Promise<EventSource> {
