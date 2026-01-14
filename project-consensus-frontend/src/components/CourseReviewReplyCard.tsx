@@ -26,7 +26,7 @@ export interface CourseReviewReplyCardProps {
 }
 
 /**
- * Course review reply card (single layer, no images), aligned with forum comment style
+ * Course review reply card
  */
 export function CourseReviewReplyCard({
   reply,
@@ -60,7 +60,7 @@ export function CourseReviewReplyCard({
   // Whether to show as anonymous (no link to profile)
   const showAsAnonymous = reply.isAnonymous && !isOwner;
 
-  // Initials-only avatar (no image). Must be declared before any early return to respect hooks rules
+  // Avatar initials fallback. Must be declared before any early return to respect hooks rules
   const initials = React.useMemo(() => {
     const name = (displayName || "?").trim();
     if (!name) return "?";
@@ -98,10 +98,10 @@ export function CourseReviewReplyCard({
     <Card className={cn("transition-all duration-200 hover:shadow-sm border-0 shadow-none py-2 gap-2", className)}>
       <CardContent className="px-2 py-0">
         <div className="flex items-start gap-2 group">
-          {/* Avatar (initials only, no image) */}
+          {/* Avatar */}
           <div className="flex-shrink-0">
             {showAsAnonymous ? (
-              <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center">
+              <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center overflow-hidden">
                 <span className="text-xs font-medium text-muted-foreground">{initials}</span>
               </div>
             ) : (
@@ -109,8 +109,13 @@ export function CourseReviewReplyCard({
                 href={`/user/${reply.author.id}`}
                 className="block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
-                <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center transition-transform duration-200 group-hover:scale-105 ring-0 group-hover:ring-2 group-hover:ring-primary/30">
-                  <span className="text-xs font-medium text-primary">{initials}</span>
+                <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden transition-transform duration-200 group-hover:scale-105 ring-0 group-hover:ring-2 group-hover:ring-primary/30">
+                  {reply.author.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={reply.author.avatarUrl} alt={reply.author.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-xs font-medium text-primary">{initials}</span>
+                  )}
                 </div>
               </Link>
             )}
