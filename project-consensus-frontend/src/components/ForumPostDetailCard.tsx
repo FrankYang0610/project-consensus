@@ -42,7 +42,8 @@ import { sanitizeHtml } from "@/lib/html-utils";
 import { cn } from "@/lib/utils";
 import { ForumPost } from "@/types";
 import { useApp } from "@/contexts/AppContext";
-import { updateForumPost } from "@/lib/api/forum-post";
+import { updateForumPost, translateForumPost } from "@/lib/api/forum-post";
+import { useTranslation } from "@/hooks/use-translation";
 import { isContentEmpty } from "@/lib/utils";
 import { TagManager } from "@/components/TagManager";
 import { formatRelativeTime } from "@/lib/time-utils";
@@ -82,7 +83,10 @@ export function ForumPostDetailCard({
   // Controlled: derive from props
   const isLiked = post.isLiked || false;
   const likesCount = post.likesCount;
-  const [isTranslated, setIsTranslated] = React.useState(false);
+  const { isTranslated, isTranslating, data: translatedPost, error: translateError, handleTranslate } = useTranslation(
+    () => translateForumPost(post.id, language),
+    language,
+  );
   const [isCopySuccess, setIsCopySuccess] = React.useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
 
@@ -125,9 +129,7 @@ export function ForumPostDetailCard({
   const handleTranslateClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const newIsTranslated = !isTranslated;
-    setIsTranslated(newIsTranslated);
-    onTranslate?.(post.id);
+    handleTranslate();
   };
 
 
@@ -272,7 +274,7 @@ export function ForumPostDetailCard({
         {!isEditing ? (
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-xl font-bold line-clamp-2 flex-1">
-              {isTranslated ? t('post.translateUnavailable') : post.title}
+              {isTranslated && !translateError && translatedPost?.title ? translatedPost.title : post.title}
             </h1>
           </div>
         ) : (
@@ -291,14 +293,18 @@ export function ForumPostDetailCard({
         )}
 
         {!isEditing ? (
-          <div
-            className="prose prose-zinc dark:prose-invert max-w-none mb-2 text-[0.9rem] leading-5 break-words overflow-wrap-anywhere"
-            dangerouslySetInnerHTML={{
-              __html: isTranslated
-                ? t('post.translateUnavailable')
-                : sanitizeHtml(post.content)
-            }}
-          />
+          isTranslated && translateError ? (
+            <p className="text-red-500 text-sm mb-2">{t(translateError)}</p>
+          ) : (
+            <div
+              className="prose prose-zinc dark:prose-invert max-w-none mb-2 text-[0.9rem] leading-5 break-words overflow-wrap-anywhere"
+              dangerouslySetInnerHTML={{
+                __html: isTranslated && translatedPost?.content
+                  ? sanitizeHtml(translatedPost.content)
+                  : sanitizeHtml(post.content)
+              }}
+            />
+          )
         ) : (
           <div className="mb-4">
             <RichTextEditor
@@ -372,9 +378,9 @@ export function ForumPostDetailCard({
                     : "text-gray-500 hover:text-gray-600"
                 )}
               >
-                <Languages className="w-4 h-4" />
+                <Languages className={cn("w-4 h-4", isTranslating && "animate-pulse")} />
                 <span className="text-sm">
-                  {isTranslated ? t('post.showOriginal') : t('post.translate')}
+                  {isTranslating ? t('post.translating') : isTranslated ? t('post.showOriginal') : t('post.translate')}
                 </span>
               </Button>
             )}

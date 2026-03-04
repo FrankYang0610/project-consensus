@@ -8,8 +8,13 @@ altair==5.5.0
     # via splink
 amqp==5.3.1
     # via kombu
+annotated-types==0.7.0
+    # via pydantic
 anyio==4.11.0
-    # via watchfiles
+    # via
+    #   httpx
+    #   openai
+    #   watchfiles
 asgiref==3.9.1
     # via
     #   django
@@ -33,7 +38,10 @@ botocore==1.40.50
 celery==5.5.3
     # via -r requirements.in
 certifi==2025.10.5
-    # via requests
+    # via
+    #   httpcore
+    #   httpx
+    #   requests
 charset-normalizer==3.4.4
     # via requests
 click==8.3.0
@@ -49,6 +57,8 @@ click-plugins==1.1.1.2
     # via celery
 click-repl==0.3.0
     # via celery
+distro==1.9.0
+    # via openai
 django==5.2.6
     # via
     #   -r requirements.in
@@ -75,12 +85,19 @@ gevent==25.9.1
 greenlet==3.2.4
     # via gevent
 h11==0.16.0
-    # via uvicorn
+    # via
+    #   httpcore
+    #   uvicorn
+httpcore==1.0.9
+    # via httpx
 httptools==0.7.1
     # via uvicorn
+httpx==0.27.2
+    # via openai
 idna==3.11
     # via
     #   anyio
+    #   httpx
     #   requests
 igraph==1.0.0
     # via splink
@@ -88,6 +105,8 @@ jinja2==3.1.6
     # via
     #   altair
     #   splink
+jiter==0.13.0
+    # via openai
 jmespath==1.0.1
     # via
     #   boto3
@@ -108,6 +127,8 @@ numpy==2.3.4
     # via
     #   pandas
     #   splink
+openai==2.24.0
+    # via -r requirements.in
 packaging==25.0
     # via
     #   altair
@@ -124,6 +145,10 @@ psycopg[binary]==3.2.10
     # via -r requirements.in
 psycopg-binary==3.2.10
     # via psycopg
+pydantic==2.12.5
+    # via openai
+pydantic-core==2.41.5
+    # via pydantic
 python-dateutil==2.9.0.post0
     # via
     #   botocore
@@ -157,7 +182,9 @@ six==1.17.0
     #   bleach
     #   python-dateutil
 sniffio==1.3.1
-    # via anyio
+    # via
+    #   anyio
+    #   openai
 splink==4.0.9
     # via -r requirements.in
 sqlglot==27.29.0
@@ -166,10 +193,18 @@ sqlparse==0.5.3
     # via django
 texttable==1.7.0
     # via igraph
+tqdm==4.67.3
+    # via openai
 typing-extensions==4.15.0
     # via
     #   altair
+    #   openai
+    #   pydantic
+    #   pydantic-core
     #   resend
+    #   typing-inspection
+typing-inspection==0.4.2
+    # via pydantic
 tzdata==2025.2
     # via
     #   kombu

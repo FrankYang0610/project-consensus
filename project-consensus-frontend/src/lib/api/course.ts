@@ -15,6 +15,14 @@ import type {
 } from "@/types";
 import { apiGet, apiPost, apiPatch, apiDeleteVoid } from "./api-utils";
 
+export interface TranslatedCourseReview {
+  content: string;
+}
+
+export interface TranslatedCourseReviewReply {
+  content: string;
+}
+
 export async function fetchCourses(params: FetchCoursesParams, init?: RequestInit): Promise<PaginatedResponse<Course>> {
   const q = new URLSearchParams();
   if (params.page) q.set('page', String(params.page));
@@ -89,6 +97,36 @@ export async function createReviewReply(reviewId: string, payload: CreateReplyPa
 
 export async function deleteReviewReply(replyId: string): Promise<void> {
   return apiDeleteVoid(`/api/replies/${encodeURIComponent(replyId)}/`);
+}
+
+/**
+ * Translate a course review's content to the given language.
+ */
+export async function translateCourseReview(
+  reviewId: string,
+  uiLanguage: string,
+): Promise<TranslatedCourseReview> {
+  const target_language = uiLanguage.startsWith("en") ? "en" : uiLanguage;
+  return apiPost<TranslatedCourseReview>(
+    `/api/reviews/${encodeURIComponent(reviewId)}/translate/`,
+    { target_language },
+  );
+}
+
+/**
+ * Translate a course review reply's content to the given language.
+ * @param replyId - Reply UUID
+ * @param uiLanguage - Frontend language code (e.g. "zh-CN", "en-US")
+ */
+export async function translateCourseReviewReply(
+  replyId: string,
+  uiLanguage: string,
+): Promise<TranslatedCourseReviewReply> {
+  const target_language = uiLanguage.startsWith("en") ? "en" : uiLanguage;
+  return apiPost<TranslatedCourseReviewReply>(
+    `/api/replies/${encodeURIComponent(replyId)}/translate/`,
+    { target_language },
+  );
 }
 
 export async function deleteCourseReview(reviewId: string): Promise<void> {

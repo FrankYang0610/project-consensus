@@ -123,6 +123,7 @@
   },
   "post": {
     "translate": "Translate",
+    "translating": "Translating...",
     "showOriginal": "Original",
     "share": "Share",
     "more": "More",
@@ -231,7 +232,8 @@
     "anonymous": "Anonymous",
     "anonymousWithId": "Anonymous ({{name}})",
     "noMore": "No more",
-    "imagePlaceholder": "[Image]"
+    "imagePlaceholder": "[Image]",
+    "error": "Error"
   },
   "courses": {
     "topbar": {
@@ -798,6 +800,12 @@
   },
   "editor": {
     "imagesNotAllowed": "Images are not allowed in course review replies"
+  },
+  "translation": {
+    "targetLanguageRequired": "Please select a target language",
+    "unsupportedLanguage": "The selected language is not supported",
+    "serviceUnavailable": "Translation service is temporarily unavailable, please try again later",
+    "notFound": "The content to translate was not found"
   },
   "welcome": {
     "title": "Welcome to PolyU.life!",

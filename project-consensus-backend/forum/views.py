@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from concurrent.futures import ThreadPoolExecutor
 
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
@@ -8,6 +9,9 @@ from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
 from typing import override
+
+from translation.services import Translator, TranslationError
+from translation.throttles import TranslationUserThrottle
 
 from accounts.services.privacy_service import (
     can_view_forum_comments,
@@ -115,6 +119,26 @@ class ForumPostViewSet(viewsets.ModelViewSet):
         except Exception as e:  # pragma: no cover
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
+    @action(detail=True, methods=["POST"], url_path="translate",
+            permission_classes=[permissions.AllowAny],
+            throttle_classes=[TranslationUserThrottle])
+    def translate(self, request: Request, pk: str | None = None):
+        post = self.get_object()
+        target_language = request.data.get("target_language")
+        if not target_language:
+            return Response({"detail": "translation.targetLanguageRequired"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                title_future = pool.submit(Translator.translate, post.title, target_language)
+                content_future = pool.submit(Translator.translate, post.content, target_language)
+                translated_title = title_future.result()
+                translated_content = content_future.result()
+        except ValueError:
+            return Response({"detail": "translation.unsupportedLanguage"}, status=status.HTTP_400_BAD_REQUEST)
+        except TranslationError:
+            return Response({"detail": "translation.serviceUnavailable"}, status=status.HTTP_502_BAD_GATEWAY)
+        return Response({"title": translated_title, "content": translated_content}, status=status.HTTP_200_OK)
+
     @action(detail=False, methods=["GET"], url_path="stats", permission_classes=[permissions.AllowAny])
     def stats(self, request: Request):
         return Response(get_forum_post_stats(), status=status.HTTP_200_OK)
@@ -218,6 +242,24 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
 
         return Response(payload, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["POST"], url_path="translate",
+            permission_classes=[permissions.AllowAny],
+            throttle_classes=[TranslationUserThrottle])
+    def translate(self, request: Request, pk: str | None = None):
+        comment = self.get_object()
+        if comment.is_deleted:
+            return Response({"detail": "translation.notFound"}, status=status.HTTP_404_NOT_FOUND)
+        target_language = request.data.get("target_language")
+        if not target_language:
+            return Response({"detail": "translation.targetLanguageRequired"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            translated_content = Translator.translate(comment.content, target_language)
+        except ValueError:
+            return Response({"detail": "translation.unsupportedLanguage"}, status=status.HTTP_400_BAD_REQUEST)
+        except TranslationError:
+            return Response({"detail": "translation.serviceUnavailable"}, status=status.HTTP_502_BAD_GATEWAY)
+        return Response({"content": translated_content}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["POST"], permission_classes=[permissions.IsAuthenticated])
     def toggle_like(self, request: Request, pk: str | None = None):
