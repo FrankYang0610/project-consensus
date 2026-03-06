@@ -11,7 +11,6 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from translation.services import Translator, TranslationError
-from translation.throttles import TranslationUserThrottle
 
 from accounts.services.privacy_service import can_view_course_reviews
 from core.permissions import IsAuthorOrReadOnly
@@ -286,8 +285,7 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
             raise PermissionDenied(detail=str(e))
 
     @action(detail=True, methods=["POST"], url_path="translate",
-            permission_classes=[permissions.AllowAny],
-            throttle_classes=[TranslationUserThrottle])
+            permission_classes=[permissions.AllowAny])
     def translate(self, request: Request, pk: str | None = None):
         review = self.get_object()
         target_language = request.data.get("target_language")
@@ -380,8 +378,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=["POST"], url_path="translate",
-            permission_classes=[permissions.AllowAny],
-            throttle_classes=[TranslationUserThrottle])
+            permission_classes=[permissions.AllowAny])
     def translate(self, request: Request, pk: str | None = None):
         reply = self.get_object()
         target_language = request.data.get("target_language")

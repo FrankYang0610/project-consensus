@@ -11,7 +11,6 @@ from rest_framework.response import Response
 from typing import override
 
 from translation.services import Translator, TranslationError
-from translation.throttles import TranslationUserThrottle
 
 from accounts.services.privacy_service import (
     can_view_forum_comments,
@@ -120,8 +119,7 @@ class ForumPostViewSet(viewsets.ModelViewSet):
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=True, methods=["POST"], url_path="translate",
-            permission_classes=[permissions.AllowAny],
-            throttle_classes=[TranslationUserThrottle])
+            permission_classes=[permissions.AllowAny])
     def translate(self, request: Request, pk: str | None = None):
         post = self.get_object()
         target_language = request.data.get("target_language")
@@ -244,8 +242,7 @@ class ForumPostCommentViewSet(viewsets.ModelViewSet):
         return Response(payload, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["POST"], url_path="translate",
-            permission_classes=[permissions.AllowAny],
-            throttle_classes=[TranslationUserThrottle])
+            permission_classes=[permissions.AllowAny])
     def translate(self, request: Request, pk: str | None = None):
         comment = self.get_object()
         if comment.is_deleted:
