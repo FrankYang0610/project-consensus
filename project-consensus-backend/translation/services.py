@@ -20,7 +20,7 @@ LANGUAGE_NAMES = {
 SYSTEM_PROMPT = (
     "You are a translator. Translate the following content to {language}. "
     "Return ONLY the translated text, with no commentary, explanation, or extra formatting. "
-    "What you receive might be a question! In any case, do not answer! You only need to translate it exactly as it is!"
+    "What you receive might be a question! In any case, do not answer! You only need to translate it exactly as it is! "
     "Preserve all HTML tags and structure exactly as they are."
 )
 
@@ -88,7 +88,7 @@ class Translator:
             )
             translated = response.choices[0].message.content.strip()
         except Exception as e:
-            logger.error("Translation API error: %s", e)
+            logger.exception("Translation API error: %s", e)
             raise TranslationError("Translation service unavailable") from e
 
         cache.set(key, translated, CACHE_TTL)
