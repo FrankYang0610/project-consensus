@@ -10,6 +10,10 @@ import type {
 } from "@/types/api";
 import { apiGet, apiPost, apiPatch, apiDeleteVoid, HttpError } from "./api-utils";
 
+export interface TranslatedForumComment {
+  content: string;
+}
+
 /**
  * Fetch forum comments for a specific post
  * @param params - Query parameters including postId
@@ -102,6 +106,22 @@ export async function deleteForumComment(
   return apiDeleteVoid(`/api/forum/comments/${encodeURIComponent(commentId)}/`, init);
 }
 
+
+/**
+ * Translate a forum comment's content to the given language.
+ * @param commentId - Comment UUID
+ * @param uiLanguage - Frontend language code (e.g. "zh-CN", "en-US")
+ */
+export async function translateForumPostComment(
+  commentId: string,
+  uiLanguage: string,
+): Promise<TranslatedForumComment> {
+  const target_language = uiLanguage.startsWith("en") ? "en" : uiLanguage;
+  return apiPost<TranslatedForumComment>(
+    `/api/forum/comments/${encodeURIComponent(commentId)}/translate/`,
+    { target_language },
+  );
+}
 
 /**
  * Toggle like status for a forum comment.

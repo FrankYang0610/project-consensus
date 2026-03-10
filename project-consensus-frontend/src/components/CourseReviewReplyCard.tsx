@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/use-i18n";
 import { useApp } from "@/contexts/AppContext";
 import { sanitizeHtml } from "@/lib/html-utils";
+import { translateCourseReviewReply } from "@/lib/api/course";
+import { useTranslation } from "@/hooks/use-translation";
 
 import ClientOnlyTime from "./ClientOnlyTime";
 
@@ -36,10 +38,13 @@ export function CourseReviewReplyCard({
   className,
   replyToReply,
 }: CourseReviewReplyCardProps) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const { user } = useApp();
   const [isDeleting, setIsDeleting] = React.useState(false);
-  const [isTranslated, setIsTranslated] = React.useState(false);
+  const { isTranslated, isTranslating, data: translatedReply, error: translateError, handleTranslate } = useTranslation(
+    () => translateCourseReviewReply(reply.id, language),
+    language,
+  );
 
   // Check if current user is the author of this anonymous reply
   const isOwner = user?.id && String(user.id) === String(reply.author.id);
@@ -79,7 +84,7 @@ export function CourseReviewReplyCard({
 
   const handleLike = () => onLike?.(reply.id);
   const handleReply = () => onReply?.(reply.id);
-  const handleTranslate = () => setIsTranslated((v) => !v);
+
   const handleDelete = async () => {
     if (!onDelete || isDeleting) return;
     setIsDeleting(true);
@@ -144,14 +149,18 @@ export function CourseReviewReplyCard({
               <ClientOnlyTime dateString={reply.createdAt} className="text-xs text-muted-foreground" />
             </div>
 
-            <div
-              className="prose prose-zinc dark:prose-invert max-w-none text-sm leading-relaxed mb-0.5"
-              dangerouslySetInnerHTML={{
-                __html: isTranslated
-                  ? sanitizeHtml(t("post.translateUnavailable"))
-                  : sanitizeHtml(reply.content),
-              }}
-            />
+            {isTranslated && translateError ? (
+              <p className="text-red-500 text-sm mb-0.5">{t(translateError)}</p>
+            ) : (
+              <div
+                className="prose prose-zinc dark:prose-invert max-w-none text-sm leading-relaxed mb-0.5"
+                dangerouslySetInnerHTML={{
+                  __html: isTranslated && translatedReply?.content
+                    ? sanitizeHtml(translatedReply.content)
+                    : sanitizeHtml(reply.content),
+                }}
+              />
+            )}
 
             {/* Actions */}
             <div className="flex items-center gap-2">
@@ -189,8 +198,8 @@ export function CourseReviewReplyCard({
                   : "text-muted-foreground hover:text-foreground"
               )}
               >
-                <Languages className="w-3 h-3 mr-1" />
-                {isTranslated ? t("comment.showOriginal") : t("comment.translate")}
+                <Languages className={cn("w-3 h-3 mr-1", isTranslating && "animate-pulse")} />
+                {isTranslating ? t("post.translating") : isTranslated ? t("comment.showOriginal") : t("comment.translate")}
               </Button>
 
               {canDelete && (

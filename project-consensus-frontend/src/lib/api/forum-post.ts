@@ -9,6 +9,11 @@ import type {
 } from "@/types/api";
 import { apiGet, apiPost, apiPatch, apiDeleteVoid, HttpError } from "./api-utils";
 
+export interface TranslatedForumPost {
+  title: string;
+  content: string;
+}
+
 /**
  * Fetch a single forum post by ID
  * @param postId - Post UUID
@@ -105,6 +110,22 @@ export async function deleteForumPost(
   return apiDeleteVoid(`/api/forum/posts/${encodeURIComponent(postId)}/`, init);
 }
 
+
+/**
+ * Translate a forum post's title and content to the given language.
+ * @param postId - Post UUID
+ * @param uiLanguage - Frontend language code (e.g. "zh-CN", "en-US")
+ */
+export async function translateForumPost(
+  postId: string,
+  uiLanguage: string,
+): Promise<TranslatedForumPost> {
+  const target_language = uiLanguage.startsWith("en") ? "en" : uiLanguage;
+  return apiPost<TranslatedForumPost>(
+    `/api/forum/posts/${encodeURIComponent(postId)}/translate/`,
+    { target_language },
+  );
+}
 
 /**
  * Toggle like status for a forum post.

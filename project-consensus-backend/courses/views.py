@@ -7,7 +7,10 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.request import Request
 from rest_framework.response import Response
+
+from translation.services import Translator, TranslationError
 
 from accounts.services.privacy_service import can_view_course_reviews
 from core.permissions import IsAuthorOrReadOnly
@@ -281,6 +284,21 @@ class CourseReviewViewSet(viewsets.ModelViewSet):
             # Let DRF's exception handling generate a 403 response.
             raise PermissionDenied(detail=str(e))
 
+    @action(detail=True, methods=["POST"], url_path="translate",
+            permission_classes=[permissions.AllowAny])
+    def translate(self, request: Request, pk: str | None = None):
+        review = self.get_object()
+        target_language = request.data.get("target_language")
+        if not target_language:
+            return Response({"detail": "translation.targetLanguageRequired"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            translated_content = Translator.translate(review.content, target_language)
+        except ValueError:
+            return Response({"detail": "translation.unsupportedLanguage"}, status=status.HTTP_400_BAD_REQUEST)
+        except TranslationError:
+            return Response({"detail": "translation.serviceUnavailable"}, status=status.HTTP_502_BAD_GATEWAY)
+        return Response({"content": translated_content}, status=status.HTTP_200_OK)
+
     @action(detail=False, methods=["GET"], url_path="stats", permission_classes=[permissions.AllowAny])
     def stats(self, request):
         # GET /api/reviews/stats/
@@ -358,6 +376,21 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
             return Response(data, status=status.HTTP_200_OK)
         except Exception as e:  # pragma: no cover
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=["POST"], url_path="translate",
+            permission_classes=[permissions.AllowAny])
+    def translate(self, request: Request, pk: str | None = None):
+        reply = self.get_object()
+        target_language = request.data.get("target_language")
+        if not target_language:
+            return Response({"detail": "translation.targetLanguageRequired"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            translated_content = Translator.translate(reply.content, target_language)
+        except ValueError:
+            return Response({"detail": "translation.unsupportedLanguage"}, status=status.HTTP_400_BAD_REQUEST)
+        except TranslationError:
+            return Response({"detail": "translation.serviceUnavailable"}, status=status.HTTP_502_BAD_GATEWAY)
+        return Response({"content": translated_content}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["GET"], url_path="find-review")
     def find_review(self, request):

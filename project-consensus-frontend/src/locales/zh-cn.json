@@ -121,6 +121,7 @@
   },
   "post": {
     "translate": "翻译",
+    "translating": "翻译中...",
     "showOriginal": "原文",
     "share": "分享",
     "more": "更多",
@@ -229,7 +230,8 @@
     "anonymous": "匿名",
     "anonymousWithId": "匿名（{{name}}）",
     "noMore": "没有更多了",
-    "imagePlaceholder": "【图片】"
+    "imagePlaceholder": "【图片】",
+    "error": "错误"
   },
   "courses": {
     "topbar": {
@@ -796,6 +798,12 @@
   },
   "editor": {
     "imagesNotAllowed": "课程评价回复中不允许插入图片"
+  },
+  "translation": {
+    "targetLanguageRequired": "请选择目标语言",
+    "unsupportedLanguage": "不支持所选的目标语言",
+    "serviceUnavailable": "翻译服务暂时不可用，请稍后再试",
+    "notFound": "未找到需要翻译的内容"
   },
   "welcome": {
     "title": "欢迎来到 PolyU.life！",

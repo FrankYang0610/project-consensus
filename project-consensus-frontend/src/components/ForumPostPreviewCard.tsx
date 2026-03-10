@@ -39,6 +39,8 @@ import { stripHtmlTags, truncateHtmlContent } from "@/lib/html-utils";
 import { ForumPost } from "@/types";
 import { useI18n } from "@/hooks/use-i18n";
 import { useApp } from "@/contexts/AppContext";
+import { translateForumPost } from "@/lib/api/forum-post";
+import { useTranslation } from "@/hooks/use-translation";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { formatRelativeTime } from "@/lib/time-utils";
 
@@ -48,7 +50,6 @@ import { formatRelativeTime } from "@/lib/time-utils";
 export interface ForumPostPreviewCardProps {
   post: ForumPost; // 帖子数据 / Post data
   onLike?: (postId: string) => void; // 点赞回调函数（可选） / Like callback function (optional)
-  onTranslate?: (postId: string) => void; // 翻译回调函数（可选） / Translate callback function (optional)
   className?: string; // 自定义CSS类名（可选） / Custom CSS class name (optional)
   currentUserId?: string; // 当前用户ID（可选） / Current user ID (optional)
 }
@@ -56,7 +57,6 @@ export interface ForumPostPreviewCardProps {
 export function ForumPostPreviewCard({
   post,
   onLike,
-  onTranslate,
   className,
   currentUserId,
 }: ForumPostPreviewCardProps) {
@@ -73,7 +73,10 @@ export function ForumPostPreviewCard({
   // Controlled: derive from props
   const isLiked = post.isLiked || false;
   const likesCount = post.likesCount;
-  const [isTranslated, setIsTranslated] = React.useState(false);
+  const { isTranslated, isTranslating, data: translatedPost, error: translateError, handleTranslate } = useTranslation(
+    () => translateForumPost(post.id, language),
+    language,
+  );
   const [isCopySuccess, setIsCopySuccess] = React.useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
 
@@ -109,9 +112,7 @@ export function ForumPostPreviewCard({
   const handleTranslateClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const newIsTranslated = !isTranslated;
-    setIsTranslated(newIsTranslated);
-    onTranslate?.(post.id);
+    handleTranslate();
   };
 
 
@@ -198,12 +199,18 @@ export function ForumPostPreviewCard({
         <CardContent className="pt-0 pb-0 px-4 flex flex-col cursor-pointer gap-1">
           <div className="flex items-center justify-between">
             <h3 className="text-base font-semibold line-clamp-1 flex-1">
-              {isTranslated ? t('post.translateUnavailable') : post.title}
+              {isTranslated && !translateError && translatedPost?.title ? translatedPost.title : post.title}
             </h3>
           </div>
-          <p className="text-muted-foreground text-sm leading-relaxed mb-1 break-words overflow-wrap-anywhere line-clamp-2 min-h-[3.25em]">
-            {isTranslated ? t('post.translateUnavailable') : truncateHtmlContent(post.content, 150, t('common.imagePlaceholder'))}
-          </p>
+          {isTranslated && translateError ? (
+            <p className="text-red-500 text-sm mb-1 min-h-[3.25em]">{t(translateError)}</p>
+          ) : (
+            <p className="text-muted-foreground text-sm leading-relaxed mb-1 break-words overflow-wrap-anywhere line-clamp-2 min-h-[3.25em]">
+              {isTranslated && translatedPost?.content
+                ? truncateHtmlContent(translatedPost.content, 150, t('common.imagePlaceholder'))
+                : truncateHtmlContent(post.content, 150, t('common.imagePlaceholder'))}
+            </p>
+          )}
         </CardContent>
       </Link>
 
@@ -277,9 +284,9 @@ export function ForumPostPreviewCard({
                   : "text-gray-500 hover:text-gray-600"
               )}
             >
-              <Languages className="w-3 h-3 mr-1 flex-shrink-0" />
+              <Languages className={cn("w-3 h-3 mr-1 flex-shrink-0", isTranslating && "animate-pulse")} />
               <span className="hidden sm:inline">
-                {isTranslated ? t('post.showOriginal') : t('post.translate')}
+                {isTranslating ? t('post.translating') : isTranslated ? t('post.showOriginal') : t('post.translate')}
               </span>
             </Button>
           </div>

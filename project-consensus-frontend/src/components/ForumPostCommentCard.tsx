@@ -25,7 +25,8 @@ import { sanitizeHtml } from "@/lib/html-utils";
 import { cn } from "@/lib/utils";
 import type { ForumPostComment } from "@/types/forum";
 import { stripHtmlTags, truncateHtmlContent } from "@/lib/html-utils";
-import { fetchForumComments } from "@/lib/api/forum-comment";
+import { fetchForumComments, translateForumPostComment } from "@/lib/api/forum-comment";
+import { useTranslation } from "@/hooks/use-translation";
 
 import ClientOnlyTime from "./ClientOnlyTime";
 import { useApp } from "@/contexts/AppContext";
@@ -54,7 +55,10 @@ export function ForumPostCommentCard({
   const { t, language } = useI18n();
   const { isLoggedIn, openLoginModal } = useApp();
   const [isDeleting, setIsDeleting] = React.useState(false);
-  const [isTranslated, setIsTranslated] = React.useState(false);
+  const { isTranslated, isTranslating, data: translatedComment, error: translateError, handleTranslate } = useTranslation(
+    () => translateForumPostComment(comment.id, language),
+    language,
+  );
   const [isCopySuccess, setIsCopySuccess] = React.useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
@@ -149,11 +153,6 @@ export function ForumPostCommentCard({
   const handleDeleteCancel = () => {
     setIsDeleteDialogOpen(false);
   };
-
-  const handleTranslate = async () => {
-    setIsTranslated(prev => !prev);
-  };
-
 
   const handleCopyText = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -423,12 +422,14 @@ export function ForumPostCommentCard({
             )}>
               {t('comment.deleted')}
             </div>
+          ) : isTranslated && translateError ? (
+            <p className="text-red-500 text-sm mb-2">{t(translateError)}</p>
           ) : (
             <div
               className="prose prose-zinc dark:prose-invert max-w-none text-sm leading-relaxed mb-2 break-words overflow-wrap-anywhere"
               dangerouslySetInnerHTML={{
-                __html: isTranslated
-                  ? sanitizeHtml(t('post.translateUnavailable'))
+                __html: isTranslated && translatedComment?.content
+                  ? sanitizeHtml(translatedComment.content)
                   : sanitizeHtml(comment.content)
               }}
             />
@@ -480,8 +481,8 @@ export function ForumPostCommentCard({
               )}
               disabled={comment.isDeleted}
             >
-              <Languages className="w-3 h-3 mr-1 flex-shrink-0" />
-              <span className="hidden sm:inline">{isTranslated ? t('comment.showOriginal') : t('comment.translate')}</span>
+              <Languages className={cn("w-3 h-3 mr-1 flex-shrink-0", isTranslating && "animate-pulse")} />
+              <span className="hidden sm:inline">{isTranslating ? t('post.translating') : isTranslated ? t('comment.showOriginal') : t('comment.translate')}</span>
             </Button>
 
             <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>

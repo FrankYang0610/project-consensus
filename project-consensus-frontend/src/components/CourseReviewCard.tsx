@@ -10,7 +10,8 @@ import {
   Calendar,
   Plus,
   Trash2,
-  Info
+  Info,
+  Languages,
 } from "lucide-react";
 
 import {
@@ -28,6 +29,8 @@ import { useI18n } from "@/hooks/use-i18n";
 import { useApp } from "@/contexts/AppContext";
 import { clamp, formatTerm, formatDateTimeDisplay, validateRating } from "@/lib/course-utils";
 import { sanitizeHtml } from "@/lib/html-utils";
+import { translateCourseReview } from "@/lib/api/course";
+import { useTranslation } from "@/hooks/use-translation";
 import type {
   CourseReview,
 } from "@/types";
@@ -152,6 +155,10 @@ export function CourseReviewCard({
 }: CourseReviewCardProps) {
   const { t, language } = useI18n();
   const { user } = useApp();
+  const { isTranslated, isTranslating, data: translatedReview, error: translateError, handleTranslate } = useTranslation(
+    () => translateCourseReview(review.id, language),
+    language,
+  );
 
   // Handle like button click
   const handleLike = React.useCallback(() => {
@@ -290,10 +297,18 @@ export function CourseReviewCard({
 
         {/* Review Content (rich text, sanitized) */}
         <div className="px-4 py-3 rounded-lg bg-muted/30 border">
-          <div
-            className="prose prose-zinc dark:prose-invert max-w-none text-sm leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: sanitizeHtml(review.content) }}
-          />
+          {isTranslated && translateError ? (
+            <p className="text-red-500 text-sm">{t(translateError)}</p>
+          ) : (
+            <div
+              className="prose prose-zinc dark:prose-invert max-w-none text-sm leading-relaxed"
+              dangerouslySetInnerHTML={{
+                __html: isTranslated && translatedReview?.content
+                  ? sanitizeHtml(translatedReview.content)
+                  : sanitizeHtml(review.content)
+              }}
+            />
+          )}
         </div>
 
         {/* Actions and Stats */}
@@ -336,6 +351,24 @@ export function CourseReviewCard({
             >
               <Plus className="w-4 h-4" />
               <span className="text-sm">{t("comment.addComment")}</span>
+            </Button>
+
+            {/* Translate Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "gap-2 h-8 px-3",
+                isTranslated
+                  ? "text-primary hover:text-primary/90"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              onClick={handleTranslate}
+            >
+              <Languages className={cn("w-4 h-4", isTranslating && "animate-pulse")} />
+              <span className="text-sm">
+                {isTranslating ? t("post.translating") : isTranslated ? t("comment.showOriginal") : t("comment.translate")}
+              </span>
             </Button>
 
             {/* Owner actions: Edit / Delete */}

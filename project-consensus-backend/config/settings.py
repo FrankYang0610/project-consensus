@@ -419,3 +419,9 @@ NOTIFICATIONS_REDIS_BACKLOG_PREFIX = env("NOTIFICATIONS_REDIS_BACKLOG_PREFIX", d
 # Backlog size for Last-Event-ID replay
 NOTIFICATIONS_REDIS_BACKLOG_SIZE = env.int("NOTIFICATIONS_REDIS_BACKLOG_SIZE", default=200)
 
+# ==================== Translation (OpenAI-compatible) ====================
+# Supports any OpenAI-compatible provider: OpenAI, DeepSeek, Moonshot, etc.
+TRANSLATION_API_BASE = env("TRANSLATION_API_BASE", default="https://api.openai.com/v1")
+TRANSLATION_API_KEY = env("TRANSLATION_API_KEY", default="")
+TRANSLATION_MODEL = env("TRANSLATION_MODEL", default="gpt-4o-mini")
+
