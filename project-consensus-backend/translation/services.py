@@ -52,7 +52,7 @@ class Translator:
     @classmethod
     def translate(cls, content: str, target_language: str) -> str:
         """Translate *content* to *target_language* using the configured
-        OpenAI-compatible provider.  Results are cached in Redis for 7 days.
+        OpenAI-compatible provider.  Results are cached via Django's cache framework for 7 days.
 
         Raises ``ValueError`` for unsupported languages and
         ``TranslationError`` on upstream API failures.

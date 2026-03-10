@@ -50,7 +50,6 @@ import { formatRelativeTime } from "@/lib/time-utils";
 export interface ForumPostPreviewCardProps {
   post: ForumPost; // 帖子数据 / Post data
   onLike?: (postId: string) => void; // 点赞回调函数（可选） / Like callback function (optional)
-  onTranslate?: (postId: string) => void; // 翻译回调函数（可选） / Translate callback function (optional)
   className?: string; // 自定义CSS类名（可选） / Custom CSS class name (optional)
   currentUserId?: string; // 当前用户ID（可选） / Current user ID (optional)
 }
@@ -58,7 +57,6 @@ export interface ForumPostPreviewCardProps {
 export function ForumPostPreviewCard({
   post,
   onLike,
-  onTranslate,
   className,
   currentUserId,
 }: ForumPostPreviewCardProps) {

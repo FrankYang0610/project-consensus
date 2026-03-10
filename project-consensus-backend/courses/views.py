@@ -383,7 +383,7 @@ class CourseReviewReplyViewSet(viewsets.ModelViewSet):
         reply = self.get_object()
         target_language = request.data.get("target_language")
         if not target_language:
-            return Response({"detail": "translation.targetLanguageRequired"},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "translation.targetLanguageRequired"}, status=status.HTTP_400_BAD_REQUEST)
         try:
             translated_content = Translator.translate(reply.content, target_language)
         except ValueError:

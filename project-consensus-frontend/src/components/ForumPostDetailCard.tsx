@@ -54,7 +54,6 @@ import { formatRelativeTime } from "@/lib/time-utils";
 export interface ForumPostDetailCardProps {
   post: ForumPost; // 帖子数据 / Post data
   onLike?: (postId: string) => void; // 点赞回调函数（可选） / Like callback function (optional)
-  onTranslate?: (postId: string) => void; // 翻译回调函数（可选） / Translate callback function (optional)
   onDelete?: (postId: string) => void; // 删除回调（可选） / Delete callback (optional)
   onUpdated?: (post: ForumPost) => void; // 更新回调（可选） / Update callback (optional)
   className?: string; // 自定义CSS类名（可选） / Custom CSS class name (optional)
@@ -66,7 +65,6 @@ const RichTextEditor = dynamic(() => import("@/components/RichTextEditor"), { ss
 export function ForumPostDetailCard({
   post,
   onLike,
-  onTranslate,
   onDelete,
   onUpdated,
   className,
