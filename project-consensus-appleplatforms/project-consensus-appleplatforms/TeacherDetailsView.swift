@@ -151,8 +151,8 @@ struct TeacherDetailsView: View {
                                 Text(label)
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
-                                if value.hasPrefix("http") {
-                                    Link(value, destination: URL(string: value)!)
+                                if value.hasPrefix("http"), let url = URL(string: value) {
+                                    Link(value, destination: url)
                                         .font(.subheadline)
                                         .lineLimit(1)
                                 } else {

@@ -63,7 +63,7 @@ struct CourseReviewCard: View {
 
     private var authorAvatar: some View {
         Group {
-            if let author = review.author, let urlStr = author.avatarUrl, let url = URL(string: urlStr) {
+            if !review.isAnonymous, let author = review.author, let urlStr = author.avatarUrl, let url = URL(string: urlStr) {
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .success(let image):

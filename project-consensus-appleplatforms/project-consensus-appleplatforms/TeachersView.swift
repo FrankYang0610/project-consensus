@@ -214,12 +214,19 @@ struct TeacherAvatar: View {
         }
     }
 
+    private var teacherNameFirstCharacter: String {
+        if let firstCharacter = teacher.name.first {
+            return String(firstCharacter)
+        }
+        return "?"
+    }
+
     private var initialsView: some View {
         Circle()
             .fill(.gray.opacity(0.2))
             .frame(width: size, height: size)
             .overlay {
-                Text(teacher.avatarUrl.prefix(2))
+                Text(teacherNameFirstCharacter)
                     .font(.system(size: size * 0.36, weight: .medium))
                     .foregroundStyle(.secondary)
             }
