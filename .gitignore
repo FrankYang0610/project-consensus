@@ -57,3 +57,14 @@ project-consensus-frontend/.turbo/
 project-consensus-frontend/.cache/
 project-consensus-frontend/.vercel/
 project-consensus-frontend/.env*
+
+## Apple Platforms
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+build/
+DerivedData/
+.build/
+.swiftpm/
+Pods/
+
