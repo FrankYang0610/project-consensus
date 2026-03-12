@@ -1,0 +1,19 @@
+{
+	"name": "xcode build server",
+	"version": "1.3.0",
+	"bspVersion": "2.2.0",
+	"languages": [
+		"c",
+		"cpp",
+		"objective-c",
+		"objective-cpp",
+		"swift"
+	],
+	"argv": [
+		"/opt/homebrew/bin/xcode-build-server"
+	],
+	"workspace": "/Users/frankyang/project-consensus/project-consensus-appleplatforms/project-consensus-appleplatforms.xcodeproj/project.xcworkspace",
+	"build_root": "/Users/frankyang/Library/Developer/Xcode/DerivedData/project-consensus-appleplatforms-anmsgydyrslvithgniiyanlyozbz",
+	"scheme": "project-consensus-appleplatforms",
+	"kind": "xcode"
+}
