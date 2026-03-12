@@ -10,14 +10,14 @@ import SwiftUI
 struct ContentView: View {
     var body: some View {
         TabView {
-            ForumView()
-                .tabItem {
-                    Label("Forum", systemImage: "bubble.left.and.bubble.right")
-                }
-
             LatestCourseReviewsView()
                 .tabItem {
                     Label("Reviews", systemImage: "star.bubble")
+                }
+            
+            ForumView()
+                .tabItem {
+                    Label("Forum", systemImage: "bubble.left.and.bubble.right")
                 }
             
             CoursesView()
