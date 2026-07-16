@@ -49,7 +49,7 @@ struct TeachersView: View {
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .secondaryAction) {
                     Menu {
                         Picker("Sort", selection: $ordering) {
                             ForEach(TeacherOrdering.allCases) { option in

@@ -23,7 +23,7 @@ struct ForumPostView: View {
             .padding()
         }
         .navigationTitle("Post")
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbarTitleDisplayMode(.inline)
         .task { await loadComments() }
     }
 

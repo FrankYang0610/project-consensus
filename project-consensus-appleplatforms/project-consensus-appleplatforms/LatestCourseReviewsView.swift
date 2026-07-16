@@ -45,7 +45,7 @@ struct LatestCourseReviewsView: View {
             }
             .navigationTitle("Latest Reviews")
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .secondaryAction) {
                     Button {
                         showBetaInfo = true
                     } label: {
