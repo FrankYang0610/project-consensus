@@ -32,7 +32,7 @@ struct TeacherDetailsView: View {
             }
         }
         .navigationTitle(teacher?.name ?? "Teacher")
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbarTitleDisplayMode(.inline)
         .task { await loadData() }
     }
 

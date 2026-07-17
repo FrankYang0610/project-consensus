@@ -157,7 +157,7 @@ struct DepartmentCoursesView: View {
             }
         }
         .navigationTitle(formattedDepartmentName(department.name))
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbarTitleDisplayMode(.inline)
         .navigationDestination(for: CourseQuery.self) { query in
             CourseLevelListView(query: query)
         }
@@ -210,7 +210,7 @@ struct CourseLevelListView: View {
             }
         }
         .navigationTitle("Level \(query.level)")
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbarTitleDisplayMode(.inline)
         .navigationDestination(for: Course.self) { course in
             CourseDetailView(course: course)
         }

@@ -19,9 +19,9 @@ struct CourseReviewDetailView: View {
             .padding()
         }
         .navigationTitle("Review")
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .confirmationAction) {
                 Button("Done") { dismiss() }
             }
         }

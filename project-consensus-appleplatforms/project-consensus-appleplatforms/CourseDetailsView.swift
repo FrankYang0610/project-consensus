@@ -39,7 +39,7 @@ struct CourseDetailView: View {
             }
         }
         .navigationTitle(course.subjectCode)
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbarTitleDisplayMode(.inline)
         .task { await loadReviews() }
         .sheet(item: $selectedReview) { review in
             NavigationStack {

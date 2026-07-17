@@ -48,7 +48,7 @@ struct ForumView: View {
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .secondaryAction) {
                     Menu {
                         Picker("Sort", selection: $ordering) {
                             ForEach(ForumOrdering.allCases) { option in
