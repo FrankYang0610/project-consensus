@@ -2,7 +2,7 @@
 
 ### Getting Started
 
-Please ensure you have Node.js (18.0+) and `npm` on your system. Then you can deploy the frontend locally according to the following steps.
+Please ensure you have Node.js 20.19+, 22.13+, or 24+ and `npm` on your system. Then you can deploy the frontend locally according to the following steps.
 
 #### 1. **Clone the repository** (if you haven't already):
 ```bash
@@ -20,12 +20,7 @@ npm install
 npx shadcn@latest init
 ```
 
-#### 4. **Install additional dependencies** (if needed):
-```bash
-npm install i18next react-i18next i18next-browser-languagedetector
-```
-
-#### 5. **Running the Development Server**
+#### 4. **Running the Development Server**
 
 Start the development server with one of the following commands:
 
@@ -248,4 +243,3 @@ project-consensus-frontend/
 ├── tsconfig.tsbuildinfo                      # TypeScript build cache
 └── README.md                                 # Project documentation
 ```
-
